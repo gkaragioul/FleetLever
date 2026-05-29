@@ -13,6 +13,7 @@ import {
   Command,
   Database,
   Download,
+  Eye,
   FileUp,
   FileText,
   Filter,
@@ -22,6 +23,7 @@ import {
   MoreHorizontal,
   Plus,
   QrCode,
+  Save,
   Search,
   Settings,
   ShieldCheck,
@@ -36,6 +38,7 @@ import {
   complianceTemplates,
   documentStatus,
   documents,
+  daysUntil,
   formatCurrency,
   formatDate,
   getAsset,
@@ -96,6 +99,11 @@ const statusLabels: Record<string, string> = {
   missing: "λείπει",
   overdue: "εκπρόθεσμο",
   open: "ανοιχτό",
+  "in progress": "σε εξέλιξη",
+  completed: "ολοκληρωμένο",
+  triaged: "triaged",
+  waiting: "σε αναμονή",
+  resolved: "κλειστό",
   scheduled: "προγραμματισμένο",
   approved: "εγκεκριμένο",
   "under review": "σε έλεγχο",
@@ -178,7 +186,7 @@ function IconButton({ icon: Icon, label, description }: { icon: LucideIcon; labe
   return (
     <span className="group relative inline-flex">
       <button
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:border-teal-300 hover:bg-[#f2f7f2] hover:text-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:border-teal-300 hover:bg-[#f2f7f2] hover:text-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
         type="button"
         aria-label={`${label}. ${description}`}
       >
@@ -199,7 +207,7 @@ function ToolbarMenu() {
   return (
     <span className="group relative inline-flex">
       <button
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:border-teal-300 hover:bg-[#f2f7f2] hover:text-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:border-teal-300 hover:bg-[#f2f7f2] hover:text-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
         type="button"
         aria-label="Περισσότερες ενέργειες. Import και Export δεδομένων."
       >
@@ -208,7 +216,7 @@ function ToolbarMenu() {
       <div className="absolute right-0 top-11 z-40 hidden w-64 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-2 text-left shadow-xl ring-1 ring-slate-950/5 group-hover:block group-focus-within:block">
         <button
           type="button"
-          className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus:bg-[#eef7f2] focus:outline-none"
+          className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Import δεδομένων. Μαζική εισαγωγή από Excel, CSV ή φάκελο αρχείων."
         >
           <UploadCloud className="mt-0.5 shrink-0 text-slate-500" size={17} />
@@ -219,7 +227,7 @@ function ToolbarMenu() {
         </button>
         <button
           type="button"
-          className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus:bg-[#eef7f2] focus:outline-none"
+          className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Export αναφοράς. Εξαγωγή αναφορών και δεδομένων για έλεγχο."
         >
           <Download className="mt-0.5 shrink-0 text-slate-500" size={17} />
@@ -237,7 +245,7 @@ function ActionButton({ icon: Icon, children }: { icon: LucideIcon; children: Re
   return (
     <button
       type="button"
-      className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[#11685f] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0f5c55] focus:outline-none focus:ring-2 focus:ring-teal-500"
+      className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[#11685f] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
     >
       <Icon size={16} />
       {children}
@@ -306,6 +314,48 @@ function DataCard({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
+function TextButton({
+  icon: Icon,
+  children,
+  onClick,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-[#123d37] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+    >
+      <Icon size={15} />
+      {children}
+    </button>
+  );
+}
+
+function FilterChip({
+  children,
+  active = false,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={`inline-flex min-h-9 items-center rounded-full border px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+        active
+          ? "border-[#11685f] bg-[#e2f0ea] text-[#123d37]"
+          : "border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 hover:border-teal-300 hover:bg-[#eef7f2]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function DashboardSignal({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
     <div className="min-w-0">
@@ -357,7 +407,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
           <button
             type="button"
             onClick={() => setActiveTab("copilot")}
-            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-white/15 bg-white/10 px-3 text-sm font-semibold text-[#f7faf4] transition hover:border-[#aee5d8] hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#aee5d8]"
+            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-white/15 bg-white/10 px-3 text-sm font-semibold text-[#f7faf4] transition hover:border-[#aee5d8] hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#aee5d8]"
           >
             Copilot
           </button>
@@ -372,7 +422,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               key={title}
               type="button"
               onClick={() => setActiveTab(tab as TabId)}
-              className="min-h-[96px] rounded-md border border-white/10 bg-white/[0.06] p-4 text-left transition hover:border-[#aee5d8] hover:bg-white/[0.1] focus:outline-none focus:ring-2 focus:ring-[#aee5d8]"
+              className="min-h-[96px] rounded-md border border-white/10 bg-white/[0.06] p-4 text-left transition hover:border-[#aee5d8] hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#aee5d8]"
             >
               <p className="font-semibold text-[#f7faf4]">{title}</p>
               <p className="mt-2 text-sm leading-6 text-[#d8e4de]">{detail}</p>
@@ -482,7 +532,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
         action={
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3.5 text-sm font-semibold text-[#123d37] shadow-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3.5 text-sm font-semibold text-[#123d37] shadow-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <Command size={16} />
             Άνοιγμα εντολών
@@ -500,7 +550,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
 
         <button
           type="button"
-          className="mt-4 flex min-h-[64px] w-full items-center gap-3 rounded-lg border border-[#cfe3da] bg-[#f7faf4] px-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="mt-4 flex min-h-[64px] w-full items-center gap-3 rounded-lg border border-[#cfe3da] bg-[#f7faf4] px-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           aria-label="Αναζήτηση σε πάγια, έγγραφα, χειριστές, βλάβες και εργασίες συντήρησης."
         >
           <Search className="shrink-0 text-[#117064]" size={22} />
@@ -519,7 +569,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
               key={scope.label}
               type="button"
               onClick={() => setActiveTab(scope.tab)}
-              className="flex min-h-12 items-center justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left text-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="flex min-h-12 items-center justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left text-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <span className="font-medium text-slate-700">{scope.label}</span>
               <span className="rounded-full bg-[#e7ece8] px-2 py-0.5 text-xs font-semibold text-slate-600">{scope.count}</span>
@@ -533,7 +583,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
               key={item.query}
               type="button"
               onClick={() => setActiveTab(item.tab)}
-              className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] hover:text-[#123d37] focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <Filter size={14} />
               <span>{item.query}</span>
@@ -554,7 +604,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
                   key={action.label}
                   type="button"
                   onClick={() => setActiveTab(action.tab)}
-                  className="group flex min-h-[116px] flex-col justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="group flex min-h-[116px] flex-col justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
                   <span className="flex items-start justify-between gap-3">
                     <span>
@@ -586,7 +636,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
                 key={item.code}
                 type="button"
                 onClick={() => setActiveTab(item.tab)}
-                className="grid min-h-[58px] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="grid min-h-[58px] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
               >
                 <span className="rounded-md bg-[#e7ece8] px-2 py-1 text-xs font-semibold text-[#13211f]">{item.code}</span>
                 <span className="min-w-0 truncate text-sm text-slate-600">{item.label}</span>
@@ -629,25 +679,34 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
 
 function AssetsPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Πάγια"
-        title="Μητρώο παγίων"
-        description="Κατάσταση, τοποθεσία, χειριστής και ελλείψεις εγγράφων για κάθε πάγιο."
+        title="Ποια πάγια μπορούν να ανατεθούν σήμερα;"
+        description="Κατάσταση στόλου, readiness και ελλείψεις εγγράφων χωρίς να ψάχνεις σε ξεχωριστές λίστες."
         action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
       />
       <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={Truck} label="Έτοιμα" value={String(readyAssets.length)} detail="Μπορούν να ανατεθούν" tone="teal" />
-        <MetricTile icon={AlertTriangle} label="Blocked" value={String(blockedAssets.length)} detail="Δεν μπαίνουν σε δουλειά" tone="red" />
+        <MetricTile icon={Truck} label="Ready" value={String(readyAssets.length)} detail="Μπορούν να ανατεθούν" tone="teal" />
+        <MetricTile icon={AlertTriangle} label="Blocked" value={String(blockedAssets.length)} detail="Μένουν εκτός δουλειάς" tone="red" />
         <MetricTile
           icon={FileText}
-          label="Με ελλείψεις"
+          label="Ελλείψεις"
           value={String(assets.filter((asset) => getMissingDocumentCategories(asset).length > 0).length)}
-          detail="Λείπουν απαιτούμενα έγγραφα"
+          detail="Λείπουν απαιτούμενα έγγραφα ή έλεγχοι"
           tone="amber"
         />
       </div>
-      <DataCard title="Πάγια">
+      <DataCard title="Μητρώο">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <FilterChip active>Όλα</FilterChip>
+            <FilterChip>Ready</FilterChip>
+            <FilterChip>Blocked</FilterChip>
+            <FilterChip>Με ελλείψεις</FilterChip>
+          </div>
+          <TextButton icon={Download}>Export στόλου</TextButton>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] border-collapse text-left text-sm">
             <thead>
@@ -658,6 +717,7 @@ function AssetsPanel() {
                 <th className="py-3 pr-4 font-semibold">Κατάσταση</th>
                 <th className="py-3 pr-4 font-semibold">Readiness</th>
                 <th className="py-3 font-semibold">Λείπουν</th>
+                <th className="py-3 pl-4 text-right font-semibold">Ενέργεια</th>
               </tr>
             </thead>
             <tbody>
@@ -686,6 +746,9 @@ function AssetsPanel() {
                         <span className="text-emerald-700">Πλήρες</span>
                       )}
                     </td>
+                    <td className="py-4 pl-4 text-right">
+                      <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                    </td>
                   </tr>
                 );
               })}
@@ -699,41 +762,56 @@ function AssetsPanel() {
 
 function DocumentsPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Έγγραφα"
-        title="Έλεγχος εγγράφων"
-        description="Κάθε έγγραφο έχει κατηγορία, σύνδεση με πάγιο ή χειριστή, κατάσταση λήξης και κατάσταση ελέγχου."
+        title="Λήξεις, approvals και έγγραφα σε έλεγχο"
+        description="Η ομάδα βλέπει πρώτα ό,τι λήγει, ό,τι είναι under review και τι χρειάζεται σύνδεση με πάγιο ή χειριστή."
         action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
       />
       <div className="grid gap-4 sm:grid-cols-3">
         <MetricTile icon={FileText} label="Σύνολο" value={String(documents.length)} detail="Καταχωρημένα έγγραφα" tone="slate" />
-        <MetricTile icon={AlertTriangle} label="Σε προθεσμία" value={String(expiringDocuments.length)} detail="Λήγουν ή έχουν λήξει" tone="amber" />
+        <MetricTile icon={AlertTriangle} label="Προθεσμίες" value={String(expiringDocuments.length)} detail="Ληγμένα ή κοντινές λήξεις" tone="amber" />
         <MetricTile
           icon={ShieldCheck}
           label="Σε έλεγχο"
           value={String(documents.filter((document) => document.reviewState === "under review").length)}
-          detail="Θέλουν επιβεβαίωση"
+          detail="Χρειάζονται επιβεβαίωση"
           tone="teal"
         />
       </div>
-      <DataCard title="Έγγραφα">
+      <DataCard title="Ουρά εγγράφων">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <FilterChip active>Όλα</FilterChip>
+            <FilterChip>Ληγμένα</FilterChip>
+            <FilterChip>30 ημέρες</FilterChip>
+            <FilterChip>Σε έλεγχο</FilterChip>
+          </div>
+          <TextButton icon={UploadCloud}>Bulk upload</TextButton>
+        </div>
         <div className="grid gap-3">
           {documents.map((document) => {
             const asset = document.assetId ? getAsset(document.assetId) : undefined;
             const status = documentStatus(document);
+            const days = document.expiresAt ? daysUntil(document.expiresAt) : null;
 
             return (
               <div
                 key={document.id}
-                className="grid gap-3 rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"
+                className="grid gap-3 rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
               >
                 <div>
                   <p className="font-semibold text-[#13211f]">{document.title}</p>
                   <p className="mt-1 text-sm text-slate-600">
-                    {categoryLabels[document.category]} · {asset?.code ?? document.operator} · AI confidence{" "}
+                    {categoryLabels[document.category]} · {asset?.code ?? document.operator} · confidence{" "}
                     {Math.round(document.confidence * 100)}%
                   </p>
+                  {days !== null && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {days < 0 ? `Έληξε πριν ${Math.abs(days)} ημέρες` : `Λήγει σε ${days} ημέρες`}
+                    </p>
+                  )}
                 </div>
                 <StatusPill label={statusLabels[document.reviewState]} tone={document.reviewState} />
                 <div className="text-sm text-slate-600">
@@ -757,19 +835,28 @@ function DocumentsPanel() {
 
 function CompliancePanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Συμμόρφωση"
-        title="Required Document Matrix"
-        description="Οι κανόνες δεν παρουσιάζονται ως νομική συμβουλή. Είναι templates που βασίζονται στα records και στις ρυθμίσεις της εταιρείας."
-        action={<ActionButton icon={ShieldCheck}>Νέο Template</ActionButton>}
+        title="Κανόνες εγγράφων ανά τύπο παγίου"
+        description="Templates για το τι πρέπει να έχει κάθε τύπος παγίου. Το Copilot τα χρησιμοποιεί ως λειτουργικό checklist, όχι ως νομική συμβουλή."
+        action={<ActionButton icon={ShieldCheck}>Νέο template</ActionButton>}
       />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricTile icon={ShieldCheck} label="Templates" value={String(complianceTemplates.length)} detail="Τύποι παγίων" tone="slate" />
+        <MetricTile icon={FileText} label="Κατηγορίες" value="7" detail="Ασφάλειες, KTEO, άδειες, certificates" tone="teal" />
+        <MetricTile icon={AlertTriangle} label="Ελλείψεις" value={String(assets.filter((asset) => getMissingDocumentCategories(asset).length > 0).length)} detail="Πάγια με κενά" tone="amber" />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {complianceTemplates.map((template) => (
           <DataCard key={template.assetType} title={template.assetType}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-sm text-slate-600">{template.requiredCategories.length} απαιτούμενα έγγραφα</p>
+              <TextButton icon={Eye}>Έλεγχος</TextButton>
+            </div>
             <div className="flex flex-wrap gap-2">
               {template.requiredCategories.map((category) => (
-                <span key={category} className="rounded-full bg-[#e7ece8] px-2.5 py-1 text-xs text-slate-700">
+                <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fdfbf7] px-2.5 py-1 text-xs font-medium text-slate-700">
                   {categoryLabels[category] ?? category}
                 </span>
               ))}
@@ -783,11 +870,11 @@ function CompliancePanel() {
 
 function MaintenancePanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Συντήρηση"
-        title="Συντήρηση και service"
-        description="Προτεραιότητα σε εκπρόθεσμες εργασίες, ανάθεση υπευθύνου και καθαρή εικόνα κόστους."
+        title="Τι service πρέπει να γίνει και από ποιον"
+        description="Εκπρόθεσμες εργασίες, επόμενα service και κόστος σε μία ουρά εργασίας."
         action={<ActionButton icon={Wrench}>Νέα εργασία</ActionButton>}
       />
       <div className="grid gap-4 sm:grid-cols-3">
@@ -795,21 +882,38 @@ function MaintenancePanel() {
         <MetricTile icon={AlertTriangle} label="Εκπρόθεσμες" value={String(overdueMaintenance.length)} detail="Θέλουν ανάθεση" tone="red" />
         <MetricTile icon={ClipboardList} label="Κόστος" value={formatCurrency(totalMaintenanceCost)} detail="Καταγεγραμμένο κόστος" tone="teal" />
       </div>
-      <DataCard title="Εργασίες">
+      <DataCard title="Ουρά εργασιών">
+        <div className="mb-4 flex flex-wrap gap-2">
+          <FilterChip active>Όλες</FilterChip>
+          <FilterChip>Εκπρόθεσμες</FilterChip>
+          <FilterChip>Προγραμματισμένες</FilterChip>
+          <FilterChip>Με κόστος</FilterChip>
+        </div>
         <div className="space-y-3">
-          {maintenanceTasks.map((task) => (
+          {maintenanceTasks.map((task) => {
+            const days = daysUntil(task.dueAt);
+
+            return (
             <div key={task.id} className="rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-[#13211f]">{task.title}</p>
                   <p className="mt-1 text-sm text-slate-600">
-                    {getAsset(task.assetId)?.code} · {task.owner} · προθεσμία {formatDate(task.dueAt)}
+                    {getAsset(task.assetId)?.code} · {task.owner} · {formatDate(task.dueAt)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {days < 0 ? `Καθυστέρηση ${Math.abs(days)} ημερών` : `Σε ${days} ημέρες`}
+                    {task.cost ? ` · ${formatCurrency(task.cost)}` : ""}
                   </p>
                 </div>
-                <StatusPill label={statusLabels[task.status]} tone={task.status} />
+                <div className="flex flex-col items-end gap-2">
+                  <StatusPill label={statusLabels[task.status]} tone={task.status} />
+                  <TextButton icon={Users}>Ανάθεση</TextButton>
+                </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </DataCard>
     </div>
@@ -818,11 +922,11 @@ function MaintenancePanel() {
 
 function IssuesPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Βλάβες"
-        title="Βλάβες πεδίου"
-        description="Οι βλάβες δείχνουν τι εμποδίζει εργασία, ποιος το έχει αναλάβει και πόσο επείγον είναι."
+        title="Τι κρατάει πάγια εκτός δουλειάς"
+        description="Blocking βλάβες, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
         action={<ActionButton icon={QrCode}>Νέα βλάβη</ActionButton>}
       />
       <div className="grid gap-4 sm:grid-cols-3">
@@ -837,23 +941,41 @@ function IssuesPanel() {
         />
       </div>
       <DataCard title="Ανοιχτές βλάβες">
+        <div className="mb-4 flex flex-wrap gap-2">
+          <FilterChip active>Όλες</FilterChip>
+          <FilterChip>Blocking</FilterChip>
+          <FilterChip>High/Critical</FilterChip>
+          <FilterChip>Σε εξέλιξη</FilterChip>
+        </div>
         <div className="space-y-3">
-          {issues.map((issue) => (
+          {issues.map((issue) => {
+            const asset = getAsset(issue.assetId);
+
+            return (
             <div key={issue.id} className="rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-[#13211f]">{issue.title}</p>
                   <p className="mt-1 text-sm text-slate-600">
-                    {getAsset(issue.assetId)?.code} · {issue.assignee} · άνοιξε {formatDate(issue.openedAt)}
+                    {asset?.code} · {asset?.location} · άνοιξε {formatDate(issue.openedAt)}
                   </p>
+                  <p className="mt-1 text-xs text-slate-500">Υπεύθυνος: {issue.assignee}</p>
                 </div>
-                <StatusPill
-                  label={issue.blocking ? "blocked" : statusLabels[issue.severity]}
-                  tone={issue.blocking ? "blocked" : issue.severity === "critical" ? "criticalIssue" : issue.severity}
-                />
+                <div className="flex flex-col items-end gap-2">
+                  <StatusPill
+                    label={issue.blocking ? "blocked" : statusLabels[issue.severity]}
+                    tone={issue.blocking ? "blocked" : issue.severity === "critical" ? "criticalIssue" : issue.severity}
+                  />
+                  <StatusPill label={statusLabels[issue.status]} tone={issue.status} />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                <TextButton icon={Users}>Ανάθεση</TextButton>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </DataCard>
     </div>
@@ -862,15 +984,23 @@ function IssuesPanel() {
 
 function OperatorsPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Χειριστές"
-        title="Operator readiness"
-        description="Άδειες, αναθέσεις παγίων και βασικά στοιχεία ανθρώπων χωρίς περιττή πολυπλοκότητα."
-        action={<ActionButton icon={Users}>Νέος Operator</ActionButton>}
+        title="Άδειες και αναθέσεις χειριστών"
+        description="Ποιος είναι διαθέσιμος, ποια άδεια λήγει και σε ποιο πάγιο είναι συνδεδεμένος."
+        action={<ActionButton icon={Users}>Νέος χειριστής</ActionButton>}
       />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricTile icon={Users} label="Χειριστές" value={String(operators.length)} detail="Ενεργοί άνθρωποι" tone="slate" />
+        <MetricTile icon={Truck} label="Αναθέσεις" value={String(operators.reduce((sum, operator) => sum + operator.assignedAssetIds.length, 0))} detail="Συνδεδεμένα πάγια" tone="teal" />
+        <MetricTile icon={AlertTriangle} label="Κοντινές λήξεις" value="1" detail="Άδειες στις επόμενες 30 ημέρες" tone="amber" />
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
-        {operators.map((operator) => (
+        {operators.map((operator) => {
+          const days = daysUntil(operator.licenseExpiresAt);
+
+          return (
           <DataCard key={operator.id} title={operator.name}>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700">
@@ -881,14 +1011,19 @@ function OperatorsPanel() {
                 <p className="text-sm text-slate-600">{operator.phone}</p>
               </div>
             </div>
-            <p className="mt-4 text-sm text-slate-600">Η άδεια λήγει {formatDate(operator.licenseExpiresAt)}</p>
+            <div className="mt-4 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+              <p className="text-sm font-semibold text-[#13211f]">Άδεια</p>
+              <p className="mt-1 text-sm text-slate-600">{formatDate(operator.licenseExpiresAt)}</p>
+              <p className="mt-1 text-xs text-slate-500">{days <= 30 ? `Λήγει σε ${days} ημέρες` : "Εντός ορίου"}</p>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {operator.assignedAssetIds.map((assetId) => (
                 <StatusPill key={assetId} label={getAsset(assetId)?.code ?? "Asset"} tone="scheduled" />
               ))}
             </div>
           </DataCard>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -896,20 +1031,31 @@ function OperatorsPanel() {
 
 function CopilotPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Copilot"
-        title="AI Operations Assistant"
-        description="Το Copilot απαντά μόνο με βάση τα διαθέσιμα records, δείχνει citations και δηλώνει όταν λείπουν δεδομένα."
-        action={<StatusPill label="cited answers" tone="valid" />}
+        title="Ρώτα για στόλο, έγγραφα και βλάβες"
+        description="Το Copilot απαντά μόνο με records της εταιρείας, δείχνει citations και σταματά όταν λείπουν δεδομένα."
+        action={<StatusPill label="citations on" tone="valid" />}
       />
-      <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <DataCard title="Απάντηση">
-          <div className="rounded-lg border border-[#29473f] bg-[#203832] p-5 text-[#f7faf4]">
-            <p className="text-sm font-semibold text-[#aee5d8]">AI Summary</p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <DataCard title="Ερώτηση">
+          <div className="rounded-lg border border-[#d9e2dc] bg-[#f7faf4] p-4">
+            <div className="flex items-center gap-3 rounded-md border border-[#cfe3da] bg-[#fbfaf6] px-4 py-3">
+              <Bot className="text-[#117064]" size={20} />
+              <span className="text-sm text-slate-600">Τι πρέπει να προλάβουμε πριν βγει το πρόγραμμα;</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {["Ποια πάγια είναι blocked;", "Τι λήγει σε 30 ημέρες;", "Τι service έχει καθυστερήσει;"].map((prompt) => (
+                <FilterChip key={prompt}>{prompt}</FilterChip>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg border border-[#29473f] bg-[#203832] p-5 text-[#f7faf4]">
+            <p className="text-sm font-semibold text-[#aee5d8]">Απάντηση</p>
             <p className="mt-3 text-sm leading-6 text-[#d8e4de]">
-              Αυτή την εβδομάδα προτεραιότητα έχουν: ανανέωση KTEO για B-12, επισκευή EX-01, follow-up για CR-04 και
-              ολοκλήρωση service στο FL-02.
+              Πρώτα κλείσε το KTEO του B-12, μετά την επισκευή του EX-01 και στη συνέχεια το follow-up για το CR-04.
+              Το FL-02 χρειάζεται overdue service πριν θεωρηθεί καθαρό για ανάθεση.
             </p>
           </div>
         </DataCard>
@@ -936,28 +1082,40 @@ function CopilotPanel() {
 
 function ReportsPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Αναφορές"
-        title="Αναφορές διοίκησης"
-        description="Αναφορές για weekly meeting, audit prep και operational follow-up."
+        title="Έτοιμες αναφορές για διοίκηση και audit"
+        description="Καθαρές εξαγωγές για attention, λήξεις, συντήρηση και readiness χωρίς χειροκίνητο καθάρισμα."
         action={<ActionButton icon={Download}>Export αναφοράς</ActionButton>}
       />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricTile icon={ClipboardList} label="Templates" value="4" detail="Έτοιμες αναφορές" tone="slate" />
+        <MetricTile icon={FileText} label="Πηγές" value="5" detail="Πάγια, έγγραφα, συντήρηση, βλάβες, χειριστές" tone="teal" />
+        <MetricTile icon={Download} label="Format" value="PDF/CSV" detail="Για έλεγχο και αποστολή" tone="amber" />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ["Attention Report", "Κρίσιμα, προειδοποιήσεις, ελλείψεις και blocked records"],
-          ["Expiration Report", "Ημερομηνίες λήξης ανά πάγιο και κατηγορία"],
-          ["Maintenance Overdue", "Due work, κόστος και υπεύθυνοι"],
-          ["Readiness Report", "Readiness scores με αιτίες και citations"],
-        ].map(([title, detail]) => (
+          ["Attention report", "Κρίσιμα, προειδοποιήσεις, ελλείψεις και blocked records", "Για πρωινό meeting"],
+          ["Λήξεις εγγράφων", "Ημερομηνίες λήξης ανά πάγιο και κατηγορία", "Για compliance follow-up"],
+          ["Overdue service", "Εργασίες, κόστος και υπεύθυνοι", "Για συνεργείο"],
+          ["Readiness report", "Scores με αιτίες και citations", "Για ανάθεση στόλου"],
+        ].map(([title, detail, meta]) => (
           <button
             key={title}
             type="button"
-            className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:border-teal-300 hover:bg-[#eef7f2]"
+            className="group flex min-h-[188px] flex-col justify-between rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
-            <ClipboardList className="text-teal-800" size={20} />
-            <p className="mt-3 font-semibold text-[#13211f]">{title}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+            <span>
+              <ClipboardList className="text-teal-800" size={20} />
+              <p className="mt-3 font-semibold text-[#13211f]">{title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+              <p className="mt-2 text-xs font-semibold text-slate-500">{meta}</p>
+            </span>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#11685f]">
+              Export
+              <ArrowRight className="transition group-hover:translate-x-0.5" size={15} />
+            </span>
           </button>
         ))}
       </div>
@@ -967,25 +1125,43 @@ function ReportsPanel() {
 
 function SettingsPanel() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Ρυθμίσεις"
-        title="Company controls και trust layer"
-        description="Ρυθμίσεις για χρήστες, notifications, imports, billing, audit logs και AI guardrails."
+        title="Έλεγχος εταιρείας και trust layer"
+        description="Ρόλοι, ειδοποιήσεις, imports, billing, audit logs και AI κανόνες σε ομάδες που βγάζουν νόημα."
       />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricTile icon={Users} label="Ρόλοι" value="7" detail="Owner έως Auditor" tone="slate" />
+        <MetricTile icon={Bell} label="Reminders" value="6" detail="60 ημέρες έως expired" tone="teal" />
+        <MetricTile icon={ShieldCheck} label="Audit" value="On" detail="Sensitive changes και AI χρήση" tone="amber" />
+      </div>
       <div className="grid gap-4 lg:grid-cols-3">
         {[
-          ["Users & Roles", "Owner, Admin, Operations, Compliance, Mechanic, Operator, Auditor"],
-          ["Notifications", "60, 30, 14, 7, day-of και expired reminder windows"],
-          ["Audit Logs", "Sensitive changes, overrides, imports και operational AI use"],
-          ["Billing", "Manual invoice mode πρώτα, Stripe-ready αργότερα"],
-          ["Imports", "CSV, Excel, folder upload, review queue και publish approval"],
-          ["AI Settings", "Citations, missing-data disclosure και no legal advice"],
-        ].map(([title, detail]) => (
-          <DataCard key={title} title={title}>
-            <p className="text-sm leading-6 text-slate-600">{detail}</p>
+          { title: "Χρήστες και ρόλοι", detail: "Owner, Admin, Operations, Compliance, Mechanic, Operator, Auditor", icon: Users },
+          { title: "Ειδοποιήσεις", detail: "60, 30, 14, 7, day-of και expired reminder windows", icon: Bell },
+          { title: "Audit logs", detail: "Sensitive changes, overrides, imports και operational AI use", icon: ClipboardList },
+          { title: "Billing", detail: "Manual invoice mode πρώτα, Stripe-ready αργότερα", icon: Save },
+          { title: "Imports", detail: "CSV, Excel, folder upload, review queue και publish approval", icon: UploadCloud },
+          { title: "AI settings", detail: "Citations, missing-data disclosure και no legal advice", icon: Bot },
+        ].map((item) => {
+          const Icon = item.icon;
+
+          return (
+          <DataCard key={item.title} title={item.title}>
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700 ring-1 ring-[#d2dbd5]">
+                <Icon size={18} />
+              </span>
+              <p className="text-sm leading-6 text-slate-600">{item.detail}</p>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-[#e3e9e2] pt-3">
+              <StatusPill label="configured" tone="valid" />
+              <TextButton icon={Settings}>Άνοιγμα</TextButton>
+            </div>
           </DataCard>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1060,7 +1236,7 @@ export function OperationsConsole() {
                   aria-selected={selected}
                   aria-controls={`${item.id}-panel`}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                     selected ? "bg-[#e2f0ea] text-[#123d37]" : "text-slate-600 hover:bg-[#eef3ed] hover:text-[#123d37]"
                   }`}
                 >
@@ -1081,7 +1257,7 @@ export function OperationsConsole() {
             </div>
             <button
               type="button"
-              className="hidden h-10 min-w-[150px] shrink-0 items-center gap-2 rounded-md border border-[#cfe3da] bg-[#eaf5ef] px-3 text-left text-[#123d37] transition hover:border-teal-200 hover:bg-[#e2f0ea] focus:outline-none focus:ring-2 focus:ring-teal-500 md:inline-flex"
+              className="hidden h-10 min-w-[150px] shrink-0 items-center gap-2 rounded-md border border-[#cfe3da] bg-[#eaf5ef] px-3 text-left text-[#123d37] transition hover:border-teal-200 hover:bg-[#e2f0ea] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 md:inline-flex"
               aria-label="Τρέχουσα τοποθεσία: Athens Depot"
             >
               <Building2 size={17} className="text-teal-700" />
