@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FleetOS AI - Domain and Brand Name Research</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #5b6472;
+      --line: #d9dee7;
+      --soft: #f5f7fb;
+      --panel: #ffffff;
+      --navy: #0b1220;
+      --blue: #1d4ed8;
+      --cyan: #0891b2;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --violet: #6d28d9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 10.3pt;
+      line-height: 1.55;
+    }
+
+    @page {
+      size: A4;
+      margin: 15mm 13mm 16mm 13mm;
+    }
+
+    .cover {
+      min-height: 238mm;
+      background:
+        linear-gradient(138deg, rgba(9,14,26,0.99), rgba(19,32,55,0.96) 56%, rgba(8,145,178,0.82)),
+        radial-gradient(circle at 78% 10%, rgba(34,197,94,0.28), transparent 34%);
+      color: white;
+      padding: 24mm 20mm 12mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+    }
+
+    .cover .kicker {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 9pt;
+      color: #a7f3d0;
+      font-weight: 800;
+    }
+
+    h1, h2, h3, h4 { margin: 0; line-height: 1.16; }
+
+    h1 {
+      margin-top: 10mm;
+      font-size: 39pt;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin-top: 6mm;
+      max-width: 154mm;
+      font-size: 17pt;
+      color: #dbeafe;
+      font-weight: 650;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 17mm;
+    }
+
+    .cover-card {
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 28mm;
+    }
+
+    .cover-card strong {
+      display: block;
+      font-size: 14pt;
+      margin-bottom: 2px;
+    }
+
+    .cover-card span {
+      color: #d1d5db;
+      font-size: 8.3pt;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: #cbd5e1;
+      font-size: 9pt;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 8mm;
+    }
+
+    section {
+      page-break-inside: avoid;
+      margin-bottom: 8mm;
+    }
+
+    h2 {
+      margin: 8mm 0 3mm;
+      color: var(--navy);
+      font-size: 18pt;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 2.5mm;
+    }
+
+    h3 {
+      margin: 5mm 0 2mm;
+      color: #1f2937;
+      font-size: 12.5pt;
+    }
+
+    h4 {
+      margin: 4mm 0 1.5mm;
+      color: #1f2937;
+      font-size: 10.2pt;
+    }
+
+    p { margin: 0 0 3mm; }
+
+    .lead {
+      font-size: 11.7pt;
+      color: #263244;
+      border-left: 4px solid var(--blue);
+      padding: 2mm 0 2mm 4mm;
+      background: #f8fafc;
+    }
+
+    .decision {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 11px 12px;
+      margin: 4mm 0;
+    }
+
+    .decision > strong:first-child {
+      display: block;
+      font-size: 13pt;
+      color: #172554;
+      margin-bottom: 1mm;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 8pt;
+      font-weight: 800;
+      margin-right: 4px;
+      background: #e0f2fe;
+      color: #075985;
+      white-space: nowrap;
+    }
+
+    .badge.green { background: #dcfce7; color: #166534; }
+    .badge.amber { background: #fef3c7; color: #92400e; }
+    .badge.red { background: #fee2e2; color: #991b1b; }
+    .badge.violet { background: #ede9fe; color: #5b21b6; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 4mm 0;
+    }
+
+    .cards.two { grid-template-columns: repeat(2, 1fr); }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel);
+    }
+
+    .metric {
+      font-size: 18pt;
+      font-weight: 850;
+      color: var(--navy);
+      display: block;
+      line-height: 1.1;
+    }
+
+    .metric-label {
+      display: block;
+      color: var(--muted);
+      font-size: 8.5pt;
+      margin-top: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 3mm 0 5mm;
+      page-break-inside: avoid;
+    }
+
+    th {
+      background: #eef2ff;
+      color: #1e293b;
+      text-align: left;
+      font-weight: 850;
+      font-size: 8.2pt;
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    td {
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      font-size: 8.65pt;
+    }
+
+    .small td, .small th { font-size: 7.9pt; padding: 6px; }
+    .score { font-weight: 850; font-size: 10pt; white-space: nowrap; }
+    .winner { background: #ecfdf5; }
+    .risk { background: #fff7ed; }
+    .bad { background: #fef2f2; }
+
+    ul, ol {
+      margin: 0 0 4mm 5mm;
+      padding-left: 3mm;
+    }
+
+    li { margin-bottom: 1.5mm; }
+
+    .quote {
+      border-left: 3px solid var(--cyan);
+      padding: 2mm 3mm;
+      background: #ecfeff;
+      color: #164e63;
+      margin: 3mm 0;
+    }
+
+    .bar {
+      height: 7px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb, #0891b2);
+    }
+
+    .page-break { page-break-before: always; }
+
+    .footnotes {
+      border-top: 2px solid var(--line);
+      padding-top: 4mm;
+      color: #374151;
+      font-size: 8pt;
+      word-break: break-word;
+    }
+
+    a { color: #1d4ed8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <div>
+      <div class="kicker">Brand, Domain, SEO, and Conflict Research</div>
+      <h1>FleetOS AI Name Decision Report</h1>
+      <div class="subtitle">A deep evaluation of six Greek-market domain candidates for an AI-assisted fleet and equipment operations platform.</div>
+      <div class="cover-grid">
+        <div class="cover-card">
+          <strong>Best candidate</strong>
+          <span>certifleet.gr, conditional on legal clearance and a compliance-first positioning.</span>
+        </div>
+        <div class="cover-card">
+          <strong>Safest fallback</strong>
+          <span>techfleet.gr, cleaner but weaker and more generic as a brand.</span>
+        </div>
+        <div class="cover-card">
+          <strong>Avoid</strong>
+          <span>fleetsync.gr, optifleet.gr, inspecta.gr, and probably fleetmate.gr as primary.</span>
+        </div>
+      </div>
+    </div>
+    <div class="meta">
+      <div>Prepared for FleetOS AI / Fleet & Equipment Operations SaaS</div>
+      <div>Research date: 28 May 2026</div>
+    </div>
+  </div>
+
+  <main>
+    <section>
+      <h2>Executive Decision</h2>
+      <p class="lead">From the six options, the best strategic name is <strong>CertiFleet</strong>, but it should only be used publicly after a trademark and confusion-risk check. It fits the first wedge best: certificates, inspections, expirations, renewals, and compliance visibility for Greek operators who live in Excel, WhatsApp, paper folders, and memory.</p>
+
+      <div class="decision">
+        <strong>Recommended direction: CertiFleet.gr</strong>
+        Use <strong>CertiFleet</strong> if the business is intentionally positioned around "fleet and equipment compliance operations" rather than generic fleet management. The name makes the first sales promise easy: never miss another certificate, inspection, license, permit, insurance renewal, or maintenance obligation.
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Domain</th>
+            <th>Decision</th>
+            <th>Score</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="winner">
+            <td>1</td>
+            <td><strong>certifleet.gr</strong></td>
+            <td><span class="badge green">Best fit</span><span class="badge amber">Needs clearance</span></td>
+            <td class="score">76 / 100</td>
+            <td>Strongest match to the Greek buyer pain: certificates, inspections, licenses, permits, insurance, renewals. The risk is a direct-looking existing CertiFleet Solutions product abroad.</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>techfleet.gr</strong></td>
+            <td><span class="badge">Fallback</span></td>
+            <td class="score">68 / 100</td>
+            <td>Cleaner than most candidates and easy enough to pronounce, but generic. It sounds like technical fleet services, telematics, or a workshop tool rather than a compliance operations system.</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>fleetmate.gr</strong></td>
+            <td><span class="badge amber">Friendly but crowded</span></td>
+            <td class="score">62 / 100</td>
+            <td>Approachable and broad, but exact "FleetMate" products already exist in fleet maintenance and compliance-like software. This weakens SEO and increases confusion risk.</td>
+          </tr>
+          <tr class="risk">
+            <td>4</td>
+            <td><strong>inspecta.gr</strong></td>
+            <td><span class="badge amber">Too narrow</span></td>
+            <td class="score">53 / 100</td>
+            <td>Memorable, but frames the product as inspection-only and collides with many existing Inspecta/inspection brands. It underplays fleet, machinery, maintenance, and operational visibility.</td>
+          </tr>
+          <tr class="bad">
+            <td>5</td>
+            <td><strong>fleetsync.gr</strong></td>
+            <td><span class="badge red">Avoid</span></td>
+            <td class="score">48 / 100</td>
+            <td>Modern SaaS sound, but exact FleetSync products exist with highly overlapping compliance, documents, maintenance, telematics, and fleet intelligence positioning.</td>
+          </tr>
+          <tr class="bad">
+            <td>6</td>
+            <td><strong>optifleet.gr</strong></td>
+            <td><span class="badge red">Avoid</span></td>
+            <td class="score">45 / 100</td>
+            <td>Too associated with optimization, telematics, fuel, routes, and Renault Trucks Optifleet. This points buyers toward the category you explicitly do not want to be in first.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Bottom line:</strong> Registering all six is not the same as choosing a brand. If budget allows, defensively register <strong>certifleet.gr</strong> and <strong>techfleet.gr</strong> now because they appear provisionable, but build brand assets only after the trademark check.</p>
+    </section>
+
+    <section>
+      <h2>What The App Needs The Name To Say</h2>
+      <p>The product is not just an AI chatbot. It is a proper operational system for Greek businesses managing fleets, cranes, buses, machinery, equipment, certifications, inspections, maintenance, and documents. AI is the assistant layer on top of structured data.</p>
+
+      <div class="quote">
+        Best one-sentence product definition: <strong>A simple fleet and equipment operations system that keeps assets, documents, expirations, inspections, and maintenance under control, with an AI assistant that answers operational questions instantly.</strong>
+      </div>
+
+      <p>The name should therefore do four jobs:</p>
+      <ul>
+        <li><strong>Signal operational control, not generic AI.</strong> The buyer must believe this is a system of record, not a chat novelty.</li>
+        <li><strong>Signal compliance urgency.</strong> The initial pain is missed inspections, expired certificates, missing documents, and panic before audits.</li>
+        <li><strong>Avoid GPS/telematics expectations.</strong> The MVP has no hardware, no GPS, no tracking devices, no route optimization.</li>
+        <li><strong>Feel credible to Greek SMB operators.</strong> Construction, cranes, tourism buses, logistics, and equipment rental buyers care about practicality, trust, and fewer problems.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Research Stack Used</h2>
+      <p>This evaluation used a combined stack, because naming quality cannot be decided by one tool. A good name must survive buyer psychology, language fit, domain availability, SEO, competitor noise, and trademark risk.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Tools / Sources</th>
+            <th>Purpose</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Codex skills already available</td>
+            <td>competitive-analyst, competitive-strategist, product-discovery, localize, market-researcher, seo, seo-local, seo-cluster, seo-sxo</td>
+            <td>Competitive framing, naming fit, Greek-market localization, buyer psychology, SEO/positioning analysis.</td>
+            <td>High for strategy; medium for data unless paired with live sources.</td>
+          </tr>
+          <tr>
+            <td>Official domain check</td>
+            <td>FORTH Registry of .gr and .el Domain Names WHOIS</td>
+            <td>Check whether each `.gr` domain can be provisioned.</td>
+            <td>High for domain availability at query time.</td>
+          </tr>
+          <tr>
+            <td>DNS checks</td>
+            <td>dig NS/A/SOA</td>
+            <td>Look for active DNS records. Useful as support, not proof of availability.</td>
+            <td>Medium.</td>
+          </tr>
+          <tr>
+            <td>Trademark clearance path</td>
+            <td>EUIPO Search IP / TMview; Hellenic Industrial Property Organisation (OBI)</td>
+            <td>Identify official databases for formal trademark screening in Greece and the EU.</td>
+            <td>High as official path; this report is not legal advice.</td>
+          </tr>
+          <tr>
+            <td>Exact-name web search</td>
+            <td>Google/Bing-style web search; direct competitor websites</td>
+            <td>Find same-name products, search ambiguity, and category confusion.</td>
+            <td>High for obvious conflicts; incomplete for hidden legal marks.</td>
+          </tr>
+          <tr>
+            <td>Online skill candidates</td>
+            <td>Brand Alchemy, Domain Name Brainstormer, Brand Architect, brand-strategist subagents</td>
+            <td>Useful additions for future ideation, phonosemantics, naming frameworks, and domain brainstorming.</td>
+            <td>Useful for ideation; still needs live validation.</td>
+          </tr>
+          <tr>
+            <td>Keyword demand</td>
+            <td>Google Ads Keyword Planner / DataForSEO / Google Search Console</td>
+            <td>Would quantify Greek search volume for fleet/compliance/inspection terms.</td>
+            <td>Potentially high, but requires configured account/API access.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Important note:</strong> Google Ads MCP tools were discoverable in the environment, but usable keyword volumes require a configured Google Ads customer account. Because this decision is mostly a brand-risk choice rather than a search-volume choice, the absence of exact keyword volume does not block the recommendation.</p>
+    </section>
+
+    <section>
+      <h2>Availability Findings</h2>
+      <p>The official FORTH `.gr` WHOIS/domain check returned that each candidate <strong>can be provisioned</strong> at the time of research. A separate DNS check returned no active NS/A/SOA records for the candidates. The FORTH result is the meaningful availability signal; the DNS result is only supporting evidence.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>FORTH `.gr` check</th>
+            <th>DNS signal</th>
+            <th>Practical meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>fleetmate.gr</td>
+            <td><span class="badge green">Can be provisioned</span></td>
+            <td>No active NS/A/SOA found</td>
+            <td>Technically available, but brand conflict risk is meaningful.</td>
+          </tr>
+          <tr>
+            <td>certifleet.gr</td>
+            <td><span class="badge green">Can be provisioned</span></td>
+            <td>No active NS/A/SOA found</td>
+            <td>Technically available; strategically strongest; must clear conflict with CertiFleet Solutions and trademarks.</td>
+          </tr>
+          <tr>
+            <td>techfleet.gr</td>
+            <td><span class="badge green">Can be provisioned</span></td>
+            <td>No active NS/A/SOA found</td>
+            <td>Technically available; cleaner but less differentiated.</td>
+          </tr>
+          <tr>
+            <td>inspecta.gr</td>
+            <td><span class="badge green">Can be provisioned</span></td>
+            <td>No active NS/A/SOA found</td>
+            <td>Technically available; too much inspection-brand noise.</td>
+          </tr>
+          <tr>
+            <td>fleetsync.gr</td>
+            <td><span class="badge green">Can be provisioned</span></td>
+            <td>No active NS/A/SOA found</td>
+            <td>Technically available; severe same-category conflict.</td>
+          </tr>
+          <tr>
+            <td>optifleet.gr</td>
+            <td><span class="badge green">Can be provisioned</span></td>
+            <td>No active NS/A/SOA found</td>
+            <td>Technically available; not advisable because of Renault Trucks Optifleet and category mismatch.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>Scoring Method</h2>
+      <p>The scoring is weighted for the specific Greek MVP: compliance, documents, inspections, maintenance, asset visibility, and AI assistance. It is not a generic SaaS-name score.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Criterion</th>
+            <th>Weight</th>
+            <th>What good looks like</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Strategic fit</td>
+            <td>20%</td>
+            <td>Matches the first wedge: never miss inspections, certificates, renewals, documents, or maintenance issues.</td>
+          </tr>
+          <tr>
+            <td>Greek B2B pronunciation and trust</td>
+            <td>15%</td>
+            <td>Easy to say in Greek business calls, sounds credible, not childish, not too Silicon Valley.</td>
+          </tr>
+          <tr>
+            <td>Category clarity</td>
+            <td>15%</td>
+            <td>Does not imply GPS, telematics, route optimization, or a huge ERP.</td>
+          </tr>
+          <tr>
+            <td>Distinctiveness / search cleanliness</td>
+            <td>15%</td>
+            <td>Not crowded by exact-name products in the same or adjacent category.</td>
+          </tr>
+          <tr>
+            <td>IP and conflict risk</td>
+            <td>15%</td>
+            <td>Low risk of conflict with existing trade names, software products, or trademarks.</td>
+          </tr>
+          <tr>
+            <td>SEO/search intent fit</td>
+            <td>10%</td>
+            <td>Can rank for brand and category searches without being drowned by existing brands.</td>
+          </tr>
+          <tr>
+            <td>Long-term elasticity</td>
+            <td>10%</td>
+            <td>Can expand from fleet documents into equipment operations without forcing a rebrand.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Scorecard</h2>
+      <table class="small">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Strategic fit<br>20</th>
+            <th>Greek B2B<br>15</th>
+            <th>Category clarity<br>15</th>
+            <th>Distinctiveness<br>15</th>
+            <th>Conflict safety<br>15</th>
+            <th>SEO fit<br>10</th>
+            <th>Elasticity<br>10</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="winner">
+            <td><strong>CertiFleet</strong><div class="bar"><span style="width:76%"></span></div></td>
+            <td>18</td>
+            <td>11</td>
+            <td>13</td>
+            <td>9</td>
+            <td>7</td>
+            <td>8</td>
+            <td>10</td>
+            <td class="score">76</td>
+          </tr>
+          <tr>
+            <td><strong>TechFleet</strong><div class="bar"><span style="width:68%"></span></div></td>
+            <td>11</td>
+            <td>12</td>
+            <td>9</td>
+            <td>12</td>
+            <td>12</td>
+            <td>6</td>
+            <td>6</td>
+            <td class="score">68</td>
+          </tr>
+          <tr>
+            <td><strong>FleetMate</strong><div class="bar"><span style="width:62%"></span></div></td>
+            <td>13</td>
+            <td>13</td>
+            <td>10</td>
+            <td>6</td>
+            <td>5</td>
+            <td>5</td>
+            <td>10</td>
+            <td class="score">62</td>
+          </tr>
+          <tr>
+            <td><strong>Inspecta</strong><div class="bar"><span style="width:53%"></span></div></td>
+            <td>11</td>
+            <td>12</td>
+            <td>8</td>
+            <td>6</td>
+            <td>5</td>
+            <td>5</td>
+            <td>6</td>
+            <td class="score">53</td>
+          </tr>
+          <tr>
+            <td><strong>FleetSync</strong><div class="bar"><span style="width:48%"></span></div></td>
+            <td>12</td>
+            <td>10</td>
+            <td>7</td>
+            <td>4</td>
+            <td>3</td>
+            <td>3</td>
+            <td>9</td>
+            <td class="score">48</td>
+          </tr>
+          <tr>
+            <td><strong>OptiFleet</strong><div class="bar"><span style="width:45%"></span></div></td>
+            <td>9</td>
+            <td>10</td>
+            <td>5</td>
+            <td>4</td>
+            <td>3</td>
+            <td>4</td>
+            <td>10</td>
+            <td class="score">45</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>Candidate Analysis</h2>
+
+      <h3>1. certifleet.gr</h3>
+      <p><span class="badge green">Best strategic fit</span><span class="badge amber">Medium-high conflict risk</span></p>
+      <p><strong>Why it works:</strong> CertiFleet instantly points to certificates, certification, renewal control, compliance, and administrative discipline. This is exactly where the MVP has the strongest Greek-market pain. A crane operator, construction company, bus company, or equipment rental firm can understand the promise without a long explanation.</p>
+      <p><strong>Greek-market fit:</strong> The root "certi" is understandable to business buyers exposed to English software language, and it maps well to the operational reality of certificates, permits, licenses, KTEO, insurance, lifting inspections, and safety checks. It feels more serious than FleetMate and less telematics-coded than FleetSync or OptiFleet.</p>
+      <p><strong>Main risk:</strong> A live CertiFleet Solutions product already markets fleet compliance, expiry alerts, renewal tracking, document dashboards, fuel/service logs, and operational control. That is close enough to require real legal review before public launch.</p>
+      <p><strong>Positioning recommendation:</strong> If used, make the brand line broader than vehicles: <em>CertiFleet - Fleet & Equipment Compliance Operations</em>. The homepage should not look like generic telematics. It should lead with expirations, documents, certificates, inspections, maintenance, and AI answers.</p>
+
+      <h3>2. techfleet.gr</h3>
+      <p><span class="badge">Clean fallback</span><span class="badge amber">Weak differentiation</span></p>
+      <p><strong>Why it works:</strong> It is straightforward, pronounceable, and likely less exposed to exact same-category conflicts than FleetMate, FleetSync, OptiFleet, or Inspecta. For a Greek buyer, it sounds like a technology product for fleets.</p>
+      <p><strong>Why it is weaker:</strong> It does not carry the compliance urgency. It could mean a workshop tool, telematics installer, GPS vendor, vehicle technology service, technician marketplace, or fleet IT integrator. It is safe but bland.</p>
+      <p><strong>Best use:</strong> Keep as a fallback or defensive registration. If CertiFleet fails trademark clearance, TechFleet is usable, but the tagline and homepage copy will need to do more work.</p>
+
+      <h3>3. fleetmate.gr</h3>
+      <p><span class="badge amber">Friendly</span><span class="badge red">Crowded name</span></p>
+      <p><strong>Why it works:</strong> It is warm, easy, and broad. It supports the idea of an assistant or "mate" for operations. It could be a good name in isolation.</p>
+      <p><strong>Why it drops:</strong> FLEETMATE is already used by fleet maintenance software, including features around preventive maintenance, inspection, registration, images/attachments, service history, and compliance. The name is too likely to create SEO ambiguity and buyer confusion.</p>
+      <p><strong>Verdict:</strong> Do not make it the primary brand unless a lawyer clears it and you accept uphill SEO. The `.gr` domain being provisionable does not solve the global exact-name problem.</p>
+
+      <h3>4. inspecta.gr</h3>
+      <p><span class="badge amber">Memorable</span><span class="badge red">Wrong frame</span></p>
+      <p><strong>Why it works:</strong> It is short and inspection-related. It sounds like a real company name and is easy to remember.</p>
+      <p><strong>Why it fails for this product:</strong> It narrows the mental frame to inspections. FleetOS AI is broader: assets, documents, expirations, maintenance, operators, daily summaries, and conversational operations. Inspecta also collides with many inspection-related and trademark signals.</p>
+      <p><strong>Verdict:</strong> Better for an inspection-reporting product than for a fleet and equipment operations system.</p>
+
+      <h3>5. fleetsync.gr</h3>
+      <p><span class="badge red">Avoid</span></p>
+      <p><strong>Why it seemed attractive:</strong> FleetSync sounds modern, SaaS-native, and operational. "Sync" suggests bringing scattered information into one place.</p>
+      <p><strong>Why it is risky:</strong> A live FleetSync product uses very close language: compliance, maintenance, telematics, insurance, documents, fleet intelligence, and a real-time system of record. This is too close to the FleetOS AI concept to ignore.</p>
+      <p><strong>Verdict:</strong> Avoid. This is the kind of name that may look perfect until search and conflict work reveal the trap.</p>
+
+      <h3>6. optifleet.gr</h3>
+      <p><span class="badge red">Avoid</span></p>
+      <p><strong>Why it seemed attractive:</strong> It sounds efficient and mature. "Opti" suggests optimization and operational improvement.</p>
+      <p><strong>Why it fails:</strong> Renault Trucks Optifleet is an established fleet management/connected vehicle product with modules for fuel, mapping, driving, safety, health, reports, real-time vehicle location, and driver behavior. The name would pull buyers toward telematics and route/fuel optimization, which is specifically outside the MVP.</p>
+      <p><strong>Verdict:</strong> Too risky and category-misaligned.</p>
+    </section>
+
+    <section class="page-break">
+      <h2>Conflict Evidence Snapshot</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Evidence found</th>
+            <th>Risk interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>FleetMate</td>
+            <td>FleetMate.com markets fleet maintenance management software with preventive maintenance, compliance, service history, attachments, inspections, registration, and alerts.</td>
+            <td><span class="badge red">High</span> Same-category naming and SEO collision.</td>
+          </tr>
+          <tr>
+            <td>CertiFleet</td>
+            <td>CertiFleet Solutions markets expiry management, smart alerts, document dashboard, renewal tracking, fleet visibility, service reminders, and compliance control.</td>
+            <td><span class="badge amber">Medium-high</span> Strategically excellent, but must be cleared before launch.</td>
+          </tr>
+          <tr>
+            <td>TechFleet</td>
+            <td>Search results include Tech Fleet as a nonprofit/community and other tech/service uses, but fewer direct fleet-compliance product collisions were obvious.</td>
+            <td><span class="badge">Medium-low</span> Cleaner, but generic.</td>
+          </tr>
+          <tr>
+            <td>Inspecta</td>
+            <td>Multiple Inspecta signals in inspection/software/company/trademark contexts.</td>
+            <td><span class="badge amber">Medium-high</span> Crowded and too inspection-only.</td>
+          </tr>
+          <tr>
+            <td>FleetSync</td>
+            <td>FleetSync.io positions itself around fleet compliance, maintenance, telematics, insurance, documents, and operational intelligence.</td>
+            <td><span class="badge red">Very high</span> Direct concept overlap.</td>
+          </tr>
+          <tr>
+            <td>OptiFleet</td>
+            <td>Renault Trucks Optifleet is a fleet management product with connected vehicle and optimization modules.</td>
+            <td><span class="badge red">Very high</span> Established brand and wrong buyer expectation.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Greek Buyer Psychology</h2>
+      <p>The buyer is probably not searching for "AI copilot" first. They are feeling the operational consequences of missed obligations: late KTEO, expired insurance, forgotten crane certification, missing PDF, maintenance surprise, or panic before an inspection. For that buyer, the name has to reduce uncertainty quickly.</p>
+
+      <div class="cards two">
+        <div class="card">
+          <span class="metric">CertiFleet</span>
+          <span class="metric-label">Best mental association</span>
+          <p>Feels like control over certificates, permits, compliance, renewals, and official obligations. Good for trust and direct sales.</p>
+        </div>
+        <div class="card">
+          <span class="metric">FleetMate</span>
+          <span class="metric-label">Best friendliness</span>
+          <p>Sounds human and approachable, but may feel less serious for fines, inspections, and compliance-heavy operations.</p>
+        </div>
+      </div>
+
+      <p><strong>Practical Greek sales test:</strong> imagine calling a crane company owner and saying: "We built CertiFleet, a system that keeps every vehicle, machine, certificate, inspection, insurance, and maintenance issue visible, with an AI assistant that tells you what needs attention." That sentence lands faster than the same sentence with OptiFleet or FleetSync, because it does not trigger GPS/optimization expectations.</p>
+    </section>
+
+    <section>
+      <h2>SEO and Search Strategy</h2>
+      <p>For this product, the domain name is not expected to rank by itself for generic keywords. Early customer acquisition will be direct emails, phone outreach, demos, referrals, and LinkedIn. SEO still matters because buyers will Google the brand after a call.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Branded search risk</th>
+            <th>Category SEO risk</th>
+            <th>Recommended SEO angle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CertiFleet</td>
+            <td>Medium-high due to CertiFleet Solutions.</td>
+            <td>Good category relevance.</td>
+            <td>Own Greek-language pages around fleet certificates, lifting inspection tracking, KTEO reminders, equipment compliance, and document expirations.</td>
+          </tr>
+          <tr>
+            <td>TechFleet</td>
+            <td>Medium-low but generic.</td>
+            <td>Weak; "tech fleet" does not encode the pain.</td>
+            <td>Use strong descriptive title tags: fleet compliance software for Greece, equipment maintenance tracking, document expiry alerts.</td>
+          </tr>
+          <tr>
+            <td>FleetMate</td>
+            <td>High due to exact FleetMate products.</td>
+            <td>Good but crowded.</td>
+            <td>Not recommended unless the brand has a unique modifier.</td>
+          </tr>
+          <tr>
+            <td>Inspecta</td>
+            <td>High in inspection-related searches.</td>
+            <td>Narrow; may attract inspection software intent.</td>
+            <td>Only suitable if the product becomes inspection-first.</td>
+          </tr>
+          <tr>
+            <td>FleetSync</td>
+            <td>Very high due to exact FleetSync product.</td>
+            <td>Close but dangerous.</td>
+            <td>Avoid.</td>
+          </tr>
+          <tr>
+            <td>OptiFleet</td>
+            <td>Very high due to Renault Trucks.</td>
+            <td>Wrong; optimization/fuel/tracking.</td>
+            <td>Avoid.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>Positioning If CertiFleet Is Chosen</h2>
+      <p><strong>Brand name:</strong> CertiFleet</p>
+      <p><strong>Domain:</strong> certifleet.gr</p>
+      <p><strong>Primary category:</strong> Fleet & equipment compliance operations software</p>
+      <p><strong>Tagline options:</strong></p>
+      <ul>
+        <li>Fleet & equipment compliance, finally under control.</li>
+        <li>Never miss another inspection, certificate, or maintenance issue.</li>
+        <li>The operations system for fleets, machines, documents, and deadlines.</li>
+      </ul>
+
+      <h3>Homepage First Screen</h3>
+      <p><strong>Headline:</strong> Keep every fleet and equipment obligation under control.</p>
+      <p><strong>Subheadline:</strong> Track vehicles, machinery, certificates, inspections, documents, expirations, and maintenance in one clean system, with an AI assistant that tells you what needs attention.</p>
+      <p><strong>CTA:</strong> Book a demo</p>
+      <p><strong>Proof strip:</strong> Built for Greek crane companies, construction fleets, transport firms, tourism buses, and equipment operators.</p>
+
+      <h3>AI Framing</h3>
+      <p>Do not lead with "AI chatbot". Lead with operational control. Then introduce AI as the layer that answers questions from the business data:</p>
+      <ul>
+        <li>"What expires this month?"</li>
+        <li>"Which machines are risky this week?"</li>
+        <li>"What documents are missing for tomorrow's inspection?"</li>
+        <li>"Show me critical compliance risks."</li>
+      </ul>
+
+      <h3>Greek-Language Sales Message</h3>
+      <p>For direct outreach, keep the message concrete: "We help Greek fleet and equipment businesses stop losing track of inspections, certificates, insurance, maintenance, and documents. Everything is visible in one system, and the AI assistant tells you what needs attention this week."</p>
+    </section>
+
+    <section>
+      <h2>Legal and Registration Path</h2>
+      <p>This report is a strategic and preliminary conflict review, not legal advice. Before launching publicly under any name, run the formal trademark path.</p>
+
+      <ol>
+        <li><strong>Register priority domains quickly:</strong> certifleet.gr and techfleet.gr are the only ones worth defensive registration from this list.</li>
+        <li><strong>Run EUIPO/TMview searches:</strong> exact and similar marks for CertiFleet, Certi Fleet, Certifleet, Fleet Cert, and related visual variants.</li>
+        <li><strong>Run OBI/Greece trademark check:</strong> verify against the official National Trademark Register, not only TMview mirrors.</li>
+        <li><strong>Check Nice classes:</strong> likely classes include software/SaaS, fleet management, compliance software, document management, and business operations services.</li>
+        <li><strong>Ask counsel about CertiFleet Solutions:</strong> jurisdiction, activity, market overlap, software/services classes, expansion risk, and likelihood of confusion.</li>
+        <li><strong>Only then build brand identity:</strong> logo, UI name, launch site, outreach material, and demo scripts.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>What I Would Not Do</h2>
+      <ul>
+        <li>I would not pick <strong>FleetSync</strong>. It is too close to an existing product that describes almost the same operational layer.</li>
+        <li>I would not pick <strong>OptiFleet</strong>. It is already strongly associated with Renault Trucks and telematics/optimization.</li>
+        <li>I would not pick <strong>Inspecta</strong> unless the product narrows into inspection management only.</li>
+        <li>I would not pick <strong>FleetMate</strong> as the primary brand. It is friendly, but exact same-category name noise is too high.</li>
+        <li>I would not choose based only on `.gr` availability. The domain check is only the first gate.</li>
+      </ul>
+    </section>
+
+    <section class="page-break">
+      <h2>Best Additional Tools To Install Or Use Next</h2>
+      <p>The best next stack is not a single "brand specialist" skill. It is a small naming pipeline with one ideation tool, one strategic filter, one SEO filter, and official legal checks.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Use it for</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Brand Alchemy</td>
+            <td>Brand DNA, naming frameworks, phonosemantics, and multi-TLD domain checking.</td>
+            <td><span class="badge green">Best online skill candidate</span> Install if we generate a new name set beyond these six.</td>
+          </tr>
+          <tr>
+            <td>Domain Name Brainstormer</td>
+            <td>Fast domain ideation and availability-oriented brainstorming.</td>
+            <td><span class="badge">Useful</span> Good for volume; needs strategic filtering afterward.</td>
+          </tr>
+          <tr>
+            <td>Brand Architect</td>
+            <td>Brand architecture and scalable identity thinking.</td>
+            <td><span class="badge">Useful</span> Good once the positioning territory is chosen.</td>
+          </tr>
+          <tr>
+            <td>Codex competitive-analyst + competitive-strategist</td>
+            <td>Competitor mapping, differentiation, positioning risks, sales narrative.</td>
+            <td><span class="badge green">Use by default</span> Already available locally.</td>
+          </tr>
+          <tr>
+            <td>Codex localize + product-discovery</td>
+            <td>Greek buyer fit, language feel, sales-call plausibility, ICP resonance.</td>
+            <td><span class="badge green">Use by default</span> Already available locally.</td>
+          </tr>
+          <tr>
+            <td>Google Ads Keyword Planner / DataForSEO</td>
+            <td>Quantify Greek search demand and phrase variants.</td>
+            <td><span class="badge amber">Account needed</span> Valuable, but not necessary for this decision.</td>
+          </tr>
+          <tr>
+            <td>EUIPO + OBI</td>
+            <td>Official trademark and legal clearance path.</td>
+            <td><span class="badge green">Mandatory before launch</span> Do not skip.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Final Recommendation</h2>
+      <p><strong>Choose CertiFleet from this list, but treat it as conditional.</strong> It has the best commercial clarity for Greece because it attaches the product to the most painful, concrete buyer problem: certificates, inspections, renewals, documents, and compliance deadlines. It also avoids the MVP-killing trap of sounding like GPS, telematics, route optimization, or another bloated ERP.</p>
+      <p><strong>Keep TechFleet as backup.</strong> It is less exciting and less precise, but safer than the crowded names. If a legal check makes CertiFleet unattractive, TechFleet is the only fallback from this list I would seriously consider.</p>
+      <p><strong>My honest strategic note:</strong> none of the six is perfect. CertiFleet is the strongest wedge name; TechFleet is the safer but blander fallback. If you are willing to explore names beyond the list, the next round should deliberately search for a name with CertiFleet's compliance clarity but lower conflict risk.</p>
+    </section>
+
+    <section class="footnotes">
+      <h2>Sources</h2>
+      <p>Official `.gr` registry WHOIS/domain check: https://grweb.ics.forth.gr/public/whois?lang=en</p>
+      <p>EUIPO Search IP databases: https://www.euipo.europa.eu/en/search-ip</p>
+      <p>Hellenic Industrial Property Organisation trademark page: https://www.obi.gr/en/trademarks/</p>
+      <p>FleetMate fleet maintenance software: https://www.fleetmate.com/</p>
+      <p>CertiFleet Solutions: https://certifleetsolutions.com/</p>
+      <p>FleetSync: https://fleetsync.io/</p>
+      <p>Renault Trucks Optifleet: https://www.renault-trucks.co.uk/static/optimising-your-fleet-and-energy-management</p>
+      <p>Brand Alchemy skill listing: https://claudskills.com/skills/brand-alchemy/</p>
+      <p>Domain Name Brainstormer skill listing: https://awesome-skills.app/skills/domain-name-brainstormer</p>
+      <p>Brand Architect skill listing: https://mcpmarket.com/tools/skills/brand-architect-1</p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>FleetOS AI - Greece Market Research</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #5b6472;
+      --line: #d9dee7;
+      --soft: #f5f7fb;
+      --panel: #ffffff;
+      --navy: #0b1220;
+      --blue: #1d4ed8;
+      --cyan: #0891b2;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.55;
+    }
+
+    @page {
+      size: A4;
+      margin: 15mm 13mm 16mm 13mm;
+    }
+
+    .cover {
+      min-height: 238mm;
+      background:
+        linear-gradient(140deg, rgba(11,18,32,0.98), rgba(17,24,39,0.94) 58%, rgba(8,145,178,0.82)),
+        radial-gradient(circle at 80% 10%, rgba(29,78,216,0.35), transparent 34%);
+      color: white;
+      padding: 25mm 20mm 12mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+    }
+
+    .cover .kicker {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 9pt;
+      color: #a7f3d0;
+      font-weight: 700;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.16; }
+
+    h1 {
+      margin-top: 11mm;
+      font-size: 42pt;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin-top: 6mm;
+      max-width: 150mm;
+      font-size: 18pt;
+      color: #dbeafe;
+      font-weight: 600;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 20mm;
+    }
+
+    .cover-card {
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 28mm;
+    }
+
+    .cover-card strong {
+      display: block;
+      font-size: 15pt;
+      margin-bottom: 2px;
+    }
+
+    .cover-card span {
+      color: #d1d5db;
+      font-size: 8.5pt;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: #cbd5e1;
+      font-size: 9pt;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 8mm;
+    }
+
+    main {
+      padding: 0;
+    }
+
+    section {
+      page-break-inside: avoid;
+      margin-bottom: 8mm;
+    }
+
+    h2 {
+      margin: 8mm 0 3mm;
+      color: var(--navy);
+      font-size: 18pt;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 2.5mm;
+    }
+
+    h3 {
+      margin: 5mm 0 2mm;
+      color: #1f2937;
+      font-size: 12.5pt;
+    }
+
+    p { margin: 0 0 3mm; }
+
+    .lead {
+      font-size: 12pt;
+      color: #263244;
+      border-left: 4px solid var(--blue);
+      padding: 2mm 0 2mm 4mm;
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 8pt;
+      font-weight: 700;
+      margin-right: 4px;
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .badge.green { background: #dcfce7; color: #166534; }
+    .badge.amber { background: #fef3c7; color: #92400e; }
+    .badge.red { background: #fee2e2; color: #991b1b; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 4mm 0;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel);
+    }
+
+    .metric {
+      font-size: 18pt;
+      font-weight: 800;
+      color: var(--navy);
+      display: block;
+      line-height: 1.1;
+    }
+
+    .metric-label {
+      display: block;
+      color: var(--muted);
+      font-size: 8.5pt;
+      margin-top: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 3mm 0 5mm;
+      page-break-inside: avoid;
+    }
+
+    th {
+      background: #eef2ff;
+      color: #1e293b;
+      text-align: left;
+      font-weight: 800;
+      font-size: 8.5pt;
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    td {
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      font-size: 8.8pt;
+    }
+
+    .small td, .small th { font-size: 8pt; padding: 6px; }
+
+    ul, ol {
+      margin: 0 0 4mm 5mm;
+      padding-left: 3mm;
+    }
+
+    li { margin-bottom: 1.5mm; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .quote {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 10px;
+      color: #1e3a8a;
+      font-weight: 700;
+      margin: 4mm 0;
+    }
+
+    .callout {
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+      border-radius: 8px;
+      padding: 10px;
+      color: #573a0b;
+      margin: 4mm 0;
+    }
+
+    .page-break { page-break-before: always; }
+
+    .source {
+      font-size: 8.2pt;
+      color: var(--muted);
+    }
+
+    a { color: #1d4ed8; text-decoration: none; }
+
+    .footer-note {
+      margin-top: 6mm;
+      font-size: 8pt;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 3mm;
+    }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <div>
+      <div class="kicker">Complete Market Research & Go-To-Market Report</div>
+      <h1>FleetOS AI</h1>
+      <div class="subtitle">AI Copilot for Fleet & Equipment Operations in Greece</div>
+      <div class="cover-grid">
+        <div class="cover-card"><strong>Go</strong><span>Proceed, but narrow the first wedge to compliance-heavy field operators.</span></div>
+        <div class="cover-card"><strong>EUR 7M-36M</strong><span>Estimated reachable Greek SAM for the focused software category.</span></div>
+        <div class="cover-card"><strong>10-80 assets</strong><span>Best early customer size: painful enough, still founder-sellable.</span></div>
+      </div>
+    </div>
+    <div class="meta">
+      <div>Prepared for: George Karagioules</div>
+      <div>Prepared: 28 May 2026</div>
+      <div>Confidence: Medium-high for niche SaaS, medium for scale</div>
+    </div>
+  </div>
+
+  <main>
+    <section>
+      <h2>1. Executive Summary</h2>
+      <p class="lead">FleetOS AI is a credible Greece-first vertical SaaS opportunity if it avoids the crowded GPS/telematics category and owns a narrower job: AI-assisted compliance, document, expiration, and maintenance visibility for Greek field businesses.</p>
+      <p>The product should not be sold as a generic fleet management platform. That category already has strong global and local vendors focused on GPS, telematics, driver behavior, fuel, routing, and enterprise fleet reporting. FleetOS AI's sharper opportunity is to become the operational memory layer for companies that run vehicles, cranes, buses, trailers, excavators, rented equipment, certificates, inspections, permits, operator licenses, and scattered documents.</p>
+      <div class="quote">Recommended positioning: "Never miss another inspection, certificate, insurance renewal, or maintenance issue again."</div>
+      <div class="cards">
+        <div class="card"><span class="metric">1.18M</span><span class="metric-label">Greece vans, trucks, and buses in use, ACEA 2026 report [S1]</span></div>
+        <div class="card"><span class="metric">22.9 yrs</span><span class="metric-label">Average age of Greek trucks, oldest in EU, ACEA [S1]</span></div>
+        <div class="card"><span class="metric">92%</span><span class="metric-label">Greek companies expect fleets to remain stable or grow, Arval 2025 [S4]</span></div>
+      </div>
+      <p><strong>Verdict:</strong> proceed to paid pilot validation. The concept has real pain, visible market pull, and a strong founder-led sales motion. The first build should stay ruthlessly focused on assets, documents, expirations, maintenance reminders, daily AI summaries, and conversational risk queries. GPS, telematics, ERP, route planning, accounting, fuel analytics, and predictive maintenance should remain explicitly out of scope until there is product-market fit.</p>
+    </section>
+
+    <section>
+      <h2>2. Market Definition and Scope</h2>
+      <p>FleetOS AI should define its market as <strong>AI-native fleet and equipment compliance operations software</strong>. That category is adjacent to fleet management, CMMS, document management, and safety/compliance software, but it is not identical to any one of them.</p>
+      <table>
+        <tr><th>Included in the first market</th><th>Excluded from the first market</th></tr>
+        <tr>
+          <td>Asset records, KTEO, insurance, lifting certificates, inspection dates, permits, operator licenses, maintenance schedules, repair notes, document upload, missing-document detection, daily AI summaries, conversational operational Q&A.</td>
+          <td>GPS, hardware, telematics, live driver monitoring, fuel cards, route optimization, payroll, invoicing, accounting, ERP inventory, dispatch optimization, predictive maintenance from sensor data.</td>
+        </tr>
+      </table>
+      <p>This matters because Greek prospects will mentally compare "fleet software" with GPS vendors. FleetOS AI should create a different buying frame: not "where are my vehicles?" but "what compliance or maintenance risk is going to hurt me next?"</p>
+    </section>
+
+    <section>
+      <h2>3. Key Market Findings</h2>
+      <ol>
+        <li><strong>The Greek operating asset base is large and old.</strong> ACEA reports approximately 921,776 vans, 225,216 trucks, and 28,196 buses in use in Greece. Greek commercial fleets are also old: vans average 21.2 years, trucks 22.9 years, and buses 17.2 years [S1]. Old fleets increase maintenance and inspection burden.</li>
+        <li><strong>The reachable business universe is broad.</strong> ELSTAT's 2023 Statistical Business Register lists 73,196 legal units in construction and 67,307 in transportation and storage, with additional relevant pools in administrative/support services, accommodation, wholesale, retail, and vehicle repair [S2].</li>
+        <li><strong>Road freight remains operationally material.</strong> ELSTAT's yearly road freight publication for 2024 is the official base for national and international road freight transport [S3]. The reported annual ton-kilometre scale supports the view that transport operations remain a meaningful business segment.</li>
+        <li><strong>Fleet sentiment is positive.</strong> Arval's 2025 Greece Fleet & Mobility Barometer, based on 300 Greek interviews, reports that 92% of companies expect fleet size to stay stable or grow over the next three years, with 44% expecting growth [S4].</li>
+        <li><strong>Competitors are mostly tracking-first or enterprise-first.</strong> Webfleet, Fleet Complete, Geotab and similar platforms lead with telematics, real-time tracking, driver behavior, reports, IoT, and hardware-connected fleet optimization [S8-S10]. OTS Open1 Fleet has strong public-sector and fleet-office functionality, including maintenance, technical checks, insurance, and traffic tax deadlines [S7].</li>
+        <li><strong>There is emerging competition near the exact wedge.</strong> Yipii Mobility explicitly mentions fleet operations, maintenance, compliance, document storage, audit trails, expiry alerts, automations, and AI [S11]. This validates demand but also means FleetOS AI must differentiate through Greek vertical specificity, simplicity, onboarding, and "AI operations copilot" depth.</li>
+        <li><strong>SME digital readiness is a constraint and an opportunity.</strong> Greece still has a high share of low digital-intensity enterprises, but the European Commission notes encouraging growth in SME digitalisation and policy support for AI/cloud adoption [S5-S6]. Translation: buyers may need hand-held onboarding, but the timing is better than five years ago.</li>
+      </ol>
+    </section>
+
+    <section class="page-break">
+      <h2>4. Market Size and Scenarios</h2>
+      <p>The official sources establish the asset and enterprise base. The SaaS opportunity must then be estimated from a reachable subset: businesses with enough vehicles/equipment and compliance pain to pay for software, but not so large that they demand ERP-grade procurement and customization.</p>
+      <table>
+        <tr><th>Official anchor</th><th>Latest evidence used</th><th>Implication</th></tr>
+        <tr><td>Commercial vehicle base</td><td>921,776 vans, 225,216 trucks, 28,196 buses in Greece [S1]</td><td>Large operational footprint; vehicle-related compliance is not niche.</td></tr>
+        <tr><td>Fleet age</td><td>Greek trucks average 22.9 years; vans 21.2; buses 17.2 [S1]</td><td>Older assets raise maintenance and document risk.</td></tr>
+        <tr><td>Relevant businesses</td><td>73,196 construction legal units; 67,307 transport/storage legal units [S2]</td><td>Large top-of-funnel, but only a small share is reachable SaaS demand.</td></tr>
+        <tr><td>Fleet outlook</td><td>92% expect stable/growing fleets; 44% expect growth [S4]</td><td>Fleet operations are not shrinking; software timing is acceptable.</td></tr>
+      </table>
+
+      <h3>Scenario Model</h3>
+      <table>
+        <tr><th>Case</th><th>Reachable companies</th><th>Avg monthly revenue</th><th>Annual SAM</th><th>Interpretation</th></tr>
+        <tr><td>Conservative</td><td>3,000</td><td>EUR 120</td><td>EUR 4.3M</td><td>Only companies with visible certificate/maintenance pain adopt.</td></tr>
+        <tr><td>Base</td><td>8,000</td><td>EUR 225</td><td>EUR 21.6M</td><td>Adoption across construction, crane, rental, tourism transport, and logistics SMBs.</td></tr>
+        <tr><td>Aggressive</td><td>15,000</td><td>EUR 350</td><td>EUR 63.0M</td><td>Category expands into broader asset compliance and multi-location field operations.</td></tr>
+      </table>
+      <p><strong>Recommended planning range:</strong> treat the practical Greek SAM as <strong>EUR 7M-36M ARR</strong>. Treat a 3-year founder-led SOM as <strong>EUR 300k-1.2M ARR</strong>, equivalent to roughly 125-500 customers at EUR 200/month, or fewer customers with setup fees and larger plans.</p>
+      <div class="callout">The market is not large enough to justify bloated ERP ambitions in Greece alone. It is large enough for a strong, profitable vertical SaaS business, and can expand later into Cyprus, Balkans, and telematics integrations.</div>
+    </section>
+
+    <section>
+      <h2>5. Customer Segments and Jobs To Be Done</h2>
+      <table>
+        <tr><th>Segment</th><th>Attractiveness</th><th>Core pain</th><th>Best first sales angle</th></tr>
+        <tr><td>Crane and lifting equipment companies</td><td><span class="badge green">Very high</span></td><td>Certificates, periodic inspections, operator readiness, high consequences if missing docs.</td><td>"Know every crane, certificate, inspection and operator issue before it becomes panic."</td></tr>
+        <tr><td>Construction and machinery operators</td><td><span class="badge green">Very high</span></td><td>Mixed assets, decentralized documents, maintenance chaos, job-site pressure.</td><td>"One AI dashboard for every machine, truck, paper, and overdue service."</td></tr>
+        <tr><td>Equipment rental firms</td><td><span class="badge green">High</span></td><td>Asset status, damage history, service readiness, client handover documents.</td><td>"Never rent out equipment with missing documents or hidden maintenance problems."</td></tr>
+        <tr><td>Tourism bus and transfer fleets</td><td><span class="badge green">High</span></td><td>Seasonal peaks, insurance/KTEO, bus readiness, urgent owner questions.</td><td>"Before the season starts, know exactly what is expired, missing, or risky."</td></tr>
+        <tr><td>Small logistics and transport firms</td><td><span class="badge amber">Medium-high</span></td><td>Vehicle maintenance, inspections, permits, but they may ask for GPS quickly.</td><td>"No hardware fleet control for your documents, deadlines, and maintenance."</td></tr>
+        <tr><td>Municipal fleets and large enterprises</td><td><span class="badge amber">Later</span></td><td>Large asset base, formal processes, tenders, procurement, integrations.</td><td>Approach after proof, not as first wedge.</td></tr>
+      </table>
+
+      <h3>Primary ICP</h3>
+      <p><strong>Greek owner/operator company with 10-80 assets, messy documents, recurring inspections, and no dedicated systems team.</strong> The buyer is usually the owner, operations manager, fleet manager, office administrator, safety/compliance responsible person, or a family member holding the paperwork together.</p>
+
+      <h3>Jobs To Be Done</h3>
+      <ul>
+        <li>"Tell me what needs attention this week without opening five spreadsheets."</li>
+        <li>"Show me which machines or vehicles are not inspection-ready."</li>
+        <li>"Find the certificate, insurance, KTEO, or permit before someone asks for it."</li>
+        <li>"Warn me before something expires."</li>
+        <li>"Give me a calm morning summary so I do not rely on memory."</li>
+      </ul>
+    </section>
+
+    <section class="page-break">
+      <h2>6. Competitive Landscape</h2>
+      <table class="small">
+        <tr><th>Competitor / substitute</th><th>Position</th><th>Strength</th><th>Opening for FleetOS AI</th></tr>
+        <tr><td>Webfleet via Eltrak [S8]</td><td>Telematics and fleet management</td><td>Established European brand, tracking, reporting, mobile access.</td><td>Too tracking-first for companies that mainly need compliance/doc visibility.</td></tr>
+        <tr><td>COSMOTE Fleet Complete / Powerfleet [S9]</td><td>IoT fleet tracking and connected vehicles</td><td>Strong telco route to market, GPS/IoT, risk and driver tools.</td><td>Hardware and tracking frame may feel overkill for document-first SMBs.</td></tr>
+        <tr><td>Geotab [S10]</td><td>Global telematics platform</td><td>Deep integrations, marketplace, scalable fleet analytics.</td><td>Strong but complex; buyer often needs reseller, device, and implementation path.</td></tr>
+        <tr><td>OTS Open1 Fleet [S7]</td><td>Web/cloud fleet office management</td><td>Greek-local, public-sector familiarity, maintenance and deadline modules.</td><td>FleetOS can be more modern, AI-native, conversational, and SMB/onboarding-focused.</td></tr>
+        <tr><td>Yipii Mobility [S11]</td><td>Operations/fleet software with compliance and AI</td><td>Closest feature overlap: documents, expiry alerts, automations, AI.</td><td>Differentiate by Greece-specific compliance templates, vertical demos, and ultra-simple first value.</td></tr>
+        <tr><td>Fleetio / MaintainX [S12-S13]</td><td>Global maintenance/fleet/CMMS software</td><td>Mature features and pricing anchors.</td><td>Not Greek-compliance native; may feel generic or foreign for local SMEs.</td></tr>
+        <tr><td>Excel, WhatsApp, paper folders</td><td>Default incumbent</td><td>Free, familiar, flexible, already used.</td><td>Main enemy. Beat it with import help, daily summary, reminders, and document search.</td></tr>
+      </table>
+
+      <h3>Differentiation Strategy</h3>
+      <p>FleetOS AI should not claim "better fleet management" against telematics incumbents. The point of attack should be narrower and sharper:</p>
+      <ul>
+        <li><strong>Greek compliance packs:</strong> KTEO, insurance, lifting certificates, operator licenses, permits, inspections, traffic-related deadlines, machine-specific document categories.</li>
+        <li><strong>AI summary as the product center:</strong> "What needs attention this week?" should be the hero workflow.</li>
+        <li><strong>No hardware promise:</strong> onboarding can start today from Excel, PDFs, photos, and folders.</li>
+        <li><strong>Concierge setup:</strong> first customers should hand over old spreadsheets and document folders; FleetOS imports and organizes them.</li>
+        <li><strong>Vertical demos:</strong> one crane company demo, one construction demo, one tourism fleet demo. Not a generic SaaS demo.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>7. Trend and Timing Analysis</h2>
+      <div class="two-col">
+        <div class="card">
+          <h3>Why now</h3>
+          <ul>
+            <li>AI chat has made conversational interfaces understandable to non-technical owners.</li>
+            <li>Greek public services have become more digital through gov.gr, making digital records more familiar.</li>
+            <li>Older vehicle and machinery fleets create recurring maintenance/document burden [S1].</li>
+            <li>Fleet growth expectations remain positive in Greece [S4].</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why adoption may be slow</h3>
+          <ul>
+            <li>Many Greek SMEs still operate with low digital intensity [S5-S6].</li>
+            <li>Owners may not pay until a deadline, fine, inspection, or lost document creates urgency.</li>
+            <li>Data entry and document upload are friction points unless onboarding is done for them.</li>
+            <li>AI must be trusted as an assistant, not as an unchecked compliance authority.</li>
+          </ul>
+        </div>
+      </div>
+      <p>The timing is good, but the product must avoid asking the customer to become a software administrator. The best GTM is service-assisted SaaS: "Give us your spreadsheet and documents; we will set up your first risk dashboard."</p>
+    </section>
+
+    <section class="page-break">
+      <h2>8. Idea Validation Verdict</h2>
+      <table>
+        <tr><th>Criterion</th><th>Score</th><th>Reason</th></tr>
+        <tr><td>Pain severity</td><td><span class="badge green">High</span></td><td>Missed inspections, expired certificates, downtime, lost papers, and owner panic are real operational pains.</td></tr>
+        <tr><td>Urgency</td><td><span class="badge green">High in niche</span></td><td>Crane, construction, bus, and rental operators have recurring deadlines and inspection readiness pressure.</td></tr>
+        <tr><td>Willingness to pay</td><td><span class="badge amber">Medium</span></td><td>Greek SMBs are price-sensitive, but will pay if the product saves fines, downtime, or administrative stress.</td></tr>
+        <tr><td>Competitive intensity</td><td><span class="badge amber">Medium</span></td><td>Tracking vendors are strong; compliance-first AI positioning is less crowded but not empty.</td></tr>
+        <tr><td>MVP feasibility</td><td><span class="badge green">High</span></td><td>The focused MVP can be built with Next.js, Supabase, storage, structured reminders, and OpenAI/Claude.</td></tr>
+        <tr><td>Scale potential</td><td><span class="badge amber">Medium</span></td><td>Greece alone supports a strong niche SaaS; regional expansion or integrations improve upside.</td></tr>
+      </table>
+
+      <p><strong>Go / narrow / kill verdict:</strong> <span class="badge green">Proceed, but narrow.</span> The market wants operational calm, not another fleet suite. Start with crane/construction/rental/tourism operators and sell inspection readiness plus AI daily summaries.</p>
+    </section>
+
+    <section>
+      <h2>9. MVP Scope and Anti-Scope</h2>
+      <table>
+        <tr><th>Build now</th><th>Do not build yet</th></tr>
+        <tr>
+          <td>
+            <ul>
+              <li>Asset register for vehicles, cranes, machinery, trailers, buses, excavators.</li>
+              <li>Expiration tracking with OK, warning, critical, expired states.</li>
+              <li>Document storage linked to assets, operators, and certifications.</li>
+              <li>Maintenance logs, scheduled/overdue/completed status.</li>
+              <li>AI chat over structured asset, expiration, maintenance, and document metadata.</li>
+              <li>Daily AI summary and dashboard.</li>
+              <li>Greek-language UI and Greek operational templates.</li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li>GPS tracking, telematics, hardware, OBD devices.</li>
+              <li>Route optimization, dispatch, proof of delivery.</li>
+              <li>ERP, accounting, invoicing, payroll.</li>
+              <li>Predictive maintenance from sensors.</li>
+              <li>Complex workflow builders.</li>
+              <li>Enterprise reporting and municipal tender features.</li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+      <p>The MVP's killer workflow is simple: upload or create assets, attach documents, add dates, then ask the system "what needs attention this week?" If that answer saves time and stress, the MVP works.</p>
+    </section>
+
+    <section class="page-break">
+      <h2>10. Pricing and Packaging</h2>
+      <p>Use pricing that reflects value and Greek SME purchasing reality. Global anchors show maintenance/fleet software often prices per vehicle or per user, while telematics commonly adds hardware or custom quotes. FleetOS should avoid per-user complexity and price by operational asset count.</p>
+      <table>
+        <tr><th>Package</th><th>Price</th><th>Target</th><th>Includes</th></tr>
+        <tr><td>Starter</td><td>EUR 99/month</td><td>Up to 10 assets</td><td>Assets, expirations, documents, reminders, basic AI summary.</td></tr>
+        <tr><td>Operations</td><td>EUR 199-249/month</td><td>Up to 35 assets</td><td>Everything in Starter plus maintenance logs, advanced AI chat, daily summary, more storage.</td></tr>
+        <tr><td>Pro</td><td>EUR 399-599/month</td><td>Up to 100 assets</td><td>Multiple users, advanced roles, richer audit history, priority support, custom compliance categories.</td></tr>
+        <tr><td>Setup/import</td><td>EUR 300-1,500 one-time</td><td>All serious customers</td><td>Import Excel, upload initial documents, configure categories, train team.</td></tr>
+      </table>
+      <p><strong>Pilot offer:</strong> 60 days at EUR 300-500 total including setup for the first 10 customers, with a conversion target to EUR 199/month or above. Avoid free pilots unless the customer gives real data, real users, and explicit permission for a case study or referral.</p>
+    </section>
+
+    <section>
+      <h2>11. GTM and Outreach Plan</h2>
+      <h3>First 30 Days</h3>
+      <ul>
+        <li>Build a list of 100 Greek companies across crane/lifting, construction machinery, equipment rental, tourism buses, and small logistics.</li>
+        <li>Interview 30 operators. Do not demo first. Ask how they track KTEO, insurance, certificates, inspections, operator licenses, documents, and maintenance.</li>
+        <li>Collect 10 anonymized examples of spreadsheets, WhatsApp workflows, folders, or inspection panic moments.</li>
+        <li>Pre-sell 3 paid pilots before building extra features.</li>
+      </ul>
+
+      <h3>Demo Script</h3>
+      <ol>
+        <li>Start with their current mess: "Show me how you know what expires this month."</li>
+        <li>Import 5 assets and 10 documents live.</li>
+        <li>Ask: "What needs attention this week?"</li>
+        <li>Show red/yellow/green risks.</li>
+        <li>Show one missing document and one overdue item.</li>
+        <li>Close with: "If this saved one missed inspection or one day of admin panic, would it be worth EUR 199/month?"</li>
+      </ol>
+
+      <h3>Cold Email Draft</h3>
+      <div class="card">
+        <p><strong>Subject:</strong> Quick question about your vehicle and machinery certificates</p>
+        <p>Hello [Name],</p>
+        <p>I am building FleetOS AI for Greek companies that manage vehicles, cranes, machinery, KTEO, insurance, inspections, certificates, and maintenance through Excel, WhatsApp, and folders.</p>
+        <p>The product gives you one dashboard and an AI assistant that answers: "What needs attention this week?"</p>
+        <p>I am speaking with a small number of operators in [construction/cranes/tourism transport] to see if this solves a real problem. Would you be open to a 15-minute call? I can also show a quick demo using sample data.</p>
+        <p>Best,<br />George</p>
+      </div>
+    </section>
+
+    <section class="page-break">
+      <h2>12. Risks, Unknowns, and Validation Plan</h2>
+      <table>
+        <tr><th>Risk</th><th>Why it matters</th><th>How to test quickly</th></tr>
+        <tr><td>Customers like the idea but do not pay</td><td>Greek SMEs may praise software then stay with Excel.</td><td>Require paid pilots, even small ones.</td></tr>
+        <tr><td>Onboarding friction</td><td>Value depends on data and documents being inside the system.</td><td>Offer concierge import and measure time-to-first-summary.</td></tr>
+        <tr><td>AI trust</td><td>Compliance errors can create liability and distrust.</td><td>AI should cite source records and say "based on uploaded data," never invent legal claims.</td></tr>
+        <tr><td>Competitor overlap</td><td>Some vendors already offer compliance, documents, and AI-adjacent features.</td><td>Win by vertical focus, Greek templates, and simpler setup.</td></tr>
+        <tr><td>Feature creep</td><td>GPS, ERP, fuel, route, and accounting requests will appear quickly.</td><td>Track requests but sell the narrow compliance product until 10 paying customers.</td></tr>
+      </table>
+
+      <h3>Validation Milestones</h3>
+      <ul>
+        <li><strong>Week 2:</strong> 15 interviews, at least 8 confirm they have missed or nearly missed a deadline/document.</li>
+        <li><strong>Week 4:</strong> 3 paid pilots committed.</li>
+        <li><strong>Week 8:</strong> each pilot has 20+ assets/documents or all critical assets loaded.</li>
+        <li><strong>Week 12:</strong> at least 2 pilots convert to EUR 199/month or higher.</li>
+        <li><strong>Kill/pivot trigger:</strong> after 30 interviews and 10 demos, fewer than 2 companies will pay anything for setup or pilot.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>13. Final Recommendation</h2>
+      <p><strong>Build a polished MVP, but sell before overbuilding.</strong> The strongest version of FleetOS AI is not a giant fleet suite. It is the AI operational layer for Greek field businesses that currently run on memory, WhatsApp, Excel, and paper.</p>
+      <p>The first product promise should be extremely concrete:</p>
+      <div class="quote">"Every morning, FleetOS tells you which asset, document, certificate, inspection, or maintenance issue needs attention before it becomes expensive."</div>
+      <p>Recommended first wedge: <strong>crane/lifting companies and construction machinery operators with 10-80 assets</strong>. Recommended first motion: direct outreach, phone calls, in-person demos, concierge setup, paid pilot. Recommended first success metric: owners say, "This is better than our Excel/WhatsApp chaos," and then pay to keep it.</p>
+      <p><strong>Overall verdict:</strong> <span class="badge green">Proceed</span> with a focused MVP and paid pilot validation. Confidence is medium-high for a profitable Greece-first niche SaaS, medium for regional expansion, and low if the product becomes a bloated ERP or generic fleet management tool.</p>
+    </section>
+
+    <section class="page-break">
+      <h2>Source Appendix</h2>
+      <p class="source">Accessed 28 May 2026. Market-size ranges are estimates built from official fleet/business anchors plus SaaS pricing assumptions. They should be validated with customer interviews and paid pilots.</p>
+      <ol class="source">
+        <li id="s1">ACEA, <a href="https://afia.pt/wp-content/uploads/2026/01/ACEA_Report-%E2%80%93-Vehicles_on_European_roads_2026.pdf">Vehicles on European Roads, January 2026</a>.</li>
+        <li id="s2">Hellenic Statistical Authority, <a href="https://www.statistics.gr/en/statistics/-/publication/SBR01/-">Statistical Business Register</a>. The report uses the 2023 legal-unit table downloaded from ELSTAT.</li>
+        <li id="s3">Hellenic Statistical Authority, <a href="https://www.statistics.gr/en/statistics/-/publication/SME16/-">Road freight transport, yearly 2024</a>.</li>
+        <li id="s4">Arval Mobility Observatory Greece, <a href="https://www.arval.gr/sites/default/files/169/2025/10/ARVAL%202025%20-%20Greece%20-%20Postcall%20FINAL.pdf">Fleet & Mobility Barometer 2025 for Greece</a>.</li>
+        <li id="s5">European Commission, <a href="https://digital-strategy.ec.europa.eu/en/factpages/greece-2025-digital-decade-country-report">Greece 2025 Digital Decade Country Report</a>.</li>
+        <li id="s6">European Commission, <a href="https://digital-strategy.ec.europa.eu/en/library/digital-decade-2025-digitalisation-business-eu-member-states">Digital Decade 2025: Digitalisation of Business in EU Member States</a>.</li>
+        <li id="s7">OTS, <a href="https://ots.gr/en/product/open1fleet-en/">Open1 Fleet</a>.</li>
+        <li id="s8">Eltrak, <a href="https://eltrak.gr/en/activities/webfleet/">Webfleet Greece</a>, and Webfleet, <a href="https://www.webfleet.com/en_us/webfleet/products/webfleet/features/">Fleet Management Software Features</a>.</li>
+        <li id="s9">Powerfleet Greece, <a href="https://www.fleetcomplete.gr/cosmote-fleet-tracker-new-iot-fleet-management-solution-for-fleets-and-connected-vehicles/">COSMOTE Fleet Tracker / Fleet Complete</a>.</li>
+        <li id="s10">Geotab, <a href="https://www.geotab.com/">Fleet Management Platform</a>.</li>
+        <li id="s11">Yipii, <a href="https://yipii.com/mobility">Yipii Mobility</a>.</li>
+        <li id="s12">Fleetio, <a href="https://www.fleetio.com/pricing/pricing-packages">Pricing and Packages</a>.</li>
+        <li id="s13">MaintainX, <a href="https://www.getmaintainx.com/pricing">Pricing</a>.</li>
+        <li id="s14">Gov.gr, <a href="https://www.gov.gr/en/org/yme/okhemata/istoriko-kteo">Search the vehicle technical inspection history</a>.</li>
+        <li id="s15">TUV Austria Hellas, <a href="https://tuvaustriahellas.gr/services/initial-periodic-inspections-of-lifting-machinery/?lang=en">Initial and periodic inspections of lifting machinery</a>.</li>
+        <li id="s16">EpirusCert, <a href="https://www.epirus-cert.gr/en/lifting-machines/">Lifting Machines</a>.</li>
+      </ol>
+      <div class="footer-note">Prepared as strategic market research, not legal, accounting, or regulatory advice. Greek compliance requirements should be verified with qualified local professionals before productizing legal reminders.</div>
+    </section>
+  </main>
+</body>
+</html>
