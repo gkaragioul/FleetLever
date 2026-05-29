@@ -4,16 +4,23 @@ import { useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
+  ArrowRight,
   Bell,
   Bot,
   Building2,
+  CheckCircle2,
   ClipboardList,
   Command,
+  Database,
   Download,
+  FileUp,
   FileText,
+  Filter,
   Gauge,
   HardHat,
+  ListChecks,
   MoreHorizontal,
+  Plus,
   QrCode,
   Search,
   Settings,
@@ -408,39 +415,213 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
   );
 }
 
-function CommandPanel() {
+function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const commandActions: {
+    label: string;
+    detail: string;
+    icon: LucideIcon;
+    tab: TabId;
+    tone: string;
+  }[] = [
+    {
+      label: "Νέο πάγιο",
+      detail: "Καταχώριση οχήματος, μηχανήματος ή εξοπλισμού.",
+      icon: Plus,
+      tab: "assets",
+      tone: "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]",
+    },
+    {
+      label: "Ανέβασμα εγγράφου",
+      detail: "Προσθήκη KTEO, άδειας ή certificate σε υπάρχον πάγιο.",
+      icon: FileUp,
+      tab: "documents",
+      tone: "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]",
+    },
+    {
+      label: "Νέα βλάβη",
+      detail: "Άμεση αναφορά προβλήματος και blocking flag.",
+      icon: AlertTriangle,
+      tab: "issues",
+      tone: "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]",
+    },
+    {
+      label: "Εργασία service",
+      detail: "Νέα εργασία συντήρησης με υπεύθυνο και προθεσμία.",
+      icon: Wrench,
+      tab: "maintenance",
+      tone: "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]",
+    },
+  ];
+
+  const searchScopes: { label: string; count: string; tab: TabId }[] = [
+    { label: "Πάγια", count: String(assets.length), tab: "assets" },
+    { label: "Έγγραφα", count: String(documents.length), tab: "documents" },
+    { label: "Βλάβες", count: String(issues.length), tab: "issues" },
+    { label: "Χειριστές", count: String(operators.length), tab: "operators" },
+  ];
+
+  const suggestedSearches: { query: string; target: string; tab: TabId }[] = [
+    { query: "B-12 blocked", target: "Βλάβες", tab: "issues" },
+    { query: "Έγγραφα επόμενων 30 ημερών", target: "Έγγραφα", tab: "documents" },
+    { query: "Overdue service", target: "Συντήρηση", tab: "maintenance" },
+  ];
+
+  const importSteps: { label: string; detail: string; status: string; icon: LucideIcon }[] = [
+    { label: "Upload", detail: "Excel, CSV ή φάκελος", status: "έτοιμο", icon: UploadCloud },
+    { label: "Αντιστοίχιση", detail: "Πεδία και τύποι εγγράφων", status: "AI draft", icon: Database },
+    { label: "Έλεγχος", detail: "Χαμηλή εμπιστοσύνη", status: "review", icon: ListChecks },
+    { label: "Δημοσίευση", detail: "Audit event πριν περάσει live", status: "approval", icon: CheckCircle2 },
+  ];
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PanelHeader
         eyebrow="Εντολές"
-        title="Γρήγορη αναζήτηση και βασικές ενέργειες"
-        description="Ένα σημείο για να βρεις πάγιο, έγγραφο, χειριστή, βλάβη ή εργασία συντήρησης χωρίς να αλλάζεις οθόνες."
-        action={<ActionButton icon={Command}>Άνοιγμα εντολών</ActionButton>}
+        title="Βρες γρήγορα αυτό που μπλοκάρει τη δουλειά"
+        description="Αναζήτηση, γρήγορες ενέργειες και Import για την ομάδα γραφείου και πεδίου."
+        action={
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3.5 text-sm font-semibold text-[#123d37] shadow-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <Command size={16} />
+            Άνοιγμα εντολών
+          </button>
+        }
       />
-      <DataCard title="Αναζήτηση">
-        <div className="rounded-lg border border-[#d9e2dc] bg-[#f2f5ef] p-4">
-          <div className="flex items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-            <Search className="text-slate-400" size={20} />
-            <span className="text-sm text-slate-500">Δοκίμασε: Ποιοι γερανοί δεν είναι inspection-ready;</span>
+
+      <section className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-[#13211f]">Αναζήτηση</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Πληκτρολόγησε κωδικό, όνομα χειριστή, KTEO ή λέξη από βλάβη.</p>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {["Νέο πάγιο", "Ανέβασμα εγγράφου", "Νέα βλάβη", "Νέα εργασία συντήρησης"].map((command) => (
+        </div>
+
+        <button
+          type="button"
+          className="mt-4 flex min-h-[64px] w-full items-center gap-3 rounded-lg border border-[#cfe3da] bg-[#f7faf4] px-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+          aria-label="Αναζήτηση σε πάγια, έγγραφα, χειριστές, βλάβες και εργασίες συντήρησης."
+        >
+          <Search className="shrink-0 text-[#117064]" size={22} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-[#13211f]">Αναζήτηση σε όλα</span>
+            <span className="block truncate text-sm text-slate-500">Δοκίμασε: B-12, KTEO, Νίκος, hydraulic ή service</span>
+          </span>
+          <span className="hidden rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-1 text-xs font-semibold text-slate-500 sm:inline-flex">
+            Ctrl K
+          </span>
+        </button>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-4">
+          {searchScopes.map((scope) => (
+            <button
+              key={scope.label}
+              type="button"
+              onClick={() => setActiveTab(scope.tab)}
+              className="flex min-h-12 items-center justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left text-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <span className="font-medium text-slate-700">{scope.label}</span>
+              <span className="rounded-full bg-[#e7ece8] px-2 py-0.5 text-xs font-semibold text-slate-600">{scope.count}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {suggestedSearches.map((item) => (
+            <button
+              key={item.query}
+              type="button"
+              onClick={() => setActiveTab(item.tab)}
+              className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] hover:text-[#123d37] focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <Filter size={14} />
+              <span>{item.query}</span>
+              <span className="text-xs font-semibold text-[#117064]">{item.target}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-4">
+        <DataCard title="Γρήγορες ενέργειες">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {commandActions.map((action) => {
+              const Icon = action.icon;
+
+              return (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => setActiveTab(action.tab)}
+                  className="group flex min-h-[116px] flex-col justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span>
+                      <span className="block text-sm font-semibold text-[#13211f]">{action.label}</span>
+                      <span className="mt-2 block text-sm leading-6 text-slate-600">{action.detail}</span>
+                    </span>
+                    <span className={`shrink-0 rounded-md p-2 ring-1 ${action.tone}`}>
+                      <Icon size={18} />
+                    </span>
+                  </span>
+                  <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#11685f]">
+                    Άνοιγμα
+                    <ArrowRight className="transition group-hover:translate-x-0.5" size={15} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </DataCard>
+
+        <DataCard title="Συχνές αναζητήσεις">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { code: "B-12", label: "Ληγμένο KTEO", tab: "issues" as TabId },
+              { code: "CR-04", label: "Πιστοποιητικό ανύψωσης", tab: "documents" as TabId },
+              { code: "FL-02", label: "Εκπρόθεσμο service", tab: "maintenance" as TabId },
+            ].map((item) => (
               <button
-                key={command}
+                key={item.code}
                 type="button"
-                className="rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:border-teal-300 hover:bg-[#eef7f2] hover:text-teal-900"
+                onClick={() => setActiveTab(item.tab)}
+                className="grid min-h-[58px] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
-                {command}
+                <span className="rounded-md bg-[#e7ece8] px-2 py-1 text-xs font-semibold text-[#13211f]">{item.code}</span>
+                <span className="min-w-0 truncate text-sm text-slate-600">{item.label}</span>
+                <ArrowRight size={15} className="text-slate-400" />
               </button>
             ))}
           </div>
+        </DataCard>
+      </div>
+
+      <DataCard title="Import">
+        <div className="grid gap-3 md:grid-cols-4">
+          {importSteps.map((step, index) => {
+            const Icon = step.icon;
+
+            return (
+              <div
+                key={step.label}
+                className="relative rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#e3f2ec] text-[#11685f] ring-1 ring-[#c7e2d6]">
+                    <Icon size={17} />
+                  </span>
+                  <span className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-semibold text-slate-500">
+                    {index + 1}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-[#13211f]">{step.label}</p>
+                <p className="mt-1 min-h-10 text-sm leading-5 text-slate-600">{step.detail}</p>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#117064]">{step.status}</p>
+              </div>
+            );
+          })}
         </div>
-      </DataCard>
-      <DataCard title="Import lane">
-        <p className="text-sm leading-7 text-slate-600">
-          Το onboarding ξεκινά από Excel, CSV ή φακέλους με αρχεία. Το σύστημα προτείνει αντιστοίχιση πεδίων, εντοπίζει
-          χαμηλή εμπιστοσύνη και κρατά audit event πριν δημοσιευθούν τα δεδομένα.
-        </p>
       </DataCard>
     </div>
   );
@@ -953,7 +1134,7 @@ export function OperationsConsole() {
             className="min-w-0"
           >
             {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} />}
-            {activeTab === "command" && <CommandPanel />}
+            {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
             {activeTab === "assets" && <AssetsPanel />}
             {activeTab === "documents" && <DocumentsPanel />}
             {activeTab === "compliance" && <CompliancePanel />}
