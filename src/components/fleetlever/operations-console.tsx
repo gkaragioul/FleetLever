@@ -363,9 +363,9 @@ function AssignmentReadinessCell({ score, missing }: { score: number; missing: s
   );
 }
 
-function DataCard({ title, children }: { title: string; children: React.ReactNode }) {
+function DataCard({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+    <section className={`rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${className}`}>
       <h2 className="text-base font-semibold text-[#13211f]">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -2060,7 +2060,7 @@ function SettingsPanel() {
 
 function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
-    <DataCard title="Σήμερα">
+    <DataCard title="Σήμερα" className="self-start">
       <div className="space-y-5">
         <section aria-labelledby="today-deadlines-title">
           <div className="mb-2 flex items-center justify-between gap-3">
