@@ -522,10 +522,10 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
   ];
 
   const importSteps: { label: string; detail: string; status: string; icon: LucideIcon }[] = [
-    { label: "Upload", detail: "Excel, CSV ή φάκελος", status: "έτοιμο", icon: UploadCloud },
+    { label: "Ανέβασμα", detail: "Excel, CSV ή φάκελος", status: "έτοιμο", icon: UploadCloud },
     { label: "Αντιστοίχιση", detail: "Πεδία και τύποι εγγράφων", status: "πρόταση AI", icon: Database },
     { label: "Έλεγχος", detail: "Χαμηλή εμπιστοσύνη", status: "σε έλεγχο", icon: ListChecks },
-    { label: "Δημοσίευση", detail: "Audit event πριν περάσει live", status: "έγκριση", icon: CheckCircle2 },
+    { label: "Δημοσίευση", detail: "Καταγραφή πριν δημοσιευθεί", status: "έγκριση", icon: CheckCircle2 },
   ];
 
   const commandResults: {
@@ -585,7 +585,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
         <label className="mt-4 flex min-h-[82px] w-full items-center gap-4 rounded-lg border border-[#c9ded6] bg-[#f2f8f4] px-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:border-[#8fd5c6] focus-within:border-[#8fd5c6] focus-within:ring-1 focus-within:ring-[#8fd5c6]">
           <Search className="shrink-0 text-[#117064]" size={26} />
           <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold text-[#13211f]">Αναζήτηση σε όλα τα records</span>
+            <span className="block text-base font-semibold text-[#13211f]">Αναζήτηση σε όλα</span>
             <input
               aria-label="Αναζήτηση σε πάγια, έγγραφα, χειριστές, βλάβες και εργασίες συντήρησης"
               className="mt-1 block w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none"
@@ -601,7 +601,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
               key={result.code}
               type="button"
               onClick={() => setActiveTab(result.tab)}
-              className="grid min-h-[68px] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              className="grid min-h-[68px] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-[#c9ded6] hover:bg-[#f7faf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <span className="rounded-md bg-[#e7ece8] px-2.5 py-1 text-xs font-semibold text-[#13211f]">{result.code}</span>
               <span className="min-w-0">
@@ -678,35 +678,15 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
           </div>
         </DataCard>
 
-        <DataCard title="Συχνές αναζητήσεις">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { code: "B-12", label: "Ληγμένο KTEO", tab: "issues" as TabId },
-              { code: "CR-04", label: "Πιστοποιητικό ανύψωσης", tab: "documents" as TabId },
-              { code: "FL-02", label: "Εκπρόθεσμη συντήρηση", tab: "maintenance" as TabId },
-            ].map((item) => (
-              <button
-                key={item.code}
-                type="button"
-                onClick={() => setActiveTab(item.tab)}
-                className="grid min-h-[58px] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <span className="rounded-md bg-[#e7ece8] px-2 py-1 text-xs font-semibold text-[#13211f]">{item.code}</span>
-                <span className="min-w-0 truncate text-sm text-slate-600">{item.label}</span>
-                <ArrowRight size={15} className="text-slate-400" />
-              </button>
-            ))}
-          </div>
-        </DataCard>
       </div>
 
       <section className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-[#13211f]">Import onboarding</h2>
+            <h2 className="text-base font-semibold text-[#13211f]">Αρχική εισαγωγή</h2>
             <p className="mt-1 text-sm text-slate-600">Για αρχική φόρτωση Excel, CSV ή φακέλων. Δεν χρειάζεται κάθε μέρα.</p>
           </div>
-          <TextButton icon={UploadCloud}>Άνοιγμα Import</TextButton>
+          <TextButton icon={UploadCloud}>Άνοιγμα εισαγωγής</TextButton>
         </div>
         <div className="mt-4 grid gap-2 md:grid-cols-4">
           {importSteps.map((step, index) => {
@@ -1274,7 +1254,7 @@ function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
 function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
-      <DataCard title="Πρόσφατες εντολές">
+      <DataCard title="Πρόσφατα">
         <div className="space-y-2">
           {[
             { title: "B-12 KTEO", detail: "Άνοιγμα βλάβης", tab: "issues" as TabId },
@@ -1318,22 +1298,6 @@ function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => v
         </div>
       </DataCard>
 
-      <DataCard title="Συντομεύσεις">
-        <div className="space-y-2 text-sm text-slate-600">
-          {[
-            ["Ctrl K", "Άνοιγμα αναζήτησης"],
-            ["B-12", "Άμεσο φίλτρο παγίου"],
-            ["KTEO", "Έγγραφα και λήξεις"],
-          ].map(([keys, label]) => (
-            <div key={keys} className="flex items-center justify-between gap-3 rounded-md border border-[#e3e9e2] bg-[#fdfbf7] px-3 py-2">
-              <span>{label}</span>
-              <span className="rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-1 text-xs font-semibold text-slate-500">
-                {keys}
-              </span>
-            </div>
-          ))}
-        </div>
-      </DataCard>
     </div>
   );
 }
