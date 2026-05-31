@@ -241,10 +241,11 @@ function ToolbarMenu() {
   );
 }
 
-function ActionButton({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
+function ActionButton({ icon: Icon, children, onClick }: { icon: LucideIcon; children: React.ReactNode; onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[#11685f] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
     >
       <Icon size={16} />
@@ -253,38 +254,82 @@ function ActionButton({ icon: Icon, children }: { icon: LucideIcon; children: Re
   );
 }
 
-function MetricTile({
-  icon: Icon,
-  label,
-  value,
-  detail,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  detail: string;
-  tone: "teal" | "amber" | "red" | "slate";
-}) {
-  const accents = {
+type MetricTone = "teal" | "amber" | "red" | "slate";
+
+function metricAccentClass(tone: MetricTone) {
+  const accents: Record<MetricTone, string> = {
     teal: "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]",
     amber: "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]",
     red: "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]",
     slate: "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]",
   };
 
+  return accents[tone];
+}
+
+type MetricStripItem = {
+  label: string;
+  value: string | number;
+  detail: string;
+  icon?: LucideIcon;
+  tone?: MetricTone;
+  active?: boolean;
+  onClick?: () => void;
+};
+
+function metricStripGridClass(count: number) {
+  if (count >= 5) return "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5";
+  if (count === 4) return "sm:grid-cols-2 lg:grid-cols-4";
+  if (count === 3) return "sm:grid-cols-3";
+  return "sm:grid-cols-2";
+}
+
+function MetricStrip({ items, ariaLabel }: { items: MetricStripItem[]; ariaLabel?: string }) {
   return (
-    <div className="flex min-h-[148px] flex-col justify-between rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="min-h-10 text-sm font-medium leading-5 text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-[#13211f]">{value}</p>
-        </div>
-        <div className={`shrink-0 rounded-md p-2 ring-1 ${accents[tone]}`}>
-          <Icon size={20} />
-        </div>
-      </div>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{detail}</p>
+    <div
+      className={`grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:divide-x sm:divide-[#d9e2dc] ${metricStripGridClass(items.length)}`}
+      aria-label={ariaLabel}
+    >
+      {items.map((item) => {
+        const Icon = item.icon;
+        const content = (
+          <>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium text-slate-500">{item.label}</span>
+              <span className="mt-1 block text-2xl font-semibold text-[#13211f]">{item.value}</span>
+              <span className="mt-1 block truncate text-sm text-slate-600">{item.detail}</span>
+            </span>
+            {Icon ? (
+              <span className={`shrink-0 rounded-md p-2 ring-1 ${metricAccentClass(item.tone ?? "slate")}`}>
+                <Icon size={18} />
+              </span>
+            ) : null}
+          </>
+        );
+        const className = `flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left last:border-b-0 sm:border-b-0 ${
+          item.active ? "bg-[#e2f0ea]" : "bg-[#fbfaf6]"
+        }`;
+
+        if (item.onClick) {
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={item.onClick}
+              aria-pressed={item.active}
+              className={`${className} transition hover:bg-[#f7faf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500`}
+            >
+              {content}
+            </button>
+          );
+        }
+
+        return (
+          <div key={item.label} className={className}>
+            {content}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -373,110 +418,54 @@ function FilterChip({
   );
 }
 
-function DashboardSignal({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-xs font-semibold text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-[#13211f]">{value}</p>
-      <p className="mt-1 text-sm leading-5 text-slate-600">{detail}</p>
-    </div>
-  );
-}
-
 function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-        <div className="p-5 sm:p-6">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#117064]">
-              Παρασκευή, 29 Μαΐου 2026
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">Καλημέρα, Γιώργο</h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-              Η εικόνα της ημέρας είναι έτοιμη για έλεγχο πριν κλειδώσει το πρόγραμμα.
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-0 border-t border-[#d9e2dc] bg-[#f2f5ef] md:grid-cols-3 md:divide-x md:divide-[#d9e2dc]">
-          <div className="border-b border-[#d9e2dc] p-4 md:border-b-0">
-            <DashboardSignal
-              label="Στόλος"
-              value={`${readyAssets.length} έτοιμο · ${blockedAssets.length} μη διαθέσιμα`}
-              detail="Τα υπόλοιπα θέλουν έλεγχο"
-            />
-          </div>
-          <div className="border-b border-[#d9e2dc] p-4 md:border-b-0">
-            <DashboardSignal label="Κοντινή λήξη" value="CR-04 · 03 Ιουν" detail="Πιστοποιητικό ανύψωσης" />
-          </div>
-          <div className="p-4">
-            <DashboardSignal label="Δεδομένα" value="Ενημερώθηκαν σήμερα" detail="Καμία γραμμή σε έλεγχο" />
-          </div>
-        </div>
-      </section>
+      <PanelHeader
+        eyebrow="Πίνακας"
+        title="Σήμερα στον στόλο"
+        description="Τα σημεία που χρειάζονται κλείσιμο πριν βγει το πρόγραμμα."
+        action={<ActionButton icon={Bot} onClick={() => setActiveTab("copilot")}>Copilot</ActionButton>}
+      />
 
-      <section className="rounded-lg border border-[#29473f] bg-[#203832] p-5 text-[#f7faf4] shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#aee5d8]">
-            <Bot size={18} />
-            Προτεραιότητες
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab("copilot")}
-            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-white/15 bg-white/10 px-3 text-sm font-semibold text-[#f7faf4] transition hover:border-[#aee5d8] hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#aee5d8]"
-          >
-            Copilot
-          </button>
-        </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          {[
-            ["B-12", "Κλείσε ανανέωση KTEO πριν ανατεθεί σε διαδρομή.", "issues"],
-            ["CR-04", "Ζήτησε ενημέρωση για το πιστοποιητικό ανύψωσης.", "documents"],
-            ["FL-02", "Ανάθεσε την εκπρόθεσμη εργασία συντήρησης και έλεγξε το έγγραφο.", "maintenance"],
-          ].map(([title, detail, tab]) => (
-            <button
-              key={title}
-              type="button"
-              onClick={() => setActiveTab(tab as TabId)}
-              className="min-h-[96px] rounded-md border border-white/10 bg-white/[0.06] p-4 text-left transition hover:border-[#aee5d8] hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#aee5d8]"
-            >
-              <p className="font-semibold text-[#f7faf4]">{title}</p>
-              <p className="mt-2 text-sm leading-6 text-[#d8e4de]">{detail}</p>
-            </button>
-          ))}
-        </div>
-      </section>
+      <MetricStrip
+        ariaLabel="Σύνοψη ημέρας"
+        items={[
+          { icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Πάγια για ανάθεση", tone: "teal" },
+          { icon: AlertTriangle, label: "Μη διαθέσιμα", value: blockedAssets.length, detail: "Μένουν εκτός", tone: "red" },
+          { icon: FileText, label: "Λήξεις", value: expiringDocuments.length, detail: "Έγγραφα με προθεσμία", tone: "amber" },
+          { icon: Wrench, label: "Service", value: overdueMaintenance.length, detail: "Εκπρόθεσμες εργασίες", tone: "red" },
+        ]}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricTile
-          icon={Truck}
-          label="Πάγια"
-          value={String(assets.length)}
-          detail="Σύνολο ενεργών εγγραφών"
-          tone="teal"
-        />
-        <MetricTile
-          icon={FileText}
-          label="Έγγραφα"
-          value={String(expiringDocuments.length)}
-          detail="Λήξεις που θέλουν προσοχή"
-          tone="amber"
-        />
-        <MetricTile
-          icon={Wrench}
-          label="Εκπρόθεσμη συντήρηση"
-          value={String(overdueMaintenance.length)}
-          detail={`${formatCurrency(totalMaintenanceCost)} σε κόστος συντήρησης`}
-          tone="red"
-        />
-        <MetricTile
-          icon={AlertTriangle}
-          label="Βλάβες"
-          value={String(blockingIssues.length)}
-          detail="Επηρεάζουν ανάθεση παγίων"
-          tone="red"
-        />
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.5fr)_340px]">
+        <DataCard title="Προτεραιότητες">
+          <div className="divide-y divide-[#e3e9e2]">
+            {[
+              { title: "B-12 KTEO", detail: "Κλείσε ανανέωση πριν μπει σε διαδρομή.", tab: "issues" as TabId, tone: "blocked" },
+              { title: "CR-04 πιστοποιητικό", detail: "Έλεγξε τη λήξη ανύψωσης στις 03 Ιουν.", tab: "documents" as TabId, tone: "critical" },
+              { title: "FL-02 συντήρηση", detail: "Ανάθεσε την εκπρόθεσμη εργασία και κράτησε κόστος.", tab: "maintenance" as TabId, tone: "overdue" },
+            ].map((item) => (
+              <button
+                key={item.title}
+                type="button"
+                onClick={() => setActiveTab(item.tab)}
+                className="grid w-full gap-3 py-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-[#13211f]">{item.title}</span>
+                  <span className="mt-1 block text-sm leading-6 text-slate-600">{item.detail}</span>
+                </span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#11685f]">
+                  Άνοιγμα
+                  <ArrowRight size={15} />
+                </span>
+              </button>
+            ))}
+          </div>
+        </DataCard>
+
+        <TodayPanel setActiveTab={setActiveTab} />
       </div>
     </div>
   );
@@ -1100,68 +1089,47 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
         action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
       />
 
-      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-2 sm:divide-x sm:divide-[#d9e2dc] lg:grid-cols-4">
-        {[
-          { id: "ready" as AssetFilter, icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tone: "teal" },
+      <MetricStrip
+        ariaLabel="Σύνοψη παγίων"
+        items={[
           {
-            id: "blocked" as AssetFilter,
+            icon: Truck,
+            label: "Έτοιμα",
+            value: readyAssets.length,
+            detail: "Μπορούν να ανατεθούν",
+            tone: "teal",
+            active: assetFilter === "ready",
+            onClick: () => setAssetFilter(assetFilter === "ready" ? "all" : "ready"),
+          },
+          {
             icon: AlertTriangle,
-            label: "Blockers σήμερα",
+            label: "Μη διαθέσιμα",
             value: blockedAssets.length,
             detail: blockedAssets.map((asset) => asset.code).join(", "),
             tone: "red",
+            active: assetFilter === "blocked",
+            onClick: () => setAssetFilter(assetFilter === "blocked" ? "all" : "blocked"),
           },
           {
-            id: "missing" as AssetFilter,
             icon: FileText,
             label: "Θέλουν έλεγχο",
             value: assetsWithMissing.length,
             detail: "Λείπουν έγγραφα ή έλεγχοι",
             tone: "amber",
+            active: assetFilter === "missing",
+            onClick: () => setAssetFilter(assetFilter === "missing" ? "all" : "missing"),
           },
           {
-            id: "all" as AssetFilter,
             icon: ListChecks,
             label: "Σύνολο",
             value: assets.length,
             detail: `${filteredAssets.length} στην ουρά`,
             tone: "slate",
+            active: assetFilter === "all",
+            onClick: () => setAssetFilter("all"),
           },
-        ].map((metric) => {
-          const Icon = metric.icon;
-          const active = metric.id === "all" ? assetFilter === "all" : assetFilter === metric.id;
-
-          return (
-            <button
-              key={metric.id}
-              type="button"
-              onClick={() => setAssetFilter(metric.id === "all" || active ? "all" : metric.id)}
-              className={`flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:border-b-0 ${
-                active ? "bg-[#e2f0ea]" : "hover:bg-[#f7faf4]"
-              }`}
-            >
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-slate-500">{metric.label}</span>
-                <span className="mt-1 block text-2xl font-semibold text-[#13211f]">{metric.value}</span>
-                <span className="mt-1 block truncate text-sm text-slate-600">{metric.detail}</span>
-              </span>
-              <span
-                className={`shrink-0 rounded-md p-2 ring-1 ${
-                  metric.tone === "teal"
-                    ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
-                    : metric.tone === "red"
-                      ? "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]"
-                      : metric.tone === "amber"
-                        ? "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
-                        : "bg-[#e7ece8] text-slate-600 ring-[#d9e2dc]"
-                }`}
-              >
-                <Icon size={19} />
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        ]}
+      />
 
       <DataCard title="Ουρά ανάθεσης">
         <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -1511,6 +1479,47 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
         description="Λήξεις, έλεγχοι και εγκρίσεις σε μία ουρά για το γραφείο."
         action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
       />
+      <MetricStrip
+        ariaLabel="Σύνοψη εγγράφων"
+        items={[
+          {
+            icon: AlertTriangle,
+            label: "Ενέργειες",
+            value: attentionDocuments.length,
+            detail: "Ανανέωση ή έγκριση",
+            tone: "amber",
+            active: documentFilter === "attention",
+            onClick: () => setDocumentFilter("attention"),
+          },
+          {
+            icon: FileText,
+            label: "Ληγμένα",
+            value: expiredDocuments.length,
+            detail: "Δεν μπαίνουν σε πρόγραμμα",
+            tone: "red",
+            active: documentFilter === "expired",
+            onClick: () => setDocumentFilter("expired"),
+          },
+          {
+            icon: ShieldCheck,
+            label: "Σε έλεγχο",
+            value: documentsInReview.length,
+            detail: "Θέλουν επιβεβαίωση",
+            tone: "teal",
+            active: documentFilter === "review",
+            onClick: () => setDocumentFilter("review"),
+          },
+          {
+            icon: CheckCircle2,
+            label: "Έγκυρα",
+            value: validDocuments.length,
+            detail: "Χωρίς άμεση ενέργεια",
+            tone: "slate",
+            active: documentFilter === "valid",
+            onClick: () => setDocumentFilter("valid"),
+          },
+        ]}
+      />
       <DataCard title="Ουρά εγγράφων">
         <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex flex-wrap gap-2">
@@ -1617,19 +1626,14 @@ function CompliancePanel() {
         description="Τι πρέπει να έχει κάθε τύπος παγίου και ποια πάγια έχουν κενά."
         action={<ActionButton icon={ShieldCheck}>Νέος κανόνας</ActionButton>}
       />
-      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
-        {[
-          { label: "Τύποι παγίων", value: complianceTemplates.length, detail: "Με κανόνες εγγράφων" },
-          { label: "Κατηγορίες", value: requiredCategories.length, detail: "KTEO, άδειες, ασφάλειες" },
-          { label: "Πάγια με κενά", value: assetsWithGaps.length, detail: "Θέλουν συμπλήρωση" },
-        ].map((item) => (
-          <div key={item.label} className="border-b border-[#d9e2dc] p-3 last:border-b-0 sm:border-b-0">
-            <p className="text-sm font-medium text-slate-500">{item.label}</p>
-            <p className="mt-1 text-xl font-semibold text-[#13211f]">{item.value}</p>
-            <p className="mt-1 text-sm text-slate-600">{item.detail}</p>
-          </div>
-        ))}
-      </div>
+      <MetricStrip
+        ariaLabel="Σύνοψη συμμόρφωσης"
+        items={[
+          { icon: ShieldCheck, label: "Τύποι παγίων", value: complianceTemplates.length, detail: "Με κανόνες εγγράφων", tone: "teal" },
+          { icon: FileText, label: "Κατηγορίες", value: requiredCategories.length, detail: "KTEO, άδειες, ασφάλειες", tone: "slate" },
+          { icon: AlertTriangle, label: "Πάγια με κενά", value: assetsWithGaps.length, detail: "Θέλουν συμπλήρωση", tone: "amber" },
+        ]}
+      />
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <DataCard title="Ελλείψεις συμμόρφωσης">
           <div className="divide-y divide-[#e3e9e2]">
@@ -1696,7 +1700,7 @@ function CompliancePanel() {
   );
 }
 
-function MaintenancePanel() {
+function MaintenancePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
       <PanelHeader
@@ -1705,45 +1709,49 @@ function MaintenancePanel() {
         description="Εκπρόθεσμες εργασίες, επόμενα service και κόστος σε μία ουρά εργασίας."
         action={<ActionButton icon={Wrench}>Νέα εργασία</ActionButton>}
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={Wrench} label="Ανοιχτές" value={String(maintenanceTasks.length)} detail="Εργασίες συντήρησης" tone="slate" />
-        <MetricTile icon={AlertTriangle} label="Εκπρόθεσμες" value={String(overdueMaintenance.length)} detail="Θέλουν ανάθεση" tone="red" />
-        <MetricTile icon={ClipboardList} label="Κόστος" value={formatCurrency(totalMaintenanceCost)} detail="Καταγεγραμμένο κόστος" tone="teal" />
-      </div>
-      <DataCard title="Ουρά εργασιών">
-        <div className="mb-4 flex flex-wrap gap-2">
-          <FilterChip active>Όλες</FilterChip>
-          <FilterChip>Εκπρόθεσμες</FilterChip>
-          <FilterChip>Προγραμματισμένες</FilterChip>
-          <FilterChip>Με κόστος</FilterChip>
-        </div>
-        <div className="space-y-3">
-          {maintenanceTasks.map((task) => {
-            const days = daysUntil(task.dueAt);
+      <MetricStrip
+        ariaLabel="Σύνοψη συντήρησης"
+        items={[
+          { icon: Wrench, label: "Ανοιχτές", value: maintenanceTasks.length, detail: "Εργασίες συντήρησης", tone: "slate" },
+          { icon: AlertTriangle, label: "Εκπρόθεσμες", value: overdueMaintenance.length, detail: "Θέλουν ανάθεση", tone: "red" },
+          { icon: ClipboardList, label: "Κόστος", value: formatCurrency(totalMaintenanceCost), detail: "Καταγεγραμμένο κόστος", tone: "teal" },
+        ]}
+      />
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_340px]">
+        <DataCard title="Ουρά εργασιών">
+          <div className="mb-4 flex flex-wrap gap-2">
+            <FilterChip active>Όλες</FilterChip>
+            <FilterChip>Εκπρόθεσμες</FilterChip>
+            <FilterChip>Προγραμματισμένες</FilterChip>
+            <FilterChip>Με κόστος</FilterChip>
+          </div>
+          <div className="space-y-2">
+            {maintenanceTasks.map((task) => {
+              const days = daysUntil(task.dueAt);
 
-            return (
-            <div key={task.id} className="rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-[#13211f]">{task.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {getAsset(task.assetId)?.code} · {task.owner} · {formatDate(task.dueAt)}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {days < 0 ? `Καθυστέρηση ${Math.abs(days)} ημερών` : `Σε ${days} ημέρες`}
-                    {task.cost ? ` · ${formatCurrency(task.cost)}` : ""}
-                  </p>
+              return (
+                <div key={task.id} className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-[#13211f]">{task.title}</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {getAsset(task.assetId)?.code} · {task.owner} · {formatDate(task.dueAt)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {days < 0 ? `Καθυστέρηση ${Math.abs(days)} ημερών` : `Σε ${days} ημέρες`}
+                      {task.cost ? ` · ${formatCurrency(task.cost)}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <StatusPill label={statusLabels[task.status]} tone={task.status} />
+                    <TextButton icon={Users}>Ανάθεση</TextButton>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <StatusPill label={statusLabels[task.status]} tone={task.status} />
-                  <TextButton icon={Users}>Ανάθεση</TextButton>
-                </div>
-              </div>
-            </div>
-            );
-          })}
-        </div>
-      </DataCard>
+              );
+            })}
+          </div>
+        </DataCard>
+        <TodayPanel setActiveTab={setActiveTab} />
+      </div>
     </div>
   );
 }
@@ -1757,55 +1765,67 @@ function IssuesPanel() {
         description="Blocking βλάβες, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
         action={<ActionButton icon={QrCode}>Νέα βλάβη</ActionButton>}
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={AlertTriangle} label="Ανοιχτές" value={String(issues.length)} detail="Χρειάζονται παρακολούθηση" tone="slate" />
-        <MetricTile icon={Truck} label="Blocking" value={String(blockingIssues.length)} detail="Μπλοκάρουν ανάθεση" tone="red" />
-        <MetricTile
-          icon={Users}
-          label="Ανατεθειμένες"
-          value={String(issues.filter((issue) => issue.assignee).length)}
-          detail="Έχουν υπεύθυνο"
-          tone="teal"
-        />
-      </div>
-      <DataCard title="Ανοιχτές βλάβες">
-        <div className="mb-4 flex flex-wrap gap-2">
-          <FilterChip active>Όλες</FilterChip>
-          <FilterChip>Blocking</FilterChip>
-          <FilterChip>High/Critical</FilterChip>
-          <FilterChip>Σε εξέλιξη</FilterChip>
-        </div>
-        <div className="space-y-3">
-          {issues.map((issue) => {
-            const asset = getAsset(issue.assetId);
+      <MetricStrip
+        ariaLabel="Σύνοψη βλαβών"
+        items={[
+          { icon: AlertTriangle, label: "Ανοιχτές", value: issues.length, detail: "Χρειάζονται παρακολούθηση", tone: "slate" },
+          { icon: Truck, label: "Blocking", value: blockingIssues.length, detail: "Μπλοκάρουν ανάθεση", tone: "red" },
+          { icon: Users, label: "Με υπεύθυνο", value: issues.filter((issue) => issue.assignee).length, detail: "Έχουν ανάθεση", tone: "teal" },
+        ]}
+      />
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_340px]">
+        <DataCard title="Ανοιχτές βλάβες">
+          <div className="mb-4 flex flex-wrap gap-2">
+            <FilterChip active>Όλες</FilterChip>
+            <FilterChip>Blocking</FilterChip>
+            <FilterChip>High/Critical</FilterChip>
+            <FilterChip>Σε εξέλιξη</FilterChip>
+          </div>
+          <div className="space-y-2">
+            {issues.map((issue) => {
+              const asset = getAsset(issue.assetId);
 
-            return (
-            <div key={issue.id} className="rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-[#13211f]">{issue.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {asset?.code} · {asset?.location} · άνοιξε {formatDate(issue.openedAt)}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">Υπεύθυνος: {issue.assignee}</p>
+              return (
+                <div key={issue.id} className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#13211f]">{issue.title}</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {asset?.code} · {asset?.location} · άνοιξε {formatDate(issue.openedAt)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Υπεύθυνος: {issue.assignee}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <StatusPill
+                      label={issue.blocking ? "μη διαθέσιμο" : statusLabels[issue.severity]}
+                      tone={issue.blocking ? "blocked" : issue.severity === "critical" ? "criticalIssue" : issue.severity}
+                    />
+                    <StatusPill label={statusLabels[issue.status]} tone={issue.status} />
+                    <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <StatusPill
-                    label={issue.blocking ? "μη διαθέσιμο" : statusLabels[issue.severity]}
-                    tone={issue.blocking ? "blocked" : issue.severity === "critical" ? "criticalIssue" : issue.severity}
-                  />
-                  <StatusPill label={statusLabels[issue.status]} tone={issue.status} />
+              );
+            })}
+          </div>
+        </DataCard>
+        <DataCard title="Μπλοκάρουν ανάθεση">
+          <div className="space-y-2">
+            {blockingIssues.map((issue) => {
+              const asset = getAsset(issue.assetId);
+
+              return (
+                <div key={issue.id} className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-[#13211f]">{asset?.code}</p>
+                    <StatusPill label="μη διαθέσιμο" tone="blocked" />
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">{asset?.name}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{issue.title}</p>
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <TextButton icon={Eye}>Άνοιγμα</TextButton>
-                <TextButton icon={Users}>Ανάθεση</TextButton>
-              </div>
-            </div>
-            );
-          })}
-        </div>
-      </DataCard>
+              );
+            })}
+          </div>
+        </DataCard>
+      </div>
     </div>
   );
 }
@@ -1819,39 +1839,68 @@ function OperatorsPanel() {
         description="Ποιος είναι διαθέσιμος, ποια άδεια λήγει και σε ποιο πάγιο είναι συνδεδεμένος."
         action={<ActionButton icon={Users}>Νέος χειριστής</ActionButton>}
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={Users} label="Χειριστές" value={String(operators.length)} detail="Ενεργοί άνθρωποι" tone="slate" />
-        <MetricTile icon={Truck} label="Αναθέσεις" value={String(operators.reduce((sum, operator) => sum + operator.assignedAssetIds.length, 0))} detail="Συνδεδεμένα πάγια" tone="teal" />
-        <MetricTile icon={AlertTriangle} label="Κοντινές λήξεις" value="1" detail="Άδειες στις επόμενες 30 ημέρες" tone="amber" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {operators.map((operator) => {
-          const days = daysUntil(operator.licenseExpiresAt);
+      <MetricStrip
+        ariaLabel="Σύνοψη χειριστών"
+        items={[
+          { icon: Users, label: "Χειριστές", value: operators.length, detail: "Ενεργοί άνθρωποι", tone: "slate" },
+          {
+            icon: Truck,
+            label: "Αναθέσεις",
+            value: operators.reduce((sum, operator) => sum + operator.assignedAssetIds.length, 0),
+            detail: "Συνδεδεμένα πάγια",
+            tone: "teal",
+          },
+          { icon: AlertTriangle, label: "Κοντινές λήξεις", value: "1", detail: "Άδειες στις 30 ημέρες", tone: "amber" },
+        ]}
+      />
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_340px]">
+        <DataCard title="Ομάδα χειριστών">
+          <div className="divide-y divide-[#e3e9e2]">
+            {operators.map((operator) => {
+              const days = daysUntil(operator.licenseExpiresAt);
 
-          return (
-          <DataCard key={operator.id} title={operator.name}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700">
-                <HardHat size={20} />
-              </div>
-              <div>
-                <p className="font-medium text-[#13211f]">{operator.role}</p>
-                <p className="text-sm text-slate-600">{operator.phone}</p>
-              </div>
-            </div>
-            <div className="mt-4 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-sm font-semibold text-[#13211f]">Άδεια</p>
-              <p className="mt-1 text-sm text-slate-600">{formatDate(operator.licenseExpiresAt)}</p>
-              <p className="mt-1 text-xs text-slate-500">{days <= 30 ? `Λήγει σε ${days} ημέρες` : "Εντός ορίου"}</p>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {operator.assignedAssetIds.map((assetId) => (
-                <StatusPill key={assetId} label={getAsset(assetId)?.code ?? "Asset"} tone="scheduled" />
-              ))}
-            </div>
-          </DataCard>
-          );
-        })}
+              return (
+                <div key={operator.id} className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700">
+                      <HardHat size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#13211f]">{operator.name}</p>
+                      <p className="mt-1 truncate text-sm text-slate-600">{operator.role} · {operator.phone}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Άδεια {formatDate(operator.licenseExpiresAt)} · {days <= 30 ? `λήγει σε ${days} ημέρες` : "εντός ορίου"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:justify-end">
+                    {operator.assignedAssetIds.map((assetId) => (
+                      <StatusPill key={assetId} label={getAsset(assetId)?.code ?? "Asset"} tone="scheduled" />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DataCard>
+        <DataCard title="Άδειες">
+          <div className="space-y-2">
+            {operators.map((operator) => {
+              const days = daysUntil(operator.licenseExpiresAt);
+              const urgent = days <= 30;
+
+              return (
+                <div key={operator.id} className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="truncate text-sm font-semibold text-[#13211f]">{operator.name}</p>
+                    <StatusPill label={urgent ? "προειδοποίηση" : "έγκυρο"} tone={urgent ? "warning" : "valid"} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{formatDate(operator.licenseExpiresAt)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </DataCard>
       </div>
     </div>
   );
@@ -1863,8 +1912,16 @@ function CopilotPanel() {
       <PanelHeader
         eyebrow="Copilot"
         title="Ρώτα για στόλο, έγγραφα και βλάβες"
-        description="Το Copilot απαντά μόνο με records της εταιρείας, δείχνει citations και σταματά όταν λείπουν δεδομένα."
-        action={<StatusPill label="citations on" tone="valid" />}
+        description="Το Copilot απαντά μόνο με δεδομένα της εταιρείας, δείχνει πηγές και σταματά όταν λείπουν στοιχεία."
+        action={<StatusPill label="πηγές ενεργές" tone="valid" />}
+      />
+      <MetricStrip
+        ariaLabel="Σύνοψη Copilot"
+        items={[
+          { icon: Bot, label: "Λειτουργία", value: "Ops", detail: "Μόνο εταιρικές εγγραφές", tone: "teal" },
+          { icon: ClipboardList, label: "Πηγές", value: attentionItems.slice(0, 5).length, detail: "Ορατές αναφορές", tone: "slate" },
+          { icon: ShieldCheck, label: "Κανόνες", value: "On", detail: "Χωρίς νομική συμβουλή", tone: "amber" },
+        ]}
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <DataCard title="Ερώτηση">
@@ -1874,7 +1931,7 @@ function CopilotPanel() {
               <span className="text-sm text-slate-600">Τι πρέπει να προλάβουμε πριν βγει το πρόγραμμα;</span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {["Ποια πάγια είναι blocked;", "Τι λήγει σε 30 ημέρες;", "Τι service έχει καθυστερήσει;"].map((prompt) => (
+              {["Ποια πάγια δεν ανατίθενται;", "Τι λήγει σε 30 ημέρες;", "Τι service έχει καθυστερήσει;"].map((prompt) => (
                 <FilterChip key={prompt}>{prompt}</FilterChip>
               ))}
             </div>
@@ -1882,12 +1939,12 @@ function CopilotPanel() {
           <div className="mt-4 rounded-lg border border-[#29473f] bg-[#203832] p-5 text-[#f7faf4]">
             <p className="text-sm font-semibold text-[#aee5d8]">Απάντηση</p>
             <p className="mt-3 text-sm leading-6 text-[#d8e4de]">
-              Πρώτα κλείσε το KTEO του B-12, μετά την επισκευή του EX-01 και στη συνέχεια το follow-up για το CR-04.
-              Το FL-02 χρειάζεται overdue service πριν θεωρηθεί καθαρό για ανάθεση.
+              Πρώτα κλείσε το KTEO του B-12, μετά την επισκευή του EX-01 και στη συνέχεια τον έλεγχο για το CR-04.
+              Το FL-02 χρειάζεται εκπρόθεσμο service πριν θεωρηθεί καθαρό για ανάθεση.
             </p>
           </div>
         </DataCard>
-        <DataCard title="Citations">
+        <DataCard title="Πηγές">
           <div className="space-y-2">
             {attentionItems.slice(0, 5).map((item) => (
               <div key={item.id} className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
@@ -1914,20 +1971,23 @@ function ReportsPanel() {
       <PanelHeader
         eyebrow="Αναφορές"
         title="Έτοιμες αναφορές για διοίκηση και audit"
-        description="Καθαρές εξαγωγές για attention, λήξεις, συντήρηση και readiness χωρίς χειροκίνητο καθάρισμα."
+        description="Καθαρές εξαγωγές για προσοχή, λήξεις, συντήρηση και ετοιμότητα χωρίς χειροκίνητο καθάρισμα."
         action={<ActionButton icon={Download}>Export αναφοράς</ActionButton>}
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={ClipboardList} label="Templates" value="4" detail="Έτοιμες αναφορές" tone="slate" />
-        <MetricTile icon={FileText} label="Πηγές" value="5" detail="Πάγια, έγγραφα, συντήρηση, βλάβες, χειριστές" tone="teal" />
-        <MetricTile icon={Download} label="Format" value="PDF/CSV" detail="Για έλεγχο και αποστολή" tone="amber" />
-      </div>
+      <MetricStrip
+        ariaLabel="Σύνοψη αναφορών"
+        items={[
+          { icon: ClipboardList, label: "Πρότυπα", value: "4", detail: "Έτοιμες αναφορές", tone: "slate" },
+          { icon: FileText, label: "Πηγές", value: "5", detail: "Πάγια, έγγραφα, service", tone: "teal" },
+          { icon: Download, label: "Μορφή", value: "PDF/CSV", detail: "Για έλεγχο και αποστολή", tone: "amber" },
+        ]}
+      />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ["Attention report", "Κρίσιμα, προειδοποιήσεις, ελλείψεις και blocked records", "Για πρωινό meeting"],
+          ["Αναφορά προσοχής", "Κρίσιμα, προειδοποιήσεις, ελλείψεις και μη διαθέσιμες εγγραφές", "Για πρωινό meeting"],
           ["Λήξεις εγγράφων", "Ημερομηνίες λήξης ανά πάγιο και κατηγορία", "Για compliance follow-up"],
-          ["Overdue service", "Εργασίες, κόστος και υπεύθυνοι", "Για συνεργείο"],
-          ["Readiness report", "Scores με αιτίες και citations", "Για ανάθεση στόλου"],
+          ["Εκπρόθεσμο service", "Εργασίες, κόστος και υπεύθυνοι", "Για συνεργείο"],
+          ["Αναφορά ετοιμότητας", "Scores με αιτίες και πηγές", "Για ανάθεση στόλου"],
         ].map(([title, detail, meta]) => (
           <button
             key={title}
@@ -1956,22 +2016,25 @@ function SettingsPanel() {
     <div className="space-y-4">
       <PanelHeader
         eyebrow="Ρυθμίσεις"
-        title="Έλεγχος εταιρείας και trust layer"
-        description="Ρόλοι, ειδοποιήσεις, imports, billing, audit logs και AI κανόνες σε ομάδες που βγάζουν νόημα."
+        title="Ρυθμίσεις εταιρείας"
+        description="Ρόλοι, ειδοποιήσεις, εισαγωγές, χρέωση, audit και κανόνες AI σε καθαρές ομάδες."
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={Users} label="Ρόλοι" value="7" detail="Owner έως Auditor" tone="slate" />
-        <MetricTile icon={Bell} label="Reminders" value="6" detail="60 ημέρες έως expired" tone="teal" />
-        <MetricTile icon={ShieldCheck} label="Audit" value="On" detail="Sensitive changes και AI χρήση" tone="amber" />
-      </div>
+      <MetricStrip
+        ariaLabel="Σύνοψη ρυθμίσεων"
+        items={[
+          { icon: Users, label: "Ρόλοι", value: "7", detail: "Owner έως Auditor", tone: "slate" },
+          { icon: Bell, label: "Υπενθυμίσεις", value: "6", detail: "60 ημέρες έως λήξη", tone: "teal" },
+          { icon: ShieldCheck, label: "Audit", value: "On", detail: "Αλλαγές και AI χρήση", tone: "amber" },
+        ]}
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         {[
           { title: "Χρήστες και ρόλοι", detail: "Owner, Admin, Operations, Compliance, Mechanic, Operator, Auditor", icon: Users },
-          { title: "Ειδοποιήσεις", detail: "60, 30, 14, 7, day-of και expired reminder windows", icon: Bell },
-          { title: "Audit logs", detail: "Sensitive changes, overrides, imports και operational AI use", icon: ClipboardList },
-          { title: "Billing", detail: "Manual invoice mode πρώτα, Stripe-ready αργότερα", icon: Save },
-          { title: "Imports", detail: "CSV, Excel, folder upload, review queue και publish approval", icon: UploadCloud },
-          { title: "AI settings", detail: "Citations, missing-data disclosure και no legal advice", icon: Bot },
+          { title: "Ειδοποιήσεις", detail: "Παράθυρα 60, 30, 14, 7 ημερών και υπενθύμιση στη λήξη", icon: Bell },
+          { title: "Καταγραφές audit", detail: "Αλλαγές, overrides, εισαγωγές και χρήση AI στην ομάδα", icon: ClipboardList },
+          { title: "Χρέωση", detail: "Χειροκίνητο τιμολόγιο πρώτα, Stripe-ready αργότερα", icon: Save },
+          { title: "Εισαγωγές", detail: "CSV, Excel, φάκελοι, ουρά ελέγχου και έγκριση δημοσίευσης", icon: UploadCloud },
+          { title: "Κανόνες AI", detail: "Πηγές, δήλωση ελλιπών δεδομένων και χωρίς νομική συμβουλή", icon: Bot },
         ].map((item) => {
           const Icon = item.icon;
 
@@ -1984,7 +2047,7 @@ function SettingsPanel() {
               <p className="text-sm leading-6 text-slate-600">{item.detail}</p>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-[#e3e9e2] pt-3">
-              <StatusPill label="configured" tone="valid" />
+              <StatusPill label="ρυθμισμένο" tone="valid" />
               <TextButton icon={Settings}>Άνοιγμα</TextButton>
             </div>
           </DataCard>
@@ -2035,57 +2098,6 @@ function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
           ))}
         </div>
       </DataCard>
-    </div>
-  );
-}
-
-function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
-  return (
-    <div className="space-y-4">
-      <DataCard title="Πρόσφατα">
-        <div className="space-y-2">
-          {[
-            { title: "B-12 KTEO", detail: "Άνοιγμα βλάβης", tab: "issues" as TabId },
-            { title: "CR-04 πιστοποιητικό", detail: "Έλεγχος εγγράφου", tab: "documents" as TabId },
-            { title: "FL-02 συντήρηση", detail: "Ανάθεση εργασίας", tab: "maintenance" as TabId },
-          ].map((item) => (
-            <button
-              key={item.title}
-              type="button"
-              onClick={() => setActiveTab(item.tab)}
-              className="grid min-h-[58px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-[#13211f]">{item.title}</span>
-                <span className="mt-0.5 block truncate text-xs text-slate-500">{item.detail}</span>
-              </span>
-              <ArrowRight size={15} className="text-slate-400" />
-            </button>
-          ))}
-        </div>
-      </DataCard>
-
-      <DataCard title="Πρόχειρες ενέργειες">
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab("documents")}
-            className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-          >
-            <p className="text-sm font-semibold text-[#13211f]">Ανέβασμα εγγράφου</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Σύνδεση νέου πιστοποιητικού με CR-04.</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("maintenance")}
-            className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-          >
-            <p className="text-sm font-semibold text-[#13211f]">Συντήρηση FL-02</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Ανάθεση στον Γιώργο Ράλλη.</p>
-          </button>
-        </div>
-      </DataCard>
-
     </div>
   );
 }
@@ -2184,13 +2196,7 @@ export function OperationsConsole() {
         </header>
 
         <main
-          className={`mx-auto grid max-w-[1500px] gap-5 px-4 py-5 sm:px-6 lg:px-8 ${
-            activeTab === "documents" || activeTab === "compliance" || activeTab === "assets"
-              ? "lg:grid-cols-1"
-              : activeTab === "command"
-                ? "lg:grid-cols-[minmax(0,1fr)_300px]"
-                : "lg:grid-cols-[minmax(0,1fr)_340px]"
-          }`}
+          className="mx-auto grid max-w-[1500px] gap-5 px-4 py-5 sm:px-6 lg:grid-cols-1 lg:px-8"
         >
           <section
             id={`${activeMeta.id}-panel`}
@@ -2203,23 +2209,13 @@ export function OperationsConsole() {
             {activeTab === "assets" && <AssetsPanel setActiveTab={setActiveTab} />}
             {activeTab === "documents" && <DocumentsPanel setActiveTab={setActiveTab} />}
             {activeTab === "compliance" && <CompliancePanel />}
-            {activeTab === "maintenance" && <MaintenancePanel />}
+            {activeTab === "maintenance" && <MaintenancePanel setActiveTab={setActiveTab} />}
             {activeTab === "issues" && <IssuesPanel />}
             {activeTab === "operators" && <OperatorsPanel />}
             {activeTab === "copilot" && <CopilotPanel />}
             {activeTab === "reports" && <ReportsPanel />}
             {activeTab === "settings" && <SettingsPanel />}
           </section>
-
-          {activeTab !== "documents" && activeTab !== "compliance" && activeTab !== "assets" ? (
-            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-              {activeTab === "command" ? (
-                <CommandContextPanel setActiveTab={setActiveTab} />
-              ) : (
-                <TodayPanel setActiveTab={setActiveTab} />
-              )}
-            </aside>
-          ) : null}
         </main>
       </div>
     </div>
