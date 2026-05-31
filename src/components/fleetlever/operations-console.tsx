@@ -516,6 +516,42 @@ function MissingDocumentChips({ missing, limit = 3 }: { missing: string[]; limit
   );
 }
 
+function MissingDocumentSummary({ missing }: { missing: string[] }) {
+  if (!missing.length) {
+    return <span className="text-sm font-medium text-emerald-700">Δεν λείπει κάτι κρίσιμο</span>;
+  }
+
+  const [first, ...rest] = missing;
+
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5 text-sm text-slate-600">
+      <span>{categoryLabels[first] ?? first}</span>
+      {rest.length ? (
+        <span className="rounded-full border border-[#d9e2dc] bg-[#f7faf4] px-2 py-0.5 text-xs font-semibold text-slate-500">
+          +{rest.length}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function assetBlockerText(asset: (typeof assets)[number], missing: string[]) {
+  const linkedBlockingIssue = issues.find((issue) => issue.assetId === asset.id && issue.blocking);
+
+  if (linkedBlockingIssue) {
+    return linkedBlockingIssue.title;
+  }
+
+  if (missing.length) {
+    const [first, ...rest] = missing;
+    return rest.length
+      ? `Λείπει ${categoryLabels[first] ?? first} και ${rest.length} ακόμη`
+      : `Λείπει ${categoryLabels[first] ?? first}`;
+  }
+
+  return "Έτοιμο για ανάθεση.";
+}
+
 function AssetDrawer({
   asset,
   onClose,
@@ -927,6 +963,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [assetQuery, setAssetQuery] = useState("");
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [showFullRegistry, setShowFullRegistry] = useState(false);
   const assetsWithMissing = assets.filter((asset) => getMissingDocumentCategories(asset).length > 0);
   const selectedAsset = selectedAssetId ? assets.find((asset) => asset.id === selectedAssetId) : undefined;
   const normalizedQuery = assetQuery.trim().toLocaleLowerCase("el-GR");
@@ -961,33 +998,34 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   const filters: { id: AssetFilter; label: string }[] = [
     { id: "all", label: "Όλα" },
     { id: "ready", label: "Έτοιμα" },
-    { id: "blocked", label: "Μη διαθέσιμα" },
-    { id: "missing", label: "Με ελλείψεις" },
+    { id: "blocked", label: "Δεν ανατίθενται" },
+    { id: "missing", label: "Θέλουν έλεγχο" },
   ];
 
   return (
     <div className="space-y-4">
       <PanelHeader
         eyebrow="Πάγια"
-        title="Πάγια προς ανάθεση"
-        description="Δες ποια μπορούν να δουλέψουν σήμερα και τι μπλοκάρει τα υπόλοιπα."
+        title="Τι μπορεί να ανατεθεί σήμερα;"
+        description="Δες τα πάγια που είναι έτοιμα, ποια μπλοκάρονται και ποια ενέργεια λείπει."
         action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
       />
-      <div className="grid gap-4 sm:grid-cols-3">
+
+      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
         {[
           { id: "ready" as AssetFilter, icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tone: "teal" },
           {
             id: "blocked" as AssetFilter,
             icon: AlertTriangle,
-            label: "Μη διαθέσιμα",
+            label: "Δεν ανατίθενται",
             value: blockedAssets.length,
-            detail: "Μένουν εκτός δουλειάς",
+            detail: "Μένουν εκτός προγράμματος",
             tone: "red",
           },
           {
             id: "missing" as AssetFilter,
             icon: FileText,
-            label: "Ελλείψεις",
+            label: "Θέλουν έλεγχο",
             value: assetsWithMissing.length,
             detail: "Λείπουν έγγραφα ή έλεγχοι",
             tone: "amber",
@@ -1001,33 +1039,32 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
               key={metric.id}
               type="button"
               onClick={() => setAssetFilter(active ? "all" : metric.id)}
-              className={`rounded-lg border bg-[#fbfaf6] p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
-                active ? "border-[#11685f] ring-1 ring-[#9adccb]" : "border-[#d9e2dc] hover:border-teal-300 hover:bg-[#f7faf4]"
+              className={`flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:border-b-0 ${
+                active ? "bg-[#e2f0ea]" : "hover:bg-[#f7faf4]"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">{metric.label}</p>
-                  <p className="mt-2 text-3xl font-semibold text-[#13211f]">{metric.value}</p>
-                </div>
-                <span
-                  className={`rounded-md p-2 ring-1 ${
-                    metric.tone === "teal"
-                      ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
-                      : metric.tone === "red"
-                        ? "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]"
-                        : "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
-                  }`}
-                >
-                  <Icon size={20} />
-                </span>
-              </div>
-              <p className="mt-5 text-sm leading-6 text-slate-600">{metric.detail}</p>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-slate-500">{metric.label}</span>
+                <span className="mt-1 block text-2xl font-semibold text-[#13211f]">{metric.value}</span>
+                <span className="mt-1 block truncate text-sm text-slate-600">{metric.detail}</span>
+              </span>
+              <span
+                className={`shrink-0 rounded-md p-2 ring-1 ${
+                  metric.tone === "teal"
+                    ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
+                    : metric.tone === "red"
+                      ? "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]"
+                      : "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
+                }`}
+              >
+                <Icon size={19} />
+              </span>
             </button>
           );
         })}
       </div>
-      <DataCard title="Μητρώο">
+
+      <DataCard title="Ουρά ανάθεσης">
         <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <label className="flex min-h-10 items-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 focus-within:border-[#8fd5c6] focus-within:ring-1 focus-within:ring-[#8fd5c6]">
             <Search size={16} className="shrink-0 text-slate-400" />
@@ -1040,7 +1077,12 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
               className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none"
             />
           </label>
-          <TextButton icon={Download}>Εξαγωγή στόλου</TextButton>
+          <div className="flex flex-wrap gap-2">
+            <TextButton icon={Eye} onClick={() => setShowFullRegistry((value) => !value)}>
+              {showFullRegistry ? "Κρύψε πίνακα" : "Πλήρης πίνακας"}
+            </TextButton>
+            <TextButton icon={Download}>Εξαγωγή</TextButton>
+          </div>
         </div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
@@ -1052,45 +1094,46 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
           </div>
           <p className="text-sm text-slate-500">{filteredAssets.length} από {assets.length} πάγια</p>
         </div>
-        <div className="grid gap-3 2xl:hidden">
+
+        <div className={showFullRegistry ? "hidden" : "space-y-2"}>
           {filteredAssets.map((asset) => {
             const missing = getMissingDocumentCategories(asset);
             const action = assetAction(asset);
+            const score = getReadinessScore(asset);
 
             return (
-              <article
+              <button
                 key={asset.id}
-                className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                type="button"
+                onClick={() => setSelectedAssetId(asset.id)}
+                className="grid min-h-[104px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 2xl:grid-cols-[minmax(180px,1.2fr)_minmax(210px,1.4fr)_minmax(150px,0.9fr)_auto] 2xl:items-center"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-[#13211f]">{asset.code}</p>
-                    <p className="mt-1 text-sm leading-5 text-slate-600">{asset.name}</p>
-                    <p className="mt-1 font-mono text-xs text-slate-400">{asset.plate ?? asset.serial}</p>
-                  </div>
-                  <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Τοποθεσία</p>
-                    <p className="mt-1 text-sm text-slate-600">{asset.location}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Χειριστής</p>
-                    <p className="mt-1 text-sm text-slate-600">{asset.operator}</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <ReadinessBar score={getReadinessScore(asset)} />
-                </div>
-                <div className="mt-4">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Λείπουν</p>
-                  <MissingDocumentChips missing={missing} limit={4} />
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <TextButton icon={Eye} onClick={() => setSelectedAssetId(asset.id)}>{action.label}</TextButton>
-                </div>
-              </article>
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-base font-semibold text-[#13211f]">{asset.code}</span>
+                    <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
+                  </span>
+                  <span className="mt-1 block truncate text-sm text-slate-600">{asset.name}</span>
+                  <span className="mt-1 block truncate font-mono text-xs text-slate-400">{asset.plate ?? asset.serial}</span>
+                </span>
+
+                <span className="min-w-0">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Εμπόδιο</span>
+                  <span className="mt-1 block text-sm leading-6 text-slate-600">{assetBlockerText(asset, missing)}</span>
+                </span>
+
+                <span>
+                  <ReadinessBar score={score} />
+                  <span className="mt-3 block">
+                    <MissingDocumentSummary missing={missing} />
+                  </span>
+                </span>
+
+                <span className="flex items-center justify-between gap-3 2xl:justify-end">
+                  <span className="text-sm font-semibold text-[#11685f]">{action.label}</span>
+                  <ArrowRight size={16} className="text-[#11685f]" />
+                </span>
+              </button>
             );
           })}
           {!filteredAssets.length ? (
@@ -1100,73 +1143,75 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
           ) : null}
         </div>
 
-        <div className="hidden overflow-x-auto 2xl:block">
-          <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-sm">
-            <colgroup>
-              <col className="w-[21%]" />
-              <col className="w-[14%]" />
-              <col className="w-[14%]" />
-              <col className="w-[13%]" />
-              <col className="w-[15%]" />
-              <col className="w-[15%]" />
-              <col className="w-[8%]" />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-[#d9e2dc] text-xs uppercase tracking-[0.14em] text-slate-500">
-                <th className="w-[210px] py-3 pr-4 font-semibold">Πάγιο</th>
-                <th className="py-3 pr-4 font-semibold">Τοποθεσία</th>
-                <th className="py-3 pr-4 font-semibold">Χειριστής</th>
-                <th className="py-3 pr-4 font-semibold">Κατάσταση</th>
-                <th className="py-3 pr-4 font-semibold">Ετοιμότητα</th>
-                <th className="py-3 font-semibold">Λείπουν</th>
-                <th className="py-3 pl-4 text-right font-semibold">Ενέργεια</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAssets.map((asset) => {
-                const missing = getMissingDocumentCategories(asset);
-                const action = assetAction(asset);
+        {showFullRegistry ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-sm">
+              <colgroup>
+                <col className="w-[21%]" />
+                <col className="w-[14%]" />
+                <col className="w-[14%]" />
+                <col className="w-[13%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-[8%]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-[#d9e2dc] text-xs uppercase tracking-[0.14em] text-slate-500">
+                  <th className="w-[210px] py-3 pr-4 font-semibold">Πάγιο</th>
+                  <th className="py-3 pr-4 font-semibold">Τοποθεσία</th>
+                  <th className="py-3 pr-4 font-semibold">Χειριστής</th>
+                  <th className="py-3 pr-4 font-semibold">Κατάσταση</th>
+                  <th className="py-3 pr-4 font-semibold">Ετοιμότητα</th>
+                  <th className="py-3 font-semibold">Λείπουν</th>
+                  <th className="py-3 pl-4 text-right font-semibold">Ενέργεια</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAssets.map((asset) => {
+                  const missing = getMissingDocumentCategories(asset);
+                  const action = assetAction(asset);
 
-                return (
-                  <tr key={asset.id} className="border-b border-[#e3e9e2] align-top last:border-0">
-                    <td className="py-4 pr-4">
-                      <p className="font-semibold text-[#13211f]">{asset.code}</p>
-                      <p className="truncate text-slate-600">{asset.name}</p>
-                      <p className="mt-1 font-mono text-xs text-slate-400">{asset.plate ?? asset.serial}</p>
-                    </td>
-                    <td className="py-4 pr-4 text-slate-600">
-                      <span className="block truncate">{asset.location}</span>
-                    </td>
-                    <td className="py-4 pr-4 text-slate-600">
-                      <span className="block truncate">{asset.operator}</span>
-                    </td>
-                    <td className="py-4 pr-4">
-                      <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
-                    </td>
-                    <td className="py-4 pr-4">
-                      <ReadinessBar score={getReadinessScore(asset)} />
-                    </td>
-                    <td className="py-4 text-slate-600">
-                      <div className="max-w-[260px]">
-                        <MissingDocumentChips missing={missing} limit={3} />
-                      </div>
-                    </td>
-                    <td className="py-4 pl-4 text-right">
-                      <TextButton icon={Eye} onClick={() => setSelectedAssetId(asset.id)}>{action.label}</TextButton>
+                  return (
+                    <tr key={asset.id} className="border-b border-[#e3e9e2] align-top last:border-0">
+                      <td className="py-4 pr-4">
+                        <p className="font-semibold text-[#13211f]">{asset.code}</p>
+                        <p className="truncate text-slate-600">{asset.name}</p>
+                        <p className="mt-1 font-mono text-xs text-slate-400">{asset.plate ?? asset.serial}</p>
+                      </td>
+                      <td className="py-4 pr-4 text-slate-600">
+                        <span className="block truncate">{asset.location}</span>
+                      </td>
+                      <td className="py-4 pr-4 text-slate-600">
+                        <span className="block truncate">{asset.operator}</span>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
+                      </td>
+                      <td className="py-4 pr-4">
+                        <ReadinessBar score={getReadinessScore(asset)} />
+                      </td>
+                      <td className="py-4 text-slate-600">
+                        <div className="max-w-[260px]">
+                          <MissingDocumentChips missing={missing} limit={3} />
+                        </div>
+                      </td>
+                      <td className="py-4 pl-4 text-right">
+                        <TextButton icon={Eye} onClick={() => setSelectedAssetId(asset.id)}>{action.label}</TextButton>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!filteredAssets.length ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-sm text-slate-500">
+                      Δεν βρέθηκαν πάγια για αυτό το φίλτρο.
                     </td>
                   </tr>
-                );
-              })}
-              {!filteredAssets.length ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm text-slate-500">
-                    Δεν βρέθηκαν πάγια για αυτό το φίλτρο.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </DataCard>
       {selectedAsset ? (
         <AssetDrawer asset={selectedAsset} onClose={() => setSelectedAssetId(null)} setActiveTab={setActiveTab} />
@@ -1627,25 +1672,12 @@ function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
 }
 
 function AssetsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
-  const closestAssets = assets
-    .filter((asset) => asset.status !== "ready")
-    .sort((a, b) => getReadinessScore(b) - getReadinessScore(a))
-    .slice(0, 3);
-  const missingCounts = Object.entries(
-    assets.reduce<Record<string, number>>((counts, asset) => {
-      getMissingDocumentCategories(asset).forEach((category) => {
-        counts[category] = (counts[category] ?? 0) + 1;
-      });
-
-      return counts;
-    }, {}),
-  )
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 4);
-
   return (
-    <div className="space-y-4">
-      <DataCard title="Μη διαθέσιμα σήμερα">
+    <DataCard title="Σημερινά blockers">
+      <div className="space-y-3">
+        <p className="text-sm leading-6 text-slate-600">
+          Τα πάγια που δεν πρέπει να μπουν σε ανάθεση μέχρι να κλείσει το βασικό εμπόδιο.
+        </p>
         <div className="space-y-3">
           {blockedAssets.map((asset) => (
             <button
@@ -1658,53 +1690,13 @@ function AssetsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => vo
                 <p className="text-sm font-semibold text-[#13211f]">{asset.code}</p>
                 <StatusPill label="μη διαθέσιμο" tone="blocked" />
               </div>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{asset.name}</p>
+              <p className="mt-1 text-sm leading-5 text-slate-600">{asset.name}</p>
+              <p className="mt-2 text-xs font-semibold text-[#11685f]">Άνοιγμα βλαβών</p>
             </button>
           ))}
         </div>
-      </DataCard>
-
-      <DataCard title="Πιο κοντά σε ανάθεση">
-        <div className="space-y-3">
-          {closestAssets.map((asset) => {
-            const score = getReadinessScore(asset);
-
-            return (
-              <button
-                key={asset.id}
-                type="button"
-                onClick={() => setActiveTab("documents")}
-                className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-[#13211f]">{asset.code}</p>
-                  <span className="text-xs font-semibold text-slate-500">{score}%</span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e7ece8]">
-                  <div className="h-full rounded-full bg-[#f59e0b]" style={{ width: `${score}%` }} />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </DataCard>
-
-      <DataCard title="Λείπουν συχνά">
-        <div className="space-y-2">
-          {missingCounts.map(([category, count]) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setActiveTab("documents")}
-              className="flex min-h-10 w-full items-center justify-between gap-3 rounded-md border border-[#e3e9e2] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <span className="text-sm text-slate-600">{categoryLabels[category] ?? category}</span>
-              <span className="rounded-full bg-[#e7ece8] px-2 py-0.5 text-xs font-semibold text-slate-600">{count}</span>
-            </button>
-          ))}
-        </div>
-      </DataCard>
-    </div>
+      </div>
+    </DataCard>
   );
 }
 
