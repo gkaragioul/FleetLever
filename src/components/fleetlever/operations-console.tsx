@@ -323,6 +323,44 @@ function MetricStrip({ items, ariaLabel }: { items: MetricStripItem[]; ariaLabel
   );
 }
 
+function OperationsPage({
+  eyebrow,
+  title,
+  description,
+  action,
+  metrics,
+  metricAriaLabel,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+  metrics?: MetricStripItem[];
+  metricAriaLabel?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-4">
+      <PanelHeader eyebrow={eyebrow} title={title} description={description} action={action} />
+      {metrics ? <MetricStrip ariaLabel={metricAriaLabel} items={metrics} /> : null}
+      {children}
+    </div>
+  );
+}
+
+function SectionGrid({
+  children,
+  variant = "single",
+}: {
+  children: React.ReactNode;
+  variant?: "single" | "two";
+}) {
+  const className = variant === "two" ? "grid items-stretch gap-4 xl:grid-cols-2" : "grid gap-4";
+
+  return <div className={className}>{children}</div>;
+}
+
 function ReadinessBar({ score }: { score: number }) {
   const color = score >= 80 ? "bg-emerald-500" : score >= 55 ? "bg-amber-500" : "bg-red-500";
 
@@ -367,6 +405,64 @@ function DrawerSection({ title, children }: { title: string; children: React.Rea
       <h3 className="text-base font-semibold text-[#13211f]">{title}</h3>
       <div className="mt-3">{children}</div>
     </section>
+  );
+}
+
+function InspectorDrawer({
+  titleId,
+  eyebrow,
+  title,
+  description,
+  closeLabel,
+  onClose,
+  children,
+  footer,
+}: {
+  titleId: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  closeLabel: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  footer: React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <button
+        type="button"
+        aria-label={closeLabel}
+        className="absolute inset-0 bg-slate-950/30"
+        onClick={onClose}
+      />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-[#d9e2dc] bg-[#fbfaf6] shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-[#d9e2dc] bg-[#fbfaf6]/95 p-5 backdrop-blur">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">{eyebrow}</p>
+              <h2 id={titleId} className="mt-2 break-words text-2xl font-semibold leading-tight text-[#13211f]">
+                {title}
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">{description}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              aria-label={closeLabel}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-5">{children}</div>
+
+        <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
+          {footer}
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -692,163 +788,139 @@ function AssetDrawer({
   const action = assetAction(asset);
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="asset-drawer-title">
-      <button
-        type="button"
-        aria-label="Κλείσιμο λεπτομερειών παγίου"
-        className="absolute inset-0 bg-slate-950/30"
-        onClick={onClose}
-      />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-[#d9e2dc] bg-[#fbfaf6] shadow-2xl">
-        <div className="sticky top-0 z-10 border-b border-[#d9e2dc] bg-[#fbfaf6]/95 p-5 backdrop-blur">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">{asset.type}</p>
-              <h2 id="asset-drawer-title" className="mt-2 break-words text-2xl font-semibold leading-tight text-[#13211f]">
-                {asset.code} · {asset.name}
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">{asset.plate ?? asset.serial} · {asset.location}</p>
-            </div>
+    <InspectorDrawer
+      titleId="asset-drawer-title"
+      eyebrow={asset.type}
+      title={`${asset.code} · ${asset.name}`}
+      description={`${asset.plate ?? asset.serial} · ${asset.location}`}
+      closeLabel="Κλείσιμο λεπτομερειών παγίου"
+      onClose={onClose}
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              aria-label="Κλείσιμο"
+              onClick={() => setActiveTab("documents")}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
-              <X size={17} />
+              <UploadCloud size={15} />
+              Έγγραφο
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("issues")}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <QrCode size={15} />
+              Βλάβη
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab(action.tab)}
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          >
+            <ArrowRight size={15} />
+            {action.label}
+          </button>
         </div>
-
-        <div className="space-y-4 p-5">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-xs font-semibold text-slate-500">Κατάσταση</p>
-              <div className="mt-2">
-                <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
-              </div>
-            </div>
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-xs font-semibold text-slate-500">Ετοιμότητα</p>
-              <p className="mt-2 text-2xl font-semibold text-[#13211f]">{score}%</p>
-            </div>
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-xs font-semibold text-slate-500">Ιδιοκτησία</p>
-              <p className="mt-2 text-sm font-semibold text-[#13211f]">{asset.ownership}</p>
-            </div>
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-xs font-semibold text-slate-500">Κατάσταση</p>
+          <div className="mt-2">
+            <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
           </div>
-
-          <DrawerSection title="Λείπουν">
-            <MissingDocumentChips missing={missing} limit={6} />
-          </DrawerSection>
-
-          <DrawerSection title="Συνδεδεμένα έγγραφα">
-            <div className="space-y-2">
-              {linkedDocuments.length ? (
-                linkedDocuments.map((document) => (
-                  <button
-                    key={document.id}
-                    type="button"
-                    onClick={() => setActiveTab("documents")}
-                    className="grid min-h-12 w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-[#13211f]">{document.title}</span>
-                      <span className="text-xs text-slate-500">
-                        {categoryLabels[document.category]} · {document.expiresAt ? formatDate(document.expiresAt) : "χωρίς λήξη"}
-                      </span>
-                    </span>
-                    <StatusPill label={statusLabels[documentStatus(document)]} tone={documentStatus(document)} />
-                  </button>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500">Δεν υπάρχουν συνδεδεμένα έγγραφα.</p>
-              )}
-            </div>
-          </DrawerSection>
-
-          <DrawerSection title="Βλάβες και συντήρηση">
-            <div className="space-y-2">
-              {[...linkedIssues, ...linkedMaintenance].length ? (
-                <>
-                  {linkedIssues.map((issue) => (
-                    <button
-                      key={issue.id}
-                      type="button"
-                      onClick={() => setActiveTab("issues")}
-                      className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm font-semibold text-[#13211f]">{issue.title}</p>
-                        <StatusPill label={issue.blocking ? "μη διαθέσιμο" : statusLabels[issue.severity]} tone={issue.blocking ? "blocked" : issue.severity} />
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">{issue.assignee}</p>
-                    </button>
-                  ))}
-                  {linkedMaintenance.map((task) => (
-                    <button
-                      key={task.id}
-                      type="button"
-                      onClick={() => setActiveTab("maintenance")}
-                      className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm font-semibold text-[#13211f]">{task.title}</p>
-                        <StatusPill label={statusLabels[task.status]} tone={task.status} />
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">Υπεύθυνος: {task.owner} · {formatDate(task.dueAt)}</p>
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <p className="text-sm text-slate-500">Δεν υπάρχουν ανοιχτές βλάβες ή εργασίες συντήρησης.</p>
-              )}
-            </div>
-          </DrawerSection>
-
-          <DrawerSection title="Χειριστής">
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-sm font-semibold text-[#13211f]">{asset.operator}</p>
-              <p className="mt-1 text-sm text-slate-600">{operator?.role ?? "Χειριστής"}</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Άδεια έως {operator ? formatDate(operator.licenseExpiresAt) : "άγνωστο"}
-              </p>
-            </div>
-          </DrawerSection>
         </div>
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-xs font-semibold text-slate-500">Ετοιμότητα</p>
+          <p className="mt-2 text-2xl font-semibold text-[#13211f]">{score}%</p>
+        </div>
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-xs font-semibold text-slate-500">Ιδιοκτησία</p>
+          <p className="mt-2 text-sm font-semibold text-[#13211f]">{asset.ownership}</p>
+        </div>
+      </div>
 
-        <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
+      <DrawerSection title="Λείπουν">
+        <MissingDocumentChips missing={missing} limit={6} />
+      </DrawerSection>
+
+      <DrawerSection title="Συνδεδεμένα έγγραφα">
+        <div className="space-y-2">
+          {linkedDocuments.length ? (
+            linkedDocuments.map((document) => (
               <button
+                key={document.id}
                 type="button"
                 onClick={() => setActiveTab("documents")}
-                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                className="grid min-h-12 w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
-                <UploadCloud size={15} />
-                Έγγραφο
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-[#13211f]">{document.title}</span>
+                  <span className="text-xs text-slate-500">
+                    {categoryLabels[document.category]} · {document.expiresAt ? formatDate(document.expiresAt) : "χωρίς λήξη"}
+                  </span>
+                </span>
+                <StatusPill label={statusLabels[documentStatus(document)]} tone={documentStatus(document)} />
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("issues")}
-                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <QrCode size={15} />
-                Βλάβη
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab(action.tab)}
-              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <ArrowRight size={15} />
-              {action.label}
-            </button>
-          </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500">Δεν υπάρχουν συνδεδεμένα έγγραφα.</p>
+          )}
         </div>
-      </aside>
-    </div>
+      </DrawerSection>
+
+      <DrawerSection title="Βλάβες και συντήρηση">
+        <div className="space-y-2">
+          {[...linkedIssues, ...linkedMaintenance].length ? (
+            <>
+              {linkedIssues.map((issue) => (
+                <button
+                  key={issue.id}
+                  type="button"
+                  onClick={() => setActiveTab("issues")}
+                  className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-[#13211f]">{issue.title}</p>
+                    <StatusPill label={issue.blocking ? "μη διαθέσιμο" : statusLabels[issue.severity]} tone={issue.blocking ? "blocked" : issue.severity} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{issue.assignee}</p>
+                </button>
+              ))}
+              {linkedMaintenance.map((task) => (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => setActiveTab("maintenance")}
+                  className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-[#13211f]">{task.title}</p>
+                    <StatusPill label={statusLabels[task.status]} tone={task.status} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Υπεύθυνος: {task.owner} · {formatDate(task.dueAt)}</p>
+                </button>
+              ))}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">Δεν υπάρχουν ανοιχτές βλάβες ή εργασίες συντήρησης.</p>
+          )}
+        </div>
+      </DrawerSection>
+
+      <DrawerSection title="Χειριστής">
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-sm font-semibold text-[#13211f]">{asset.operator}</p>
+          <p className="mt-1 text-sm text-slate-600">{operator?.role ?? "Χειριστής"}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Άδεια έως {operator ? formatDate(operator.licenseExpiresAt) : "άγνωστο"}
+          </p>
+        </div>
+      </DrawerSection>
+    </InspectorDrawer>
   );
 }
 
@@ -1141,17 +1213,13 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   ];
 
   return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Πάγια"
-        title="Τι μπορεί να ανατεθεί σήμερα;"
-        description="Δες τα πάγια που είναι έτοιμα, ποια μπλοκάρονται και ποια ενέργεια λείπει."
-        action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
-      />
-
-      <MetricStrip
-        ariaLabel="Σύνοψη παγίων"
-        items={[
+    <OperationsPage
+      eyebrow="Πάγια"
+      title="Τι μπορεί να ανατεθεί σήμερα;"
+      description="Δες τα πάγια που είναι έτοιμα, ποια μπλοκάρονται και ποια ενέργεια λείπει."
+      action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
+      metricAriaLabel="Σύνοψη παγίων"
+      metrics={[
           {
             icon: Truck,
             label: "Έτοιμα",
@@ -1189,7 +1257,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
             onClick: () => setAssetFilter("all"),
           },
         ]}
-      />
+    >
 
       <DataCard title="Ουρά ανάθεσης">
         <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -1343,7 +1411,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
       {selectedAsset ? (
         <AssetDrawer asset={selectedAsset} onClose={() => setSelectedAssetId(null)} setActiveTab={setActiveTab} />
       ) : null}
-    </div>
+    </OperationsPage>
   );
 }
 
@@ -1363,144 +1431,116 @@ function DocumentDrawer({
   const primaryAction = documentAction(document);
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="document-drawer-title">
-      <button
-        type="button"
-        aria-label="Κλείσιμο λεπτομερειών εγγράφου"
-        className="absolute inset-0 bg-slate-950/30"
-        onClick={onClose}
-      />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-[#d9e2dc] bg-[#fbfaf6] shadow-2xl">
-        <div className="sticky top-0 z-10 border-b border-[#d9e2dc] bg-[#fbfaf6]/95 p-5 backdrop-blur">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">
-                {categoryLabels[document.category]}
-              </p>
-              <h2 id="document-drawer-title" className="mt-2 break-words text-2xl font-semibold leading-tight text-[#13211f]">
-                {document.title}
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">{documentTarget(document)}</p>
-            </div>
+    <InspectorDrawer
+      titleId="document-drawer-title"
+      eyebrow={categoryLabels[document.category]}
+      title={document.title}
+      description={documentTarget(document)}
+      closeLabel="Κλείσιμο λεπτομερειών εγγράφου"
+      onClose={onClose}
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              aria-label="Κλείσιμο"
+              onClick={() => setActiveTab("assets")}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
-              <X size={17} />
+              <Truck size={15} />
+              Πάγιο
+            </button>
+            <button
+              type="button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <UploadCloud size={15} />
+              Ανέβασμα
             </button>
           </div>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          >
+            <ArrowRight size={15} />
+            {primaryAction}
+          </button>
         </div>
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-xs font-semibold text-slate-500">Προθεσμία</p>
+          <p className="mt-2 text-sm font-semibold text-[#13211f]">
+            {document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη"}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">{documentDueText(document)}</p>
+        </div>
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-xs font-semibold text-slate-500">Κατάσταση</p>
+          <div className="mt-2">
+            <StatusPill label={statusLabels[status]} tone={status} />
+          </div>
+        </div>
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          <p className="text-xs font-semibold text-slate-500">Έλεγχος</p>
+          <p className="mt-2 text-sm font-semibold text-[#13211f]">{statusLabels[document.reviewState]}</p>
+          <p className="mt-1 text-xs text-slate-500">AI {Math.round(document.confidence * 100)}%</p>
+        </div>
+      </div>
 
-        <div className="space-y-4 p-5">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-xs font-semibold text-slate-500">Προθεσμία</p>
-              <p className="mt-2 text-sm font-semibold text-[#13211f]">
-                {document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη"}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">{documentDueText(document)}</p>
+      <DrawerSection title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
+        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+          {asset ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                <span className="block text-sm font-semibold text-[#13211f]">{asset.code} · {asset.name}</span>
+                <span className="mt-1 block text-xs text-slate-500">{asset.plate ?? asset.serial} · {asset.location}</span>
+              </span>
+              <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
             </div>
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-xs font-semibold text-slate-500">Κατάσταση</p>
-              <div className="mt-2">
-                <StatusPill label={statusLabels[status]} tone={status} />
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-[#13211f]">{document.operator}</p>
+              <p className="mt-1 text-xs text-slate-500">Έγγραφο χειριστή</p>
+            </>
+          )}
+        </div>
+      </DrawerSection>
+
+      <DrawerSection title="Σχετική δουλειά">
+        <div className="space-y-2">
+          {linkedIssue ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("issues")}
+              className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-[#13211f]">{linkedIssue.title}</p>
+                <StatusPill label="μη διαθέσιμο" tone="blocked" />
               </div>
-            </div>
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <p className="text-xs font-semibold text-slate-500">Έλεγχος</p>
-              <p className="mt-2 text-sm font-semibold text-[#13211f]">{statusLabels[document.reviewState]}</p>
-              <p className="mt-1 text-xs text-slate-500">AI {Math.round(document.confidence * 100)}%</p>
-            </div>
-          </div>
-
-          <DrawerSection title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
-            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              {asset ? (
-                <>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <span>
-                      <span className="block text-sm font-semibold text-[#13211f]">{asset.code} · {asset.name}</span>
-                      <span className="mt-1 block text-xs text-slate-500">{asset.plate ?? asset.serial} · {asset.location}</span>
-                    </span>
-                    <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-[#13211f]">{document.operator}</p>
-                  <p className="mt-1 text-xs text-slate-500">Έγγραφο χειριστή</p>
-                </>
-              )}
-            </div>
-          </DrawerSection>
-
-          <DrawerSection title="Σχετική δουλειά">
-            <div className="space-y-2">
-              {linkedIssue ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("issues")}
-                  className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-semibold text-[#13211f]">{linkedIssue.title}</p>
-                    <StatusPill label="μη διαθέσιμο" tone="blocked" />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{linkedIssue.assignee}</p>
-                </button>
-              ) : null}
-              {linkedTask ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("maintenance")}
-                  className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-semibold text-[#13211f]">{linkedTask.title}</p>
-                    <StatusPill label={statusLabels[linkedTask.status]} tone={linkedTask.status} />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{linkedTask.owner} · {formatDate(linkedTask.dueAt)}</p>
-                </button>
-              ) : null}
-              {!linkedIssue && !linkedTask ? (
-                <p className="text-sm text-slate-500">Δεν υπάρχει ανοιχτή βλάβη ή εργασία συντήρησης για αυτό το έγγραφο.</p>
-              ) : null}
-            </div>
-          </DrawerSection>
-        </div>
-
-        <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setActiveTab("assets")}
-                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <Truck size={15} />
-                Πάγιο
-              </button>
-              <button
-                type="button"
-                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <UploadCloud size={15} />
-                Ανέβασμα
-              </button>
-            </div>
+              <p className="mt-1 text-xs text-slate-500">{linkedIssue.assignee}</p>
+            </button>
+          ) : null}
+          {linkedTask ? (
             <button
               type="button"
-              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              onClick={() => setActiveTab("maintenance")}
+              className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
-              <ArrowRight size={15} />
-              {primaryAction}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-[#13211f]">{linkedTask.title}</p>
+                <StatusPill label={statusLabels[linkedTask.status]} tone={linkedTask.status} />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">{linkedTask.owner} · {formatDate(linkedTask.dueAt)}</p>
             </button>
-          </div>
+          ) : null}
+          {!linkedIssue && !linkedTask ? (
+            <p className="text-sm text-slate-500">Δεν υπάρχει ανοιχτή βλάβη ή εργασία συντήρησης για αυτό το έγγραφο.</p>
+          ) : null}
         </div>
-      </aside>
-    </div>
+      </DrawerSection>
+    </InspectorDrawer>
   );
 }
 
@@ -1532,16 +1572,13 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
   ];
 
   return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Έγγραφα"
-        title="Έγγραφα που θέλουν ενέργεια"
-        description="Λήξεις, έλεγχοι και εγκρίσεις σε μία ουρά για το γραφείο."
-        action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη εγγράφων"
-        items={[
+    <OperationsPage
+      eyebrow="Έγγραφα"
+      title="Έγγραφα που θέλουν ενέργεια"
+      description="Λήξεις, έλεγχοι και εγκρίσεις σε μία ουρά για το γραφείο."
+      action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
+      metricAriaLabel="Σύνοψη εγγράφων"
+      metrics={[
           {
             icon: AlertTriangle,
             label: "Ενέργειες",
@@ -1579,7 +1616,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
             onClick: () => setDocumentFilter("valid"),
           },
         ]}
-      />
+    >
       <DataCard title="Ουρά εγγράφων">
         <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex flex-wrap gap-2">
@@ -1649,7 +1686,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
       {selectedDocument ? (
         <DocumentDrawer document={selectedDocument} onClose={() => setSelectedDocumentId(null)} setActiveTab={setActiveTab} />
       ) : null}
-    </div>
+    </OperationsPage>
   );
 }
 
@@ -1679,22 +1716,19 @@ function CompliancePanel() {
   });
 
   return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Συμμόρφωση"
-        title="Κανόνες συμμόρφωσης"
-        description="Τι πρέπει να έχει κάθε τύπος παγίου και ποια πάγια έχουν κενά."
-        action={<ActionButton icon={ShieldCheck}>Νέος κανόνας</ActionButton>}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη συμμόρφωσης"
-        items={[
+    <OperationsPage
+      eyebrow="Συμμόρφωση"
+      title="Κανόνες συμμόρφωσης"
+      description="Τι πρέπει να έχει κάθε τύπος παγίου και ποια πάγια έχουν κενά."
+      action={<ActionButton icon={ShieldCheck}>Νέος κανόνας</ActionButton>}
+      metricAriaLabel="Σύνοψη συμμόρφωσης"
+      metrics={[
           { icon: ShieldCheck, label: "Τύποι παγίων", value: complianceTemplates.length, detail: "Με κανόνες εγγράφων", tone: "teal" },
           { icon: FileText, label: "Κατηγορίες", value: requiredCategories.length, detail: "KTEO, άδειες, ασφάλειες", tone: "slate" },
           { icon: AlertTriangle, label: "Πάγια με κενά", value: assetsWithGaps.length, detail: "Θέλουν συμπλήρωση", tone: "amber" },
         ]}
-      />
-      <div className="grid items-stretch gap-4 xl:grid-cols-2">
+    >
+      <SectionGrid variant="two">
         <DataCard title="Πάγια με κενά">
           <div className="divide-y divide-[#e3e9e2]">
             {assetsWithGaps.map((asset) => {
@@ -1755,29 +1789,26 @@ function CompliancePanel() {
             ))}
           </div>
         </DataCard>
-      </div>
-    </div>
+      </SectionGrid>
+    </OperationsPage>
   );
 }
 
 function MaintenancePanel() {
   return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Συντήρηση"
-        title="Τι service πρέπει να γίνει και από ποιον"
-        description="Εκπρόθεσμες εργασίες, επόμενα service και κόστος σε μία ουρά εργασίας."
-        action={<ActionButton icon={Wrench}>Νέα εργασία</ActionButton>}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη συντήρησης"
-        items={[
+    <OperationsPage
+      eyebrow="Συντήρηση"
+      title="Τι service πρέπει να γίνει και από ποιον"
+      description="Εκπρόθεσμες εργασίες, επόμενα service και κόστος σε μία ουρά εργασίας."
+      action={<ActionButton icon={Wrench}>Νέα εργασία</ActionButton>}
+      metricAriaLabel="Σύνοψη συντήρησης"
+      metrics={[
           { icon: Wrench, label: "Ανοιχτές", value: maintenanceTasks.length, detail: "Εργασίες συντήρησης", tone: "slate" },
           { icon: AlertTriangle, label: "Εκπρόθεσμες", value: overdueMaintenance.length, detail: "Θέλουν ανάθεση", tone: "red" },
           { icon: ClipboardList, label: "Κόστος", value: formatCurrency(totalMaintenanceCost), detail: "Καταγεγραμμένο κόστος", tone: "teal" },
         ]}
-      />
-      <div className="space-y-4">
+    >
+      <SectionGrid>
         <DataCard title="Ουρά εργασιών">
           <div className="mb-4 flex flex-wrap gap-2">
             <FilterChip active>Όλες</FilterChip>
@@ -1836,29 +1867,26 @@ function MaintenancePanel() {
             })}
           </div>
         </DataCard>
-      </div>
-    </div>
+      </SectionGrid>
+    </OperationsPage>
   );
 }
 
 function IssuesPanel() {
   return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Βλάβες"
-        title="Τι κρατάει πάγια εκτός δουλειάς"
-        description="Βλάβες που μπλοκάρουν ανάθεση, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
-        action={<ActionButton icon={QrCode}>Νέα βλάβη</ActionButton>}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη βλαβών"
-        items={[
+    <OperationsPage
+      eyebrow="Βλάβες"
+      title="Τι κρατάει πάγια εκτός δουλειάς"
+      description="Βλάβες που μπλοκάρουν ανάθεση, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
+      action={<ActionButton icon={QrCode}>Νέα βλάβη</ActionButton>}
+      metricAriaLabel="Σύνοψη βλαβών"
+      metrics={[
           { icon: AlertTriangle, label: "Ανοιχτές", value: issues.length, detail: "Χρειάζονται παρακολούθηση", tone: "slate" },
           { icon: Truck, label: "Μπλοκάρουν", value: blockingIssues.length, detail: "Δεν μπαίνουν σε πρόγραμμα", tone: "red" },
           { icon: Users, label: "Με υπεύθυνο", value: issues.filter((issue) => issue.assignee).length, detail: "Έχουν ανάθεση", tone: "teal" },
         ]}
-      />
-      <div className="grid gap-4">
+    >
+      <SectionGrid>
         <DataCard title="Ανοιχτές βλάβες">
           <div className="mb-4 flex flex-wrap gap-2">
             <FilterChip active>Όλες</FilterChip>
@@ -1892,8 +1920,8 @@ function IssuesPanel() {
             })}
           </div>
         </DataCard>
-      </div>
-    </div>
+      </SectionGrid>
+    </OperationsPage>
   );
 }
 
@@ -1902,21 +1930,18 @@ function OperatorsPanel() {
   const expiringLicenses = operators.filter((operator) => daysUntil(operator.licenseExpiresAt) <= 30);
 
   return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Χειριστές"
-        title="Άδειες και αναθέσεις χειριστών"
-        description="Ποιος είναι διαθέσιμος, ποια άδεια λήγει και σε ποιο πάγιο είναι συνδεδεμένος."
-        action={<ActionButton icon={Users}>Νέος χειριστής</ActionButton>}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη χειριστών"
-        items={[
+    <OperationsPage
+      eyebrow="Χειριστές"
+      title="Άδειες και αναθέσεις χειριστών"
+      description="Ποιος είναι διαθέσιμος, ποια άδεια λήγει και σε ποιο πάγιο είναι συνδεδεμένος."
+      action={<ActionButton icon={Users}>Νέος χειριστής</ActionButton>}
+      metricAriaLabel="Σύνοψη χειριστών"
+      metrics={[
           { icon: Users, label: "Χειριστές", value: operators.length, detail: "Ενεργοί άνθρωποι", tone: "slate" },
           { icon: Truck, label: "Αναθέσεις", value: totalAssignments, detail: "Συνδεδεμένα πάγια", tone: "teal" },
           { icon: AlertTriangle, label: "Κοντινές λήξεις", value: expiringLicenses.length, detail: "Άδειες στις 30 ημέρες", tone: "amber" },
         ]}
-      />
+    >
       <DataCard title="Ομάδα χειριστών">
         <div className="divide-y divide-[#e3e9e2]">
           {operators.map((operator) => {
@@ -1968,7 +1993,7 @@ function OperatorsPanel() {
           })}
         </div>
       </DataCard>
-    </div>
+    </OperationsPage>
   );
 }
 
