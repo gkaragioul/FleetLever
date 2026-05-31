@@ -65,7 +65,7 @@ type TabId =
   | "settings";
 
 const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
-  { id: "dashboard", label: "Πίνακας", icon: Gauge },
+  { id: "dashboard", label: "Επισκόπηση", icon: Gauge },
   { id: "assets", label: "Πάγια", icon: Truck },
   { id: "documents", label: "Έγγραφα", icon: FileText },
   { id: "compliance", label: "Συμμόρφωση", icon: ShieldCheck },
@@ -419,27 +419,80 @@ function FilterChip({
 }
 
 function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const readinessPercent = Math.round((readyAssets.length / assets.length) * 100);
+  const overviewItems = [
+    { icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Πάγια για ανάθεση", tab: "assets" as TabId },
+    { icon: AlertTriangle, label: "Μπλοκάρουν", value: blockedAssets.length, detail: "B-12 και EX-01", tab: "issues" as TabId },
+    { icon: FileText, label: "Λήξεις", value: expiringDocuments.length, detail: "Κοντινές προθεσμίες", tab: "documents" as TabId },
+    { icon: Wrench, label: "Service", value: overdueMaintenance.length, detail: "Εκπρόθεσμες εργασίες", tab: "maintenance" as TabId },
+  ];
+
   return (
     <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Πίνακας"
-        title="Σήμερα στον στόλο"
-        description="Τα σημεία που χρειάζονται κλείσιμο πριν βγει το πρόγραμμα."
-        action={<ActionButton icon={Bot} onClick={() => setActiveTab("copilot")}>Copilot</ActionButton>}
-      />
+      <section
+        className="overflow-hidden rounded-lg border border-[#27483f] bg-[#203832] text-[#f7faf4] shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+        aria-labelledby="fleet-overview-title"
+      >
+        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#aee5d8]">Επισκόπηση</p>
+            <h1 id="fleet-overview-title" className="mt-2 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">
+              Εικόνα στόλου σήμερα
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d8e4de]">
+              Τι είναι έτοιμο, τι μπλοκάρει και τι χρειάζεται κλείσιμο πριν βγει το πρόγραμμα.
+            </p>
+          </div>
 
-      <MetricStrip
-        ariaLabel="Σύνοψη ημέρας"
-        items={[
-          { icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Πάγια για ανάθεση", tone: "teal" },
-          { icon: AlertTriangle, label: "Μη διαθέσιμα", value: blockedAssets.length, detail: "Μένουν εκτός", tone: "red" },
-          { icon: FileText, label: "Λήξεις", value: expiringDocuments.length, detail: "Έγγραφα με προθεσμία", tone: "amber" },
-          { icon: Wrench, label: "Service", value: overdueMaintenance.length, detail: "Εκπρόθεσμες εργασίες", tone: "red" },
-        ]}
-      />
+          <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-[#aee5d8]">Ετοιμότητα ανάθεσης</p>
+                <p className="mt-1 text-3xl font-semibold">
+                  {readyAssets.length}/{assets.length}
+                </p>
+              </div>
+              <Truck className="mt-1 shrink-0 text-[#aee5d8]" size={22} />
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm text-[#d8e4de]">
+                <span>Έτοιμα πάγια</span>
+                <span>{readinessPercent}%</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-[#73d7c4]" style={{ width: `${readinessPercent}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-3">
-        <DataCard title="Προτεραιότητες">
+        <div className="grid grid-cols-2 border-t border-white/10 lg:grid-cols-4">
+          {overviewItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setActiveTab(item.tab)}
+                className="grid min-h-[112px] grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-b border-r border-white/10 p-4 text-left transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#aee5d8] [&:nth-child(2n)]:border-r-0 [&:nth-last-child(-n+2)]:border-b-0 lg:border-b-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(4n)]:border-r-0"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-[#aee5d8]">{item.label}</span>
+                  <span className="mt-2 block text-3xl font-semibold text-[#f7faf4]">{item.value}</span>
+                  <span className="mt-1 block truncate text-sm text-[#d8e4de]">{item.detail}</span>
+                </span>
+                <span className="rounded-md bg-white/10 p-2 text-[#aee5d8] ring-1 ring-white/10">
+                  <Icon size={18} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="grid items-stretch gap-4 lg:grid-cols-3">
+        <DataCard title="Επόμενες κινήσεις">
           <div className="divide-y divide-[#e3e9e2]">
             {[
               { title: "B-12 KTEO", detail: "Κλείσε ανανέωση πριν μπει σε διαδρομή.", tab: "issues" as TabId, tone: "blocked" },
@@ -1726,27 +1779,53 @@ function MaintenancePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void
             <FilterChip>Προγραμματισμένες</FilterChip>
             <FilterChip>Με κόστος</FilterChip>
           </div>
-          <div className="space-y-2">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {maintenanceTasks.map((task) => {
               const days = daysUntil(task.dueAt);
+              const asset = getAsset(task.assetId);
+              const isOverdue = task.status === "overdue" || days < 0;
 
               return (
-                <div key={task.id} className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-[#13211f]">{task.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {getAsset(task.assetId)?.code} · {task.owner} · {formatDate(task.dueAt)}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {days < 0 ? `Καθυστέρηση ${Math.abs(days)} ημερών` : `Σε ${days} ημέρες`}
-                      {task.cost ? ` · ${formatCurrency(task.cost)}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <article
+                  key={task.id}
+                  className={`flex min-h-[196px] flex-col rounded-md border p-4 ${
+                    isOverdue ? "border-red-200 bg-red-50/40" : "border-[#d9e2dc] bg-[#fdfbf7]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="line-clamp-2 font-semibold leading-5 text-[#13211f]">{task.title}</p>
+                      <p className="mt-1 truncate text-sm text-slate-600">
+                        {asset?.code} · {asset?.name}
+                      </p>
+                    </div>
                     <StatusPill label={statusLabels[task.status]} tone={task.status} />
+                  </div>
+
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3">
+                      <dt className="text-slate-500">Υπεύθυνος</dt>
+                      <dd className="truncate font-medium text-slate-700">{task.owner}</dd>
+                    </div>
+                    <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3">
+                      <dt className="text-slate-500">Προθεσμία</dt>
+                      <dd className="font-medium text-slate-700">{formatDate(task.dueAt)}</dd>
+                    </div>
+                    <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3">
+                      <dt className="text-slate-500">Χρόνος</dt>
+                      <dd className={isOverdue ? "font-semibold text-red-700" : "font-medium text-slate-700"}>
+                        {days < 0 ? `${Math.abs(days)} ημέρες καθυστέρηση` : `Σε ${days} ημέρες`}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                    <span className="text-sm font-semibold text-[#11685f]">
+                      {task.cost ? formatCurrency(task.cost) : "Χωρίς κόστος"}
+                    </span>
                     <TextButton icon={Users}>Ανάθεση</TextButton>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
@@ -2043,18 +2122,18 @@ function SettingsPanel() {
           const Icon = item.icon;
 
           return (
-          <DataCard key={item.title} title={item.title}>
-            <div className="flex items-start gap-3">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700 ring-1 ring-[#d2dbd5]">
-                <Icon size={18} />
-              </span>
-              <p className="text-sm leading-6 text-slate-600">{item.detail}</p>
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t border-[#e3e9e2] pt-3">
-              <StatusPill label="ρυθμισμένο" tone="valid" />
-              <TextButton icon={Settings}>Άνοιγμα</TextButton>
-            </div>
-          </DataCard>
+            <DataCard key={item.title} title={item.title}>
+              <div className="flex items-start gap-3">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700 ring-1 ring-[#d2dbd5]">
+                  <Icon size={18} />
+                </span>
+                <p className="text-sm leading-6 text-slate-600">{item.detail}</p>
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-[#e3e9e2] pt-3">
+                <StatusPill label="ρυθμισμένο" tone="valid" />
+                <TextButton icon={Settings}>Άνοιγμα</TextButton>
+              </div>
+            </DataCard>
           );
         })}
       </div>
