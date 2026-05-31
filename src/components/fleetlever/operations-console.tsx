@@ -483,6 +483,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
 }
 
 type AssetFilter = "all" | "ready" | "blocked" | "missing";
+type DocumentFilter = "attention" | "expired" | "upcoming" | "review" | "valid" | "all";
 
 function assetAction(asset: (typeof assets)[number]): { label: string; tab: TabId } {
   if (asset.status === "ready") {
@@ -563,6 +564,65 @@ function assetBlockerText(asset: (typeof assets)[number], missing: string[]) {
   }
 
   return "Έτοιμο για ανάθεση.";
+}
+
+function documentTarget(document: (typeof documents)[number]) {
+  const asset = document.assetId ? getAsset(document.assetId) : undefined;
+
+  if (asset) {
+    return `${asset.code} · ${asset.name}`;
+  }
+
+  return document.operator ?? "Χωρίς σύνδεση";
+}
+
+function documentDueText(document: (typeof documents)[number]) {
+  if (!document.expiresAt) {
+    return "Χωρίς λήξη";
+  }
+
+  const days = daysUntil(document.expiresAt);
+
+  if (days < 0) {
+    return `Έληξε πριν ${Math.abs(days)} ημέρες`;
+  }
+
+  if (days === 0) {
+    return "Λήγει σήμερα";
+  }
+
+  return `Λήγει σε ${days} ημέρες`;
+}
+
+function documentAction(document: (typeof documents)[number]) {
+  const status = documentStatus(document);
+
+  if (document.reviewState === "under review") {
+    return "Έγκριση";
+  }
+
+  if (status === "expired" || status === "critical" || status === "warning") {
+    return "Ανανέωση";
+  }
+
+  return "Άνοιγμα";
+}
+
+function isDocumentAttention(document: (typeof documents)[number]) {
+  return document.reviewState === "under review" || ["expired", "critical", "warning"].includes(documentStatus(document));
+}
+
+function filterDocuments(filter: DocumentFilter) {
+  return documents.filter((document) => {
+    const status = documentStatus(document);
+
+    if (filter === "attention") return isDocumentAttention(document);
+    if (filter === "expired") return status === "expired";
+    if (filter === "upcoming") return status === "critical" || status === "warning";
+    if (filter === "review") return document.reviewState === "under review";
+    if (filter === "valid") return status === "valid";
+    return true;
+  });
 }
 
 function AssetDrawer({
@@ -1244,75 +1304,292 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   );
 }
 
-function DocumentsPanel() {
+function DocumentDrawer({
+  document,
+  onClose,
+  setActiveTab,
+}: {
+  document: (typeof documents)[number];
+  onClose: () => void;
+  setActiveTab: (tab: TabId) => void;
+}) {
+  const asset = document.assetId ? getAsset(document.assetId) : undefined;
+  const linkedIssue = asset ? issues.find((issue) => issue.assetId === asset.id && issue.blocking) : undefined;
+  const linkedTask = asset ? maintenanceTasks.find((task) => task.assetId === asset.id && task.status !== "completed") : undefined;
+  const status = documentStatus(document);
+  const primaryAction = documentAction(document);
+
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="document-drawer-title">
+      <button
+        type="button"
+        aria-label="Κλείσιμο λεπτομερειών εγγράφου"
+        className="absolute inset-0 bg-slate-950/30"
+        onClick={onClose}
+      />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-[#d9e2dc] bg-[#fbfaf6] shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-[#d9e2dc] bg-[#fbfaf6]/95 p-5 backdrop-blur">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">
+                {categoryLabels[document.category]}
+              </p>
+              <h2 id="document-drawer-title" className="mt-2 break-words text-2xl font-semibold leading-tight text-[#13211f]">
+                {document.title}
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">{documentTarget(document)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              aria-label="Κλείσιμο"
+            >
+              <X size={17} />
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+              <p className="text-xs font-semibold text-slate-500">Προθεσμία</p>
+              <p className="mt-2 text-sm font-semibold text-[#13211f]">
+                {document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{documentDueText(document)}</p>
+            </div>
+            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+              <p className="text-xs font-semibold text-slate-500">Κατάσταση</p>
+              <div className="mt-2">
+                <StatusPill label={statusLabels[status]} tone={status} />
+              </div>
+            </div>
+            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+              <p className="text-xs font-semibold text-slate-500">Έλεγχος</p>
+              <p className="mt-2 text-sm font-semibold text-[#13211f]">{statusLabels[document.reviewState]}</p>
+              <p className="mt-1 text-xs text-slate-500">AI {Math.round(document.confidence * 100)}%</p>
+            </div>
+          </div>
+
+          <DataCard title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
+            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+              {asset ? (
+                <>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      <span className="block text-sm font-semibold text-[#13211f]">{asset.code} · {asset.name}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{asset.plate ?? asset.serial} · {asset.location}</span>
+                    </span>
+                    <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-[#13211f]">{document.operator}</p>
+                  <p className="mt-1 text-xs text-slate-500">Έγγραφο χειριστή</p>
+                </>
+              )}
+            </div>
+          </DataCard>
+
+          <DataCard title="Σχετική δουλειά">
+            <div className="space-y-2">
+              {linkedIssue ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("issues")}
+                  className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-[#13211f]">{linkedIssue.title}</p>
+                    <StatusPill label="μη διαθέσιμο" tone="blocked" />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{linkedIssue.assignee}</p>
+                </button>
+              ) : null}
+              {linkedTask ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("maintenance")}
+                  className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-[#13211f]">{linkedTask.title}</p>
+                    <StatusPill label={statusLabels[linkedTask.status]} tone={linkedTask.status} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{linkedTask.owner} · {formatDate(linkedTask.dueAt)}</p>
+                </button>
+              ) : null}
+              {!linkedIssue && !linkedTask ? (
+                <p className="text-sm text-slate-500">Δεν υπάρχει ανοιχτή βλάβη ή εργασία συντήρησης για αυτό το έγγραφο.</p>
+              ) : null}
+            </div>
+          </DataCard>
+        </div>
+
+        <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab("assets")}
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <Truck size={15} />
+                Πάγιο
+              </button>
+              <button
+                type="button"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <UploadCloud size={15} />
+                Ανέβασμα
+              </button>
+            </div>
+            <button
+              type="button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <ArrowRight size={15} />
+              {primaryAction}
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const [documentFilter, setDocumentFilter] = useState<DocumentFilter>("attention");
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const filteredDocuments = filterDocuments(documentFilter);
+  const selectedDocument = selectedDocumentId ? documents.find((document) => document.id === selectedDocumentId) : undefined;
+  const documentsInReview = documents.filter((document) => document.reviewState === "under review");
+  const validDocuments = documents.filter((document) => documentStatus(document) === "valid");
+  const filters: { id: DocumentFilter; label: string }[] = [
+    { id: "attention", label: "Προσοχή" },
+    { id: "expired", label: "Ληγμένα" },
+    { id: "upcoming", label: "30 ημέρες" },
+    { id: "review", label: "Σε έλεγχο" },
+    { id: "valid", label: "Έγκυρα" },
+    { id: "all", label: "Όλα" },
+  ];
+
   return (
     <div className="space-y-4">
       <PanelHeader
         eyebrow="Έγγραφα"
-        title="Λήξεις, approvals και έγγραφα σε έλεγχο"
-        description="Η ομάδα βλέπει πρώτα ό,τι λήγει, ό,τι είναι under review και τι χρειάζεται σύνδεση με πάγιο ή χειριστή."
+        title="Τι έγγραφα θέλουν προσοχή;"
+        description="Λήξεις, έλεγχος και επόμενη ενέργεια σε μία ουρά για το γραφείο."
         action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={FileText} label="Σύνολο" value={String(documents.length)} detail="Καταχωρημένα έγγραφα" tone="slate" />
-        <MetricTile icon={AlertTriangle} label="Προθεσμίες" value={String(expiringDocuments.length)} detail="Ληγμένα ή κοντινές λήξεις" tone="amber" />
-        <MetricTile
-          icon={ShieldCheck}
-          label="Σε έλεγχο"
-          value={String(documents.filter((document) => document.reviewState === "under review").length)}
-          detail="Χρειάζονται επιβεβαίωση"
-          tone="teal"
-        />
+      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
+        {[
+          { id: "attention" as DocumentFilter, icon: AlertTriangle, label: "Προσοχή", value: filterDocuments("attention").length, detail: "Λήξεις ή έλεγχος", tone: "amber" },
+          { id: "review" as DocumentFilter, icon: ShieldCheck, label: "Σε έλεγχο", value: documentsInReview.length, detail: "Θέλουν επιβεβαίωση", tone: "teal" },
+          { id: "valid" as DocumentFilter, icon: FileText, label: "Έγκυρα", value: validDocuments.length, detail: "Χωρίς άμεση ενέργεια", tone: "slate" },
+        ].map((metric) => {
+          const Icon = metric.icon;
+          const active = documentFilter === metric.id;
+
+          return (
+            <button
+              key={metric.id}
+              type="button"
+              onClick={() => setDocumentFilter(active ? "attention" : metric.id)}
+              className={`flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:border-b-0 ${
+                active ? "bg-[#e2f0ea]" : "hover:bg-[#f7faf4]"
+              }`}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-slate-500">{metric.label}</span>
+                <span className="mt-1 block text-2xl font-semibold text-[#13211f]">{metric.value}</span>
+                <span className="mt-1 block truncate text-sm text-slate-600">{metric.detail}</span>
+              </span>
+              <span
+                className={`shrink-0 rounded-md p-2 ring-1 ${
+                  metric.tone === "teal"
+                    ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
+                    : metric.tone === "amber"
+                      ? "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
+                      : "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]"
+                }`}
+              >
+                <Icon size={19} />
+              </span>
+            </button>
+          );
+        })}
       </div>
       <DataCard title="Ουρά εγγράφων">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex flex-wrap gap-2">
-            <FilterChip active>Όλα</FilterChip>
-            <FilterChip>Ληγμένα</FilterChip>
-            <FilterChip>30 ημέρες</FilterChip>
-            <FilterChip>Σε έλεγχο</FilterChip>
+            {filters.map((filter) => (
+              <FilterChip key={filter.id} active={documentFilter === filter.id} onClick={() => setDocumentFilter(filter.id)}>
+                {filter.label}
+              </FilterChip>
+            ))}
           </div>
           <TextButton icon={UploadCloud}>Μαζικό ανέβασμα</TextButton>
         </div>
-        <div className="grid gap-3">
-          {documents.map((document) => {
+        <div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">
+          <span>{filteredDocuments.length} από {documents.length} έγγραφα</span>
+          <span className="hidden sm:inline">Άνοιξε γραμμή για λεπτομέρειες και επόμενη ενέργεια.</span>
+        </div>
+        <div className="space-y-2">
+          {filteredDocuments.map((document) => {
             const asset = document.assetId ? getAsset(document.assetId) : undefined;
             const status = documentStatus(document);
-            const days = document.expiresAt ? daysUntil(document.expiresAt) : null;
+            const action = documentAction(document);
 
             return (
-              <div
+              <button
                 key={document.id}
-                className="grid gap-3 rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+                type="button"
+                onClick={() => setSelectedDocumentId(document.id)}
+                className="grid min-h-[92px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[minmax(220px,1fr)_170px_220px] xl:items-center"
               >
-                <div>
-                  <p className="font-semibold text-[#13211f]">{document.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {categoryLabels[document.category]} · {asset?.code ?? document.operator} · εμπιστοσύνη{" "}
-                    {Math.round(document.confidence * 100)}%
-                  </p>
-                  {days !== null && (
-                    <p className="mt-1 text-xs text-slate-500">
-                      {days < 0 ? `Έληξε πριν ${Math.abs(days)} ημέρες` : `Λήγει σε ${days} ημέρες`}
-                    </p>
-                  )}
-                </div>
-                <StatusPill label={statusLabels[document.reviewState]} tone={document.reviewState} />
-                <div className="text-sm text-slate-600">
-                  {document.expiresAt ? (
-                    <span className="inline-flex items-center gap-2">
-                      {formatDate(document.expiresAt)}
-                      <StatusPill label={statusLabels[status]} tone={status} />
-                    </span>
-                  ) : (
-                    "Χωρίς λήξη"
-                  )}
-                </div>
-              </div>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-[#13211f]">{document.title}</span>
+                  <span className="mt-1 block truncate text-sm text-slate-600">
+                    {categoryLabels[document.category]} · {asset?.code ?? document.operator}
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-500">AI {Math.round(document.confidence * 100)}%</span>
+                </span>
+
+                <span className="min-w-0">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Προθεσμία</span>
+                  <span className="mt-1 block text-sm leading-5 text-slate-600">{documentDueText(document)}</span>
+                  <span className="mt-1 block text-xs text-slate-500">{document.expiresAt ? formatDate(document.expiresAt) : "χωρίς ημερομηνία"}</span>
+                </span>
+
+                <span className="flex min-w-0 flex-col gap-2 xl:items-end">
+                  <span className="flex max-w-full flex-wrap gap-2 xl:justify-end">
+                    <StatusPill label={statusLabels[status]} tone={status} />
+                    {document.reviewState === "under review" ? (
+                      <StatusPill label="σε έλεγχο" tone="under review" />
+                    ) : null}
+                  </span>
+                  <span className="inline-flex min-h-[28px] items-center gap-2 text-sm font-semibold text-[#11685f]">
+                    {action}
+                    <ArrowRight size={16} className="shrink-0 text-[#11685f]" />
+                  </span>
+                </span>
+              </button>
             );
           })}
+          {!filteredDocuments.length ? (
+            <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
+              Δεν υπάρχουν έγγραφα σε αυτό το φίλτρο.
+            </div>
+          ) : null}
         </div>
       </DataCard>
+      {selectedDocument ? (
+        <DocumentDrawer document={selectedDocument} onClose={() => setSelectedDocumentId(null)} setActiveTab={setActiveTab} />
+      ) : null}
     </div>
   );
 }
@@ -1724,6 +2001,40 @@ function AssetsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => vo
   );
 }
 
+function DocumentsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const actionDocuments = filterDocuments("attention").slice(0, 4);
+
+  return (
+    <DataCard title="Χρειάζονται ενέργεια">
+      <div className="space-y-3">
+        <p className="text-sm leading-6 text-slate-600">
+          Η ουρά δείχνει μόνο όσα χρειάζονται ανανέωση ή επιβεβαίωση πριν μπουν σε πρόγραμμα.
+        </p>
+        <div className="space-y-3">
+          {actionDocuments.map((document) => {
+            const status = documentStatus(document);
+
+            return (
+              <button
+                key={document.id}
+                type="button"
+                onClick={() => setActiveTab("documents")}
+                className="grid min-h-[72px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-[#13211f]">{document.title}</span>
+                  <span className="mt-1 block truncate text-xs text-slate-500">{documentAction(document)}</span>
+                </span>
+                <StatusPill label={statusLabels[status]} tone={status} />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </DataCard>
+  );
+}
+
 function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
@@ -1882,7 +2193,7 @@ export function OperationsConsole() {
             {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} />}
             {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
             {activeTab === "assets" && <AssetsPanel setActiveTab={setActiveTab} />}
-            {activeTab === "documents" && <DocumentsPanel />}
+            {activeTab === "documents" && <DocumentsPanel setActiveTab={setActiveTab} />}
             {activeTab === "compliance" && <CompliancePanel />}
             {activeTab === "maintenance" && <MaintenancePanel />}
             {activeTab === "issues" && <IssuesPanel />}
@@ -1897,6 +2208,8 @@ export function OperationsConsole() {
               <CommandContextPanel setActiveTab={setActiveTab} />
             ) : activeTab === "assets" ? (
               <AssetsContextPanel setActiveTab={setActiveTab} />
+            ) : activeTab === "documents" ? (
+              <DocumentsContextPanel setActiveTab={setActiveTab} />
             ) : (
               <TodayPanel setActiveTab={setActiveTab} />
             )}
