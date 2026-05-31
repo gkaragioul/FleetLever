@@ -1100,15 +1100,15 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
         action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
       />
 
-      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
+      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-2 sm:divide-x sm:divide-[#d9e2dc] lg:grid-cols-4">
         {[
           { id: "ready" as AssetFilter, icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tone: "teal" },
           {
             id: "blocked" as AssetFilter,
             icon: AlertTriangle,
-            label: "Δεν ανατίθενται",
+            label: "Blockers σήμερα",
             value: blockedAssets.length,
-            detail: "Μένουν εκτός προγράμματος",
+            detail: blockedAssets.map((asset) => asset.code).join(", "),
             tone: "red",
           },
           {
@@ -1119,15 +1119,23 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
             detail: "Λείπουν έγγραφα ή έλεγχοι",
             tone: "amber",
           },
+          {
+            id: "all" as AssetFilter,
+            icon: ListChecks,
+            label: "Σύνολο",
+            value: assets.length,
+            detail: `${filteredAssets.length} στην ουρά`,
+            tone: "slate",
+          },
         ].map((metric) => {
           const Icon = metric.icon;
-          const active = assetFilter === metric.id;
+          const active = metric.id === "all" ? assetFilter === "all" : assetFilter === metric.id;
 
           return (
             <button
               key={metric.id}
               type="button"
-              onClick={() => setAssetFilter(active ? "all" : metric.id)}
+              onClick={() => setAssetFilter(metric.id === "all" || active ? "all" : metric.id)}
               className={`flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:border-b-0 ${
                 active ? "bg-[#e2f0ea]" : "hover:bg-[#f7faf4]"
               }`}
@@ -1143,7 +1151,9 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
                     ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
                     : metric.tone === "red"
                       ? "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]"
-                      : "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
+                      : metric.tone === "amber"
+                        ? "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
+                        : "bg-[#e7ece8] text-slate-600 ring-[#d9e2dc]"
                 }`}
               >
                 <Icon size={19} />
@@ -1178,6 +1188,11 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
             {filters.map((filter) => (
               <FilterChip key={filter.id} active={assetFilter === filter.id} onClick={() => setAssetFilter(filter.id)}>
                 {filter.label}
+              </FilterChip>
+            ))}
+            {blockedAssets.map((asset) => (
+              <FilterChip key={asset.id} active={assetFilter === "blocked"} onClick={() => setAssetFilter("blocked")}>
+                {asset.code}
               </FilterChip>
             ))}
           </div>
@@ -1615,64 +1630,68 @@ function CompliancePanel() {
           </div>
         ))}
       </div>
-      <DataCard title="Ελλείψεις συμμόρφωσης">
-        <div className="divide-y divide-[#e3e9e2]">
-          {assetsWithGaps.map((asset) => {
-            const missing = getMissingDocumentCategories(asset);
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+        <DataCard title="Ελλείψεις συμμόρφωσης">
+          <div className="divide-y divide-[#e3e9e2]">
+            {assetsWithGaps.map((asset) => {
+              const missing = getMissingDocumentCategories(asset);
 
-            return (
-              <button
-                key={asset.id}
-                type="button"
-                className="grid w-full gap-3 py-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:grid-cols-[150px_minmax(0,1fr)_128px] sm:items-center"
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <span className="truncate text-sm font-semibold text-[#13211f]">{asset.code}</span>
-                    <StatusPill label={gapCountLabel(missing.length)} tone="warning" />
-                  </span>
-                  <span className="mt-1 block truncate text-xs text-slate-500">{asset.name}</span>
-                </span>
-                <span className="flex min-w-0 flex-wrap gap-1.5">
-                  {missing.map((category) => (
-                    <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
-                      {categoryLabels[category] ?? category}
+              return (
+                <button
+                  key={asset.id}
+                  type="button"
+                  className="grid w-full gap-3 py-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  <span className="min-w-0">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-sm font-semibold text-[#13211f]">{asset.code}</span>
+                      <StatusPill label={gapCountLabel(missing.length)} tone="warning" />
                     </span>
-                  ))}
-                </span>
-                <span className="inline-flex min-h-9 items-center justify-start gap-1.5 text-sm font-semibold text-[#11685f] sm:justify-end">
-                  Συμπλήρωση
-                  <ArrowRight size={15} className="shrink-0" />
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </DataCard>
-      <DataCard title="Κανόνες εγγράφων">
-        <div className="divide-y divide-[#e3e9e2]">
-          {assetsWithGapsByType.map((template) => (
-            <div key={template.assetType} className="grid gap-3 py-4 first:pt-0 last:pb-0 lg:grid-cols-[170px_minmax(0,1fr)_150px] lg:items-center">
-              <div className="min-w-0">
-                <h3 className="truncate text-sm font-semibold text-[#13211f]">{assetTypeLabels[template.assetType] ?? template.assetType}</h3>
-                <p className="mt-1 text-xs font-medium text-slate-500">
-                  {template.blockedByRule.length
-                    ? assetGapSummary(template.blockedByRule.length, template.missingCount)
-                    : "Χωρίς τρέχοντα κενά"}
-                </p>
-              </div>
-              <div className="flex min-w-0 flex-wrap gap-1.5">
-                {template.requiredCategories.map((category) => (
-                  <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
-                    {categoryLabels[category] ?? category}
+                    <span className="mt-1 block truncate text-xs text-slate-500">{asset.name}</span>
+                    <span className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+                      {missing.map((category) => (
+                        <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
+                          {categoryLabels[category] ?? category}
+                        </span>
+                      ))}
+                    </span>
                   </span>
-                ))}
+                  <span className="inline-flex min-h-9 items-center justify-start gap-1.5 text-sm font-semibold text-[#11685f] sm:justify-end">
+                    Συμπλήρωση
+                    <ArrowRight size={15} className="shrink-0" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </DataCard>
+        <DataCard title="Κανόνες εγγράφων">
+          <div className="divide-y divide-[#e3e9e2]">
+            {assetsWithGapsByType.map((template) => (
+              <div key={template.assetType} className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate text-sm font-semibold text-[#13211f]">{assetTypeLabels[template.assetType] ?? template.assetType}</h3>
+                    <span className="text-xs font-medium text-slate-500">
+                      {template.blockedByRule.length
+                        ? assetGapSummary(template.blockedByRule.length, template.missingCount)
+                        : "Χωρίς τρέχοντα κενά"}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+                    {template.requiredCategories.map((category) => (
+                      <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
+                        {categoryLabels[category] ?? category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <TextButton icon={Eye}>Άνοιγμα</TextButton>
               </div>
-              <TextButton icon={Eye}>Άνοιγμα</TextButton>
-            </div>
-          ))}
-        </div>
-      </DataCard>
+            ))}
+          </div>
+        </DataCard>
+      </div>
     </div>
   );
 }
@@ -2020,35 +2039,6 @@ function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   );
 }
 
-function AssetsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
-  return (
-    <DataCard title="Σημερινά blockers">
-      <div className="space-y-3">
-        <p className="text-sm leading-6 text-slate-600">
-          Τα πάγια που δεν πρέπει να μπουν σε ανάθεση μέχρι να κλείσει το βασικό εμπόδιο.
-        </p>
-        <div className="space-y-3">
-          {blockedAssets.map((asset) => (
-            <button
-              key={asset.id}
-              type="button"
-              onClick={() => setActiveTab("issues")}
-              className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[#13211f]">{asset.code}</p>
-                <StatusPill label="μη διαθέσιμο" tone="blocked" />
-              </div>
-              <p className="mt-1 text-sm leading-5 text-slate-600">{asset.name}</p>
-              <p className="mt-2 text-xs font-semibold text-[#11685f]">Άνοιγμα βλαβών</p>
-            </button>
-          ))}
-        </div>
-      </div>
-    </DataCard>
-  );
-}
-
 function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
@@ -2195,7 +2185,7 @@ export function OperationsConsole() {
 
         <main
           className={`mx-auto grid max-w-[1500px] gap-5 px-4 py-5 sm:px-6 lg:px-8 ${
-            activeTab === "documents" || activeTab === "compliance"
+            activeTab === "documents" || activeTab === "compliance" || activeTab === "assets"
               ? "lg:grid-cols-1"
               : activeTab === "command"
                 ? "lg:grid-cols-[minmax(0,1fr)_300px]"
@@ -2221,12 +2211,10 @@ export function OperationsConsole() {
             {activeTab === "settings" && <SettingsPanel />}
           </section>
 
-          {activeTab !== "documents" && activeTab !== "compliance" ? (
+          {activeTab !== "documents" && activeTab !== "compliance" && activeTab !== "assets" ? (
             <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
               {activeTab === "command" ? (
                 <CommandContextPanel setActiveTab={setActiveTab} />
-              ) : activeTab === "assets" ? (
-                <AssetsContextPanel setActiveTab={setActiveTab} />
               ) : (
                 <TodayPanel setActiveTab={setActiveTab} />
               )}
