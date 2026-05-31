@@ -65,7 +65,6 @@ type TabId =
 
 const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "dashboard", label: "Πίνακας", icon: Gauge },
-  { id: "command", label: "Εντολές", icon: Command },
   { id: "assets", label: "Πάγια", icon: Truck },
   { id: "documents", label: "Έγγραφα", icon: FileText },
   { id: "compliance", label: "Συμμόρφωση", icon: ShieldCheck },
