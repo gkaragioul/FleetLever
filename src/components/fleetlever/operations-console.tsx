@@ -438,7 +438,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
         ]}
       />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.5fr)_340px]">
+      <div className="grid items-stretch gap-4 xl:grid-cols-3">
         <DataCard title="Προτεραιότητες">
           <div className="divide-y divide-[#e3e9e2]">
             {[
@@ -465,7 +465,8 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
           </div>
         </DataCard>
 
-        <TodayPanel setActiveTab={setActiveTab} />
+        <DeadlinesCard setActiveTab={setActiveTab} />
+        <AssignmentsCard setActiveTab={setActiveTab} />
       </div>
     </div>
   );
@@ -1717,7 +1718,7 @@ function MaintenancePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void
           { icon: ClipboardList, label: "Κόστος", value: formatCurrency(totalMaintenanceCost), detail: "Καταγεγραμμένο κόστος", tone: "teal" },
         ]}
       />
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_340px]">
+      <div className="space-y-4">
         <DataCard title="Ουρά εργασιών">
           <div className="mb-4 flex flex-wrap gap-2">
             <FilterChip active>Όλες</FilterChip>
@@ -1750,7 +1751,10 @@ function MaintenancePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void
             })}
           </div>
         </DataCard>
-        <TodayPanel setActiveTab={setActiveTab} />
+        <div className="grid items-stretch gap-4 lg:grid-cols-2">
+          <DeadlinesCard setActiveTab={setActiveTab} />
+          <AssignmentsCard setActiveTab={setActiveTab} />
+        </div>
       </div>
     </div>
   );
@@ -2058,66 +2062,60 @@ function SettingsPanel() {
   );
 }
 
-function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
-    <DataCard title="Σήμερα" className="self-start">
-      <div className="space-y-5">
-        <section aria-labelledby="today-deadlines-title">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h3 id="today-deadlines-title" className="text-sm font-semibold text-[#13211f]">
-              Προθεσμίες
-            </h3>
-            <TextButton icon={FileText} onClick={() => setActiveTab("documents")}>
-              Έγγραφα
-            </TextButton>
-          </div>
-          <div className="space-y-0">
-            {expiringDocuments.slice(0, 4).map((document) => (
-              <button
-                key={document.id}
-                type="button"
-                onClick={() => setActiveTab("documents")}
-                className="grid min-h-[58px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[#e3e9e2] py-3 text-left transition hover:text-teal-900 first:pt-0 last:border-0 last:pb-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium leading-5 text-[#13211f]">{document.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη"}
-                  </p>
-                </div>
-                <StatusPill label={statusLabels[documentStatus(document)]} tone={documentStatus(document)} />
-              </button>
-            ))}
-          </div>
-        </section>
+    <DataCard title="Προθεσμίες">
+      <div className="mb-3 flex justify-end">
+        <TextButton icon={FileText} onClick={() => setActiveTab("documents")}>
+          Έγγραφα
+        </TextButton>
+      </div>
+      <div className="space-y-0">
+        {expiringDocuments.slice(0, 4).map((document) => (
+          <button
+            key={document.id}
+            type="button"
+            onClick={() => setActiveTab("documents")}
+            className="grid min-h-[58px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[#e3e9e2] py-3 text-left transition hover:text-teal-900 first:pt-0 last:border-0 last:pb-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-5 text-[#13211f]">{document.title}</p>
+              <p className="text-xs text-slate-500">
+                {document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη"}
+              </p>
+            </div>
+            <StatusPill label={statusLabels[documentStatus(document)]} tone={documentStatus(document)} />
+          </button>
+        ))}
+      </div>
+    </DataCard>
+  );
+}
 
-        <section aria-labelledby="today-assignments-title" className="border-t border-[#e3e9e2] pt-4">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h3 id="today-assignments-title" className="text-sm font-semibold text-[#13211f]">
-              Αναθέσεις
-            </h3>
-            <TextButton icon={AlertTriangle} onClick={() => setActiveTab("issues")}>
-              Βλάβες
-            </TextButton>
-          </div>
-          <div className="space-y-2">
-            {issues.slice(0, 2).map((issue) => (
-              <button
-                key={issue.id}
-                type="button"
-                onClick={() => setActiveTab("issues")}
-                className="grid min-h-[68px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-[#13211f]">{getAsset(issue.assetId)?.code}</span>
-                  <span className="mt-1 block truncate text-sm text-slate-600">{issue.assignee}</span>
-                  <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{issue.title}</span>
-                </span>
-                <ArrowRight className="text-[#11685f]" size={15} />
-              </button>
-            ))}
-          </div>
-        </section>
+function AssignmentsCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  return (
+    <DataCard title="Αναθέσεις">
+      <div className="mb-3 flex justify-end">
+        <TextButton icon={AlertTriangle} onClick={() => setActiveTab("issues")}>
+          Βλάβες
+        </TextButton>
+      </div>
+      <div className="space-y-2">
+        {issues.slice(0, 2).map((issue) => (
+          <button
+            key={issue.id}
+            type="button"
+            onClick={() => setActiveTab("issues")}
+            className="grid min-h-[82px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3.5 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-[#13211f]">{getAsset(issue.assetId)?.code}</span>
+              <span className="mt-1 block truncate text-sm text-slate-600">{issue.assignee}</span>
+              <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{issue.title}</span>
+            </span>
+            <ArrowRight className="text-[#11685f]" size={15} />
+          </button>
+        ))}
       </div>
     </DataCard>
   );
