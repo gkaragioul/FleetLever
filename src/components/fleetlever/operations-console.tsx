@@ -1593,13 +1593,6 @@ function CompliancePanel() {
       missingCount,
     };
   });
-  const frequentMissing = requiredCategories
-    .map((category) => ({
-      category,
-      count: assets.filter((asset) => getMissingDocumentCategories(asset).includes(category)).length,
-    }))
-    .filter((item) => item.count > 0)
-    .sort((a, b) => b.count - a.count);
 
   return (
     <div className="space-y-4">
@@ -1622,83 +1615,60 @@ function CompliancePanel() {
           </div>
         ))}
       </div>
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <DataCard title="Πάγια με ελλείψεις">
-          <div className="grid gap-3 md:grid-cols-2">
-            {assetsWithGaps.map((asset) => {
-              const missing = getMissingDocumentCategories(asset);
+      <DataCard title="Ελλείψεις συμμόρφωσης">
+        <div className="divide-y divide-[#e3e9e2]">
+          {assetsWithGaps.map((asset) => {
+            const missing = getMissingDocumentCategories(asset);
 
-              return (
-                <button
-                  key={asset.id}
-                  type="button"
-                  className="grid min-h-[108px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto]"
-                >
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold text-[#13211f]">{asset.code}</span>
-                      <StatusPill label={gapCountLabel(missing.length)} tone="warning" />
-                    </span>
-                    <span className="mt-1 block truncate text-xs text-slate-500">{asset.name}</span>
-                    <span className="mt-3 flex flex-wrap gap-1.5">
-                      {missing.slice(0, 3).map((category) => (
-                        <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
-                          {categoryLabels[category] ?? category}
-                        </span>
-                      ))}
-                      {missing.length > 3 ? (
-                        <span className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
-                          +{missing.length - 3}
-                        </span>
-                      ) : null}
-                    </span>
+            return (
+              <button
+                key={asset.id}
+                type="button"
+                className="grid w-full gap-3 py-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:grid-cols-[150px_minmax(0,1fr)_128px] sm:items-center"
+              >
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate text-sm font-semibold text-[#13211f]">{asset.code}</span>
+                    <StatusPill label={gapCountLabel(missing.length)} tone="warning" />
                   </span>
-                  <span className="inline-flex items-center justify-end gap-1.5 self-end text-sm font-semibold text-[#11685f]">
-                    Προβολή
-                    <ArrowRight size={15} className="shrink-0" />
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </DataCard>
-        <DataCard title="Λείπουν συχνά">
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-            {frequentMissing.map((item) => (
-              <div key={item.category} className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2">
-                <span className="truncate text-sm font-medium text-slate-700">{categoryLabels[item.category] ?? item.category}</span>
-                <span className="rounded-full bg-[#e7ece8] px-2 py-0.5 text-xs font-semibold text-slate-600">{item.count}</span>
-              </div>
-            ))}
-          </div>
-        </DataCard>
-      </div>
-      <DataCard title="Κανόνες ανά τύπο παγίου">
-        <div className="grid auto-rows-fr gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  <span className="mt-1 block truncate text-xs text-slate-500">{asset.name}</span>
+                </span>
+                <span className="flex min-w-0 flex-wrap gap-1.5">
+                  {missing.map((category) => (
+                    <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
+                      {categoryLabels[category] ?? category}
+                    </span>
+                  ))}
+                </span>
+                <span className="inline-flex min-h-9 items-center justify-start gap-1.5 text-sm font-semibold text-[#11685f] sm:justify-end">
+                  Συμπλήρωση
+                  <ArrowRight size={15} className="shrink-0" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </DataCard>
+      <DataCard title="Κανόνες εγγράφων">
+        <div className="divide-y divide-[#e3e9e2]">
           {assetsWithGapsByType.map((template) => (
-            <div
-              key={template.assetType}
-              className="flex min-h-[170px] flex-col rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="truncate text-base font-semibold text-[#13211f]">{assetTypeLabels[template.assetType] ?? template.assetType}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{template.requiredCategories.length} απαιτούμενα έγγραφα</p>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    {template.blockedByRule.length
-                      ? assetGapSummary(template.blockedByRule.length, template.missingCount)
-                      : "Χωρίς τρέχοντα κενά"}
-                  </p>
-                </div>
-                <TextButton icon={Eye}>Κενά</TextButton>
+            <div key={template.assetType} className="grid gap-3 py-4 first:pt-0 last:pb-0 lg:grid-cols-[170px_minmax(0,1fr)_150px] lg:items-center">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-[#13211f]">{assetTypeLabels[template.assetType] ?? template.assetType}</h3>
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  {template.blockedByRule.length
+                    ? assetGapSummary(template.blockedByRule.length, template.missingCount)
+                    : "Χωρίς τρέχοντα κενά"}
+                </p>
               </div>
-              <div className="mt-auto flex flex-wrap gap-2 pt-4">
+              <div className="flex min-w-0 flex-wrap gap-1.5">
                 {template.requiredCategories.map((category) => (
-                  <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2.5 py-1 text-xs font-medium text-slate-700">
+                  <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-medium text-slate-600">
                     {categoryLabels[category] ?? category}
                   </span>
                 ))}
               </div>
+              <TextButton icon={Eye}>Άνοιγμα</TextButton>
             </div>
           ))}
         </div>
