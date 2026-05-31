@@ -166,7 +166,7 @@ function PanelHeader({
         <h1 className="mt-2 text-2xl font-semibold leading-tight text-[#13211f] sm:text-3xl">{title}</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
       </div>
-      {action}
+      {action ? <div className="flex shrink-0 self-start lg:self-auto">{action}</div> : null}
     </div>
   );
 }
@@ -354,9 +354,18 @@ function AssignmentReadinessCell({ score, missing }: { score: number; missing: s
 
 function DataCard({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${className}`}>
+    <section className={`rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:p-5 ${className}`}>
       <h2 className="text-base font-semibold text-[#13211f]">{title}</h2>
       <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function DrawerSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-[#d9e2dc] bg-[#fdfbf7] p-4">
+      <h3 className="text-base font-semibold text-[#13211f]">{title}</h3>
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
@@ -437,7 +446,9 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               Τι είναι έτοιμο, τι μπλοκάρει και τι χρειάζεται κλείσιμο πριν βγει το πρόγραμμα.
             </p>
           </div>
-          <ActionButton icon={Command}>Copilot</ActionButton>
+          <div className="self-start">
+            <ActionButton icon={Command}>Copilot</ActionButton>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-[minmax(260px,0.7fr)_minmax(0,1.3fr)]">
@@ -727,11 +738,11 @@ function AssetDrawer({
             </div>
           </div>
 
-          <DataCard title="Λείπουν">
+          <DrawerSection title="Λείπουν">
             <MissingDocumentChips missing={missing} limit={6} />
-          </DataCard>
+          </DrawerSection>
 
-          <DataCard title="Συνδεδεμένα έγγραφα">
+          <DrawerSection title="Συνδεδεμένα έγγραφα">
             <div className="space-y-2">
               {linkedDocuments.length ? (
                 linkedDocuments.map((document) => (
@@ -754,9 +765,9 @@ function AssetDrawer({
                 <p className="text-sm text-slate-500">Δεν υπάρχουν συνδεδεμένα έγγραφα.</p>
               )}
             </div>
-          </DataCard>
+          </DrawerSection>
 
-          <DataCard title="Βλάβες και συντήρηση">
+          <DrawerSection title="Βλάβες και συντήρηση">
             <div className="space-y-2">
               {[...linkedIssues, ...linkedMaintenance].length ? (
                 <>
@@ -793,9 +804,9 @@ function AssetDrawer({
                 <p className="text-sm text-slate-500">Δεν υπάρχουν ανοιχτές βλάβες ή εργασίες συντήρησης.</p>
               )}
             </div>
-          </DataCard>
+          </DrawerSection>
 
-          <DataCard title="Χειριστής">
+          <DrawerSection title="Χειριστής">
             <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
               <p className="text-sm font-semibold text-[#13211f]">{asset.operator}</p>
               <p className="mt-1 text-sm text-slate-600">{operator?.role ?? "Χειριστής"}</p>
@@ -803,7 +814,7 @@ function AssetDrawer({
                 Άδεια έως {operator ? formatDate(operator.licenseExpiresAt) : "άγνωστο"}
               </p>
             </div>
-          </DataCard>
+          </DrawerSection>
         </div>
 
         <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
@@ -1404,7 +1415,7 @@ function DocumentDrawer({
             </div>
           </div>
 
-          <DataCard title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
+          <DrawerSection title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
             <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
               {asset ? (
                 <>
@@ -1423,9 +1434,9 @@ function DocumentDrawer({
                 </>
               )}
             </div>
-          </DataCard>
+          </DrawerSection>
 
-          <DataCard title="Σχετική δουλειά">
+          <DrawerSection title="Σχετική δουλειά">
             <div className="space-y-2">
               {linkedIssue ? (
                 <button
@@ -1457,7 +1468,7 @@ function DocumentDrawer({
                 <p className="text-sm text-slate-500">Δεν υπάρχει ανοιχτή βλάβη ή εργασία συντήρησης για αυτό το έγγραφο.</p>
               ) : null}
             </div>
-          </DataCard>
+          </DrawerSection>
         </div>
 
         <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
