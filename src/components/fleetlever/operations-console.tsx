@@ -294,7 +294,7 @@ function ReadinessBar({ score }: { score: number }) {
   return (
     <div className="min-w-[120px]">
       <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>Readiness</span>
+        <span>Ετοιμότητα</span>
         <span className="font-mono text-slate-700">{score}%</span>
       </div>
       <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#e7ece8]">
@@ -337,13 +337,17 @@ function TextButton({
 function FilterChip({
   children,
   active = false,
+  onClick,
 }: {
   children: React.ReactNode;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      aria-pressed={active}
       className={`inline-flex min-h-9 items-center rounded-full border px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
         active
           ? "border-[#11685f] bg-[#e2f0ea] text-[#123d37]"
@@ -462,6 +466,26 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
       </div>
     </div>
   );
+}
+
+type AssetFilter = "all" | "ready" | "blocked" | "missing";
+
+function assetAction(asset: (typeof assets)[number]): { label: string; tab: TabId } {
+  if (asset.status === "ready") {
+    return { label: "Ανάθεση", tab: "operators" };
+  }
+
+  if (asset.status === "blocked") {
+    return { label: "Δες εμπόδια", tab: "issues" };
+  }
+
+  return { label: "Συμπλήρωση", tab: "documents" };
+}
+
+function assetStatusLabel(status: string) {
+  if (status === "ready") return "έτοιμο";
+  if (status === "blocked") return "μη διαθέσιμο";
+  return statusLabels[status] ?? status;
 }
 
 function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
@@ -709,81 +733,195 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
   );
 }
 
-function AssetsPanel() {
+function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
+  const [assetQuery, setAssetQuery] = useState("");
+  const assetsWithMissing = assets.filter((asset) => getMissingDocumentCategories(asset).length > 0);
+  const normalizedQuery = assetQuery.trim().toLocaleLowerCase("el-GR");
+  const filteredAssets = assets.filter((asset) => {
+    const missing = getMissingDocumentCategories(asset);
+    const matchesFilter =
+      assetFilter === "all" ||
+      (assetFilter === "ready" && asset.status === "ready") ||
+      (assetFilter === "blocked" && asset.status === "blocked") ||
+      (assetFilter === "missing" && missing.length > 0);
+
+    if (!matchesFilter) return false;
+    if (!normalizedQuery) return true;
+
+    const searchable = [
+      asset.code,
+      asset.name,
+      asset.plate,
+      asset.serial,
+      asset.location,
+      asset.operator,
+      assetStatusLabel(asset.status),
+      ...missing.map((item) => categoryLabels[item] ?? item),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase("el-GR");
+
+    return searchable.includes(normalizedQuery);
+  });
+
+  const filters: { id: AssetFilter; label: string }[] = [
+    { id: "all", label: "Όλα" },
+    { id: "ready", label: "Έτοιμα" },
+    { id: "blocked", label: "Μη διαθέσιμα" },
+    { id: "missing", label: "Με ελλείψεις" },
+  ];
+
   return (
     <div className="space-y-4">
       <PanelHeader
         eyebrow="Πάγια"
-        title="Ποια πάγια μπορούν να ανατεθούν σήμερα;"
-        description="Κατάσταση στόλου, readiness και ελλείψεις εγγράφων χωρίς να ψάχνεις σε ξεχωριστές λίστες."
+        title="Πάγια προς ανάθεση"
+        description="Δες ποια μπορούν να δουλέψουν σήμερα και τι μπλοκάρει τα υπόλοιπα."
         action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
       />
       <div className="grid gap-4 sm:grid-cols-3">
-        <MetricTile icon={Truck} label="Ready" value={String(readyAssets.length)} detail="Μπορούν να ανατεθούν" tone="teal" />
-        <MetricTile icon={AlertTriangle} label="Blocked" value={String(blockedAssets.length)} detail="Μένουν εκτός δουλειάς" tone="red" />
-        <MetricTile
-          icon={FileText}
-          label="Ελλείψεις"
-          value={String(assets.filter((asset) => getMissingDocumentCategories(asset).length > 0).length)}
-          detail="Λείπουν απαιτούμενα έγγραφα ή έλεγχοι"
-          tone="amber"
-        />
+        {[
+          { id: "ready" as AssetFilter, icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tone: "teal" },
+          {
+            id: "blocked" as AssetFilter,
+            icon: AlertTriangle,
+            label: "Μη διαθέσιμα",
+            value: blockedAssets.length,
+            detail: "Μένουν εκτός δουλειάς",
+            tone: "red",
+          },
+          {
+            id: "missing" as AssetFilter,
+            icon: FileText,
+            label: "Ελλείψεις",
+            value: assetsWithMissing.length,
+            detail: "Λείπουν έγγραφα ή έλεγχοι",
+            tone: "amber",
+          },
+        ].map((metric) => {
+          const Icon = metric.icon;
+          const active = assetFilter === metric.id;
+
+          return (
+            <button
+              key={metric.id}
+              type="button"
+              onClick={() => setAssetFilter(active ? "all" : metric.id)}
+              className={`rounded-lg border bg-[#fbfaf6] p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+                active ? "border-[#11685f] ring-1 ring-[#9adccb]" : "border-[#d9e2dc] hover:border-teal-300 hover:bg-[#f7faf4]"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">{metric.label}</p>
+                  <p className="mt-2 text-3xl font-semibold text-[#13211f]">{metric.value}</p>
+                </div>
+                <span
+                  className={`rounded-md p-2 ring-1 ${
+                    metric.tone === "teal"
+                      ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
+                      : metric.tone === "red"
+                        ? "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]"
+                        : "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
+                  }`}
+                >
+                  <Icon size={20} />
+                </span>
+              </div>
+              <p className="mt-5 text-sm leading-6 text-slate-600">{metric.detail}</p>
+            </button>
+          );
+        })}
       </div>
       <DataCard title="Μητρώο">
+        <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <label className="flex min-h-10 items-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 focus-within:border-[#8fd5c6] focus-within:ring-1 focus-within:ring-[#8fd5c6]">
+            <Search size={16} className="shrink-0 text-slate-400" />
+            <input
+              type="search"
+              value={assetQuery}
+              onChange={(event) => setAssetQuery(event.target.value)}
+              aria-label="Αναζήτηση σε πάγια"
+              placeholder="Αναζήτηση σε πάγια, πινακίδα, χειριστή ή τοποθεσία..."
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none"
+            />
+          </label>
+          <TextButton icon={Download}>Εξαγωγή στόλου</TextButton>
+        </div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
-            <FilterChip active>Όλα</FilterChip>
-            <FilterChip>Ready</FilterChip>
-            <FilterChip>Blocked</FilterChip>
-            <FilterChip>Με ελλείψεις</FilterChip>
+            {filters.map((filter) => (
+              <FilterChip key={filter.id} active={assetFilter === filter.id} onClick={() => setAssetFilter(filter.id)}>
+                {filter.label}
+              </FilterChip>
+            ))}
           </div>
-          <TextButton icon={Download}>Export στόλου</TextButton>
+          <p className="text-sm text-slate-500">{filteredAssets.length} από {assets.length} πάγια</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[#d9e2dc] text-xs uppercase tracking-[0.14em] text-slate-500">
-                <th className="py-3 pr-4 font-semibold">Πάγιο</th>
+                <th className="w-[210px] py-3 pr-4 font-semibold">Πάγιο</th>
                 <th className="py-3 pr-4 font-semibold">Τοποθεσία</th>
                 <th className="py-3 pr-4 font-semibold">Χειριστής</th>
                 <th className="py-3 pr-4 font-semibold">Κατάσταση</th>
-                <th className="py-3 pr-4 font-semibold">Readiness</th>
+                <th className="py-3 pr-4 font-semibold">Ετοιμότητα</th>
                 <th className="py-3 font-semibold">Λείπουν</th>
                 <th className="py-3 pl-4 text-right font-semibold">Ενέργεια</th>
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset) => {
+              {filteredAssets.map((asset) => {
                 const missing = getMissingDocumentCategories(asset);
+                const action = assetAction(asset);
 
                 return (
                   <tr key={asset.id} className="border-b border-[#e3e9e2] align-top last:border-0">
                     <td className="py-4 pr-4">
                       <p className="font-semibold text-[#13211f]">{asset.code}</p>
-                      <p className="text-slate-600">{asset.name}</p>
+                      <p className="max-w-[20ch] text-slate-600">{asset.name}</p>
                       <p className="mt-1 font-mono text-xs text-slate-400">{asset.plate ?? asset.serial}</p>
                     </td>
                     <td className="py-4 pr-4 text-slate-600">{asset.location}</td>
                     <td className="py-4 pr-4 text-slate-600">{asset.operator}</td>
                     <td className="py-4 pr-4">
-                      <StatusPill label={statusLabels[asset.status]} tone={asset.status} />
+                      <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
                     </td>
                     <td className="py-4 pr-4">
                       <ReadinessBar score={getReadinessScore(asset)} />
                     </td>
                     <td className="py-4 text-slate-600">
                       {missing.length ? (
-                        missing.map((item) => categoryLabels[item] ?? item).join(", ")
+                        <div className="flex max-w-[260px] flex-wrap gap-1.5">
+                          {missing.map((item) => (
+                            <span
+                              key={item}
+                              className="rounded-full border border-[#d9e2dc] bg-[#f7faf4] px-2 py-1 text-xs font-medium text-slate-600"
+                            >
+                              {categoryLabels[item] ?? item}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-emerald-700">Πλήρες</span>
                       )}
                     </td>
                     <td className="py-4 pl-4 text-right">
-                      <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                      <TextButton icon={Eye} onClick={() => setActiveTab(action.tab)}>{action.label}</TextButton>
                     </td>
                   </tr>
                 );
               })}
+              {!filteredAssets.length ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-sm text-slate-500">
+                    Δεν βρέθηκαν πάγια για αυτό το φίλτρο.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -1243,6 +1381,88 @@ function TodayPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   );
 }
 
+function AssetsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const closestAssets = assets
+    .filter((asset) => asset.status !== "ready")
+    .sort((a, b) => getReadinessScore(b) - getReadinessScore(a))
+    .slice(0, 3);
+  const missingCounts = Object.entries(
+    assets.reduce<Record<string, number>>((counts, asset) => {
+      getMissingDocumentCategories(asset).forEach((category) => {
+        counts[category] = (counts[category] ?? 0) + 1;
+      });
+
+      return counts;
+    }, {}),
+  )
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 4);
+
+  return (
+    <div className="space-y-4">
+      <DataCard title="Μη διαθέσιμα σήμερα">
+        <div className="space-y-3">
+          {blockedAssets.map((asset) => (
+            <button
+              key={asset.id}
+              type="button"
+              onClick={() => setActiveTab("issues")}
+              className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-[#13211f]">{asset.code}</p>
+                <StatusPill label="μη διαθέσιμο" tone="blocked" />
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{asset.name}</p>
+            </button>
+          ))}
+        </div>
+      </DataCard>
+
+      <DataCard title="Πιο κοντά σε ανάθεση">
+        <div className="space-y-3">
+          {closestAssets.map((asset) => {
+            const score = getReadinessScore(asset);
+
+            return (
+              <button
+                key={asset.id}
+                type="button"
+                onClick={() => setActiveTab("documents")}
+                className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[#13211f]">{asset.code}</p>
+                  <span className="text-xs font-semibold text-slate-500">{score}%</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e7ece8]">
+                  <div className="h-full rounded-full bg-[#f59e0b]" style={{ width: `${score}%` }} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </DataCard>
+
+      <DataCard title="Λείπουν συχνά">
+        <div className="space-y-2">
+          {missingCounts.map(([category, count]) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setActiveTab("documents")}
+              className="flex min-h-10 w-full items-center justify-between gap-3 rounded-md border border-[#e3e9e2] bg-[#fdfbf7] px-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <span className="text-sm text-slate-600">{categoryLabels[category] ?? category}</span>
+              <span className="rounded-full bg-[#e7ece8] px-2 py-0.5 text-xs font-semibold text-slate-600">{count}</span>
+            </button>
+          ))}
+        </div>
+      </DataCard>
+    </div>
+  );
+}
+
 function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
@@ -1398,7 +1618,7 @@ export function OperationsConsole() {
           >
             {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} />}
             {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
-            {activeTab === "assets" && <AssetsPanel />}
+            {activeTab === "assets" && <AssetsPanel setActiveTab={setActiveTab} />}
             {activeTab === "documents" && <DocumentsPanel />}
             {activeTab === "compliance" && <CompliancePanel />}
             {activeTab === "maintenance" && <MaintenancePanel />}
@@ -1410,7 +1630,13 @@ export function OperationsConsole() {
           </section>
 
           <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            {activeTab === "command" ? <CommandContextPanel setActiveTab={setActiveTab} /> : <TodayPanel setActiveTab={setActiveTab} />}
+            {activeTab === "command" ? (
+              <CommandContextPanel setActiveTab={setActiveTab} />
+            ) : activeTab === "assets" ? (
+              <AssetsContextPanel setActiveTab={setActiveTab} />
+            ) : (
+              <TodayPanel setActiveTab={setActiveTab} />
+            )}
           </aside>
         </main>
       </div>
