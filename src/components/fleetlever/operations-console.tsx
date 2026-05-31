@@ -1622,8 +1622,8 @@ function CompliancePanel() {
           </div>
         ))}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid content-start items-start gap-4 lg:grid-cols-2">
           {assetsWithGapsByType.map((template) => (
             <DataCard key={template.assetType} title={assetTypeLabels[template.assetType] ?? template.assetType}>
               <div className="mb-4 flex items-center justify-between gap-3">
