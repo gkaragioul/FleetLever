@@ -1492,8 +1492,8 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
     <div className="space-y-4">
       <PanelHeader
         eyebrow="Έγγραφα"
-        title="Τι έγγραφα θέλουν προσοχή"
-        description="Λήξεις, έλεγχος και επόμενη ενέργεια σε μία ουρά για το γραφείο."
+        title="Έγγραφα που θέλουν ενέργεια"
+        description="Λήξεις, έλεγχοι και εγκρίσεις σε μία ουρά για το γραφείο."
         action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
       />
       <DataCard title="Ουρά εγγράφων">
@@ -1526,7 +1526,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
                 key={document.id}
                 type="button"
                 onClick={() => setSelectedDocumentId(document.id)}
-                className="grid min-h-[92px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[minmax(220px,1fr)_170px_220px] xl:items-center"
+                className="grid min-h-[80px] w-full gap-2.5 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-4 py-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[minmax(220px,1fr)_170px_220px] xl:items-center"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-[#13211f]">{document.title}</span>
