@@ -302,6 +302,9 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
   const session = sessionResult.rows[0];
 
   return {
+    runtime: {
+      dataSource: "database",
+    },
     organization: {
       id: organization.id,
       name: organization.name,

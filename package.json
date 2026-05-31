@@ -11,9 +11,12 @@
     "start": "next start",
     "lint": "eslint",
     "design:audit": "node scripts/design-audit.mjs",
+    "e2e:smoke": "node scripts/e2e-smoke.mjs",
+    "qa:all": "npm run lint && npm run build && npm run design:audit && npm run e2e:smoke",
     "db:migrate": "node scripts/migrate.mjs",
     "db:create-app-role": "node scripts/create-db-app-role.mjs",
     "db:seed": "SEED_DEMO=true node scripts/migrate.mjs",
+    "db:reset-demo": "node scripts/reset-demo.mjs",
     "db:health": "node scripts/db-health.mjs"
   },
   "dependencies": {

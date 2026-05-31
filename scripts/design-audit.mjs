@@ -11,6 +11,8 @@ const TAB_LABELS = [
   "Συντήρηση",
   "Βλάβες",
   "Χειριστές",
+  "Ημερολόγιο",
+  "Αναφορές",
 ];
 
 const VIEWPORTS = [
@@ -158,6 +160,39 @@ async function assertNoUnexpectedOffscreenElements(page, label, viewportName) {
   }
 }
 
+async function assertNamedInteractiveControls(page, label, viewportName) {
+  const unnamed = await page.evaluate(() =>
+    Array.from(document.querySelectorAll("button, a, input, select, textarea"))
+      .filter((element) => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+
+        if (style.display === "none" || style.visibility === "hidden") return false;
+        if (rect.width === 0 || rect.height === 0) return false;
+        if (element.getAttribute("aria-hidden") === "true") return false;
+
+        const text = element.textContent?.trim() ?? "";
+        const label =
+          element.getAttribute("aria-label") ??
+          element.getAttribute("title") ??
+          element.getAttribute("placeholder") ??
+          "";
+
+        return !text && !label.trim();
+      })
+      .slice(0, 8)
+      .map((element) => ({
+        tag: element.tagName.toLowerCase(),
+        type: element.getAttribute("type"),
+        className: element.getAttribute("class")?.slice(0, 80) ?? "",
+      })),
+  );
+
+  if (unnamed.length) {
+    throw new Error(`${viewportName} / ${label}: unnamed interactive controls ${JSON.stringify(unnamed, null, 2)}`);
+  }
+}
+
 async function openTab(page, label) {
   await page.getByRole("tab", { name: label }).first().click();
   await page.waitForTimeout(150);
@@ -173,6 +208,7 @@ async function auditPanel(page, label, viewportName) {
 
   await assertNoRootOverflow(page, label, viewportName);
   await assertNoUnexpectedOffscreenElements(page, label, viewportName);
+  await assertNamedInteractiveControls(page, label, viewportName);
 }
 
 async function auditDrawer(page, tabLabel, rowName) {

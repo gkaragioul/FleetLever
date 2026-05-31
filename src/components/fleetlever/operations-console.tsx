@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, useTransition } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useTransition } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
@@ -68,6 +68,7 @@ import {
   switchWorkspace,
   updateAsset,
   updateDocument,
+  updateIssue,
   updateMaintenanceTask,
   updateOperator,
   type ActionResult,
@@ -329,12 +330,14 @@ function ToolbarMenu() {
         className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:border-teal-300 hover:bg-[#f2f7f2] hover:text-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
         type="button"
         aria-label="Περισσότερες ενέργειες. Import και Export δεδομένων."
+        aria-haspopup="menu"
       >
         <MoreHorizontal size={18} />
       </button>
-      <div className="absolute right-0 top-11 z-40 hidden w-64 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-2 text-left shadow-xl ring-1 ring-slate-950/5 group-hover:block group-focus-within:block">
+      <div role="menu" className="absolute right-0 top-11 z-40 hidden w-64 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-2 text-left shadow-xl ring-1 ring-slate-950/5 group-hover:block group-focus-within:block">
         <button
           type="button"
+          role="menuitem"
           onClick={() => openAction("import")}
           className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Import δεδομένων. Μαζική εισαγωγή από Excel, CSV ή φάκελο αρχείων."
@@ -347,6 +350,7 @@ function ToolbarMenu() {
         </button>
         <button
           type="button"
+          role="menuitem"
           onClick={exportSnapshot}
           className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Export αναφοράς. Εξαγωγή αναφορών και δεδομένων για έλεγχο."
@@ -528,6 +532,15 @@ function DataCard({ title, children, className = "" }: { title: string; children
       <h2 className="text-base font-semibold text-[#13211f]">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function EmptyState({ title, detail, className = "" }: { title: string; detail?: string; className?: string }) {
+  return (
+    <div className={`rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center ${className}`}>
+      <p className="text-sm font-semibold text-[#13211f]">{title}</p>
+      {detail ? <p className="mt-1 text-sm leading-6 text-slate-500">{detail}</p> : null}
+    </div>
   );
 }
 
@@ -742,9 +755,7 @@ function GlobalSearchBox({
               ))}
             </div>
           ) : (
-            <div className="rounded-md border border-dashed border-[#d9e2dc] p-5 text-center text-sm text-slate-500">
-              Δεν βρέθηκαν αποτελέσματα.
-            </div>
+            <EmptyState title="Δεν βρέθηκαν αποτελέσματα" detail="Δοκίμασε κωδικό παγίου, χειριστή, KTEO ή περιγραφή βλάβης." />
           )}
         </div>
       ) : null}
@@ -807,11 +818,7 @@ function NotificationsDrawer({
               </span>
             </button>
           ))}
-          {!notifications.length ? (
-            <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
-              Δεν υπάρχουν ανοιχτές ειδοποιήσεις.
-            </div>
-          ) : null}
+          {!notifications.length ? <EmptyState title="Δεν υπάρχουν ανοιχτές ειδοποιήσεις" detail="Οι άμεσες προθεσμίες και αναθέσεις είναι καθαρές." /> : null}
         </div>
       </aside>
     </div>
@@ -1835,43 +1842,48 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
   const commandActions: {
     label: string;
     detail: string;
-    actionLabel: string;
-    icon: LucideIcon;
-    tab: TabId;
-    tone: string;
-  }[] = [
+	    actionLabel: string;
+	    icon: LucideIcon;
+	    tab: TabId;
+	    modalKind: Exclude<ActionModalKind, null>;
+	    tone: string;
+	  }[] = [
     {
       label: "Νέο πάγιο",
       detail: "Καταχώριση οχήματος, μηχανήματος ή εξοπλισμού.",
       actionLabel: "Καταχώριση",
-      icon: Plus,
-      tab: "assets",
-      tone: "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]",
-    },
+	      icon: Plus,
+	      tab: "assets",
+	      modalKind: "asset",
+	      tone: "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]",
+	    },
     {
       label: "Ανέβασμα εγγράφου",
       detail: "Προσθήκη KTEO, άδειας ή πιστοποιητικού σε υπάρχον πάγιο.",
       actionLabel: "Ανέβασμα",
-      icon: FileUp,
-      tab: "documents",
-      tone: "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]",
-    },
+	      icon: FileUp,
+	      tab: "documents",
+	      modalKind: "document",
+	      tone: "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]",
+	    },
     {
       label: "Νέα βλάβη",
       detail: "Άμεση αναφορά προβλήματος που μπλοκάρει ανάθεση.",
       actionLabel: "Αναφορά",
-      icon: AlertTriangle,
-      tab: "issues",
-      tone: "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]",
-    },
+	      icon: AlertTriangle,
+	      tab: "issues",
+	      modalKind: "issue",
+	      tone: "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]",
+	    },
     {
       label: "Εργασία συντήρησης",
       detail: "Νέα εργασία συντήρησης με υπεύθυνο και προθεσμία.",
       actionLabel: "Ανάθεση",
-      icon: Wrench,
-      tab: "maintenance",
-      tone: "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]",
-    },
+	      icon: Wrench,
+	      tab: "maintenance",
+	      modalKind: "maintenance",
+	      tone: "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]",
+	    },
   ];
 
   const suggestedSearches: { query: string; target: string; tab: TabId }[] = [
@@ -2070,7 +2082,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
                 <button
                   key={action.label}
                   type="button"
-                  onClick={() => setActiveTab(action.tab)}
+	                  onClick={() => openAction(action.modalKind)}
                   className="group flex min-h-[116px] flex-col justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
                   <span className="flex items-start justify-between gap-3">
@@ -2333,11 +2345,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
               </button>
             );
           })}
-          {!filteredAssets.length ? (
-            <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
-              Δεν βρέθηκαν πάγια για αυτό το φίλτρο.
-            </div>
-          ) : null}
+          {!filteredAssets.length ? <EmptyState title="Δεν βρέθηκαν πάγια" detail="Άλλαξε φίλτρο ή αναζήτηση για να δεις περισσότερα πάγια." /> : null}
         </div>
 
         {showFullRegistry ? (
@@ -2766,7 +2774,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               </FilterChip>
             ))}
           </div>
-          <TextButton icon={UploadCloud} onClick={() => openAction("document")}>Μαζικό ανέβασμα</TextButton>
+          <TextButton icon={UploadCloud} onClick={() => openAction("import", { importType: "documents_csv" })}>Μαζικό ανέβασμα</TextButton>
         </div>
         <div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">
           <span>{filteredDocuments.length} από {documents.length} έγγραφα</span>
@@ -2827,11 +2835,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               </button>
             );
           })}
-          {!filteredDocuments.length ? (
-            <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
-              Δεν υπάρχουν έγγραφα σε αυτό το φίλτρο.
-            </div>
-          ) : null}
+          {!filteredDocuments.length ? <EmptyState title="Δεν υπάρχουν έγγραφα" detail="Η τρέχουσα ουρά δεν έχει στοιχεία για αυτό το φίλτρο." /> : null}
         </div>
       </DataCard>
       {selectedDocument ? (
@@ -2996,7 +3000,7 @@ function MaintenancePanel() {
             <FilterChip active={maintenanceFilter === "scheduled"} onClick={() => setMaintenanceFilter("scheduled")}>Προγραμματισμένες</FilterChip>
             <FilterChip active={maintenanceFilter === "cost"} onClick={() => setMaintenanceFilter("cost")}>Με κόστος</FilterChip>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-2">
             {filteredTasks.map((task) => {
               const days = daysUntil(task.dueAt);
               const asset = findAsset(assets, task.assetId);
@@ -3005,72 +3009,59 @@ function MaintenancePanel() {
               return (
                 <article
                   key={task.id}
-                  className={`flex min-h-[196px] min-w-0 flex-col rounded-md border p-4 ${
+                  className={`grid min-h-[88px] min-w-0 gap-3 rounded-md border p-4 xl:grid-cols-[minmax(260px,1fr)_170px_150px_auto] xl:items-center ${
                     isOverdue ? "border-red-200 bg-red-50/40" : "border-[#d9e2dc] bg-[#fdfbf7]"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="line-clamp-2 font-semibold leading-5 text-[#13211f]">{task.title}</p>
-                      <p className="mt-1 truncate text-sm text-slate-600">
-                        {asset?.code} · {asset?.name}
-                      </p>
-                    </div>
-                    <StatusPill label={statusLabels[task.status]} tone={task.status} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-[#13211f]">{task.title}</p>
+                    <p className="mt-1 truncate text-sm text-slate-600">
+                      {asset?.code} · {asset?.name}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-slate-500">Υπεύθυνος: {task.owner}</p>
                   </div>
 
-                  <dl className="mt-4 grid gap-3 text-sm">
-                    <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3">
-                      <dt className="text-slate-500">Υπεύθυνος</dt>
-                      <dd className="truncate font-medium text-slate-700">{task.owner}</dd>
-                    </div>
-                    <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3">
-                      <dt className="text-slate-500">Προθεσμία</dt>
-                      <dd className="font-medium text-slate-700">{formatDate(task.dueAt)}</dd>
-                    </div>
-                    <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3">
-                      <dt className="text-slate-500">Χρόνος</dt>
-                      <dd className={isOverdue ? "font-semibold text-red-700" : "font-medium text-slate-700"}>
-                        {days < 0 ? `${Math.abs(days)} ημέρες καθυστέρηση` : `Σε ${days} ημέρες`}
-                      </dd>
-                    </div>
-                  </dl>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Προθεσμία</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">{formatDate(task.dueAt)}</p>
+                    <p className={isOverdue ? "mt-1 text-xs font-semibold text-red-700" : "mt-1 text-xs text-slate-500"}>
+                      {days < 0 ? `${Math.abs(days)} ημέρες καθυστέρηση` : `Σε ${days} ημέρες`}
+                    </p>
+                  </div>
 
-                  <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                  <div className="flex flex-wrap items-center gap-2 xl:flex-col xl:items-start">
+                    <StatusPill label={statusLabels[task.status]} tone={task.status} />
                     <span className="text-sm font-semibold text-[#11685f]">
                       {task.cost ? formatCurrency(task.cost) : "Χωρίς κόστος"}
                     </span>
-                    <span className="flex flex-wrap justify-end gap-2">
-                      <TextButton
-                        icon={Eye}
-                        onClick={() =>
-                          openAction("maintenance", {
-                            taskId: task.id,
-                            assetId: task.assetId,
-                            title: task.title,
-                            dueAt: task.dueAt,
-                            cost: task.cost ? String(task.cost) : "",
-                          })
-                        }
-                      >
-                        Επεξεργασία
-                      </TextButton>
-                      <TextButton icon={Users} onClick={() => handleAssign(task)}>
-                        {isPending ? "Γίνεται..." : "Ανάθεση"}
-                      </TextButton>
-                      <TextButton icon={CheckCircle2} onClick={() => handleComplete(task)}>
-                        Ολοκλήρωση
-                      </TextButton>
-                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 xl:justify-end">
+                    <TextButton
+                      icon={Eye}
+                      onClick={() =>
+                        openAction("maintenance", {
+                          taskId: task.id,
+                          assetId: task.assetId,
+                          title: task.title,
+                          dueAt: task.dueAt,
+                          cost: task.cost ? String(task.cost) : "",
+                        })
+                      }
+                    >
+                      Επεξεργασία
+                    </TextButton>
+                    <TextButton icon={Users} onClick={() => handleAssign(task)}>
+                      {isPending ? "Γίνεται..." : "Ανάθεση"}
+                    </TextButton>
+                    <TextButton icon={CheckCircle2} onClick={() => handleComplete(task)}>
+                      Ολοκλήρωση
+                    </TextButton>
                   </div>
                 </article>
               );
             })}
-            {!filteredTasks.length ? (
-              <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500 md:col-span-2 xl:col-span-3">
-                Δεν υπάρχουν εργασίες σε αυτό το φίλτρο.
-              </div>
-            ) : null}
+            {!filteredTasks.length ? <EmptyState title="Δεν υπάρχουν εργασίες" detail="Η ουρά είναι καθαρή για αυτό το φίλτρο." /> : null}
           </div>
         </DataCard>
       </SectionGrid>
@@ -3136,6 +3127,20 @@ function IssuesPanel() {
                       tone={issue.blocking ? "blocked" : issue.severity === "critical" ? "criticalIssue" : issue.severity}
                     />
                     <StatusPill label={statusLabels[issue.status]} tone={issue.status} />
+                    <TextButton
+                      icon={Eye}
+                      onClick={() =>
+                        openAction("issue", {
+                          issueId: issue.id,
+                          assetId: issue.assetId,
+                          title: issue.title,
+                          severity: issue.severity,
+                          blocking: issue.blocking ? "true" : "",
+                        })
+                      }
+                    >
+                      Επεξεργασία
+                    </TextButton>
                     <TextButton icon={Wrench} onClick={() => openAction("maintenance", { assetId: issue.assetId })}>
                       Εργασία
                     </TextButton>
@@ -3146,11 +3151,7 @@ function IssuesPanel() {
                 </div>
               );
             })}
-            {!filteredIssues.length ? (
-              <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
-                Δεν υπάρχουν βλάβες σε αυτό το φίλτρο.
-              </div>
-            ) : null}
+            {!filteredIssues.length ? <EmptyState title="Δεν υπάρχουν βλάβες" detail="Η ουρά βλαβών είναι καθαρή για αυτό το φίλτρο." /> : null}
           </div>
         </DataCard>
       </SectionGrid>
@@ -3263,6 +3264,7 @@ function OperatorsPanel() {
               </div>
             );
           })}
+          {!operators.length ? <EmptyState title="Δεν υπάρχουν χειριστές" detail="Πρόσθεσε χειριστή για να ξεκινήσουν αναθέσεις παγίων." /> : null}
         </div>
       </DataCard>
     </OperationsPage>
@@ -3298,11 +3300,7 @@ function CalendarBucket({
             <StatusPill label={statusLabels[item.tone] ?? item.tone} tone={item.tone} />
           </button>
         ))}
-        {!items.length ? (
-          <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-5 text-center text-sm text-slate-500">
-            {empty}
-          </div>
-        ) : null}
+        {!items.length ? <EmptyState title={empty} /> : null}
       </div>
     </DataCard>
   );
@@ -3588,6 +3586,7 @@ function ActionModal({
   const operatorOptions = data.operators.map((operator) => ({ value: operator.id, label: operator.name }));
   const isAssetEdit = kind === "asset" && Boolean(defaults.assetId);
   const isDocumentEdit = kind === "document" && Boolean(defaults.documentId);
+  const isIssueEdit = kind === "issue" && Boolean(defaults.issueId);
   const isMaintenanceEdit = kind === "maintenance" && Boolean(defaults.taskId);
   const isOperatorEdit = kind === "operator" && Boolean(defaults.operatorId);
   const [documentTitle, setDocumentTitle] = useState(defaults.title ?? "");
@@ -3596,8 +3595,14 @@ function ActionModal({
   const [documentExpiresAt, setDocumentExpiresAt] = useState(defaults.expiresAt ?? "");
   const [documentFileName, setDocumentFileName] = useState("");
   const documentSuggestion = inferDocumentDraft(`${documentTitle} ${documentFileName}`, data);
-  const [importType, setImportType] = useState<"assets_csv" | "documents_csv">("assets_csv");
-  const [importText, setImportText] = useState("code,name,type,plate\nTR-09,Ford Transit,Van,DEM-0005");
+  const initialImportType = defaults.importType === "documents_csv" ? "documents_csv" : "assets_csv";
+  const initialImportText =
+    defaults.importText ??
+    (initialImportType === "documents_csv"
+      ? "title,category,assetCode,expiresAt\nTR-09 KTEO,KTEO,TR-09,2027-06-01"
+      : "code,name,type,plate\nTR-09,Ford Transit,Van,DEM-0005");
+  const [importType, setImportType] = useState<"assets_csv" | "documents_csv">(initialImportType);
+  const [importText, setImportText] = useState(initialImportText);
   const importRows = useMemo<ImportPreviewRow[]>(() => {
     const existingCodes = new Set(data.assets.map((asset) => asset.code.toLocaleUpperCase("el-GR")));
     return parseCsv(importText).slice(0, 30).map((row, index) => {
@@ -3621,7 +3626,7 @@ function ActionModal({
       : kind === "document"
         ? isDocumentEdit ? "Επεξεργασία εγγράφου" : "Ανέβασμα εγγράφου"
         : kind === "issue"
-          ? "Νέα βλάβη"
+          ? isIssueEdit ? "Επεξεργασία βλάβης" : "Νέα βλάβη"
           : kind === "maintenance"
             ? isMaintenanceEdit ? "Επεξεργασία εργασίας" : "Νέα εργασία"
             : kind === "operator"
@@ -3635,7 +3640,7 @@ function ActionModal({
   function actionForKind() {
     if (kind === "asset") return isAssetEdit ? updateAsset : createAsset;
     if (kind === "document") return isDocumentEdit ? updateDocument : createDocument;
-    if (kind === "issue") return createIssue;
+    if (kind === "issue") return isIssueEdit ? updateIssue : createIssue;
     if (kind === "maintenance") return isMaintenanceEdit ? updateMaintenanceTask : createMaintenanceTask;
     if (kind === "operator") return isOperatorEdit ? updateOperator : createOperator;
     if (kind === "workspace") return switchWorkspace;
@@ -3671,6 +3676,7 @@ function ActionModal({
         <form onSubmit={handleSubmit} encType="multipart/form-data" className="grid max-h-[75vh] gap-4 overflow-y-auto p-5">
           {kind === "asset" && defaults.assetId ? <input type="hidden" name="assetId" value={defaults.assetId} /> : null}
           {kind === "document" && defaults.documentId ? <input type="hidden" name="documentId" value={defaults.documentId} /> : null}
+          {kind === "issue" && defaults.issueId ? <input type="hidden" name="issueId" value={defaults.issueId} /> : null}
           {kind === "maintenance" && defaults.taskId ? <input type="hidden" name="taskId" value={defaults.taskId} /> : null}
           {kind === "operator" && defaults.operatorId ? <input type="hidden" name="operatorId" value={defaults.operatorId} /> : null}
           {kind === "asset" ? (
@@ -3790,9 +3796,13 @@ function ActionModal({
                 <input
                   name="file"
                   type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xls,.xlsx,.doc,.docx"
                   onChange={(event) => setDocumentFileName(event.target.files?.[0]?.name ?? "")}
                   className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#e2f0ea] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#123d37] focus:border-[#8fd5c6] focus:outline-none focus:ring-1 focus:ring-[#8fd5c6]"
                 />
+                <span className="text-xs font-normal leading-5 text-slate-500">
+                  PDF, εικόνα, CSV, Excel ή Word έως 10MB.
+                </span>
               </label>
             </>
           ) : null}
@@ -3800,11 +3810,11 @@ function ActionModal({
           {kind === "issue" ? (
             <>
               <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} required options={assetOptions} />
-              <Field label="Τίτλος βλάβης" name="title" required placeholder="Πτώση πίεσης..." />
+              <Field label="Τίτλος βλάβης" name="title" defaultValue={defaults.title} required placeholder="Πτώση πίεσης..." />
               <SelectField
                 label="Σοβαρότητα"
                 name="severity"
-                defaultValue="medium"
+                defaultValue={defaults.severity ?? "medium"}
                 options={[
                   { value: "low", label: "Χαμηλή" },
                   { value: "medium", label: "Μεσαία" },
@@ -3817,11 +3827,12 @@ function ActionModal({
                 <textarea
                   name="description"
                   rows={3}
+                  defaultValue={defaults.description}
                   className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
                 />
               </label>
               <label className="inline-flex items-center gap-2 text-sm font-medium text-[#13211f]">
-                <input name="blocking" type="checkbox" className="h-4 w-4 rounded border-[#d9e2dc]" />
+                <input name="blocking" type="checkbox" defaultChecked={defaults.blocking === "true"} className="h-4 w-4 rounded border-[#d9e2dc]" />
                 Μπλοκάρει ανάθεση
               </label>
             </>
@@ -3954,6 +3965,27 @@ function ActionModal({
   );
 }
 
+function RuntimeBanner() {
+  const data = useFleetData();
+
+  if (data.runtime?.dataSource !== "demo") return null;
+
+  return (
+    <div
+      role="status"
+      className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <span className="inline-flex items-center gap-2 font-semibold">
+        <Database size={16} />
+        Demo data
+      </span>
+      <span className="text-amber-800">
+        {data.runtime.warning ?? "Οι αλλαγές χρειάζονται ενεργό DATABASE_URL για να αποθηκευτούν."}
+      </span>
+    </div>
+  );
+}
+
 export function OperationsConsole({ initialData = fallbackFleetData }: { initialData?: FleetLeverData }) {
   const [data, setData] = useState<FleetLeverData>(initialData);
   const [activeTab, setActiveTab] = useState<TabId>("dashboard");
@@ -3969,6 +4001,14 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     () => (activeTab === "command" ? { id: "command" as const, label: "Copilot", icon: Command } : tabs.find((tab) => tab.id === activeTab) ?? tabs[0]),
     [activeTab],
   );
+
+  useEffect(() => {
+    if (!toast) return undefined;
+
+    const timer = window.setTimeout(() => setToast(""), 4200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
   const actionContext = useMemo<OperationsActions>(
     () => ({
       openAction: (kind, defaults = {}) => setActionModal({ kind, defaults }),
@@ -3989,7 +4029,8 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
               }
 
               resolve(result);
-            } catch {
+            } catch (error) {
+              console.error("FleetLever action failed", error);
               const result = { ok: false, message: "Η ενέργεια απέτυχε. Δοκίμασε ξανά." };
               setToast(result.message);
               resolve(result);
@@ -4128,6 +4169,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
         <main
           className="mx-auto grid max-w-[1500px] gap-5 px-4 py-5 sm:px-6 lg:grid-cols-1 lg:px-8"
         >
+          <RuntimeBanner />
           <section
             id={`${activeMeta.id}-panel`}
             role="tabpanel"
@@ -4153,7 +4195,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
         onNavigate={(tab) => setActiveTab(tab)}
       />
       {toast ? (
-        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-4 py-2 text-sm font-medium text-[#123d37] shadow-lg">
+        <div role="status" aria-live="polite" className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-4 py-2 text-sm font-medium text-[#123d37] shadow-lg">
           {toast}
         </div>
       ) : null}

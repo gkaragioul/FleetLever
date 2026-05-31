@@ -82,6 +82,10 @@ export type ComplianceTemplate = {
 };
 
 export type FleetLeverData = {
+  runtime?: {
+    dataSource: "database" | "demo";
+    warning?: string;
+  };
   organization: {
     id: string;
     name: string;
@@ -361,6 +365,10 @@ export const complianceTemplates: ComplianceTemplate[] = [
 ];
 
 export const fallbackFleetData: FleetLeverData = {
+  runtime: {
+    dataSource: "demo",
+    warning: "DATABASE_URL is not configured. Mutations are disabled until the app is connected to Postgres.",
+  },
   organization: {
     id: "demo-local",
     name: "Demo ΑΕ",
