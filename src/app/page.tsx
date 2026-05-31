@@ -1,5 +1,10 @@
 import { OperationsConsole } from "@/components/fleetlever/operations-console";
+import { getFleetLeverData } from "@/lib/db/fleetlever-data";
 
-export default function Home() {
-  return <OperationsConsole />;
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const initialData = await getFleetLeverData();
+
+  return <OperationsConsole initialData={initialData} />;
 }

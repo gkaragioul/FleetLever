@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useTransition } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
@@ -32,20 +32,29 @@ import {
 } from "lucide-react";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 import {
-  assets,
-  complianceTemplates,
+  type Asset,
+  type FleetDocument,
+  type FleetLeverData,
+  type Issue,
+  type MaintenanceTask,
+  fallbackFleetData,
   documentStatus,
-  documents,
   daysUntil,
   formatCurrency,
   formatDate,
-  getAsset,
-  getMissingDocumentCategories,
-  getReadinessScore,
-  issues,
-  maintenanceTasks,
-  operators,
 } from "@/lib/fleetlever";
+import {
+  approveDocument,
+  assignMaintenanceTask,
+  createAsset,
+  createComplianceRule,
+  createDocument,
+  createIssue,
+  createMaintenanceTask,
+  createOperator,
+  renewDocument,
+  type ActionResult,
+} from "@/app/actions";
 
 type TabId =
   | "dashboard"
@@ -67,14 +76,28 @@ const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "operators", label: "Χειριστές", icon: Users },
 ];
 
-const blockedAssets = assets.filter((asset) => asset.status === "blocked");
-const readyAssets = assets.filter((asset) => asset.status === "ready");
-const expiringDocuments = documents.filter((document) =>
-  ["expired", "critical", "warning"].includes(documentStatus(document)),
-);
-const overdueMaintenance = maintenanceTasks.filter((task) => task.status === "overdue");
-const blockingIssues = issues.filter((issue) => issue.blocking);
-const totalMaintenanceCost = maintenanceTasks.reduce((sum, task) => sum + (task.cost ?? 0), 0);
+type ActionModalKind = "asset" | "document" | "issue" | "maintenance" | "operator" | "rule" | null;
+
+type OperationsActions = {
+  openAction: (kind: Exclude<ActionModalKind, null>, defaults?: Record<string, string>) => void;
+  runAction: (action: (formData: FormData) => Promise<ActionResult>, formData: FormData) => Promise<ActionResult>;
+  isPending: boolean;
+};
+
+const FleetDataContext = createContext<FleetLeverData>(fallbackFleetData);
+const OperationsActionsContext = createContext<OperationsActions>({
+  openAction: () => {},
+  runAction: async () => ({ ok: false, message: "Η ενέργεια δεν είναι διαθέσιμη." }),
+  isPending: false,
+});
+
+function useFleetData() {
+  return useContext(FleetDataContext);
+}
+
+function useOperationsActions() {
+  return useContext(OperationsActionsContext);
+}
 
 const statusLabels: Record<string, string> = {
   ready: "έτοιμο",
@@ -171,10 +194,21 @@ function PanelHeader({
   );
 }
 
-function IconButton({ icon: Icon, label, description }: { icon: LucideIcon; label: string; description: string }) {
+function IconButton({
+  icon: Icon,
+  label,
+  description,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  onClick?: () => void;
+}) {
   return (
     <span className="group relative inline-flex">
       <button
+        onClick={onClick}
         className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:border-teal-300 hover:bg-[#f2f7f2] hover:text-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
         type="button"
         aria-label={`${label}. ${description}`}
@@ -193,6 +227,19 @@ function IconButton({ icon: Icon, label, description }: { icon: LucideIcon; labe
 }
 
 function ToolbarMenu() {
+  const { openAction } = useOperationsActions();
+  const data = useFleetData();
+
+  function exportSnapshot() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fleetlever-export-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <span className="group relative inline-flex">
       <button
@@ -205,6 +252,7 @@ function ToolbarMenu() {
       <div className="absolute right-0 top-11 z-40 hidden w-64 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-2 text-left shadow-xl ring-1 ring-slate-950/5 group-hover:block group-focus-within:block">
         <button
           type="button"
+          onClick={() => openAction("document")}
           className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Import δεδομένων. Μαζική εισαγωγή από Excel, CSV ή φάκελο αρχείων."
         >
@@ -216,6 +264,7 @@ function ToolbarMenu() {
         </button>
         <button
           type="button"
+          onClick={exportSnapshot}
           className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Export αναφοράς. Εξαγωγή αναφορών και δεδομένων για έλεγχο."
         >
@@ -513,7 +562,15 @@ function FilterChip({
 }
 
 function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
-  const readinessPercent = Math.round((readyAssets.length / assets.length) * 100);
+  const data = useFleetData();
+  const { assets, documents, maintenanceTasks } = data;
+  const readyAssets = assets.filter((asset) => asset.status === "ready");
+  const blockedAssets = assets.filter((asset) => asset.status === "blocked");
+  const expiringDocuments = documents.filter((document) =>
+    ["expired", "critical", "warning"].includes(documentStatus(document)),
+  );
+  const overdueMaintenance = maintenanceTasks.filter((task) => task.status === "overdue");
+  const readinessPercent = assets.length ? Math.round((readyAssets.length / assets.length) * 100) : 0;
   const overviewItems = [
     { icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tab: "assets" as TabId },
     { icon: AlertTriangle, label: "Μη διαθέσιμα", value: blockedAssets.length, detail: "Μένουν εκτός", tab: "issues" as TabId },
@@ -543,7 +600,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
             </p>
           </div>
           <div className="self-start">
-            <ActionButton icon={Command}>Copilot</ActionButton>
+            <ActionButton icon={Command} onClick={() => setActiveTab("command")}>Copilot</ActionButton>
           </div>
         </div>
 
@@ -629,8 +686,47 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
 
 type AssetFilter = "all" | "ready" | "blocked" | "missing";
 type DocumentFilter = "attention" | "expired" | "upcoming" | "review" | "valid" | "all";
+type MaintenanceFilter = "all" | "overdue" | "scheduled" | "cost";
+type IssueFilter = "all" | "blocking" | "high" | "progress";
 
-function assetAction(asset: (typeof assets)[number]): { label: string; tab: TabId } {
+function findAsset(assets: Asset[], assetId?: string) {
+  return assetId ? assets.find((asset) => asset.id === assetId) : undefined;
+}
+
+function getDocumentsForAsset(documents: FleetDocument[], assetId: string) {
+  return documents.filter((document) => document.assetId === assetId);
+}
+
+function getTemplateForAsset(asset: Asset, complianceTemplates: FleetLeverData["complianceTemplates"]) {
+  return complianceTemplates.find((template) => template.assetType === asset.type);
+}
+
+function getMissingDocumentCategoriesForAsset(
+  asset: Asset,
+  documents: FleetDocument[],
+  complianceTemplates: FleetLeverData["complianceTemplates"],
+) {
+  const template = getTemplateForAsset(asset, complianceTemplates);
+  if (!template) return [];
+
+  const present = new Set(getDocumentsForAsset(documents, asset.id).map((document) => document.category));
+  return template.requiredCategories.filter((category) => !present.has(category));
+}
+
+function getReadinessScoreForAsset(asset: Asset, data: FleetLeverData) {
+  const assetDocuments = getDocumentsForAsset(data.documents, asset.id);
+  const missing = getMissingDocumentCategoriesForAsset(asset, data.documents, data.complianceTemplates).length;
+  const expired = assetDocuments.filter((document) => documentStatus(document) === "expired").length;
+  const critical = assetDocuments.filter((document) => documentStatus(document) === "critical").length;
+  const overdueMaintenance = data.maintenanceTasks.filter(
+    (task) => task.assetId === asset.id && task.status === "overdue",
+  ).length;
+  const blockingIssues = data.issues.filter((issue) => issue.assetId === asset.id && issue.blocking).length;
+
+  return Math.max(0, 100 - missing * 18 - expired * 25 - critical * 12 - overdueMaintenance * 18 - blockingIssues * 25);
+}
+
+function assetAction(asset: Asset): { label: string; tab: TabId } {
   if (asset.status === "ready") {
     return { label: "Ανάθεση", tab: "operators" };
   }
@@ -694,7 +790,7 @@ function MissingDocumentSummary({ missing }: { missing: string[] }) {
   );
 }
 
-function assetBlockerText(asset: (typeof assets)[number], missing: string[]) {
+function assetBlockerText(asset: Asset, missing: string[], issues: Issue[]) {
   const linkedBlockingIssue = issues.find((issue) => issue.assetId === asset.id && issue.blocking);
 
   if (linkedBlockingIssue) {
@@ -711,8 +807,8 @@ function assetBlockerText(asset: (typeof assets)[number], missing: string[]) {
   return "Έτοιμο για ανάθεση.";
 }
 
-function documentTarget(document: (typeof documents)[number]) {
-  const asset = document.assetId ? getAsset(document.assetId) : undefined;
+function documentTarget(document: FleetDocument, assets: Asset[]) {
+  const asset = findAsset(assets, document.assetId);
 
   if (asset) {
     return `${asset.code} · ${asset.name}`;
@@ -721,7 +817,7 @@ function documentTarget(document: (typeof documents)[number]) {
   return document.operator ?? "Χωρίς σύνδεση";
 }
 
-function documentDueText(document: (typeof documents)[number]) {
+function documentDueText(document: FleetDocument) {
   if (!document.expiresAt) {
     return "Χωρίς λήξη";
   }
@@ -739,7 +835,7 @@ function documentDueText(document: (typeof documents)[number]) {
   return `Λήγει σε ${days} ημέρες`;
 }
 
-function documentAction(document: (typeof documents)[number]) {
+function documentAction(document: FleetDocument) {
   const status = documentStatus(document);
 
   if (document.reviewState === "under review") {
@@ -753,11 +849,11 @@ function documentAction(document: (typeof documents)[number]) {
   return "Άνοιγμα";
 }
 
-function isDocumentAttention(document: (typeof documents)[number]) {
+function isDocumentAttention(document: FleetDocument) {
   return document.reviewState === "under review" || ["expired", "critical", "warning"].includes(documentStatus(document));
 }
 
-function filterDocuments(filter: DocumentFilter) {
+function filterDocuments(documents: FleetDocument[], filter: DocumentFilter) {
   return documents.filter((document) => {
     const status = documentStatus(document);
 
@@ -775,12 +871,15 @@ function AssetDrawer({
   onClose,
   setActiveTab,
 }: {
-  asset: (typeof assets)[number];
+  asset: Asset;
   onClose: () => void;
   setActiveTab: (tab: TabId) => void;
 }) {
-  const missing = getMissingDocumentCategories(asset);
-  const score = getReadinessScore(asset);
+  const data = useFleetData();
+  const { documents, issues, maintenanceTasks, operators, complianceTemplates } = data;
+  const { openAction } = useOperationsActions();
+  const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
+  const score = getReadinessScoreForAsset(asset, data);
   const linkedDocuments = documents.filter((document) => document.assetId === asset.id);
   const linkedIssues = issues.filter((issue) => issue.assetId === asset.id && issue.status !== "resolved");
   const linkedMaintenance = maintenanceTasks.filter((task) => task.assetId === asset.id);
@@ -800,7 +899,7 @@ function AssetDrawer({
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setActiveTab("documents")}
+              onClick={() => openAction("document", { assetId: asset.id })}
               className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <UploadCloud size={15} />
@@ -808,7 +907,7 @@ function AssetDrawer({
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("issues")}
+              onClick={() => openAction("issue", { assetId: asset.id })}
               className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <QrCode size={15} />
@@ -1170,15 +1269,20 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
 }
 
 function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const data = useFleetData();
+  const { assets, documents, complianceTemplates, issues } = data;
+  const { openAction } = useOperationsActions();
   const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [assetQuery, setAssetQuery] = useState("");
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [showFullRegistry, setShowFullRegistry] = useState(false);
-  const assetsWithMissing = assets.filter((asset) => getMissingDocumentCategories(asset).length > 0);
+  const readyAssets = assets.filter((asset) => asset.status === "ready");
+  const blockedAssets = assets.filter((asset) => asset.status === "blocked");
+  const assetsWithMissing = assets.filter((asset) => getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates).length > 0);
   const selectedAsset = selectedAssetId ? assets.find((asset) => asset.id === selectedAssetId) : undefined;
   const normalizedQuery = assetQuery.trim().toLocaleLowerCase("el-GR");
   const filteredAssets = assets.filter((asset) => {
-    const missing = getMissingDocumentCategories(asset);
+    const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
     const matchesFilter =
       assetFilter === "all" ||
       (assetFilter === "ready" && asset.status === "ready") ||
@@ -1212,12 +1316,22 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
     { id: "missing", label: "Θέλουν έλεγχο" },
   ];
 
+  function exportAssets() {
+    const blob = new Blob([JSON.stringify(filteredAssets, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fleetlever-assets-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <OperationsPage
       eyebrow="Πάγια"
       title="Τι μπορεί να ανατεθεί σήμερα;"
       description="Δες τα πάγια που είναι έτοιμα, ποια μπλοκάρονται και ποια ενέργεια λείπει."
-      action={<ActionButton icon={Truck}>Νέο πάγιο</ActionButton>}
+      action={<ActionButton icon={Truck} onClick={() => openAction("asset")}>Νέο πάγιο</ActionButton>}
       metricAriaLabel="Σύνοψη παγίων"
       metrics={[
           {
@@ -1276,7 +1390,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
             <TextButton icon={Eye} onClick={() => setShowFullRegistry((value) => !value)}>
               {showFullRegistry ? "Κρύψε πίνακα" : "Πλήρης πίνακας"}
             </TextButton>
-            <TextButton icon={Download}>Εξαγωγή</TextButton>
+            <TextButton icon={Download} onClick={exportAssets}>Εξαγωγή</TextButton>
           </div>
         </div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -1297,9 +1411,9 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
 
         <div className={showFullRegistry ? "hidden" : "space-y-2"}>
           {filteredAssets.map((asset) => {
-            const missing = getMissingDocumentCategories(asset);
+            const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
             const action = assetAction(asset);
-            const score = getReadinessScore(asset);
+            const score = getReadinessScoreForAsset(asset, data);
 
             return (
               <button
@@ -1319,7 +1433,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
 
                 <span className="flex min-w-0 flex-col justify-center">
                   <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Εμπόδιο</span>
-                  <span className="mt-1 block text-sm leading-6 text-slate-600 xl:line-clamp-2">{assetBlockerText(asset, missing)}</span>
+                  <span className="mt-1 block text-sm leading-6 text-slate-600 xl:line-clamp-2">{assetBlockerText(asset, missing, issues)}</span>
                 </span>
 
                 <AssignmentReadinessCell score={score} missing={missing} />
@@ -1363,7 +1477,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
               </thead>
               <tbody>
                 {filteredAssets.map((asset) => {
-                  const missing = getMissingDocumentCategories(asset);
+                  const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
                   const action = assetAction(asset);
 
                   return (
@@ -1383,7 +1497,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
                         <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
                       </td>
                       <td className="py-4 pr-4">
-                        <ReadinessBar score={getReadinessScore(asset)} />
+                        <ReadinessBar score={getReadinessScoreForAsset(asset, data)} />
                       </td>
                       <td className="py-4 text-slate-600">
                         <div className="max-w-[260px]">
@@ -1420,22 +1534,42 @@ function DocumentDrawer({
   onClose,
   setActiveTab,
 }: {
-  document: (typeof documents)[number];
+  document: FleetDocument;
   onClose: () => void;
   setActiveTab: (tab: TabId) => void;
 }) {
-  const asset = document.assetId ? getAsset(document.assetId) : undefined;
+  const data = useFleetData();
+  const { assets, issues, maintenanceTasks } = data;
+  const { openAction, runAction, isPending } = useOperationsActions();
+  const asset = findAsset(assets, document.assetId);
   const linkedIssue = asset ? issues.find((issue) => issue.assetId === asset.id && issue.blocking) : undefined;
   const linkedTask = asset ? maintenanceTasks.find((task) => task.assetId === asset.id && task.status !== "completed") : undefined;
   const status = documentStatus(document);
   const primaryAction = documentAction(document);
+
+  async function handlePrimaryAction() {
+    const formData = new FormData();
+    formData.set("documentId", document.id);
+
+    if (primaryAction === "Έγκριση") {
+      await runAction(approveDocument, formData);
+      return;
+    }
+
+    if (primaryAction === "Ανανέωση") {
+      const current = document.expiresAt ? new Date(`${document.expiresAt}T12:00:00+03:00`) : new Date();
+      current.setFullYear(current.getFullYear() + 1);
+      formData.set("expiresAt", current.toISOString().slice(0, 10));
+      await runAction(renewDocument, formData);
+    }
+  }
 
   return (
     <InspectorDrawer
       titleId="document-drawer-title"
       eyebrow={categoryLabels[document.category]}
       title={document.title}
-      description={documentTarget(document)}
+      description={documentTarget(document, assets)}
       closeLabel="Κλείσιμο λεπτομερειών εγγράφου"
       onClose={onClose}
       footer={
@@ -1451,6 +1585,7 @@ function DocumentDrawer({
             </button>
             <button
               type="button"
+              onClick={() => openAction("document", asset ? { assetId: asset.id } : {})}
               className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <UploadCloud size={15} />
@@ -1459,6 +1594,8 @@ function DocumentDrawer({
           </div>
           <button
             type="button"
+            onClick={handlePrimaryAction}
+            disabled={isPending || primaryAction === "Άνοιγμα"}
             className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <ArrowRight size={15} />
@@ -1545,15 +1682,17 @@ function DocumentDrawer({
 }
 
 function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const { documents, assets } = useFleetData();
+  const { openAction } = useOperationsActions();
   const [documentFilter, setDocumentFilter] = useState<DocumentFilter>("attention");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-  const filteredDocuments = filterDocuments(documentFilter);
+  const filteredDocuments = filterDocuments(documents, documentFilter);
   const selectedDocument = selectedDocumentId ? documents.find((document) => document.id === selectedDocumentId) : undefined;
   const documentsInReview = documents.filter((document) => document.reviewState === "under review");
   const validDocuments = documents.filter((document) => documentStatus(document) === "valid");
-  const expiredDocuments = filterDocuments("expired");
-  const upcomingDocuments = filterDocuments("upcoming");
-  const attentionDocuments = filterDocuments("attention");
+  const expiredDocuments = filterDocuments(documents, "expired");
+  const upcomingDocuments = filterDocuments(documents, "upcoming");
+  const attentionDocuments = filterDocuments(documents, "attention");
   const filterCounts: Record<DocumentFilter, number> = {
     attention: attentionDocuments.length,
     expired: expiredDocuments.length,
@@ -1576,7 +1715,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
       eyebrow="Έγγραφα"
       title="Έγγραφα που θέλουν ενέργεια"
       description="Λήξεις, έλεγχοι και εγκρίσεις σε μία ουρά για το γραφείο."
-      action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
+      action={<ActionButton icon={FileText} onClick={() => openAction("document")}>Ανέβασμα εγγράφου</ActionButton>}
       metricAriaLabel="Σύνοψη εγγράφων"
       metrics={[
           {
@@ -1631,14 +1770,14 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               </FilterChip>
             ))}
           </div>
-          <TextButton icon={UploadCloud}>Μαζικό ανέβασμα</TextButton>
+          <TextButton icon={UploadCloud} onClick={() => openAction("document")}>Μαζικό ανέβασμα</TextButton>
         </div>
         <div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">
           <span>{filteredDocuments.length} από {documents.length} έγγραφα</span>
         </div>
         <div className="space-y-2">
           {filteredDocuments.map((document) => {
-            const asset = document.assetId ? getAsset(document.assetId) : undefined;
+            const asset = findAsset(assets, document.assetId);
             const status = documentStatus(document);
             const action = documentAction(document);
 
@@ -1691,7 +1830,10 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
 }
 
 function CompliancePanel() {
-  const assetsWithGaps = assets.filter((asset) => getMissingDocumentCategories(asset).length > 0);
+  const data = useFleetData();
+  const { assets, documents, complianceTemplates } = data;
+  const { openAction } = useOperationsActions();
+  const assetsWithGaps = assets.filter((asset) => getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates).length > 0);
   const requiredCategories = Array.from(new Set(complianceTemplates.flatMap((template) => template.requiredCategories)));
   const assetGapSummary = (assetCount: number, gapCount: number) =>
     `${assetCount} ${assetCount === 1 ? "πάγιο" : "πάγια"} · ${gapCount} ${gapCount === 1 ? "κενό" : "κενά"}`;
@@ -1705,8 +1847,8 @@ function CompliancePanel() {
   };
   const assetsWithGapsByType = complianceTemplates.map((template) => {
     const matchingAssets = assets.filter((asset) => asset.type === template.assetType);
-    const blockedByRule = matchingAssets.filter((asset) => getMissingDocumentCategories(asset).length > 0);
-    const missingCount = blockedByRule.reduce((sum, asset) => sum + getMissingDocumentCategories(asset).length, 0);
+    const blockedByRule = matchingAssets.filter((asset) => getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates).length > 0);
+    const missingCount = blockedByRule.reduce((sum, asset) => sum + getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates).length, 0);
 
     return {
       ...template,
@@ -1720,7 +1862,7 @@ function CompliancePanel() {
       eyebrow="Συμμόρφωση"
       title="Κανόνες συμμόρφωσης"
       description="Τι πρέπει να έχει κάθε τύπος παγίου και ποια πάγια έχουν κενά."
-      action={<ActionButton icon={ShieldCheck}>Νέος κανόνας</ActionButton>}
+      action={<ActionButton icon={ShieldCheck} onClick={() => openAction("rule")}>Νέος κανόνας</ActionButton>}
       metricAriaLabel="Σύνοψη συμμόρφωσης"
       metrics={[
           { icon: ShieldCheck, label: "Τύποι παγίων", value: complianceTemplates.length, detail: "Με κανόνες εγγράφων", tone: "teal" },
@@ -1732,12 +1874,13 @@ function CompliancePanel() {
         <DataCard title="Πάγια με κενά">
           <div className="divide-y divide-[#e3e9e2]">
             {assetsWithGaps.map((asset) => {
-              const missing = getMissingDocumentCategories(asset);
+              const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
 
               return (
                 <button
                   key={asset.id}
                   type="button"
+                  onClick={() => openAction("document", { assetId: asset.id })}
                   className="grid w-full gap-3 py-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                 >
                   <span className="min-w-0">
@@ -1784,7 +1927,7 @@ function CompliancePanel() {
                     ))}
                   </div>
                 </div>
-                <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                <TextButton icon={Eye} onClick={() => openAction("rule", { assetType: template.assetType })}>Άνοιγμα</TextButton>
               </div>
             ))}
           </div>
@@ -1795,12 +1938,31 @@ function CompliancePanel() {
 }
 
 function MaintenancePanel() {
+  const data = useFleetData();
+  const { assets, maintenanceTasks } = data;
+  const { openAction, runAction, isPending } = useOperationsActions();
+  const [maintenanceFilter, setMaintenanceFilter] = useState<MaintenanceFilter>("all");
+  const overdueMaintenance = maintenanceTasks.filter((task) => task.status === "overdue");
+  const totalMaintenanceCost = maintenanceTasks.reduce((sum, task) => sum + (task.cost ?? 0), 0);
+  const filteredTasks = maintenanceTasks.filter((task) => {
+    if (maintenanceFilter === "overdue") return task.status === "overdue";
+    if (maintenanceFilter === "scheduled") return task.status === "scheduled";
+    if (maintenanceFilter === "cost") return Boolean(task.cost);
+    return true;
+  });
+
+  async function handleAssign(task: MaintenanceTask) {
+    const formData = new FormData();
+    formData.set("taskId", task.id);
+    await runAction(assignMaintenanceTask, formData);
+  }
+
   return (
     <OperationsPage
       eyebrow="Συντήρηση"
       title="Τι service πρέπει να γίνει και από ποιον"
       description="Εκπρόθεσμες εργασίες, επόμενα service και κόστος σε μία ουρά εργασίας."
-      action={<ActionButton icon={Wrench}>Νέα εργασία</ActionButton>}
+      action={<ActionButton icon={Wrench} onClick={() => openAction("maintenance")}>Νέα εργασία</ActionButton>}
       metricAriaLabel="Σύνοψη συντήρησης"
       metrics={[
           { icon: Wrench, label: "Ανοιχτές", value: maintenanceTasks.length, detail: "Εργασίες συντήρησης", tone: "slate" },
@@ -1811,15 +1973,15 @@ function MaintenancePanel() {
       <SectionGrid>
         <DataCard title="Ουρά εργασιών">
           <div className="mb-4 flex flex-wrap gap-2">
-            <FilterChip active>Όλες</FilterChip>
-            <FilterChip>Εκπρόθεσμες</FilterChip>
-            <FilterChip>Προγραμματισμένες</FilterChip>
-            <FilterChip>Με κόστος</FilterChip>
+            <FilterChip active={maintenanceFilter === "all"} onClick={() => setMaintenanceFilter("all")}>Όλες</FilterChip>
+            <FilterChip active={maintenanceFilter === "overdue"} onClick={() => setMaintenanceFilter("overdue")}>Εκπρόθεσμες</FilterChip>
+            <FilterChip active={maintenanceFilter === "scheduled"} onClick={() => setMaintenanceFilter("scheduled")}>Προγραμματισμένες</FilterChip>
+            <FilterChip active={maintenanceFilter === "cost"} onClick={() => setMaintenanceFilter("cost")}>Με κόστος</FilterChip>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {maintenanceTasks.map((task) => {
+            {filteredTasks.map((task) => {
               const days = daysUntil(task.dueAt);
-              const asset = getAsset(task.assetId);
+              const asset = findAsset(assets, task.assetId);
               const isOverdue = task.status === "overdue" || days < 0;
 
               return (
@@ -1860,11 +2022,18 @@ function MaintenancePanel() {
                     <span className="text-sm font-semibold text-[#11685f]">
                       {task.cost ? formatCurrency(task.cost) : "Χωρίς κόστος"}
                     </span>
-                    <TextButton icon={Users}>Ανάθεση</TextButton>
+                    <TextButton icon={Users} onClick={() => handleAssign(task)}>
+                      {isPending ? "Γίνεται..." : "Ανάθεση"}
+                    </TextButton>
                   </div>
                 </article>
               );
             })}
+            {!filteredTasks.length ? (
+              <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+                Δεν υπάρχουν εργασίες σε αυτό το φίλτρο.
+              </div>
+            ) : null}
           </div>
         </DataCard>
       </SectionGrid>
@@ -1873,12 +2042,23 @@ function MaintenancePanel() {
 }
 
 function IssuesPanel() {
+  const { assets, issues } = useFleetData();
+  const { openAction } = useOperationsActions();
+  const [issueFilter, setIssueFilter] = useState<IssueFilter>("all");
+  const blockingIssues = issues.filter((issue) => issue.blocking);
+  const filteredIssues = issues.filter((issue) => {
+    if (issueFilter === "blocking") return issue.blocking;
+    if (issueFilter === "high") return issue.severity === "high" || issue.severity === "critical";
+    if (issueFilter === "progress") return issue.status === "in progress" || issue.status === "triaged";
+    return true;
+  });
+
   return (
     <OperationsPage
       eyebrow="Βλάβες"
       title="Τι κρατάει πάγια εκτός δουλειάς"
       description="Βλάβες που μπλοκάρουν ανάθεση, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
-      action={<ActionButton icon={QrCode}>Νέα βλάβη</ActionButton>}
+      action={<ActionButton icon={QrCode} onClick={() => openAction("issue")}>Νέα βλάβη</ActionButton>}
       metricAriaLabel="Σύνοψη βλαβών"
       metrics={[
           { icon: AlertTriangle, label: "Ανοιχτές", value: issues.length, detail: "Χρειάζονται παρακολούθηση", tone: "slate" },
@@ -1889,14 +2069,14 @@ function IssuesPanel() {
       <SectionGrid>
         <DataCard title="Ανοιχτές βλάβες">
           <div className="mb-4 flex flex-wrap gap-2">
-            <FilterChip active>Όλες</FilterChip>
-            <FilterChip>Μπλοκάρουν</FilterChip>
-            <FilterChip>Υψηλές/κρίσιμες</FilterChip>
-            <FilterChip>Σε εξέλιξη</FilterChip>
+            <FilterChip active={issueFilter === "all"} onClick={() => setIssueFilter("all")}>Όλες</FilterChip>
+            <FilterChip active={issueFilter === "blocking"} onClick={() => setIssueFilter("blocking")}>Μπλοκάρουν</FilterChip>
+            <FilterChip active={issueFilter === "high"} onClick={() => setIssueFilter("high")}>Υψηλές/κρίσιμες</FilterChip>
+            <FilterChip active={issueFilter === "progress"} onClick={() => setIssueFilter("progress")}>Σε εξέλιξη</FilterChip>
           </div>
           <div className="space-y-2">
-            {issues.map((issue) => {
-              const asset = getAsset(issue.assetId);
+            {filteredIssues.map((issue) => {
+              const asset = findAsset(assets, issue.assetId);
 
               return (
                 <div key={issue.id} className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -1913,11 +2093,18 @@ function IssuesPanel() {
                       tone={issue.blocking ? "blocked" : issue.severity === "critical" ? "criticalIssue" : issue.severity}
                     />
                     <StatusPill label={statusLabels[issue.status]} tone={issue.status} />
-                    <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                    <TextButton icon={Wrench} onClick={() => openAction("maintenance", { assetId: issue.assetId })}>
+                      Εργασία
+                    </TextButton>
                   </div>
                 </div>
               );
             })}
+            {!filteredIssues.length ? (
+              <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
+                Δεν υπάρχουν βλάβες σε αυτό το φίλτρο.
+              </div>
+            ) : null}
           </div>
         </DataCard>
       </SectionGrid>
@@ -1926,6 +2113,8 @@ function IssuesPanel() {
 }
 
 function OperatorsPanel() {
+  const { assets, operators } = useFleetData();
+  const { openAction } = useOperationsActions();
   const totalAssignments = operators.reduce((sum, operator) => sum + operator.assignedAssetIds.length, 0);
   const expiringLicenses = operators.filter((operator) => daysUntil(operator.licenseExpiresAt) <= 30);
 
@@ -1934,7 +2123,7 @@ function OperatorsPanel() {
       eyebrow="Χειριστές"
       title="Άδειες και αναθέσεις χειριστών"
       description="Ποιος είναι διαθέσιμος, ποια άδεια λήγει και σε ποιο πάγιο είναι συνδεδεμένος."
-      action={<ActionButton icon={Users}>Νέος χειριστής</ActionButton>}
+      action={<ActionButton icon={Users} onClick={() => openAction("operator")}>Νέος χειριστής</ActionButton>}
       metricAriaLabel="Σύνοψη χειριστών"
       metrics={[
           { icon: Users, label: "Χειριστές", value: operators.length, detail: "Ενεργοί άνθρωποι", tone: "slate" },
@@ -1981,13 +2170,13 @@ function OperatorsPanel() {
                         key={assetId}
                         className="rounded-full border border-[#d9e2dc] bg-[#f7faf4] px-2 py-1 text-xs font-semibold text-slate-600"
                       >
-                        {getAsset(assetId)?.code ?? "Asset"}
+                        {findAsset(assets, assetId)?.code ?? "Asset"}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <TextButton icon={Eye}>Άνοιγμα</TextButton>
+                <TextButton icon={FileText} onClick={() => openAction("document")}>Άδεια</TextButton>
               </div>
             );
           })}
@@ -1998,6 +2187,11 @@ function OperatorsPanel() {
 }
 
 function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const { documents } = useFleetData();
+  const expiringDocuments = documents.filter((document) =>
+    ["expired", "critical", "warning"].includes(documentStatus(document)),
+  );
+
   return (
     <DataCard title="Προθεσμίες">
       <div className="mb-3 flex justify-end">
@@ -2028,6 +2222,8 @@ function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void })
 }
 
 function AssignmentsCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const { assets, issues } = useFleetData();
+
   return (
     <DataCard title="Αναθέσεις">
       <div className="mb-3 flex justify-end">
@@ -2044,7 +2240,7 @@ function AssignmentsCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void 
             className="grid min-h-[82px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3.5 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-[#13211f]">{getAsset(issue.assetId)?.code}</span>
+              <span className="block text-sm font-semibold text-[#13211f]">{findAsset(assets, issue.assetId)?.code}</span>
               <span className="mt-1 block truncate text-sm text-slate-600">{issue.assignee}</span>
               <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{issue.title}</span>
             </span>
@@ -2056,11 +2252,313 @@ function AssignmentsCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void 
   );
 }
 
-export function OperationsConsole() {
-  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
-  const activeMeta = useMemo(() => tabs.find((tab) => tab.id === activeTab) ?? tabs[0], [activeTab]);
+const documentCategories = Object.keys(categoryLabels);
+const assetTypes = ["Crane", "Bus", "Forklift", "Van", "Excavator"];
+
+function Field({
+  label,
+  name,
+  defaultValue,
+  placeholder,
+  type = "text",
+  required = false,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  placeholder?: string;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+      {label}
+      <input
+        name={name}
+        type={type}
+        required={required}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+      />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  name,
+  defaultValue,
+  options,
+  required = false,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  options: { value: string; label: string }[];
+  required?: boolean;
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+      {label}
+      <select
+        name={name}
+        required={required}
+        defaultValue={defaultValue ?? ""}
+        className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+      >
+        <option value="">Επίλεξε</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ActionModal({
+  kind,
+  defaults,
+  onClose,
+}: {
+  kind: Exclude<ActionModalKind, null>;
+  defaults: Record<string, string>;
+  onClose: () => void;
+}) {
+  const data = useFleetData();
+  const { runAction, isPending } = useOperationsActions();
+  const [message, setMessage] = useState("");
+  const assetOptions = data.assets.map((asset) => ({ value: asset.id, label: `${asset.code} · ${asset.name}` }));
+  const operatorOptions = data.operators.map((operator) => ({ value: operator.id, label: operator.name }));
+  const titleMap: Record<Exclude<ActionModalKind, null>, string> = {
+    asset: "Νέο πάγιο",
+    document: "Ανέβασμα εγγράφου",
+    issue: "Νέα βλάβη",
+    maintenance: "Νέα εργασία",
+    operator: "Νέος χειριστής",
+    rule: "Νέος κανόνας",
+  };
+  const actionMap: Record<Exclude<ActionModalKind, null>, (formData: FormData) => Promise<ActionResult>> = {
+    asset: createAsset,
+    document: createDocument,
+    issue: createIssue,
+    maintenance: createMaintenanceTask,
+    operator: createOperator,
+    rule: createComplianceRule,
+  };
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const result = await runAction(actionMap[kind], new FormData(event.currentTarget));
+    setMessage(result.message);
+  }
 
   return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="action-modal-title">
+      <button type="button" aria-label="Κλείσιμο φόρμας" className="absolute inset-0 bg-slate-950/30" onClick={onClose} />
+      <div className="absolute left-1/2 top-1/2 w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[#d9e2dc] p-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">Ενέργεια</p>
+            <h2 id="action-modal-title" className="mt-1 text-xl font-semibold text-[#13211f]">{titleMap[kind]}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            aria-label="Κλείσιμο"
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="grid max-h-[75vh] gap-4 overflow-y-auto p-5">
+          {kind === "asset" ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Κωδικός" name="code" required placeholder="TR-09" />
+                <Field label="Όνομα" name="name" required placeholder="Ford Transit" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Τύπος" name="assetType" required options={assetTypes.map((type) => ({ value: type, label: type }))} />
+                <SelectField
+                  label="Ιδιοκτησία"
+                  name="ownership"
+                  defaultValue="owned"
+                  options={[
+                    { value: "owned", label: "owned" },
+                    { value: "leased", label: "leased" },
+                    { value: "rented", label: "rented" },
+                  ]}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Πινακίδα" name="plate" />
+                <Field label="Serial" name="serial" />
+              </div>
+              <Field label="Τμήμα" name="department" />
+            </>
+          ) : null}
+
+          {kind === "document" ? (
+            <>
+              <Field label="Τίτλος" name="title" required placeholder="CR-04 νέο πιστοποιητικό" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField
+                  label="Κατηγορία"
+                  name="category"
+                  required
+                  options={documentCategories.map((category) => ({ value: category, label: categoryLabels[category] ?? category }))}
+                />
+                <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} options={assetOptions} />
+              </div>
+              <SelectField label="Χειριστής" name="operatorId" options={operatorOptions} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Ημερομηνία έκδοσης" name="issuedAt" type="date" />
+                <Field label="Ημερομηνία λήξης" name="expiresAt" type="date" />
+              </div>
+            </>
+          ) : null}
+
+          {kind === "issue" ? (
+            <>
+              <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} required options={assetOptions} />
+              <Field label="Τίτλος βλάβης" name="title" required placeholder="Πτώση πίεσης..." />
+              <SelectField
+                label="Σοβαρότητα"
+                name="severity"
+                defaultValue="medium"
+                options={[
+                  { value: "low", label: "Χαμηλή" },
+                  { value: "medium", label: "Μεσαία" },
+                  { value: "high", label: "Υψηλή" },
+                  { value: "critical", label: "Κρίσιμη" },
+                ]}
+              />
+              <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                Περιγραφή
+                <textarea
+                  name="description"
+                  rows={3}
+                  className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+                />
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-[#13211f]">
+                <input name="blocking" type="checkbox" className="h-4 w-4 rounded border-[#d9e2dc]" />
+                Μπλοκάρει ανάθεση
+              </label>
+            </>
+          ) : null}
+
+          {kind === "maintenance" ? (
+            <>
+              <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} required options={assetOptions} />
+              <Field label="Εργασία" name="title" required placeholder="Service 10.000 χλμ." />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Προθεσμία" name="dueAt" type="date" />
+                <Field label="Κόστος" name="cost" type="number" />
+              </div>
+            </>
+          ) : null}
+
+          {kind === "operator" ? (
+            <>
+              <Field label="Όνομα" name="name" required placeholder="Maria Sotiropoulou" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Ρόλος" name="role" placeholder="Bus driver" />
+                <Field label="Τηλέφωνο" name="phone" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Κατηγορίες άδειας" name="licenseCategories" placeholder="D, Crane" />
+                <Field label="Λήξη άδειας" name="licenseExpiresAt" type="date" />
+              </div>
+            </>
+          ) : null}
+
+          {kind === "rule" ? (
+            <>
+              <Field label="Τύπος παγίου" name="assetType" defaultValue={defaults.assetType} required placeholder="Trailer" />
+              <Field label="Κατηγορίες εγγράφων" name="categories" required placeholder="KTEO, Insurance" />
+            </>
+          ) : null}
+
+          {message ? (
+            <p className={`rounded-md border px-3 py-2 text-sm ${message.includes("Δεν") || message.includes("Συμπλήρωσε") ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+              {message}
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-[#d9e2dc] pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2]"
+            >
+              Άκυρο
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex h-10 items-center rounded-md bg-[#11685f] px-3 text-sm font-semibold text-white transition hover:bg-[#0f5c55] disabled:opacity-60"
+            >
+              {isPending ? "Αποθήκευση..." : "Αποθήκευση"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export function OperationsConsole({ initialData = fallbackFleetData }: { initialData?: FleetLeverData }) {
+  const [data, setData] = useState<FleetLeverData>(initialData);
+  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+  const [actionModal, setActionModal] = useState<{ kind: ActionModalKind; defaults: Record<string, string> }>({
+    kind: null,
+    defaults: {},
+  });
+  const [toast, setToast] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const activeMeta = useMemo(
+    () => (activeTab === "command" ? { id: "command" as const, label: "Copilot", icon: Command } : tabs.find((tab) => tab.id === activeTab) ?? tabs[0]),
+    [activeTab],
+  );
+  const actionContext = useMemo<OperationsActions>(
+    () => ({
+      openAction: (kind, defaults = {}) => setActionModal({ kind, defaults }),
+      isPending,
+      runAction: (action, formData) =>
+        new Promise<ActionResult>((resolve) => {
+          startTransition(async () => {
+            try {
+              const result = await action(formData);
+              setToast(result.message);
+
+              if (result.ok) {
+                const response = await fetch("/api/fleetlever/snapshot", { cache: "no-store" });
+                if (response.ok) {
+                  setData(await response.json());
+                }
+                setActionModal({ kind: null, defaults: {} });
+              }
+
+              resolve(result);
+            } catch {
+              const result = { ok: false, message: "Η ενέργεια απέτυχε. Δοκίμασε ξανά." };
+              setToast(result.message);
+              resolve(result);
+            }
+          });
+        }),
+    }),
+    [isPending],
+  );
+
+  return (
+    <FleetDataContext.Provider value={data}>
+      <OperationsActionsContext.Provider value={actionContext}>
     <div className="min-h-screen bg-[#edf1ee] text-[#13211f]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-[#d9e2dc] bg-[#f8f7f2]/95 px-4 py-5 backdrop-blur xl:block">
         <div>
@@ -2103,28 +2601,54 @@ export function OperationsConsole() {
             <button
               type="button"
               className="hidden h-10 min-w-[150px] shrink-0 items-center gap-2 rounded-md border border-[#cfe3da] bg-[#eaf5ef] px-3 text-left text-[#123d37] transition hover:border-teal-200 hover:bg-[#e2f0ea] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 md:inline-flex"
-              aria-label="Τρέχουσα τοποθεσία: Athens Depot"
+              aria-label={`Τρέχουσα τοποθεσία: ${data.location.name}`}
             >
               <Building2 size={17} className="text-teal-700" />
               <span>
-                <span className="block text-sm font-semibold leading-4">Athens Depot</span>
-                <span className="block text-xs leading-5 text-[#117064]">5 πάγια · 3 χειριστές</span>
+                <span className="block text-sm font-semibold leading-4">{data.location.name}</span>
+                <span className="block text-xs leading-5 text-[#117064]">
+                  {data.location.assetCount} πάγια · {data.location.operatorCount} χειριστές
+                </span>
               </span>
             </button>
-            <div className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#f3f5f0] px-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab("command")}
+              className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#f3f5f0] px-3 text-left transition hover:border-teal-200 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              aria-label="Άνοιγμα αναζήτησης σε πάγια, KTEO, χειριστή ή βλάβη"
+            >
               <Search className="shrink-0 text-slate-400" size={18} />
               <span className="truncate text-sm text-slate-500">Αναζήτηση παγίου, KTEO, χειριστή ή βλάβης...</span>
-            </div>
+            </button>
             <div className="hidden items-center gap-2 sm:flex">
               <span className="hidden items-center gap-2 2xl:inline-flex">
-                <IconButton icon={Truck} label="Νέο πάγιο" description="Καταχώριση οχήματος, μηχανήματος ή εξοπλισμού." />
+                <IconButton
+                  icon={Truck}
+                  label="Νέο πάγιο"
+                  description="Καταχώριση οχήματος, μηχανήματος ή εξοπλισμού."
+                  onClick={() => setActionModal({ kind: "asset", defaults: {} })}
+                />
                 <IconButton
                   icon={FileText}
                   label="Ανέβασμα εγγράφου"
                   description="Προσθήκη άδειας, KTEO, πιστοποιητικού ή άλλου αρχείου."
+                  onClick={() => setActionModal({ kind: "document", defaults: {} })}
                 />
-                <IconButton icon={QrCode} label="Νέα βλάβη" description="Γρήγορη αναφορά προβλήματος από πεδίο ή γραφείο." />
-                <IconButton icon={Bell} label="Ειδοποιήσεις" description="Έλεγχος υπενθυμίσεων, προθεσμιών και αναθέσεων." />
+                <IconButton
+                  icon={QrCode}
+                  label="Νέα βλάβη"
+                  description="Γρήγορη αναφορά προβλήματος από πεδίο ή γραφείο."
+                  onClick={() => setActionModal({ kind: "issue", defaults: {} })}
+                />
+                <IconButton
+                  icon={Bell}
+                  label="Ειδοποιήσεις"
+                  description="Έλεγχος υπενθυμίσεων, προθεσμιών και αναθέσεων."
+                  onClick={() => {
+                    setActiveTab("dashboard");
+                    setToast("Οι ειδοποιήσεις εμφανίζονται στις προτεραιότητες, τις λήξεις και τις αναθέσεις.");
+                  }}
+                />
               </span>
               <ToolbarMenu />
             </div>
@@ -2173,6 +2697,20 @@ export function OperationsConsole() {
           </section>
         </main>
       </div>
+      {toast ? (
+        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-4 py-2 text-sm font-medium text-[#123d37] shadow-lg">
+          {toast}
+        </div>
+      ) : null}
+      {actionModal.kind ? (
+        <ActionModal
+          kind={actionModal.kind}
+          defaults={actionModal.defaults}
+          onClose={() => setActionModal({ kind: null, defaults: {} })}
+        />
+      ) : null}
     </div>
+      </OperationsActionsContext.Provider>
+    </FleetDataContext.Provider>
   );
 }

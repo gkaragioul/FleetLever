@@ -31,11 +31,14 @@ export type FleetDocument = {
   title: string;
   category: DocumentCategory;
   assetId?: string;
+  assetCode?: string;
   operator?: string;
   expiresAt?: string;
   issuedAt?: string;
   reviewState: "approved" | "under review";
   confidence: number;
+  fileName?: string;
+  storageKey?: string;
 };
 
 export type MaintenanceTask = {
@@ -70,8 +73,31 @@ export type Operator = {
 };
 
 export type ComplianceTemplate = {
+  id?: string;
   assetType: string;
   requiredCategories: DocumentCategory[];
+};
+
+export type FleetLeverData = {
+  organization: {
+    id: string;
+    name: string;
+    locale: string;
+    timezone: string;
+    currency: string;
+  };
+  location: {
+    id?: string;
+    name: string;
+    assetCount: number;
+    operatorCount: number;
+  };
+  assets: Asset[];
+  documents: FleetDocument[];
+  maintenanceTasks: MaintenanceTask[];
+  issues: Issue[];
+  operators: Operator[];
+  complianceTemplates: ComplianceTemplate[];
 };
 
 export const today = new Date("2026-05-29T09:00:00+03:00");
@@ -324,6 +350,27 @@ export const complianceTemplates: ComplianceTemplate[] = [
     requiredCategories: ["Insurance", "Periodic inspection", "Safety document"],
   },
 ];
+
+export const fallbackFleetData: FleetLeverData = {
+  organization: {
+    id: "demo-local",
+    name: "Demo ΑΕ",
+    locale: "el-GR",
+    timezone: "Europe/Athens",
+    currency: "EUR",
+  },
+  location: {
+    name: "Athens Depot",
+    assetCount: assets.length,
+    operatorCount: operators.length,
+  },
+  assets,
+  documents,
+  maintenanceTasks,
+  issues,
+  operators,
+  complianceTemplates,
+};
 
 export function daysUntil(date: string, baseDate = today) {
   const target = new Date(`${date}T12:00:00+03:00`);
