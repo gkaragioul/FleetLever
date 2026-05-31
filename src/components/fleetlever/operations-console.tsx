@@ -90,7 +90,7 @@ const statusLabels: Record<string, string> = {
   open: "ανοιχτό",
   "in progress": "σε εξέλιξη",
   completed: "ολοκληρωμένο",
-  triaged: "triaged",
+  triaged: "σε αξιολόγηση",
   waiting: "σε αναμονή",
   resolved: "κλειστό",
   scheduled: "προγραμματισμένο",
@@ -268,7 +268,7 @@ type MetricStripItem = {
 
 function metricStripGridClass(count: number) {
   if (count >= 5) return "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5";
-  if (count === 4) return "sm:grid-cols-2 lg:grid-cols-4";
+  if (count === 4) return "grid-cols-2 lg:grid-cols-4";
   if (count === 3) return "sm:grid-cols-3";
   return "sm:grid-cols-2";
 }
@@ -295,7 +295,7 @@ function MetricStrip({ items, ariaLabel }: { items: MetricStripItem[]; ariaLabel
             ) : null}
           </>
         );
-        const className = `flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left last:border-b-0 sm:border-b-0 ${
+        const className = `flex min-h-[88px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left last:border-b-0 sm:border-b-0 ${
           item.active ? "bg-[#e2f0ea]" : "bg-[#fbfaf6]"
         }`;
 
@@ -1840,23 +1840,23 @@ function IssuesPanel() {
       <PanelHeader
         eyebrow="Βλάβες"
         title="Τι κρατάει πάγια εκτός δουλειάς"
-        description="Blocking βλάβες, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
+        description="Βλάβες που μπλοκάρουν ανάθεση, υπεύθυνοι και επόμενη ενέργεια για να μη μπει λάθος πάγιο στο πρόγραμμα."
         action={<ActionButton icon={QrCode}>Νέα βλάβη</ActionButton>}
       />
       <MetricStrip
         ariaLabel="Σύνοψη βλαβών"
         items={[
           { icon: AlertTriangle, label: "Ανοιχτές", value: issues.length, detail: "Χρειάζονται παρακολούθηση", tone: "slate" },
-          { icon: Truck, label: "Blocking", value: blockingIssues.length, detail: "Μπλοκάρουν ανάθεση", tone: "red" },
+          { icon: Truck, label: "Μπλοκάρουν", value: blockingIssues.length, detail: "Μπλοκάρουν ανάθεση", tone: "red" },
           { icon: Users, label: "Με υπεύθυνο", value: issues.filter((issue) => issue.assignee).length, detail: "Έχουν ανάθεση", tone: "teal" },
         ]}
       />
-      <div className="grid items-stretch gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         <DataCard title="Ανοιχτές βλάβες">
           <div className="mb-4 flex flex-wrap gap-2">
             <FilterChip active>Όλες</FilterChip>
-            <FilterChip>Blocking</FilterChip>
-            <FilterChip>High/Critical</FilterChip>
+            <FilterChip>Μπλοκάρουν</FilterChip>
+            <FilterChip>Υψηλές/κρίσιμες</FilterChip>
             <FilterChip>Σε εξέλιξη</FilterChip>
           </div>
           <div className="space-y-2">
@@ -1880,24 +1880,6 @@ function IssuesPanel() {
                     <StatusPill label={statusLabels[issue.status]} tone={issue.status} />
                     <TextButton icon={Eye}>Άνοιγμα</TextButton>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </DataCard>
-        <DataCard title="Blocking βλάβες">
-          <div className="space-y-2">
-            {blockingIssues.map((issue) => {
-              const asset = getAsset(issue.assetId);
-
-              return (
-                <div key={issue.id} className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-[#13211f]">{asset?.code}</p>
-                    <StatusPill label="μη διαθέσιμο" tone="blocked" />
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">{asset?.name}</p>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">{issue.title}</p>
                 </div>
               );
             })}
