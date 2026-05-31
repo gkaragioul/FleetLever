@@ -293,7 +293,7 @@ function ReadinessBar({ score }: { score: number }) {
   const color = score >= 80 ? "bg-emerald-500" : score >= 55 ? "bg-amber-500" : "bg-red-500";
 
   return (
-    <div className="min-w-[120px]">
+    <div className="w-full min-w-[120px]">
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span>Ετοιμότητα</span>
         <span className="font-mono text-slate-700">{score}%</span>
@@ -302,6 +302,19 @@ function ReadinessBar({ score }: { score: number }) {
         <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
       </div>
     </div>
+  );
+}
+
+function AssignmentReadinessCell({ score, missing }: { score: number; missing: string[] }) {
+  return (
+    <span className="flex h-full min-h-[72px] w-full flex-col justify-center">
+      <span className="block w-full max-w-[190px]">
+        <ReadinessBar score={score} />
+      </span>
+      <span className="mt-2 block min-h-6 max-w-[190px] truncate text-sm text-slate-600">
+        <MissingDocumentSummary missing={missing} />
+      </span>
+    </span>
   );
 }
 
@@ -1106,9 +1119,9 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
                 key={asset.id}
                 type="button"
                 onClick={() => setSelectedAssetId(asset.id)}
-                className="grid min-h-[104px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 2xl:grid-cols-[minmax(180px,1.2fr)_minmax(210px,1.4fr)_minmax(150px,0.9fr)_auto] 2xl:items-center"
+                className="grid min-h-[104px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[180px_minmax(0,1fr)_200px_112px] xl:items-stretch"
               >
-                <span className="min-w-0">
+                <span className="flex min-w-0 flex-col justify-center">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-base font-semibold text-[#13211f]">{asset.code}</span>
                     <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
@@ -1117,19 +1130,14 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
                   <span className="mt-1 block truncate font-mono text-xs text-slate-400">{asset.plate ?? asset.serial}</span>
                 </span>
 
-                <span className="min-w-0">
+                <span className="flex min-w-0 flex-col justify-center">
                   <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Εμπόδιο</span>
-                  <span className="mt-1 block text-sm leading-6 text-slate-600">{assetBlockerText(asset, missing)}</span>
+                  <span className="mt-1 block text-sm leading-6 text-slate-600 xl:line-clamp-2">{assetBlockerText(asset, missing)}</span>
                 </span>
 
-                <span>
-                  <ReadinessBar score={score} />
-                  <span className="mt-3 block">
-                    <MissingDocumentSummary missing={missing} />
-                  </span>
-                </span>
+                <AssignmentReadinessCell score={score} missing={missing} />
 
-                <span className="flex items-center justify-between gap-3 2xl:justify-end">
+                <span className="flex min-h-[72px] items-center justify-between gap-3 xl:justify-end">
                   <span className="text-sm font-semibold text-[#11685f]">{action.label}</span>
                   <ArrowRight size={16} className="text-[#11685f]" />
                 </span>
