@@ -1469,7 +1469,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
   const documentsInReview = documents.filter((document) => document.reviewState === "under review");
   const validDocuments = documents.filter((document) => documentStatus(document) === "valid");
   const filters: { id: DocumentFilter; label: string }[] = [
-    { id: "attention", label: "Προσοχή" },
+    { id: "attention", label: "Ενέργειες" },
     { id: "expired", label: "Ληγμένα" },
     { id: "upcoming", label: "30 ημέρες" },
     { id: "review", label: "Σε έλεγχο" },
@@ -1481,13 +1481,13 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
     <div className="space-y-4">
       <PanelHeader
         eyebrow="Έγγραφα"
-        title="Τι έγγραφα θέλουν προσοχή;"
+        title="Τι έγγραφα θέλουν προσοχή"
         description="Λήξεις, έλεγχος και επόμενη ενέργεια σε μία ουρά για το γραφείο."
         action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
       />
       <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
         {[
-          { id: "attention" as DocumentFilter, icon: AlertTriangle, label: "Προσοχή", value: filterDocuments("attention").length, detail: "Λήξεις ή έλεγχος", tone: "amber" },
+          { id: "attention" as DocumentFilter, icon: AlertTriangle, label: "Ενέργειες", value: filterDocuments("attention").length, detail: "Ανανέωση ή έγκριση", tone: "amber" },
           { id: "review" as DocumentFilter, icon: ShieldCheck, label: "Σε έλεγχο", value: documentsInReview.length, detail: "Θέλουν επιβεβαίωση", tone: "teal" },
           { id: "valid" as DocumentFilter, icon: FileText, label: "Έγκυρα", value: validDocuments.length, detail: "Χωρίς άμεση ενέργεια", tone: "slate" },
         ].map((metric) => {
@@ -1556,12 +1556,10 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
                   <span className="mt-1 block truncate text-sm text-slate-600">
                     {categoryLabels[document.category]} · {asset?.code ?? document.operator}
                   </span>
-                  <span className="mt-1 block text-xs text-slate-500">AI {Math.round(document.confidence * 100)}%</span>
                 </span>
 
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Προθεσμία</span>
-                  <span className="mt-1 block text-sm leading-5 text-slate-600">{documentDueText(document)}</span>
+                  <span className="block text-sm font-semibold leading-5 text-slate-700">{documentDueText(document)}</span>
                   <span className="mt-1 block text-xs text-slate-500">{document.expiresAt ? formatDate(document.expiresAt) : "χωρίς ημερομηνία"}</span>
                 </span>
 
@@ -2001,40 +1999,6 @@ function AssetsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => vo
   );
 }
 
-function DocumentsContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
-  const actionDocuments = filterDocuments("attention").slice(0, 4);
-
-  return (
-    <DataCard title="Χρειάζονται ενέργεια">
-      <div className="space-y-3">
-        <p className="text-sm leading-6 text-slate-600">
-          Η ουρά δείχνει μόνο όσα χρειάζονται ανανέωση ή επιβεβαίωση πριν μπουν σε πρόγραμμα.
-        </p>
-        <div className="space-y-3">
-          {actionDocuments.map((document) => {
-            const status = documentStatus(document);
-
-            return (
-              <button
-                key={document.id}
-                type="button"
-                onClick={() => setActiveTab("documents")}
-                className="grid min-h-[72px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-[#13211f]">{document.title}</span>
-                  <span className="mt-1 block truncate text-xs text-slate-500">{documentAction(document)}</span>
-                </span>
-                <StatusPill label={statusLabels[status]} tone={status} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </DataCard>
-  );
-}
-
 function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <div className="space-y-4">
@@ -2181,7 +2145,11 @@ export function OperationsConsole() {
 
         <main
           className={`mx-auto grid max-w-[1500px] gap-5 px-4 py-5 sm:px-6 lg:px-8 ${
-            activeTab === "command" ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "lg:grid-cols-[minmax(0,1fr)_340px]"
+            activeTab === "documents"
+              ? "lg:grid-cols-1"
+              : activeTab === "command"
+                ? "lg:grid-cols-[minmax(0,1fr)_300px]"
+                : "lg:grid-cols-[minmax(0,1fr)_340px]"
           }`}
         >
           <section
@@ -2203,17 +2171,17 @@ export function OperationsConsole() {
             {activeTab === "settings" && <SettingsPanel />}
           </section>
 
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            {activeTab === "command" ? (
-              <CommandContextPanel setActiveTab={setActiveTab} />
-            ) : activeTab === "assets" ? (
-              <AssetsContextPanel setActiveTab={setActiveTab} />
-            ) : activeTab === "documents" ? (
-              <DocumentsContextPanel setActiveTab={setActiveTab} />
-            ) : (
-              <TodayPanel setActiveTab={setActiveTab} />
-            )}
-          </aside>
+          {activeTab !== "documents" ? (
+            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+              {activeTab === "command" ? (
+                <CommandContextPanel setActiveTab={setActiveTab} />
+              ) : activeTab === "assets" ? (
+                <AssetsContextPanel setActiveTab={setActiveTab} />
+              ) : (
+                <TodayPanel setActiveTab={setActiveTab} />
+              )}
+            </aside>
+          ) : null}
         </main>
       </div>
     </div>
