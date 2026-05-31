@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Bell,
-  Bot,
   Building2,
   CheckCircle2,
   ClipboardList,
@@ -23,9 +22,7 @@ import {
   MoreHorizontal,
   Plus,
   QrCode,
-  Save,
   Search,
-  Settings,
   ShieldCheck,
   Truck,
   UploadCloud,
@@ -43,7 +40,6 @@ import {
   formatCurrency,
   formatDate,
   getAsset,
-  getAttentionItems,
   getMissingDocumentCategories,
   getReadinessScore,
   issues,
@@ -59,10 +55,7 @@ type TabId =
   | "compliance"
   | "maintenance"
   | "issues"
-  | "operators"
-  | "copilot"
-  | "reports"
-  | "settings";
+  | "operators";
 
 const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "dashboard", label: "Επισκόπηση", icon: Gauge },
@@ -72,12 +65,8 @@ const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "maintenance", label: "Συντήρηση", icon: Wrench },
   { id: "issues", label: "Βλάβες", icon: AlertTriangle },
   { id: "operators", label: "Χειριστές", icon: Users },
-  { id: "copilot", label: "Copilot", icon: Bot },
-  { id: "reports", label: "Αναφορές", icon: ClipboardList },
-  { id: "settings", label: "Ρυθμίσεις", icon: Settings },
 ];
 
-const attentionItems = getAttentionItems();
 const blockedAssets = assets.filter((asset) => asset.status === "blocked");
 const readyAssets = assets.filter((asset) => asset.status === "ready");
 const expiringDocuments = documents.filter((document) =>
@@ -1989,158 +1978,6 @@ function OperatorsPanel() {
   );
 }
 
-function CopilotPanel() {
-  return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Copilot"
-        title="Ρώτα για στόλο, έγγραφα και βλάβες"
-        description="Το Copilot απαντά μόνο με δεδομένα της εταιρείας, δείχνει πηγές και σταματά όταν λείπουν στοιχεία."
-        action={<StatusPill label="πηγές ενεργές" tone="valid" />}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη Copilot"
-        items={[
-          { icon: Bot, label: "Λειτουργία", value: "Ops", detail: "Μόνο εταιρικές εγγραφές", tone: "teal" },
-          { icon: ClipboardList, label: "Πηγές", value: attentionItems.slice(0, 5).length, detail: "Ορατές αναφορές", tone: "slate" },
-          { icon: ShieldCheck, label: "Κανόνες", value: "On", detail: "Χωρίς νομική συμβουλή", tone: "amber" },
-        ]}
-      />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <DataCard title="Ερώτηση">
-          <div className="rounded-lg border border-[#d9e2dc] bg-[#f7faf4] p-4">
-            <div className="flex items-center gap-3 rounded-md border border-[#cfe3da] bg-[#fbfaf6] px-4 py-3">
-              <Bot className="text-[#117064]" size={20} />
-              <span className="text-sm text-slate-600">Τι πρέπει να προλάβουμε πριν βγει το πρόγραμμα;</span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["Ποια πάγια δεν ανατίθενται;", "Τι λήγει σε 30 ημέρες;", "Τι service έχει καθυστερήσει;"].map((prompt) => (
-                <FilterChip key={prompt}>{prompt}</FilterChip>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 rounded-lg border border-[#29473f] bg-[#203832] p-5 text-[#f7faf4]">
-            <p className="text-sm font-semibold text-[#aee5d8]">Απάντηση</p>
-            <p className="mt-3 text-sm leading-6 text-[#d8e4de]">
-              Πρώτα κλείσε το KTEO του B-12, μετά την επισκευή του EX-01 και στη συνέχεια τον έλεγχο για το CR-04.
-              Το FL-02 χρειάζεται εκπρόθεσμο service πριν θεωρηθεί καθαρό για ανάθεση.
-            </p>
-          </div>
-        </DataCard>
-        <DataCard title="Πηγές">
-          <div className="space-y-2">
-            {attentionItems.slice(0, 5).map((item) => (
-              <div key={item.id} className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[#13211f]">{item.source}</p>
-                    <p className="mt-1 text-sm leading-5 text-slate-600">{item.label}</p>
-                  </div>
-                  <StatusPill label={statusLabels[item.kind] ?? item.kind} tone={item.kind} />
-                </div>
-                <p className="mt-2 text-xs text-slate-500">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-        </DataCard>
-      </div>
-    </div>
-  );
-}
-
-function ReportsPanel() {
-  return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Αναφορές"
-        title="Έτοιμες αναφορές για διοίκηση και audit"
-        description="Καθαρές εξαγωγές για προσοχή, λήξεις, συντήρηση και ετοιμότητα χωρίς χειροκίνητο καθάρισμα."
-        action={<ActionButton icon={Download}>Export αναφοράς</ActionButton>}
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη αναφορών"
-        items={[
-          { icon: ClipboardList, label: "Πρότυπα", value: "4", detail: "Έτοιμες αναφορές", tone: "slate" },
-          { icon: FileText, label: "Πηγές", value: "5", detail: "Πάγια, έγγραφα, service", tone: "teal" },
-          { icon: Download, label: "Μορφή", value: "PDF/CSV", detail: "Για έλεγχο και αποστολή", tone: "amber" },
-        ]}
-      />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["Αναφορά προσοχής", "Κρίσιμα, προειδοποιήσεις, ελλείψεις και μη διαθέσιμες εγγραφές", "Για πρωινό meeting"],
-          ["Λήξεις εγγράφων", "Ημερομηνίες λήξης ανά πάγιο και κατηγορία", "Για compliance follow-up"],
-          ["Εκπρόθεσμο service", "Εργασίες, κόστος και υπεύθυνοι", "Για συνεργείο"],
-          ["Αναφορά ετοιμότητας", "Scores με αιτίες και πηγές", "Για ανάθεση στόλου"],
-        ].map(([title, detail, meta]) => (
-          <button
-            key={title}
-            type="button"
-            className="group flex min-h-[188px] flex-col justify-between rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-          >
-            <span>
-              <ClipboardList className="text-teal-800" size={20} />
-              <p className="mt-3 font-semibold text-[#13211f]">{title}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
-              <p className="mt-2 text-xs font-semibold text-slate-500">{meta}</p>
-            </span>
-            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#11685f]">
-              Export
-              <ArrowRight className="transition group-hover:translate-x-0.5" size={15} />
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SettingsPanel() {
-  return (
-    <div className="space-y-4">
-      <PanelHeader
-        eyebrow="Ρυθμίσεις"
-        title="Ρυθμίσεις εταιρείας"
-        description="Ρόλοι, ειδοποιήσεις, εισαγωγές, χρέωση, audit και κανόνες AI σε καθαρές ομάδες."
-      />
-      <MetricStrip
-        ariaLabel="Σύνοψη ρυθμίσεων"
-        items={[
-          { icon: Users, label: "Ρόλοι", value: "7", detail: "Owner έως Auditor", tone: "slate" },
-          { icon: Bell, label: "Υπενθυμίσεις", value: "6", detail: "60 ημέρες έως λήξη", tone: "teal" },
-          { icon: ShieldCheck, label: "Audit", value: "On", detail: "Αλλαγές και AI χρήση", tone: "amber" },
-        ]}
-      />
-      <div className="grid gap-4 lg:grid-cols-3">
-        {[
-          { title: "Χρήστες και ρόλοι", detail: "Owner, Admin, Operations, Compliance, Mechanic, Operator, Auditor", icon: Users },
-          { title: "Ειδοποιήσεις", detail: "Παράθυρα 60, 30, 14, 7 ημερών και υπενθύμιση στη λήξη", icon: Bell },
-          { title: "Καταγραφές audit", detail: "Αλλαγές, overrides, εισαγωγές και χρήση AI στην ομάδα", icon: ClipboardList },
-          { title: "Χρέωση", detail: "Χειροκίνητο τιμολόγιο πρώτα, Stripe-ready αργότερα", icon: Save },
-          { title: "Εισαγωγές", detail: "CSV, Excel, φάκελοι, ουρά ελέγχου και έγκριση δημοσίευσης", icon: UploadCloud },
-          { title: "Κανόνες AI", detail: "Πηγές, δήλωση ελλιπών δεδομένων και χωρίς νομική συμβουλή", icon: Bot },
-        ].map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <DataCard key={item.title} title={item.title}>
-              <div className="flex items-start gap-3">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#e7ece8] text-slate-700 ring-1 ring-[#d2dbd5]">
-                  <Icon size={18} />
-                </span>
-                <p className="text-sm leading-6 text-slate-600">{item.detail}</p>
-              </div>
-              <div className="mt-4 flex items-center justify-between border-t border-[#e3e9e2] pt-3">
-                <StatusPill label="ρυθμισμένο" tone="valid" />
-                <TextButton icon={Settings}>Άνοιγμα</TextButton>
-              </div>
-            </DataCard>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   return (
     <DataCard title="Προθεσμίες">
@@ -2310,9 +2147,6 @@ export function OperationsConsole() {
             {activeTab === "maintenance" && <MaintenancePanel setActiveTab={setActiveTab} />}
             {activeTab === "issues" && <IssuesPanel />}
             {activeTab === "operators" && <OperatorsPanel />}
-            {activeTab === "copilot" && <CopilotPanel />}
-            {activeTab === "reports" && <ReportsPanel />}
-            {activeTab === "settings" && <SettingsPanel />}
           </section>
         </main>
       </div>
