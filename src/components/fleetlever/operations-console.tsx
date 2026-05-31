@@ -466,6 +466,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
 }
 
 function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const [showImportSteps, setShowImportSteps] = useState(false);
   const commandActions: {
     label: string;
     detail: string;
@@ -501,22 +502,15 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
     {
       label: "Εργασία συντήρησης",
       detail: "Νέα εργασία συντήρησης με υπεύθυνο και προθεσμία.",
-      actionLabel: "Προγραμματισμός",
+      actionLabel: "Ανάθεση",
       icon: Wrench,
       tab: "maintenance",
       tone: "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]",
     },
   ];
 
-  const searchScopes: { label: string; count: string; tab: TabId }[] = [
-    { label: "Πάγια", count: String(assets.length), tab: "assets" },
-    { label: "Έγγραφα", count: String(documents.length), tab: "documents" },
-    { label: "Βλάβες", count: String(issues.length), tab: "issues" },
-    { label: "Χειριστές", count: String(operators.length), tab: "operators" },
-  ];
-
   const suggestedSearches: { query: string; target: string; tab: TabId }[] = [
-    { query: "B-12 blocked", target: "Βλάβες", tab: "issues" },
+    { query: "B-12 μη διαθέσιμο", target: "Βλάβες", tab: "issues" },
     { query: "Έγγραφα επόμενων 30 ημερών", target: "Έγγραφα", tab: "documents" },
     { query: "Εκπρόθεσμη συντήρηση", target: "Συντήρηση", tab: "maintenance" },
   ];
@@ -533,14 +527,16 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
     title: string;
     detail: string;
     actionLabel: string;
+    statusLabel: string;
     tone: string;
     tab: TabId;
   }[] = [
     {
       code: "B-12",
-      title: "blocked · KTEO",
+      title: "μη διαθέσιμο · KTEO",
       detail: "Ληγμένο KTEO. Μην ανατεθεί σε διαδρομή.",
       actionLabel: "Άνοιγμα βλάβης",
+      statusLabel: "μη διαθέσιμο",
       tone: "blocked",
       tab: "issues",
     },
@@ -549,6 +545,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
       title: "πιστοποιητικό · κοντινή λήξη",
       detail: "Πιστοποιητικό ανύψωσης λήγει στις 03 Ιουν.",
       actionLabel: "Έλεγχος εγγράφου",
+      statusLabel: "κρίσιμο",
       tone: "critical",
       tab: "documents",
     },
@@ -557,6 +554,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
       title: "συντήρηση · εκπρόθεσμη",
       detail: "Χρειάζεται ανάθεση εργασίας συντήρησης.",
       actionLabel: "Ανάθεση εργασίας",
+      statusLabel: "εκπρόθεσμο",
       tone: "overdue",
       tab: "maintenance",
     },
@@ -609,23 +607,9 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
                 <span className="mt-0.5 block truncate text-sm text-slate-600">{result.detail}</span>
               </span>
               <span className="flex flex-col items-end gap-1">
-                <StatusPill label={statusLabels[result.tone] ?? result.tone} tone={result.tone} />
+                <StatusPill label={result.statusLabel} tone={result.tone} />
                 <span className="hidden text-xs font-semibold text-[#11685f] sm:block">{result.actionLabel}</span>
               </span>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-4">
-          {searchScopes.map((scope) => (
-            <button
-              key={scope.label}
-              type="button"
-              onClick={() => setActiveTab(scope.tab)}
-              className="flex min-h-12 items-center justify-between rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-left text-sm transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            >
-              <span className="font-medium text-slate-700">{scope.label}</span>
-              <span className="rounded-full bg-[#e7ece8] px-2 py-0.5 text-xs font-semibold text-slate-600">{scope.count}</span>
             </button>
           ))}
         </div>
@@ -677,41 +661,50 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
             })}
           </div>
         </DataCard>
-
       </div>
 
       <section className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-[#13211f]">Αρχική εισαγωγή</h2>
-            <p className="mt-1 text-sm text-slate-600">Για αρχική φόρτωση Excel, CSV ή φακέλων. Δεν χρειάζεται κάθε μέρα.</p>
-          </div>
-          <TextButton icon={UploadCloud}>Άνοιγμα εισαγωγής</TextButton>
+          <span>
+            <span className="block text-base font-semibold text-[#13211f]">Αρχική εισαγωγή</span>
+            <span className="mt-1 block text-sm text-slate-600">Για Excel, CSV ή φακέλους στην αρχική ρύθμιση.</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowImportSteps((value) => !value)}
+            aria-expanded={showImportSteps}
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-[#123d37] transition hover:border-[#c9ded6] hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          >
+            <UploadCloud size={15} />
+            {showImportSteps ? "Κρύψε τα βήματα" : "Δες τα βήματα"}
+          </button>
         </div>
-        <div className="mt-4 grid gap-2 md:grid-cols-4">
-          {importSteps.map((step, index) => {
-            const Icon = step.icon;
+        {showImportSteps ? (
+          <div className="mt-4 grid gap-2 border-t border-[#e3e9e2] pt-4 md:grid-cols-4">
+            {importSteps.map((step, index) => {
+              const Icon = step.icon;
 
-            return (
-              <div
-                key={step.label}
-                className="relative rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#e3f2ec] text-[#11685f] ring-1 ring-[#c7e2d6]">
-                    <Icon size={15} />
-                  </span>
-                  <span className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-semibold text-slate-500">
-                    {index + 1}
-                  </span>
+              return (
+                <div
+                  key={step.label}
+                  className="relative rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#e3f2ec] text-[#11685f] ring-1 ring-[#c7e2d6]">
+                      <Icon size={15} />
+                    </span>
+                    <span className="rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2 py-0.5 text-xs font-semibold text-slate-500">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-[#13211f]">{step.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{step.detail}</p>
+                  <p className="mt-2 text-xs font-semibold text-[#117064]">{step.status}</p>
                 </div>
-                <p className="mt-2 text-sm font-semibold text-[#13211f]">{step.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">{step.detail}</p>
-                <p className="mt-2 text-xs font-semibold text-[#117064]">{step.status}</p>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : null}
       </section>
     </div>
   );
