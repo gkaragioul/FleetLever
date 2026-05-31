@@ -36,6 +36,35 @@ const pool = new Pool({
   ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
 });
 
+async function checkDemoTenant() {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    await client.query("select set_config('app.current_organization_id', $1, true)", [demoOrganizationId]);
+    await client.query("select set_config('app.current_profile_id', $1, true)", [demoProfileId]);
+    const result = await client.query(
+      `
+        select 1
+        from public.organization_members
+        where organization_id = $1
+          and profile_id = $2
+          and status = 'active'
+        limit 1
+      `,
+      [demoOrganizationId, demoProfileId],
+    );
+    await client.query("rollback");
+
+    return result.rowCount === 1;
+  } catch {
+    await client.query("rollback").catch(() => {});
+    return false;
+  } finally {
+    client.release();
+  }
+}
+
 try {
   const [databaseResult, tableResult, migrationTableResult] = await Promise.all([
     pool.query(`
@@ -56,16 +85,7 @@ try {
   ]);
 
   const missingTables = tableResult.rows.filter((row) => !row.exists).map((row) => row.table_name);
-  const hasOrganizationMembers = !missingTables.includes("organization_members");
-  const tenantResult = hasOrganizationMembers
-      ? await pool.query(`
-        select count(*)::int as active_members
-        from public.organization_members
-        where organization_id = $1
-          and profile_id = $2
-          and status = 'active'
-      `, [demoOrganizationId, demoProfileId])
-    : { rows: [{ active_members: 0 }] };
+  const tenantActive = !missingTables.includes("organization_members") ? await checkDemoTenant() : false;
   const migrationsResult = migrationTableResult.rows[0]?.exists
     ? await pool.query("select json_agg(version order by version) as applied from public.schema_migrations")
     : { rows: [{ applied: [] }] };
@@ -80,7 +100,7 @@ try {
     demoTenant: {
       organizationId: demoOrganizationId,
       profileId: demoProfileId,
-      activeMembers: tenantResult.rows[0]?.active_members ?? 0,
+      active: tenantActive,
     },
     migrations: {
       tableExists: Boolean(migrationTableResult.rows[0]?.exists),

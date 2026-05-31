@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDbPool } from "@/lib/db/client";
+import { getDbPool, withTenant } from "@/lib/db/client";
 
 export const dynamic = "force-dynamic";
 
@@ -61,17 +61,9 @@ export async function GET() {
     const missingTables = tableResult.rows.filter((row) => !row.exists).map((row) => row.table_name);
     const database = dbResult.rows[0];
     const tenantResult = !missingTables.includes("organization_members")
-      ? await pool.query<{ active_members: number }>(
-          `
-            select count(*)::int as active_members
-            from public.organization_members
-            where organization_id = $1
-              and profile_id = $2
-              and status = 'active'
-          `,
-          [DEMO_ORGANIZATION_ID, DEMO_PROFILE_ID],
-        )
-      : { rows: [{ active_members: 0 }] };
+      ? await withTenant({ organizationId: DEMO_ORGANIZATION_ID, profileId: DEMO_PROFILE_ID }, async () => ({ active: true }))
+          .catch(() => ({ active: false }))
+      : { active: false };
     const migrationsResult = migrationTableResult.rows[0]?.exists
       ? await pool.query<{ applied: string[] | null }>(
           "select json_agg(version order by version) as applied from public.schema_migrations",
@@ -96,7 +88,7 @@ export async function GET() {
       demoTenant: {
         organizationId: DEMO_ORGANIZATION_ID,
         profileId: DEMO_PROFILE_ID,
-        activeMembers: tenantResult.rows[0]?.active_members ?? 0,
+        active: tenantResult.active,
       },
       migrations: {
         tableExists: Boolean(migrationTableResult.rows[0]?.exists),
