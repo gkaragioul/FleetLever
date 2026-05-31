@@ -1501,9 +1501,9 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
           <div className="flex flex-wrap gap-2">
             {filters.map((filter) => (
               <FilterChip key={filter.id} active={documentFilter === filter.id} onClick={() => setDocumentFilter(filter.id)}>
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
                   <span>{filter.label}</span>
-                  <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-[#d9e2dc]">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#fdfbf7] px-1.5 text-[11px] font-semibold leading-none text-slate-500 ring-1 ring-[#d9e2dc]">
                     {filterCounts[filter.id]}
                   </span>
                 </span>
