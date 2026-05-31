@@ -45,7 +45,12 @@ import {
 } from "@/lib/fleetlever";
 import {
   approveDocument,
+  archiveAsset,
+  archiveDocument,
+  archiveOperator,
+  askCopilot,
   assignMaintenanceTask,
+  completeMaintenanceTask,
   createAsset,
   createComplianceRule,
   createDocument,
@@ -53,6 +58,12 @@ import {
   createMaintenanceTask,
   createOperator,
   renewDocument,
+  resolveIssue,
+  switchWorkspace,
+  updateAsset,
+  updateDocument,
+  updateMaintenanceTask,
+  updateOperator,
   type ActionResult,
 } from "@/app/actions";
 
@@ -76,12 +87,24 @@ const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "operators", label: "Χειριστές", icon: Users },
 ];
 
-type ActionModalKind = "asset" | "document" | "issue" | "maintenance" | "operator" | "rule" | null;
+type ActionModalKind = "asset" | "document" | "issue" | "maintenance" | "operator" | "rule" | "workspace" | null;
 
 type OperationsActions = {
   openAction: (kind: Exclude<ActionModalKind, null>, defaults?: Record<string, string>) => void;
   runAction: (action: (formData: FormData) => Promise<ActionResult>, formData: FormData) => Promise<ActionResult>;
   isPending: boolean;
+};
+
+type CopilotResponse = {
+  answer: string;
+  conversationId?: string;
+  citations: {
+    table: string;
+    id: string;
+    title: string;
+    excerpt: string;
+  }[];
+  suggestions: string[];
 };
 
 const FleetDataContext = createContext<FleetLeverData>(fallbackFleetData);
@@ -835,6 +858,12 @@ function documentDueText(document: FleetDocument) {
   return `Λήγει σε ${days} ημέρες`;
 }
 
+function formatFileSize(bytes?: number) {
+  if (!bytes) return "Χωρίς αρχείο";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function documentAction(document: FleetDocument) {
   const status = documentStatus(document);
 
@@ -877,7 +906,7 @@ function AssetDrawer({
 }) {
   const data = useFleetData();
   const { documents, issues, maintenanceTasks, operators, complianceTemplates } = data;
-  const { openAction } = useOperationsActions();
+  const { openAction, runAction, isPending } = useOperationsActions();
   const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
   const score = getReadinessScoreForAsset(asset, data);
   const linkedDocuments = documents.filter((document) => document.assetId === asset.id);
@@ -885,6 +914,13 @@ function AssetDrawer({
   const linkedMaintenance = maintenanceTasks.filter((task) => task.assetId === asset.id);
   const operator = operators.find((item) => item.name === asset.operator);
   const action = assetAction(asset);
+
+  async function handleArchive() {
+    const formData = new FormData();
+    formData.set("assetId", asset.id);
+    await runAction(archiveAsset, formData);
+    onClose();
+  }
 
   return (
     <InspectorDrawer
@@ -912,6 +948,35 @@ function AssetDrawer({
             >
               <QrCode size={15} />
               Βλάβη
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                openAction("asset", {
+                  assetId: asset.id,
+                  code: asset.code,
+                  name: asset.name,
+                  assetType: asset.type,
+                  ownership: asset.ownership,
+                  plate: asset.plate ?? "",
+                  serial: asset.serial ?? "",
+                  department: asset.department,
+                  operatorId: asset.operatorId ?? "",
+                })
+              }
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <Eye size={15} />
+              Επεξεργασία
+            </button>
+            <button
+              type="button"
+              onClick={handleArchive}
+              disabled={isPending}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:opacity-60"
+            >
+              <X size={15} />
+              Αρχειοθέτηση
             </button>
           </div>
           <button
@@ -1024,7 +1089,12 @@ function AssetDrawer({
 }
 
 function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const { runAction, isPending } = useOperationsActions();
   const [showImportSteps, setShowImportSteps] = useState(false);
+  const [question, setQuestion] = useState("Τι πρέπει να κλείσει σήμερα πριν βγει το πρόγραμμα;");
+  const [conversationId, setConversationId] = useState("");
+  const [copilotResult, setCopilotResult] = useState<CopilotResponse | null>(null);
+  const [copilotMessage, setCopilotMessage] = useState("");
   const commandActions: {
     label: string;
     detail: string;
@@ -1118,6 +1188,23 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
     },
   ];
 
+  async function handleCopilotSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    if (conversationId) {
+      formData.set("conversationId", conversationId);
+    }
+
+    const result = await runAction(askCopilot, formData);
+    setCopilotMessage(result.message);
+
+    if (result.ok && result.data && typeof result.data === "object") {
+      const response = result.data as CopilotResponse;
+      setCopilotResult(response);
+      setConversationId(response.conversationId ?? conversationId);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <PanelHeader
@@ -1125,6 +1212,54 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
         title="Βρες την επόμενη ενέργεια"
         description="Το κέντρο εντολών βρίσκει πάγια, έγγραφα, βλάβες και εργασίες συντήρησης και προτείνει το επόμενο βήμα."
       />
+
+      <DataCard title="Copilot">
+        <form onSubmit={handleCopilotSubmit} className="grid gap-3">
+          <label className="grid gap-2 text-sm font-medium text-[#13211f]">
+            Ερώτηση
+            <textarea
+              name="question"
+              rows={3}
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              className="min-h-[92px] resize-y rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+            />
+          </label>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm leading-6 text-slate-600">
+              Απαντά από τα live πάγια, έγγραφα, βλάβες και εργασίες και κρατάει ιστορικό συνομιλίας.
+            </p>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[#11685f] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0f5c55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:opacity-60"
+            >
+              <Command size={16} />
+              {isPending ? "Σκέφτεται..." : "Ρώτησε"}
+            </button>
+          </div>
+          {copilotMessage && !copilotResult ? (
+            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{copilotMessage}</p>
+          ) : null}
+        </form>
+        {copilotResult ? (
+          <div className="mt-4 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4">
+            <p className="text-sm leading-6 text-slate-700">{copilotResult.answer}</p>
+            {copilotResult.citations.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {copilotResult.citations.map((citation) => (
+                  <span
+                    key={`${citation.table}-${citation.id}`}
+                    className="max-w-full rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-2.5 py-1 text-xs font-medium text-slate-600"
+                  >
+                    {citation.title}: {citation.excerpt}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </DataCard>
 
       <section className="rounded-lg border border-[#cfe3da] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1564,6 +1699,13 @@ function DocumentDrawer({
     }
   }
 
+  async function handleArchive() {
+    const formData = new FormData();
+    formData.set("documentId", document.id);
+    await runAction(archiveDocument, formData);
+    onClose();
+  }
+
   return (
     <InspectorDrawer
       titleId="document-drawer-title"
@@ -1590,6 +1732,41 @@ function DocumentDrawer({
             >
               <UploadCloud size={15} />
               Ανέβασμα
+            </button>
+            {document.hasFile ? (
+              <a
+                href={`/api/fleetlever/documents/${document.id}/file`}
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <Download size={15} />
+                Λήψη
+              </a>
+            ) : null}
+            <button
+              type="button"
+              onClick={() =>
+                openAction("document", {
+                  documentId: document.id,
+                  title: document.title,
+                  category: document.category,
+                  assetId: document.assetId ?? "",
+                  issuedAt: document.issuedAt ?? "",
+                  expiresAt: document.expiresAt ?? "",
+                })
+              }
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <Eye size={15} />
+              Επεξεργασία
+            </button>
+            <button
+              type="button"
+              onClick={handleArchive}
+              disabled={isPending}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:opacity-60"
+            >
+              <X size={15} />
+              Αρχείο
             </button>
           </div>
           <button
@@ -1624,6 +1801,26 @@ function DocumentDrawer({
           <p className="mt-1 text-xs text-slate-500">AI {Math.round(document.confidence * 100)}%</p>
         </div>
       </div>
+
+      <DrawerSection title="Αρχείο">
+        <div className="flex flex-col gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-[#13211f]">
+              {document.fileName ?? "Δεν έχει ανέβει αρχείο"}
+            </span>
+            <span className="mt-1 block text-xs text-slate-500">{formatFileSize(document.fileSize)}</span>
+          </span>
+          {document.hasFile ? (
+            <a
+              href={`/api/fleetlever/documents/${document.id}/file`}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-[#123d37] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <Download size={15} />
+              Λήψη
+            </a>
+          ) : null}
+        </div>
+      </DrawerSection>
 
       <DrawerSection title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
         <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
@@ -1957,6 +2154,12 @@ function MaintenancePanel() {
     await runAction(assignMaintenanceTask, formData);
   }
 
+  async function handleComplete(task: MaintenanceTask) {
+    const formData = new FormData();
+    formData.set("taskId", task.id);
+    await runAction(completeMaintenanceTask, formData);
+  }
+
   return (
     <OperationsPage
       eyebrow="Συντήρηση"
@@ -2022,9 +2225,28 @@ function MaintenancePanel() {
                     <span className="text-sm font-semibold text-[#11685f]">
                       {task.cost ? formatCurrency(task.cost) : "Χωρίς κόστος"}
                     </span>
-                    <TextButton icon={Users} onClick={() => handleAssign(task)}>
-                      {isPending ? "Γίνεται..." : "Ανάθεση"}
-                    </TextButton>
+                    <span className="flex flex-wrap justify-end gap-2">
+                      <TextButton
+                        icon={Eye}
+                        onClick={() =>
+                          openAction("maintenance", {
+                            taskId: task.id,
+                            assetId: task.assetId,
+                            title: task.title,
+                            dueAt: task.dueAt,
+                            cost: task.cost ? String(task.cost) : "",
+                          })
+                        }
+                      >
+                        Επεξεργασία
+                      </TextButton>
+                      <TextButton icon={Users} onClick={() => handleAssign(task)}>
+                        {isPending ? "Γίνεται..." : "Ανάθεση"}
+                      </TextButton>
+                      <TextButton icon={CheckCircle2} onClick={() => handleComplete(task)}>
+                        Ολοκλήρωση
+                      </TextButton>
+                    </span>
                   </div>
                 </article>
               );
@@ -2043,7 +2265,7 @@ function MaintenancePanel() {
 
 function IssuesPanel() {
   const { assets, issues } = useFleetData();
-  const { openAction } = useOperationsActions();
+  const { openAction, runAction, isPending } = useOperationsActions();
   const [issueFilter, setIssueFilter] = useState<IssueFilter>("all");
   const blockingIssues = issues.filter((issue) => issue.blocking);
   const filteredIssues = issues.filter((issue) => {
@@ -2052,6 +2274,12 @@ function IssuesPanel() {
     if (issueFilter === "progress") return issue.status === "in progress" || issue.status === "triaged";
     return true;
   });
+
+  async function handleResolve(issue: Issue) {
+    const formData = new FormData();
+    formData.set("issueId", issue.id);
+    await runAction(resolveIssue, formData);
+  }
 
   return (
     <OperationsPage
@@ -2096,6 +2324,9 @@ function IssuesPanel() {
                     <TextButton icon={Wrench} onClick={() => openAction("maintenance", { assetId: issue.assetId })}>
                       Εργασία
                     </TextButton>
+                    <TextButton icon={CheckCircle2} onClick={() => handleResolve(issue)}>
+                      {isPending ? "Γίνεται..." : "Κλείσιμο"}
+                    </TextButton>
                   </div>
                 </div>
               );
@@ -2114,9 +2345,15 @@ function IssuesPanel() {
 
 function OperatorsPanel() {
   const { assets, operators } = useFleetData();
-  const { openAction } = useOperationsActions();
+  const { openAction, runAction, isPending } = useOperationsActions();
   const totalAssignments = operators.reduce((sum, operator) => sum + operator.assignedAssetIds.length, 0);
   const expiringLicenses = operators.filter((operator) => daysUntil(operator.licenseExpiresAt) <= 30);
+
+  async function handleArchive(operator: FleetLeverData["operators"][number]) {
+    const formData = new FormData();
+    formData.set("operatorId", operator.id);
+    await runAction(archiveOperator, formData);
+  }
 
   return (
     <OperationsPage
@@ -2176,7 +2413,38 @@ function OperatorsPanel() {
                   </div>
                 </div>
 
-                <TextButton icon={FileText} onClick={() => openAction("document")}>Άδεια</TextButton>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <TextButton
+                    icon={Eye}
+                    onClick={() =>
+                      openAction("operator", {
+                        operatorId: operator.id,
+                        name: operator.name,
+                        role: operator.role,
+                        phone: operator.phone,
+                        licenseCategories: operator.licenseCategories.join(", "),
+                        licenseExpiresAt: operator.licenseExpiresAt,
+                      })
+                    }
+                  >
+                    Επεξεργασία
+                  </TextButton>
+                  <TextButton
+                    icon={FileText}
+                    onClick={() =>
+                      openAction("document", {
+                        operatorId: operator.id,
+                        category: "Operator license",
+                        title: `Άδεια χειριστή ${operator.name}`,
+                      })
+                    }
+                  >
+                    Άδεια
+                  </TextButton>
+                  <TextButton icon={X} onClick={() => handleArchive(operator)}>
+                    {isPending ? "Γίνεται..." : "Αρχείο"}
+                  </TextButton>
+                </div>
               </div>
             );
           })}
@@ -2332,26 +2600,38 @@ function ActionModal({
   const [message, setMessage] = useState("");
   const assetOptions = data.assets.map((asset) => ({ value: asset.id, label: `${asset.code} · ${asset.name}` }));
   const operatorOptions = data.operators.map((operator) => ({ value: operator.id, label: operator.name }));
-  const titleMap: Record<Exclude<ActionModalKind, null>, string> = {
-    asset: "Νέο πάγιο",
-    document: "Ανέβασμα εγγράφου",
-    issue: "Νέα βλάβη",
-    maintenance: "Νέα εργασία",
-    operator: "Νέος χειριστής",
-    rule: "Νέος κανόνας",
-  };
-  const actionMap: Record<Exclude<ActionModalKind, null>, (formData: FormData) => Promise<ActionResult>> = {
-    asset: createAsset,
-    document: createDocument,
-    issue: createIssue,
-    maintenance: createMaintenanceTask,
-    operator: createOperator,
-    rule: createComplianceRule,
-  };
+  const isAssetEdit = kind === "asset" && Boolean(defaults.assetId);
+  const isDocumentEdit = kind === "document" && Boolean(defaults.documentId);
+  const isMaintenanceEdit = kind === "maintenance" && Boolean(defaults.taskId);
+  const isOperatorEdit = kind === "operator" && Boolean(defaults.operatorId);
+  const title =
+    kind === "asset"
+      ? isAssetEdit ? "Επεξεργασία παγίου" : "Νέο πάγιο"
+      : kind === "document"
+        ? isDocumentEdit ? "Επεξεργασία εγγράφου" : "Ανέβασμα εγγράφου"
+        : kind === "issue"
+          ? "Νέα βλάβη"
+          : kind === "maintenance"
+            ? isMaintenanceEdit ? "Επεξεργασία εργασίας" : "Νέα εργασία"
+            : kind === "operator"
+              ? isOperatorEdit ? "Επεξεργασία χειριστή" : "Νέος χειριστής"
+              : kind === "workspace"
+                ? "Workspace"
+                : "Νέος κανόνας";
+
+  function actionForKind() {
+    if (kind === "asset") return isAssetEdit ? updateAsset : createAsset;
+    if (kind === "document") return isDocumentEdit ? updateDocument : createDocument;
+    if (kind === "issue") return createIssue;
+    if (kind === "maintenance") return isMaintenanceEdit ? updateMaintenanceTask : createMaintenanceTask;
+    if (kind === "operator") return isOperatorEdit ? updateOperator : createOperator;
+    if (kind === "workspace") return switchWorkspace;
+    return createComplianceRule;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = await runAction(actionMap[kind], new FormData(event.currentTarget));
+    const result = await runAction(actionForKind(), new FormData(event.currentTarget));
     setMessage(result.message);
   }
 
@@ -2362,7 +2642,7 @@ function ActionModal({
         <div className="flex items-start justify-between gap-4 border-b border-[#d9e2dc] p-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">Ενέργεια</p>
-            <h2 id="action-modal-title" className="mt-1 text-xl font-semibold text-[#13211f]">{titleMap[kind]}</h2>
+            <h2 id="action-modal-title" className="mt-1 text-xl font-semibold text-[#13211f]">{title}</h2>
           </div>
           <button
             type="button"
@@ -2374,19 +2654,23 @@ function ActionModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid max-h-[75vh] gap-4 overflow-y-auto p-5">
+        <form onSubmit={handleSubmit} encType="multipart/form-data" className="grid max-h-[75vh] gap-4 overflow-y-auto p-5">
+          {kind === "asset" && defaults.assetId ? <input type="hidden" name="assetId" value={defaults.assetId} /> : null}
+          {kind === "document" && defaults.documentId ? <input type="hidden" name="documentId" value={defaults.documentId} /> : null}
+          {kind === "maintenance" && defaults.taskId ? <input type="hidden" name="taskId" value={defaults.taskId} /> : null}
+          {kind === "operator" && defaults.operatorId ? <input type="hidden" name="operatorId" value={defaults.operatorId} /> : null}
           {kind === "asset" ? (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Κωδικός" name="code" required placeholder="TR-09" />
-                <Field label="Όνομα" name="name" required placeholder="Ford Transit" />
+                <Field label="Κωδικός" name="code" defaultValue={defaults.code} required placeholder="TR-09" />
+                <Field label="Όνομα" name="name" defaultValue={defaults.name} required placeholder="Ford Transit" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Τύπος" name="assetType" required options={assetTypes.map((type) => ({ value: type, label: type }))} />
+                <SelectField label="Τύπος" name="assetType" defaultValue={defaults.assetType} required options={assetTypes.map((type) => ({ value: type, label: type }))} />
                 <SelectField
                   label="Ιδιοκτησία"
                   name="ownership"
-                  defaultValue="owned"
+                  defaultValue={defaults.ownership ?? "owned"}
                   options={[
                     { value: "owned", label: "owned" },
                     { value: "leased", label: "leased" },
@@ -2395,30 +2679,40 @@ function ActionModal({
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Πινακίδα" name="plate" />
-                <Field label="Serial" name="serial" />
+                <Field label="Πινακίδα" name="plate" defaultValue={defaults.plate} />
+                <Field label="Serial" name="serial" defaultValue={defaults.serial} />
               </div>
-              <Field label="Τμήμα" name="department" />
+              <Field label="Τμήμα" name="department" defaultValue={defaults.department} />
+              <SelectField label="Χειριστής" name="operatorId" defaultValue={defaults.operatorId} options={operatorOptions} />
             </>
           ) : null}
 
           {kind === "document" ? (
             <>
-              <Field label="Τίτλος" name="title" required placeholder="CR-04 νέο πιστοποιητικό" />
+              <Field label="Τίτλος" name="title" defaultValue={defaults.title} required placeholder="CR-04 νέο πιστοποιητικό" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <SelectField
                   label="Κατηγορία"
                   name="category"
+                  defaultValue={defaults.category}
                   required
                   options={documentCategories.map((category) => ({ value: category, label: categoryLabels[category] ?? category }))}
                 />
                 <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} options={assetOptions} />
               </div>
-              <SelectField label="Χειριστής" name="operatorId" options={operatorOptions} />
+              <SelectField label="Χειριστής" name="operatorId" defaultValue={defaults.operatorId} options={operatorOptions} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Ημερομηνία έκδοσης" name="issuedAt" type="date" />
-                <Field label="Ημερομηνία λήξης" name="expiresAt" type="date" />
+                <Field label="Ημερομηνία έκδοσης" name="issuedAt" defaultValue={defaults.issuedAt} type="date" />
+                <Field label="Ημερομηνία λήξης" name="expiresAt" defaultValue={defaults.expiresAt} type="date" />
               </div>
+              <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                {isDocumentEdit ? "Νέο αρχείο (προαιρετικό)" : "Αρχείο"}
+                <input
+                  name="file"
+                  type="file"
+                  className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#e2f0ea] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#123d37] focus:border-[#8fd5c6] focus:outline-none focus:ring-1 focus:ring-[#8fd5c6]"
+                />
+              </label>
             </>
           ) : null}
 
@@ -2455,24 +2749,24 @@ function ActionModal({
           {kind === "maintenance" ? (
             <>
               <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} required options={assetOptions} />
-              <Field label="Εργασία" name="title" required placeholder="Service 10.000 χλμ." />
+              <Field label="Εργασία" name="title" defaultValue={defaults.title} required placeholder="Service 10.000 χλμ." />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Προθεσμία" name="dueAt" type="date" />
-                <Field label="Κόστος" name="cost" type="number" />
+                <Field label="Προθεσμία" name="dueAt" defaultValue={defaults.dueAt} type="date" />
+                <Field label="Κόστος" name="cost" defaultValue={defaults.cost} type="number" />
               </div>
             </>
           ) : null}
 
           {kind === "operator" ? (
             <>
-              <Field label="Όνομα" name="name" required placeholder="Maria Sotiropoulou" />
+              <Field label="Όνομα" name="name" defaultValue={defaults.name} required placeholder="Maria Sotiropoulou" />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Ρόλος" name="role" placeholder="Bus driver" />
-                <Field label="Τηλέφωνο" name="phone" />
+                <Field label="Ρόλος" name="role" defaultValue={defaults.role} placeholder="Bus driver" />
+                <Field label="Τηλέφωνο" name="phone" defaultValue={defaults.phone} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Κατηγορίες άδειας" name="licenseCategories" placeholder="D, Crane" />
-                <Field label="Λήξη άδειας" name="licenseExpiresAt" type="date" />
+                <Field label="Κατηγορίες άδειας" name="licenseCategories" defaultValue={defaults.licenseCategories} placeholder="D, Crane" />
+                <Field label="Λήξη άδειας" name="licenseExpiresAt" defaultValue={defaults.licenseExpiresAt} type="date" />
               </div>
             </>
           ) : null}
@@ -2481,6 +2775,16 @@ function ActionModal({
             <>
               <Field label="Τύπος παγίου" name="assetType" defaultValue={defaults.assetType} required placeholder="Trailer" />
               <Field label="Κατηγορίες εγγράφων" name="categories" required placeholder="KTEO, Insurance" />
+            </>
+          ) : null}
+
+          {kind === "workspace" ? (
+            <>
+              <Field label="Organization ID" name="organizationId" defaultValue={defaults.organizationId} required />
+              <Field label="Profile ID" name="profileId" defaultValue={defaults.profileId} required />
+              <p className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm leading-6 text-slate-600">
+                Η αλλαγή γίνεται μόνο αν το profile είναι ενεργό μέλος του organization.
+              </p>
             </>
           ) : null}
 
@@ -2600,6 +2904,15 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             </div>
             <button
               type="button"
+              onClick={() =>
+                setActionModal({
+                  kind: "workspace",
+                  defaults: {
+                    organizationId: data.session?.organizationId ?? data.organization.id,
+                    profileId: data.session?.profileId ?? "",
+                  },
+                })
+              }
               className="hidden h-10 min-w-[150px] shrink-0 items-center gap-2 rounded-md border border-[#cfe3da] bg-[#eaf5ef] px-3 text-left text-[#123d37] transition hover:border-teal-200 hover:bg-[#e2f0ea] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 md:inline-flex"
               aria-label={`Τρέχουσα τοποθεσία: ${data.location.name}`}
             >

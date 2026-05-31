@@ -19,6 +19,7 @@ export type Asset = {
   serial?: string;
   location: string;
   department: string;
+  operatorId?: string;
   operator: string;
   status: AssetStatus;
   ownership: "owned" | "leased" | "rented";
@@ -38,7 +39,9 @@ export type FleetDocument = {
   reviewState: "approved" | "under review";
   confidence: number;
   fileName?: string;
+  fileSize?: number;
   storageKey?: string;
+  hasFile?: boolean;
 };
 
 export type MaintenanceTask = {
@@ -85,6 +88,12 @@ export type FleetLeverData = {
     locale: string;
     timezone: string;
     currency: string;
+  };
+  session?: {
+    organizationId: string;
+    profileId: string;
+    profileName: string;
+    role: string;
   };
   location: {
     id?: string;
@@ -358,6 +367,12 @@ export const fallbackFleetData: FleetLeverData = {
     locale: "el-GR",
     timezone: "Europe/Athens",
     currency: "EUR",
+  },
+  session: {
+    organizationId: "demo-local",
+    profileId: "demo-profile",
+    profileName: "Demo user",
+    role: "owner",
   },
   location: {
     name: "Athens Depot",

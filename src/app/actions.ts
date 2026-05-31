@@ -1,11 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { runTenantMutation } from "@/lib/db/fleetlever-data";
+import {
+  type FleetLeverData,
+  documentStatus,
+  formatDate,
+} from "@/lib/fleetlever";
+import { getFleetLeverData, runTenantMutation } from "@/lib/db/fleetlever-data";
+import { setActiveTenantContext } from "@/lib/db/tenant-context";
 
 export type ActionResult = {
   ok: boolean;
   message: string;
+  data?: unknown;
 };
 
 function text(formData: FormData, key: string, fallback = "") {
@@ -30,6 +37,34 @@ function centsOrNull(formData: FormData, key: string) {
   return Number.isFinite(numeric) ? Math.round(numeric * 100) : null;
 }
 
+function sanitizeFileName(value: string) {
+  return value.replace(/[^\p{L}\p{N}._ -]+/gu, "-").replace(/\s+/g, " ").trim().slice(0, 140) || "document";
+}
+
+function storageSlug(value: string) {
+  return value
+    .toLocaleLowerCase("el-GR")
+    .replace(/[^a-z0-9α-ωάέήίόύώϊϋΐΰ]+/giu, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "document";
+}
+
+function uploadedFile(formData: FormData) {
+  const value = formData.get("file");
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+function documentStatusSql() {
+  return `
+    status = case
+      when expires_at is not null and expires_at < current_date then 'expired'
+      when expires_at is not null and expires_at <= current_date + interval '7 days' then 'critical'
+      when expires_at is not null and expires_at <= current_date + interval '30 days' then 'warning'
+      else 'valid'
+    end
+  `;
+}
+
 function requireDatabase() {
   if (!process.env.DATABASE_URL) {
     return {
@@ -52,16 +87,18 @@ export async function createAsset(formData: FormData): Promise<ActionResult> {
   const name = text(formData, "name");
   const code = text(formData, "code").toUpperCase();
   const assetType = text(formData, "assetType", "Van");
+  const operatorId = nullableText(formData, "operatorId");
 
   if (!name || !code) {
     return { ok: false, message: "Συμπλήρωσε κωδικό και όνομα παγίου." };
   }
 
   await runTenantMutation(async (client, context) => {
-    await client.query(
+    const asset = await client.query<{ id: string }>(
       `
         insert into public.assets (
           organization_id,
+          assigned_operator_id,
           name,
           internal_code,
           asset_type,
@@ -71,10 +108,12 @@ export async function createAsset(formData: FormData): Promise<ActionResult> {
           status,
           department
         )
-        values ($1, $2, $3, $4, $5, $6, $7, 'attention', $8)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, 'attention', $9)
+        returning id
       `,
       [
         context.organizationId,
+        operatorId,
         name,
         code,
         assetType,
@@ -84,10 +123,110 @@ export async function createAsset(formData: FormData): Promise<ActionResult> {
         nullableText(formData, "department"),
       ],
     );
+
+    if (operatorId) {
+      await client.query(
+        `
+          insert into public.operator_assignments (organization_id, operator_id, asset_id)
+          values ($1, $2, $3)
+        `,
+        [context.organizationId, operatorId, asset.rows[0].id],
+      );
+    }
   });
 
   refresh();
   return { ok: true, message: `Το πάγιο ${code} καταχωρήθηκε.` };
+}
+
+export async function updateAsset(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const assetId = text(formData, "assetId");
+  const name = text(formData, "name");
+  const code = text(formData, "code").toUpperCase();
+  const assetType = text(formData, "assetType", "Van");
+  const operatorId = nullableText(formData, "operatorId");
+
+  if (!assetId || !name || !code) {
+    return { ok: false, message: "Συμπλήρωσε κωδικό και όνομα παγίου." };
+  }
+
+  await runTenantMutation(async (client, context) => {
+    await client.query(
+      `
+        update public.assets
+        set name = $2,
+            internal_code = $3,
+            asset_type = $4,
+            plate_number = $5,
+            serial_number = $6,
+            ownership_type = $7,
+            department = $8,
+            assigned_operator_id = $9
+        where id = $1
+      `,
+      [
+        assetId,
+        name,
+        code,
+        assetType,
+        nullableText(formData, "plate"),
+        nullableText(formData, "serial"),
+        text(formData, "ownership", "owned"),
+        nullableText(formData, "department"),
+        operatorId,
+      ],
+    );
+
+    await client.query(
+      `
+        update public.operator_assignments
+        set assigned_until = current_date
+        where asset_id = $1
+          and organization_id = $2
+          and assigned_until is null
+      `,
+      [assetId, context.organizationId],
+    );
+
+    if (operatorId) {
+      await client.query(
+        `
+          insert into public.operator_assignments (organization_id, operator_id, asset_id)
+          values ($1, $2, $3)
+        `,
+        [context.organizationId, operatorId, assetId],
+      );
+    }
+  });
+
+  refresh();
+  return { ok: true, message: `Το πάγιο ${code} ενημερώθηκε.` };
+}
+
+export async function archiveAsset(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const assetId = text(formData, "assetId");
+  if (!assetId) return { ok: false, message: "Δεν βρέθηκε πάγιο." };
+
+  await runTenantMutation(async (client) => {
+    await client.query(
+      `
+        update public.assets
+        set archived_at = now(),
+            status = 'inactive'
+        where id = $1
+      `,
+      [assetId],
+    );
+  });
+
+  refresh();
+  return { ok: true, message: "Το πάγιο αρχειοθετήθηκε." };
 }
 
 export async function createDocument(formData: FormData): Promise<ActionResult> {
@@ -98,13 +237,22 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
   const category = text(formData, "category", "Insurance");
   const assetId = text(formData, "assetId");
   const operatorId = text(formData, "operatorId");
+  const file = uploadedFile(formData);
 
   if (!title) {
     return { ok: false, message: "Συμπλήρωσε τίτλο εγγράφου." };
   }
 
+  if (file && file.size > 10 * 1024 * 1024) {
+    return { ok: false, message: "Το αρχείο πρέπει να είναι έως 10MB." };
+  }
+
   await runTenantMutation(async (client, context) => {
-    const storageKey = `uploads/${crypto.randomUUID()}-${title.toLocaleLowerCase("el-GR").replace(/[^a-z0-9α-ωάέήίόύώϊϋΐΰ]+/giu, "-")}.pdf`;
+    const safeName = sanitizeFileName(file?.name ?? `${title}.pdf`);
+    const extension = safeName.includes(".") ? safeName.slice(safeName.lastIndexOf(".")) : ".pdf";
+    const storageKey = `uploads/${context.organizationId}/${crypto.randomUUID()}-${storageSlug(title)}${extension}`;
+    const fileSize = file?.size ?? null;
+    const mimeType = file?.type || "application/pdf";
     const document = await client.query<{ id: string }>(
       `
         insert into public.documents (
@@ -114,13 +262,14 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
           storage_key,
           file_name,
           mime_type,
+          file_size_bytes,
           issued_at,
           expires_at,
           status,
           review_state,
           ai_confidence
         )
-        values ($1, $2, $3, $4, $5, 'application/pdf', $6, $7, 'under_review', 'under_review', 0.72)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'under_review', 'under_review', 0.72)
         returning id
       `,
       [
@@ -128,13 +277,52 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
         title,
         category,
         storageKey,
-        `${title}.pdf`,
+        safeName,
+        mimeType,
+        fileSize,
         dateOrNull(formData, "issuedAt"),
         dateOrNull(formData, "expiresAt"),
       ],
     );
 
     const documentId = document.rows[0].id;
+
+    if (file) {
+      const content = Buffer.from(await file.arrayBuffer());
+
+      await client.query(
+        `
+          insert into public.document_files (
+            organization_id,
+            document_id,
+            storage_key,
+            file_name,
+            mime_type,
+            file_size_bytes,
+            content,
+            uploaded_by_profile_id
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [context.organizationId, documentId, storageKey, safeName, mimeType, file.size, content, context.profileId],
+      );
+
+      await client.query(
+        `
+          insert into public.document_versions (
+            organization_id,
+            document_id,
+            version_number,
+            storage_key,
+            file_name,
+            file_size_bytes,
+            uploaded_by_profile_id
+          )
+          values ($1, $2, 1, $3, $4, $5, $6)
+        `,
+        [context.organizationId, documentId, storageKey, safeName, file.size, context.profileId],
+      );
+    }
 
     if (assetId) {
       await client.query(
@@ -160,7 +348,7 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
   });
 
   refresh();
-  return { ok: true, message: "Το έγγραφο μπήκε σε έλεγχο." };
+  return { ok: true, message: file ? "Το έγγραφο ανέβηκε και μπήκε σε έλεγχο." : "Το έγγραφο μπήκε σε έλεγχο." };
 }
 
 export async function approveDocument(formData: FormData): Promise<ActionResult> {
@@ -175,12 +363,7 @@ export async function approveDocument(formData: FormData): Promise<ActionResult>
       `
         update public.documents
         set review_state = 'approved',
-            status = case
-              when expires_at is not null and expires_at < current_date then 'expired'
-              when expires_at is not null and expires_at <= current_date + interval '7 days' then 'critical'
-              when expires_at is not null and expires_at <= current_date + interval '30 days' then 'warning'
-              else 'valid'
-            end
+            ${documentStatusSql()}
         where id = $1
       `,
       [documentId],
@@ -189,6 +372,170 @@ export async function approveDocument(formData: FormData): Promise<ActionResult>
 
   refresh();
   return { ok: true, message: "Το έγγραφο εγκρίθηκε." };
+}
+
+export async function updateDocument(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const documentId = text(formData, "documentId");
+  const title = text(formData, "title");
+  const category = text(formData, "category", "Insurance");
+  const assetId = text(formData, "assetId");
+  const operatorId = text(formData, "operatorId");
+  const file = uploadedFile(formData);
+
+  if (!documentId || !title) {
+    return { ok: false, message: "Συμπλήρωσε τίτλο εγγράφου." };
+  }
+
+  if (file && file.size > 10 * 1024 * 1024) {
+    return { ok: false, message: "Το αρχείο πρέπει να είναι έως 10MB." };
+  }
+
+  await runTenantMutation(async (client, context) => {
+    let storageKey: string | null = null;
+    let safeName: string | null = null;
+    let mimeType: string | null = null;
+
+    if (file) {
+      safeName = sanitizeFileName(file.name);
+      const extension = safeName.includes(".") ? safeName.slice(safeName.lastIndexOf(".")) : ".pdf";
+      storageKey = `uploads/${context.organizationId}/${crypto.randomUUID()}-${storageSlug(title)}${extension}`;
+      mimeType = file.type || "application/octet-stream";
+    }
+
+    await client.query(
+      `
+        update public.documents
+        set title = $2,
+            category = $3,
+            issued_at = $4,
+            expires_at = $5,
+            review_state = case when $6::boolean then 'under_review' else review_state end,
+            status = case
+              when $6::boolean then 'under_review'
+              when $5::date is not null and $5::date < current_date then 'expired'
+              when $5::date is not null and $5::date <= current_date + interval '7 days' then 'critical'
+              when $5::date is not null and $5::date <= current_date + interval '30 days' then 'warning'
+              else 'valid'
+            end,
+            storage_key = coalesce($7, storage_key),
+            file_name = coalesce($8, file_name),
+            mime_type = coalesce($9, mime_type),
+            file_size_bytes = coalesce($10, file_size_bytes)
+        where id = $1
+      `,
+      [
+        documentId,
+        title,
+        category,
+        dateOrNull(formData, "issuedAt"),
+        dateOrNull(formData, "expiresAt"),
+        Boolean(file),
+        storageKey,
+        safeName,
+        mimeType,
+        file?.size ?? null,
+      ],
+    );
+
+    await client.query("delete from public.document_asset_links where document_id = $1", [documentId]);
+    await client.query("delete from public.document_operator_links where document_id = $1", [documentId]);
+
+    if (assetId) {
+      await client.query(
+        `
+          insert into public.document_asset_links (organization_id, document_id, asset_id)
+          values ($1, $2, $3)
+          on conflict (document_id, asset_id) do nothing
+        `,
+        [context.organizationId, documentId, assetId],
+      );
+    }
+
+    if (operatorId) {
+      await client.query(
+        `
+          insert into public.document_operator_links (organization_id, document_id, operator_id)
+          values ($1, $2, $3)
+          on conflict (document_id, operator_id) do nothing
+        `,
+        [context.organizationId, documentId, operatorId],
+      );
+    }
+
+    if (file && storageKey && safeName && mimeType) {
+      const content = Buffer.from(await file.arrayBuffer());
+      const version = await client.query<{ version_number: number }>(
+        `
+          select coalesce(max(version_number), 0) + 1 as version_number
+          from public.document_versions
+          where document_id = $1
+        `,
+        [documentId],
+      );
+
+      await client.query(
+        `
+          insert into public.document_files (
+            organization_id,
+            document_id,
+            storage_key,
+            file_name,
+            mime_type,
+            file_size_bytes,
+            content,
+            uploaded_by_profile_id
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [context.organizationId, documentId, storageKey, safeName, mimeType, file.size, content, context.profileId],
+      );
+
+      await client.query(
+        `
+          insert into public.document_versions (
+            organization_id,
+            document_id,
+            version_number,
+            storage_key,
+            file_name,
+            file_size_bytes,
+            uploaded_by_profile_id
+          )
+          values ($1, $2, $3, $4, $5, $6, $7)
+        `,
+        [
+          context.organizationId,
+          documentId,
+          version.rows[0]?.version_number ?? 1,
+          storageKey,
+          safeName,
+          file.size,
+          context.profileId,
+        ],
+      );
+    }
+  });
+
+  refresh();
+  return { ok: true, message: file ? "Το έγγραφο ενημερώθηκε και μπήκε ξανά σε έλεγχο." : "Το έγγραφο ενημερώθηκε." };
+}
+
+export async function archiveDocument(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const documentId = text(formData, "documentId");
+  if (!documentId) return { ok: false, message: "Δεν βρέθηκε έγγραφο." };
+
+  await runTenantMutation(async (client) => {
+    await client.query("update public.documents set archived_at = now() where id = $1", [documentId]);
+  });
+
+  refresh();
+  return { ok: true, message: "Το έγγραφο αρχειοθετήθηκε." };
 }
 
 export async function renewDocument(formData: FormData): Promise<ActionResult> {
@@ -280,6 +627,89 @@ export async function assignMaintenanceTask(formData: FormData): Promise<ActionR
   return { ok: true, message: "Η εργασία ανατέθηκε." };
 }
 
+export async function updateMaintenanceTask(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const taskId = text(formData, "taskId");
+  const title = text(formData, "title");
+  const assetId = text(formData, "assetId");
+  if (!taskId || !title || !assetId) {
+    return { ok: false, message: "Συμπλήρωσε πάγιο και εργασία." };
+  }
+
+  await runTenantMutation(async (client) => {
+    await client.query(
+      `
+        update public.maintenance_tasks
+        set asset_id = $2,
+            title = $3,
+            due_at = $4,
+            cost_cents = $5
+        where id = $1
+      `,
+      [taskId, assetId, title, dateOrNull(formData, "dueAt"), centsOrNull(formData, "cost")],
+    );
+  });
+
+  refresh();
+  return { ok: true, message: "Η εργασία ενημερώθηκε." };
+}
+
+export async function completeMaintenanceTask(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const taskId = text(formData, "taskId");
+  if (!taskId) return { ok: false, message: "Δεν βρέθηκε εργασία." };
+
+  await runTenantMutation(async (client, context) => {
+    const task = await client.query<{
+      id: string;
+      asset_id: string;
+      title: string;
+      cost_cents: number | null;
+    }>(
+      `
+        update public.maintenance_tasks
+        set status = 'completed',
+            completed_at = now()
+        where id = $1
+        returning id, asset_id, title, cost_cents
+      `,
+      [taskId],
+    );
+
+    const completed = task.rows[0];
+    if (completed) {
+      await client.query(
+        `
+          insert into public.maintenance_records (
+            organization_id,
+            task_id,
+            asset_id,
+            title,
+            cost_cents,
+            notes
+          )
+          values ($1, $2, $3, $4, $5, $6)
+        `,
+        [
+          context.organizationId,
+          completed.id,
+          completed.asset_id,
+          completed.title,
+          completed.cost_cents,
+          nullableText(formData, "notes"),
+        ],
+      );
+    }
+  });
+
+  refresh();
+  return { ok: true, message: "Η εργασία ολοκληρώθηκε." };
+}
+
 export async function createIssue(formData: FormData): Promise<ActionResult> {
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
@@ -321,6 +751,53 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
   return { ok: true, message: "Η βλάβη καταχωρήθηκε." };
 }
 
+export async function resolveIssue(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const issueId = text(formData, "issueId");
+  if (!issueId) return { ok: false, message: "Δεν βρέθηκε βλάβη." };
+
+  await runTenantMutation(async (client) => {
+    const result = await client.query<{ asset_id: string }>(
+      `
+        update public.issues
+        set status = 'resolved',
+            blocking_asset = false,
+            resolved_at = now()
+        where id = $1
+        returning asset_id
+      `,
+      [issueId],
+    );
+
+    const assetId = result.rows[0]?.asset_id;
+    if (assetId) {
+      await client.query(
+        `
+          update public.assets asset
+          set status = case
+            when not exists (
+              select 1
+              from public.issues issue
+              where issue.asset_id = asset.id
+                and issue.blocking_asset
+                and issue.status not in ('resolved', 'closed')
+            ) then 'attention'
+            else asset.status
+          end
+          where asset.id = $1
+            and asset.status = 'blocked'
+        `,
+        [assetId],
+      );
+    }
+  });
+
+  refresh();
+  return { ok: true, message: "Η βλάβη έκλεισε." };
+}
+
 export async function createOperator(formData: FormData): Promise<ActionResult> {
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
@@ -357,6 +834,59 @@ export async function createOperator(formData: FormData): Promise<ActionResult> 
 
   refresh();
   return { ok: true, message: "Ο χειριστής καταχωρήθηκε." };
+}
+
+export async function updateOperator(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const operatorId = text(formData, "operatorId");
+  const name = text(formData, "name");
+  if (!operatorId || !name) return { ok: false, message: "Συμπλήρωσε όνομα χειριστή." };
+
+  await runTenantMutation(async (client) => {
+    await client.query(
+      `
+        update public.operators
+        set full_name = $2,
+            phone = $3,
+            role_title = $4,
+            license_categories = $5,
+            license_expires_at = $6
+        where id = $1
+      `,
+      [
+        operatorId,
+        name,
+        nullableText(formData, "phone"),
+        nullableText(formData, "role"),
+        text(formData, "licenseCategories")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        dateOrNull(formData, "licenseExpiresAt"),
+      ],
+    );
+  });
+
+  refresh();
+  return { ok: true, message: "Ο χειριστής ενημερώθηκε." };
+}
+
+export async function archiveOperator(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const operatorId = text(formData, "operatorId");
+  if (!operatorId) return { ok: false, message: "Δεν βρέθηκε χειριστής." };
+
+  await runTenantMutation(async (client) => {
+    await client.query("update public.assets set assigned_operator_id = null where assigned_operator_id = $1", [operatorId]);
+    await client.query("update public.operators set archived_at = now() where id = $1", [operatorId]);
+  });
+
+  refresh();
+  return { ok: true, message: "Ο χειριστής αρχειοθετήθηκε." };
 }
 
 export async function createComplianceRule(formData: FormData): Promise<ActionResult> {
@@ -399,4 +929,215 @@ export async function createComplianceRule(formData: FormData): Promise<ActionRe
 
   refresh();
   return { ok: true, message: "Ο κανόνας συμμόρφωσης ενημερώθηκε." };
+}
+
+export async function switchWorkspace(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const organizationId = text(formData, "organizationId");
+  const profileId = text(formData, "profileId");
+
+  if (!organizationId || !profileId) {
+    return { ok: false, message: "Συμπλήρωσε organization και profile id." };
+  }
+
+  await setActiveTenantContext({ organizationId, profileId });
+  refresh();
+
+  return { ok: true, message: "Το workspace άλλαξε." };
+}
+
+type CopilotCitation = {
+  table: "assets" | "documents" | "issues" | "maintenance_tasks";
+  id: string;
+  title: string;
+  excerpt: string;
+};
+
+function buildCopilotResponse(question: string, data: FleetLeverData) {
+  const normalized = question.toLocaleLowerCase("el-GR");
+  const blockers = data.issues.filter((issue) => issue.blocking);
+  const attentionDocuments = data.documents.filter((document) =>
+    ["expired", "critical", "warning"].includes(documentStatus(document)) || document.reviewState === "under review",
+  );
+  const overdueTasks = data.maintenanceTasks.filter((task) => task.status === "overdue");
+  const requestedAsset = data.assets.find((asset) => normalized.includes(asset.code.toLocaleLowerCase("el-GR")));
+  const citations: CopilotCitation[] = [];
+
+  if (requestedAsset) {
+    const assetDocuments = attentionDocuments.filter((document) => document.assetId === requestedAsset.id);
+    const assetIssues = data.issues.filter((issue) => issue.assetId === requestedAsset.id);
+    const assetTasks = data.maintenanceTasks.filter((task) => task.assetId === requestedAsset.id);
+
+    citations.push({
+      table: "assets",
+      id: requestedAsset.id,
+      title: requestedAsset.code,
+      excerpt: requestedAsset.name,
+    });
+    for (const document of assetDocuments.slice(0, 2)) {
+      citations.push({
+        table: "documents",
+        id: document.id,
+        title: document.title,
+        excerpt: document.expiresAt ? `${documentStatus(document)} · ${formatDate(document.expiresAt)}` : "Χωρίς λήξη",
+      });
+    }
+    for (const issue of assetIssues.slice(0, 2)) {
+      citations.push({
+        table: "issues",
+        id: issue.id,
+        title: issue.title,
+        excerpt: issue.blocking ? "Μπλοκάρει ανάθεση" : issue.status,
+      });
+    }
+    for (const task of assetTasks.slice(0, 1)) {
+      citations.push({
+        table: "maintenance_tasks",
+        id: task.id,
+        title: task.title,
+        excerpt: `${task.status} · ${formatDate(task.dueAt)}`,
+      });
+    }
+
+    const nextStep =
+      assetIssues.some((issue) => issue.blocking)
+        ? "κλείσιμο της blocking βλάβης"
+        : assetDocuments.length
+          ? "ανανέωση ή έγκριση εγγράφου"
+          : assetTasks.some((task) => task.status === "overdue")
+            ? "ολοκλήρωση εκπρόθεσμης συντήρησης"
+            : "ανάθεση";
+
+    return {
+      answer: `${requestedAsset.code}: η επόμενη ενέργεια είναι ${nextStep}. Κατάσταση παγίου: ${requestedAsset.status}. ${
+        assetDocuments.length ? `Έγγραφα που θέλουν προσοχή: ${assetDocuments.map((document) => document.title).join(", ")}. ` : ""
+      }${assetIssues.length ? `Ανοιχτές βλάβες: ${assetIssues.map((issue) => issue.title).join(", ")}. ` : ""}${
+        assetTasks.length ? `Συντήρηση: ${assetTasks.map((task) => task.title).join(", ")}.` : ""
+      }`,
+      citations,
+      suggestions: ["Άνοιγμα παγίου", "Ανέβασμα εγγράφου", "Νέα εργασία"],
+    };
+  }
+
+  if (normalized.includes("service") || normalized.includes("συντήρηση") || normalized.includes("εργασία")) {
+    overdueTasks.slice(0, 3).forEach((task) =>
+      citations.push({
+        table: "maintenance_tasks",
+        id: task.id,
+        title: task.title,
+        excerpt: `${task.status} · ${formatDate(task.dueAt)}`,
+      }),
+    );
+
+    return {
+      answer: overdueTasks.length
+        ? `Υπάρχουν ${overdueTasks.length} εκπρόθεσμες εργασίες. Πρώτη προτεραιότητα: ${overdueTasks[0].title}.`
+        : "Δεν υπάρχουν εκπρόθεσμες εργασίες αυτή τη στιγμή. Κοίτα τις προγραμματισμένες για επόμενη ανάθεση.",
+      citations,
+      suggestions: ["Νέα εργασία", "Φίλτρο εκπρόθεσμων", "Πάγια με χαμηλή ετοιμότητα"],
+    };
+  }
+
+  if (normalized.includes("έγγρα") || normalized.includes("kteo") || normalized.includes("λήξ")) {
+    attentionDocuments.slice(0, 4).forEach((document) =>
+      citations.push({
+        table: "documents",
+        id: document.id,
+        title: document.title,
+        excerpt: document.expiresAt ? `${documentStatus(document)} · ${formatDate(document.expiresAt)}` : "Σε έλεγχο",
+      }),
+    );
+
+    return {
+      answer: attentionDocuments.length
+        ? `Η ουρά εγγράφων έχει ${attentionDocuments.length} στοιχεία που θέλουν ενέργεια. Ξεκίνα από ${attentionDocuments[0].title}.`
+        : "Δεν υπάρχουν έγγραφα που θέλουν άμεση ενέργεια.",
+      citations,
+      suggestions: ["Ανανέωση εγγράφου", "Έγκριση σε έλεγχο", "Μαζικό ανέβασμα"],
+    };
+  }
+
+  blockers.slice(0, 3).forEach((issue) =>
+    citations.push({
+      table: "issues",
+      id: issue.id,
+      title: issue.title,
+      excerpt: "Μπλοκάρει ανάθεση",
+    }),
+  );
+  attentionDocuments.slice(0, 2).forEach((document) =>
+    citations.push({
+      table: "documents",
+      id: document.id,
+      title: document.title,
+      excerpt: document.expiresAt ? `${documentStatus(document)} · ${formatDate(document.expiresAt)}` : "Σε έλεγχο",
+    }),
+  );
+
+  return {
+    answer: `Σήμερα βλέπω ${blockers.length} blockers, ${attentionDocuments.length} έγγραφα που θέλουν ενέργεια και ${overdueTasks.length} εκπρόθεσμες εργασίες. Κλείσε πρώτα τα blocking πάγια και μετά τις λήξεις των επόμενων ημερών.`,
+    citations,
+    suggestions: ["Δείξε blockers", "Έγγραφα με λήξη", "Εκπρόθεσμο service"],
+  };
+}
+
+export async function askCopilot(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const question = text(formData, "question");
+  if (!question) return { ok: false, message: "Γράψε μια ερώτηση για το Copilot." };
+
+  const data = await getFleetLeverData();
+  const response = buildCopilotResponse(question, data);
+
+  await runTenantMutation(async (client, context) => {
+    const conversationId = text(formData, "conversationId");
+    const conversation = conversationId
+      ? { rows: [{ id: conversationId }] }
+      : await client.query<{ id: string }>(
+          `
+            insert into public.ai_conversations (organization_id, profile_id, title, mode)
+            values ($1, $2, $3, 'asset_analyst')
+            returning id
+          `,
+          [context.organizationId, context.profileId, question.slice(0, 80)],
+        );
+
+    const activeConversationId = conversation.rows[0].id;
+
+    await client.query(
+      `
+        insert into public.ai_messages (organization_id, conversation_id, profile_id, role, content, model)
+        values ($1, $2, $3, 'user', $4, 'fleetlever-rules-v1')
+      `,
+      [context.organizationId, activeConversationId, context.profileId, question],
+    );
+
+    const assistantMessage = await client.query<{ id: string }>(
+      `
+        insert into public.ai_messages (organization_id, conversation_id, profile_id, role, content, model)
+        values ($1, $2, $3, 'assistant', $4, 'fleetlever-rules-v1')
+        returning id
+      `,
+      [context.organizationId, activeConversationId, context.profileId, response.answer],
+    );
+
+    for (const citation of response.citations.slice(0, 6)) {
+      await client.query(
+        `
+          insert into public.ai_citations (organization_id, message_id, record_table, record_id, title, excerpt)
+          values ($1, $2, $3, $4, $5, $6)
+        `,
+        [context.organizationId, assistantMessage.rows[0].id, citation.table, citation.id, citation.title, citation.excerpt],
+      );
+    }
+
+    response.citations = response.citations.slice(0, 6);
+    Object.assign(response, { conversationId: activeConversationId });
+  });
+
+  return { ok: true, message: "Το Copilot απάντησε.", data: response };
 }

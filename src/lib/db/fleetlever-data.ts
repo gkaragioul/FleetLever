@@ -13,11 +13,7 @@ import {
 } from "@/lib/fleetlever";
 import { withTenant } from "@/lib/db/client";
 import type { TenantContext } from "@/lib/db/queries";
-
-export const demoTenantContext: TenantContext = {
-  organizationId: process.env.FLEETLEVER_DEMO_ORGANIZATION_ID ?? "00000000-0000-4000-8000-000000000001",
-  profileId: process.env.FLEETLEVER_DEMO_PROFILE_ID ?? "00000000-0000-4000-8000-000000000101",
-};
+import { getActiveTenantContext } from "@/lib/db/tenant-context";
 
 type Queryable = pg.PoolClient;
 
@@ -69,6 +65,21 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     `,
     [context.organizationId],
   );
+  const sessionResult = await client.query(
+    `
+      select
+        profile.id,
+        profile.full_name,
+        members.role
+      from public.profiles profile
+      join public.organization_members members on members.profile_id = profile.id
+      where profile.id = $2
+        and members.organization_id = $1
+        and members.status = 'active'
+      limit 1
+    `,
+    [context.organizationId, context.profileId],
+  );
   const assetResult = await client.query(
     `
       select
@@ -83,6 +94,7 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
         asset.status,
         asset.current_hours,
         asset.current_mileage,
+        asset.assigned_operator_id,
         location.name as location_name,
         operator.full_name as operator_name
       from public.assets asset
@@ -102,10 +114,17 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
         document.category,
         document.storage_key,
         document.file_name,
+        document.file_size_bytes,
         document.issued_at,
         document.expires_at,
         document.review_state,
         document.ai_confidence,
+        exists (
+          select 1
+          from public.document_files file
+          where file.document_id = document.id
+            and file.organization_id = document.organization_id
+        ) as has_file,
         linked_asset.asset_id,
         linked_asset.asset_code,
         linked_operator.operator_name
@@ -216,6 +235,7 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     serial: row.serial_number ?? undefined,
     location: row.location_name ?? "Χωρίς τοποθεσία",
     department: row.department ?? row.asset_type,
+    operatorId: row.assigned_operator_id ?? undefined,
     operator: row.operator_name ?? "Χωρίς ανάθεση",
     status: row.status as AssetStatus,
     ownership: row.ownership_type,
@@ -235,7 +255,9 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     reviewState: reviewState(row.review_state),
     confidence: row.ai_confidence === null ? 0 : Number(row.ai_confidence),
     fileName: row.file_name,
+    fileSize: numberOrUndefined(row.file_size_bytes),
     storageKey: row.storage_key,
+    hasFile: Boolean(row.has_file),
   }));
 
   const maintenanceTasks: MaintenanceTask[] = maintenanceResult.rows.map((row) => ({
@@ -277,6 +299,7 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
 
   const organization = organizationResult.rows[0] ?? fallbackFleetData.organization;
   const location = locationResult.rows[0];
+  const session = sessionResult.rows[0];
 
   return {
     organization: {
@@ -285,6 +308,12 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
       locale: organization.locale,
       timezone: organization.timezone,
       currency: organization.currency,
+    },
+    session: {
+      organizationId: context.organizationId,
+      profileId: context.profileId,
+      profileName: session?.full_name ?? "Χρήστης",
+      role: session?.role ?? "member",
     },
     location: {
       id: location?.id,
@@ -301,17 +330,19 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
   };
 }
 
-export async function getFleetLeverData(context: TenantContext = demoTenantContext): Promise<FleetLeverData> {
+export async function getFleetLeverData(context?: TenantContext): Promise<FleetLeverData> {
   if (!process.env.DATABASE_URL) {
     return fallbackFleetData;
   }
 
-  return withTenant(context, (client) => queryFleetLeverData(client, context));
+  const activeContext = context ?? await getActiveTenantContext();
+  return withTenant(activeContext, (client) => queryFleetLeverData(client, activeContext));
 }
 
 export async function runTenantMutation<T>(
   callback: (client: Queryable, context: TenantContext) => Promise<T>,
-  context: TenantContext = demoTenantContext,
+  context?: TenantContext,
 ) {
-  return withTenant(context, async (client) => callback(client, context));
+  const activeContext = context ?? await getActiveTenantContext();
+  return withTenant(activeContext, async (client) => callback(client, activeContext));
 }
