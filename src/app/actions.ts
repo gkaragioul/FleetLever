@@ -30,11 +30,24 @@ function dateOrNull(formData: FormData, key: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
+function maybeDate(value: unknown) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
 function centsOrNull(formData: FormData, key: string) {
   const value = text(formData, key);
   if (!value) return null;
   const numeric = Number(value.replace(",", "."));
   return Number.isFinite(numeric) ? Math.round(numeric * 100) : null;
+}
+
+function safeJsonArray(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function sanitizeFileName(value: string) {
@@ -929,6 +942,244 @@ export async function createComplianceRule(formData: FormData): Promise<ActionRe
 
   refresh();
   return { ok: true, message: "Ο κανόνας συμμόρφωσης ενημερώθηκε." };
+}
+
+export async function importFleetRows(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const importType = text(formData, "importType", "assets_csv");
+  const sourceName = text(formData, "sourceName", "manual-import.csv");
+  const rows = safeJsonArray(text(formData, "rowsJson")).slice(0, 100);
+
+  if (!rows.length) {
+    return { ok: false, message: "Δεν υπάρχουν γραμμές για εισαγωγή." };
+  }
+
+  let imported = 0;
+  let skipped = 0;
+
+  await runTenantMutation(async (client, context) => {
+    const importRecord = await client.query<{ id: string }>(
+      `
+        insert into public.imports (
+          organization_id,
+          created_by_profile_id,
+          import_type,
+          status,
+          source_name,
+          summary
+        )
+        values ($1, $2, $3, 'completed', $4, $5)
+        returning id
+      `,
+      [
+        context.organizationId,
+        context.profileId,
+        importType === "documents_csv" ? "documents_csv" : "assets_csv",
+        sourceName,
+        JSON.stringify({ rows: rows.length }),
+      ],
+    );
+    const importId = importRecord.rows[0].id;
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index] as Record<string, unknown>;
+      const normalized = Object.fromEntries(
+        Object.entries(row).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
+      );
+
+      let status = "skipped";
+      let errorMessage: string | null = null;
+      let createdTable: string | null = null;
+      let createdId: string | null = null;
+
+      if (importType === "documents_csv") {
+        const title = String(normalized.title ?? normalized.τίτλος ?? "").trim();
+        const category = String(normalized.category ?? normalized.κατηγορία ?? "Insurance").trim();
+        const assetCode = String(normalized.assetCode ?? normalized.asset ?? normalized.πάγιο ?? "").trim();
+        const expiresAt = maybeDate(normalized.expiresAt ?? normalized.expiry ?? normalized.λήξη);
+
+        if (!title) {
+          errorMessage = "Λείπει τίτλος εγγράφου.";
+        } else {
+          const asset = assetCode
+            ? await client.query<{ id: string }>(
+                `
+                  select id
+                  from public.assets
+                  where organization_id = $1
+                    and upper(internal_code) = upper($2)
+                    and archived_at is null
+                  limit 1
+                `,
+                [context.organizationId, assetCode],
+              )
+            : { rows: [] };
+          const storageKey = `imports/${context.organizationId}/${crypto.randomUUID()}-${storageSlug(title)}.pdf`;
+          const document = await client.query<{ id: string }>(
+            `
+              insert into public.documents (
+                organization_id,
+                title,
+                category,
+                storage_key,
+                file_name,
+                mime_type,
+                expires_at,
+                status,
+                review_state,
+                ai_confidence
+              )
+              values ($1, $2, $3, $4, $5, 'application/pdf', $6, 'under_review', 'under_review', 0.68)
+              returning id
+            `,
+            [context.organizationId, title, category, storageKey, `${sanitizeFileName(title)}.pdf`, expiresAt],
+          );
+          createdTable = "documents";
+          createdId = document.rows[0].id;
+          status = "imported";
+          imported += 1;
+
+          if (asset.rows[0]?.id) {
+            await client.query(
+              `
+                insert into public.document_asset_links (organization_id, document_id, asset_id)
+                values ($1, $2, $3)
+                on conflict (document_id, asset_id) do nothing
+              `,
+              [context.organizationId, createdId, asset.rows[0].id],
+            );
+          }
+        }
+      } else {
+        const code = String(normalized.code ?? normalized.internal_code ?? normalized.κωδικός ?? "").trim().toUpperCase();
+        const name = String(normalized.name ?? normalized.όνομα ?? "").trim();
+        const assetType = String(normalized.type ?? normalized.assetType ?? normalized.τύπος ?? "Van").trim();
+
+        if (!code || !name) {
+          errorMessage = "Λείπει κωδικός ή όνομα παγίου.";
+        } else {
+          const asset = await client.query<{ id: string }>(
+            `
+              insert into public.assets (
+                organization_id,
+                name,
+                internal_code,
+                asset_type,
+                plate_number,
+                serial_number,
+                ownership_type,
+                status,
+                department
+              )
+              values ($1, $2, $3, $4, $5, $6, 'owned', 'attention', $7)
+              on conflict (organization_id, internal_code) do nothing
+              returning id
+            `,
+            [
+              context.organizationId,
+              name,
+              code,
+              assetType,
+              String(normalized.plate ?? normalized.πινακίδα ?? "").trim() || null,
+              String(normalized.serial ?? normalized.σειριακό ?? "").trim() || null,
+              String(normalized.department ?? normalized.τμήμα ?? assetType).trim() || assetType,
+            ],
+          );
+
+          if (asset.rows[0]?.id) {
+            createdTable = "assets";
+            createdId = asset.rows[0].id;
+            status = "imported";
+            imported += 1;
+          } else {
+            errorMessage = "Υπάρχει ήδη πάγιο με αυτόν τον κωδικό.";
+          }
+        }
+      }
+
+      if (status !== "imported") {
+        skipped += 1;
+      }
+
+      await client.query(
+        `
+          insert into public.import_rows (
+            organization_id,
+            import_id,
+            row_number,
+            raw_data,
+            normalized_data,
+            confidence,
+            status,
+            error_message,
+            created_record_table,
+            created_record_id
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `,
+        [
+          context.organizationId,
+          importId,
+          index + 1,
+          JSON.stringify(row),
+          JSON.stringify(normalized),
+          status === "imported" ? 0.86 : 0.42,
+          status,
+          errorMessage,
+          createdTable,
+          createdId,
+        ],
+      );
+    }
+
+    await client.query(
+      `
+        update public.imports
+        set summary = $2
+        where id = $1
+      `,
+      [importId, JSON.stringify({ rows: rows.length, imported, skipped })],
+    );
+  });
+
+  refresh();
+  return { ok: true, message: `Η εισαγωγή ολοκληρώθηκε: ${imported} νέες εγγραφές, ${skipped} παραλείψεις.` };
+}
+
+export async function recordReport(formData: FormData): Promise<ActionResult> {
+  const missingDb = requireDatabase();
+  if (missingDb) return missingDb;
+
+  const reportType = text(formData, "reportType", "readiness");
+  const title = text(formData, "title", "FleetLever report");
+
+  await runTenantMutation(async (client, context) => {
+    await client.query(
+      `
+        insert into public.reports (
+          organization_id,
+          created_by_profile_id,
+          report_type,
+          title,
+          filters,
+          generated_at
+        )
+        values ($1, $2, $3, $4, $5, now())
+      `,
+      [
+        context.organizationId,
+        context.profileId,
+        reportType,
+        title,
+        JSON.stringify({ generatedFrom: "reports-panel" }),
+      ],
+    );
+  });
+
+  refresh();
+  return { ok: true, message: "Η αναφορά καταγράφηκε." };
 }
 
 export async function switchWorkspace(formData: FormData): Promise<ActionResult> {

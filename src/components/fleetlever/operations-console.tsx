@@ -5,11 +5,14 @@ import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
   ArrowRight,
+  BarChart3,
   Bell,
   Building2,
+  CalendarDays,
   CheckCircle2,
   ClipboardList,
   Command,
+  Copy,
   Database,
   Download,
   Eye,
@@ -24,6 +27,7 @@ import {
   QrCode,
   Search,
   ShieldCheck,
+  Sparkles,
   Truck,
   UploadCloud,
   Users,
@@ -57,6 +61,8 @@ import {
   createIssue,
   createMaintenanceTask,
   createOperator,
+  importFleetRows,
+  recordReport,
   renewDocument,
   resolveIssue,
   switchWorkspace,
@@ -75,7 +81,9 @@ type TabId =
   | "compliance"
   | "maintenance"
   | "issues"
-  | "operators";
+  | "operators"
+  | "calendar"
+  | "reports";
 
 const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "dashboard", label: "Κέντρο στόλου", icon: Gauge },
@@ -85,9 +93,11 @@ const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "maintenance", label: "Συντήρηση", icon: Wrench },
   { id: "issues", label: "Βλάβες", icon: AlertTriangle },
   { id: "operators", label: "Χειριστές", icon: Users },
+  { id: "calendar", label: "Ημερολόγιο", icon: CalendarDays },
+  { id: "reports", label: "Αναφορές", icon: BarChart3 },
 ];
 
-type ActionModalKind = "asset" | "document" | "issue" | "maintenance" | "operator" | "rule" | "workspace" | null;
+type ActionModalKind = "asset" | "document" | "issue" | "maintenance" | "operator" | "rule" | "workspace" | "import" | null;
 
 type OperationsActions = {
   openAction: (kind: Exclude<ActionModalKind, null>, defaults?: Record<string, string>) => void;
@@ -105,6 +115,56 @@ type CopilotResponse = {
     excerpt: string;
   }[];
   suggestions: string[];
+};
+
+type SearchResult = {
+  id: string;
+  kind: "asset" | "document" | "issue" | "maintenance" | "operator";
+  title: string;
+  detail: string;
+  meta: string;
+  tone: string;
+  tab: TabId;
+  actionLabel: string;
+  assetId?: string;
+  documentId?: string;
+  issueId?: string;
+};
+
+type InsightItem = {
+  id: string;
+  title: string;
+  detail: string;
+  tone: string;
+  tab: TabId;
+  actionLabel: string;
+  recordId?: string;
+};
+
+type TimelineItem = {
+  id: string;
+  date: string;
+  title: string;
+  detail: string;
+  tone: string;
+};
+
+type CalendarItem = {
+  id: string;
+  date: string;
+  title: string;
+  detail: string;
+  tone: string;
+  tab: TabId;
+};
+
+type ReportType = "readiness" | "documents" | "maintenance" | "blockers";
+
+type ImportPreviewRow = {
+  rowNumber: number;
+  data: Record<string, string>;
+  status: "ready" | "duplicate" | "needs_review";
+  note: string;
 };
 
 const FleetDataContext = createContext<FleetLeverData>(fallbackFleetData);
@@ -275,7 +335,7 @@ function ToolbarMenu() {
       <div className="absolute right-0 top-11 z-40 hidden w-64 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-2 text-left shadow-xl ring-1 ring-slate-950/5 group-hover:block group-focus-within:block">
         <button
           type="button"
-          onClick={() => openAction("document")}
+          onClick={() => openAction("import")}
           className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left transition hover:bg-[#eef7f2] focus-visible:bg-[#eef7f2] focus-visible:outline-none"
           aria-label="Import δεδομένων. Μαζική εισαγωγή από Excel, CSV ή φάκελο αρχείων."
         >
@@ -581,6 +641,180 @@ function FilterChip({
     >
       {children}
     </button>
+  );
+}
+
+function GlobalSearchBox({
+  query,
+  onQueryChange,
+  onNavigate,
+}: {
+  query: string;
+  onQueryChange: (value: string) => void;
+  onNavigate: (tab: TabId, result?: SearchResult) => void;
+}) {
+  const data = useFleetData();
+  const { openAction, runAction } = useOperationsActions();
+  const results = buildSearchResults(data, query);
+  const [focused, setFocused] = useState(false);
+
+  async function handleSecondary(result: SearchResult, event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+
+    if (result.kind === "document" && result.documentId) {
+      const document = data.documents.find((item) => item.id === result.documentId);
+      if (document?.reviewState === "under review") {
+        const formData = new FormData();
+        formData.set("documentId", result.documentId);
+        await runAction(approveDocument, formData);
+        return;
+      }
+    }
+
+    if (result.kind === "issue" && result.issueId) {
+      const formData = new FormData();
+      formData.set("issueId", result.issueId);
+      await runAction(resolveIssue, formData);
+      return;
+    }
+
+    if (result.assetId) {
+      openAction(result.kind === "issue" ? "issue" : "document", { assetId: result.assetId });
+    }
+  }
+
+  return (
+    <div className="relative flex min-w-0 flex-1">
+      <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#f3f5f0] px-3 transition focus-within:border-teal-200 focus-within:bg-[#eef7f2] focus-within:ring-2 focus-within:ring-teal-500/20">
+        <Search className="shrink-0 text-slate-400" size={18} />
+        <input
+          type="search"
+          value={query}
+          onFocus={() => setFocused(true)}
+          onBlur={() => window.setTimeout(() => setFocused(false), 160)}
+          onChange={(event) => onQueryChange(event.target.value)}
+          className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-500"
+          placeholder="Αναζήτηση παγίου, KTEO, χειριστή ή βλάβης..."
+          aria-label="Αναζήτηση σε όλα τα δεδομένα FleetLever"
+        />
+      </label>
+      {focused && query.trim() ? (
+        <div className="absolute left-0 right-0 top-12 z-50 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-2 shadow-xl ring-1 ring-slate-950/5">
+          {results.length ? (
+            <div className="max-h-[420px] space-y-1 overflow-y-auto">
+              {results.map((result) => (
+                <div
+                  key={result.id}
+                  className="grid w-full gap-3 rounded-md px-3 py-2.5 transition hover:bg-[#eef7f2] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(result.tab, result)}
+                    className="min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                  >
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-sm font-semibold text-[#13211f]">{result.title}</span>
+                      <StatusPill label={statusLabels[result.tone] ?? result.tone} tone={result.tone} />
+                    </span>
+                    <span className="mt-1 block truncate text-xs text-slate-500">{result.meta}</span>
+                    <span className="mt-1 block truncate text-sm text-slate-600">{result.detail}</span>
+                  </button>
+                  <span className="flex items-center justify-end gap-2">
+                    {result.kind === "document" || result.kind === "issue" || result.assetId ? (
+                      <button
+                        type="button"
+                        onClick={(event) => handleSecondary(result, event)}
+                        className="hidden min-h-8 items-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-2.5 text-xs font-semibold text-[#123d37] transition hover:border-teal-300 hover:bg-[#f7faf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:inline-flex"
+                      >
+                        {result.kind === "issue" ? "Κλείσιμο" : "Ενέργεια"}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(result.tab, result)}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-[#11685f] transition hover:bg-[#f7faf4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                    >
+                      {result.actionLabel}
+                      <ArrowRight size={15} />
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-[#d9e2dc] p-5 text-center text-sm text-slate-500">
+              Δεν βρέθηκαν αποτελέσματα.
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function NotificationsDrawer({
+  open,
+  onClose,
+  onNavigate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onNavigate: (tab: TabId) => void;
+}) {
+  const data = useFleetData();
+  const notifications = buildNotifications(data);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="notifications-title">
+      <button type="button" aria-label="Κλείσιμο ειδοποιήσεων" className="absolute inset-0 bg-slate-950/25" onClick={onClose} />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-[#d9e2dc] bg-[#fbfaf6] shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[#d9e2dc] bg-[#fbfaf6]/95 p-5 backdrop-blur">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">Σήμερα</p>
+            <h2 id="notifications-title" className="mt-1 text-xl font-semibold text-[#13211f]">Ειδοποιήσεις</h2>
+            <p className="mt-1 text-sm text-slate-600">Μόνο όσα χρειάζονται ενέργεια ή προσοχή.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#d9e2dc] bg-[#fbfaf6] text-slate-600 transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            aria-label="Κλείσιμο"
+          >
+            <X size={17} />
+          </button>
+        </div>
+        <div className="space-y-2 p-5">
+          {notifications.map((notification) => (
+            <button
+              key={notification.id}
+              type="button"
+              onClick={() => {
+                onNavigate(notification.tab);
+                onClose();
+              }}
+              className="grid w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-semibold text-[#13211f]">{notification.title}</span>
+                <StatusPill label={statusLabels[notification.tone] ?? notification.tone} tone={notification.tone} />
+              </span>
+              <span className="line-clamp-2 text-sm leading-6 text-slate-600">{notification.detail}</span>
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#11685f]">
+                {notification.actionLabel}
+                <ArrowRight size={15} />
+              </span>
+            </button>
+          ))}
+          {!notifications.length ? (
+            <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-6 text-center text-sm text-slate-500">
+              Δεν υπάρχουν ανοιχτές ειδοποιήσεις.
+            </div>
+          ) : null}
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -895,6 +1129,426 @@ function filterDocuments(documents: FleetDocument[], filter: DocumentFilter) {
   });
 }
 
+function assetReadinessInsights(asset: Asset, data: FleetLeverData): InsightItem[] {
+  const missing = getMissingDocumentCategoriesForAsset(asset, data.documents, data.complianceTemplates);
+  const assetDocuments = data.documents.filter((document) => document.assetId === asset.id);
+  const expiredOrUrgent = assetDocuments.filter((document) =>
+    ["expired", "critical", "warning"].includes(documentStatus(document)) || document.reviewState === "under review",
+  );
+  const blockingIssues = data.issues.filter((issue) => issue.assetId === asset.id && issue.blocking);
+  const overdueTasks = data.maintenanceTasks.filter((task) => task.assetId === asset.id && task.status === "overdue");
+  const insights: InsightItem[] = [];
+
+  for (const issue of blockingIssues) {
+    insights.push({
+      id: `issue-${issue.id}`,
+      title: "Blocking βλάβη",
+      detail: issue.title,
+      tone: "blocked",
+      tab: "issues",
+      actionLabel: "Δες βλάβη",
+      recordId: issue.id,
+    });
+  }
+
+  for (const document of expiredOrUrgent.slice(0, 3)) {
+    insights.push({
+      id: `document-${document.id}`,
+      title: document.reviewState === "under review" ? "Έγγραφο σε έλεγχο" : "Λήξη εγγράφου",
+      detail: `${document.title} · ${documentDueText(document)}`,
+      tone: document.reviewState === "under review" ? "under review" : documentStatus(document),
+      tab: "documents",
+      actionLabel: documentAction(document),
+      recordId: document.id,
+    });
+  }
+
+  for (const task of overdueTasks) {
+    insights.push({
+      id: `task-${task.id}`,
+      title: "Εκπρόθεσμη συντήρηση",
+      detail: `${task.title} · ${formatDate(task.dueAt)}`,
+      tone: "overdue",
+      tab: "maintenance",
+      actionLabel: "Ανάθεση",
+      recordId: task.id,
+    });
+  }
+
+  for (const category of missing.slice(0, 4)) {
+    insights.push({
+      id: `missing-${asset.id}-${category}`,
+      title: "Λείπει απαιτούμενο έγγραφο",
+      detail: categoryLabels[category] ?? category,
+      tone: "warning",
+      tab: "documents",
+      actionLabel: "Συμπλήρωση",
+      recordId: asset.id,
+    });
+  }
+
+  if (!insights.length) {
+    return [
+      {
+        id: `ready-${asset.id}`,
+        title: "Έτοιμο για ανάθεση",
+        detail: "Δεν υπάρχουν blocking βλάβες ή άμεσες ελλείψεις.",
+        tone: "valid",
+        tab: "operators",
+        actionLabel: "Ανάθεση",
+      },
+    ];
+  }
+
+  return insights;
+}
+
+function assetTimeline(asset: Asset, data: FleetLeverData): TimelineItem[] {
+  const items: TimelineItem[] = [];
+
+  for (const document of data.documents.filter((item) => item.assetId === asset.id)) {
+    if (document.issuedAt) {
+      items.push({
+        id: `doc-issued-${document.id}`,
+        date: document.issuedAt,
+        title: `${categoryLabels[document.category] ?? document.category} καταχωρήθηκε`,
+        detail: document.title,
+        tone: document.reviewState === "under review" ? "under review" : "valid",
+      });
+    }
+    if (document.expiresAt) {
+      items.push({
+        id: `doc-expiry-${document.id}`,
+        date: document.expiresAt,
+        title: documentDueText(document),
+        detail: document.title,
+        tone: documentStatus(document),
+      });
+    }
+  }
+
+  for (const issue of data.issues.filter((item) => item.assetId === asset.id)) {
+    items.push({
+      id: `issue-${issue.id}`,
+      date: issue.openedAt,
+      title: issue.blocking ? "Blocking βλάβη" : "Βλάβη",
+      detail: issue.title,
+      tone: issue.blocking ? "blocked" : issue.severity,
+    });
+  }
+
+  for (const task of data.maintenanceTasks.filter((item) => item.assetId === asset.id)) {
+    items.push({
+      id: `task-${task.id}`,
+      date: task.dueAt,
+      title: task.status === "overdue" ? "Εκπρόθεσμη εργασία" : "Προγραμματισμένη εργασία",
+      detail: task.title,
+      tone: task.status,
+    });
+  }
+
+  return items.sort((a, b) => new Date(`${a.date}T12:00:00+03:00`).getTime() - new Date(`${b.date}T12:00:00+03:00`).getTime());
+}
+
+function buildNotifications(data: FleetLeverData): InsightItem[] {
+  const documentItems = data.documents
+    .filter(isDocumentAttention)
+    .map((document) => ({
+      id: `notification-document-${document.id}`,
+      title: documentAction(document),
+      detail: `${document.title} · ${documentDueText(document)}`,
+      tone: document.reviewState === "under review" ? "under review" : documentStatus(document),
+      tab: "documents" as TabId,
+      actionLabel: "Άνοιγμα",
+      recordId: document.id,
+    }));
+  const issueItems = data.issues
+    .filter((issue) => issue.blocking)
+    .map((issue) => ({
+      id: `notification-issue-${issue.id}`,
+      title: "Πάγιο εκτός ανάθεσης",
+      detail: issue.title,
+      tone: "blocked",
+      tab: "issues" as TabId,
+      actionLabel: "Δες εμπόδια",
+      recordId: issue.id,
+    }));
+  const taskItems = data.maintenanceTasks
+    .filter((task) => task.status === "overdue")
+    .map((task) => ({
+      id: `notification-task-${task.id}`,
+      title: "Εκπρόθεσμη συντήρηση",
+      detail: `${task.title} · ${formatDate(task.dueAt)}`,
+      tone: "overdue",
+      tab: "maintenance" as TabId,
+      actionLabel: "Ανάθεση",
+      recordId: task.id,
+    }));
+  const operatorItems = data.operators
+    .filter((operator) => daysUntil(operator.licenseExpiresAt) <= 30)
+    .map((operator) => ({
+      id: `notification-operator-${operator.id}`,
+      title: "Άδεια χειριστή",
+      detail: `${operator.name} · ${formatDate(operator.licenseExpiresAt)}`,
+      tone: "warning",
+      tab: "operators" as TabId,
+      actionLabel: "Ανανέωση",
+      recordId: operator.id,
+    }));
+
+  return [...issueItems, ...documentItems, ...taskItems, ...operatorItems].slice(0, 12);
+}
+
+function buildCalendarItems(data: FleetLeverData): CalendarItem[] {
+  const documentItems = data.documents
+    .filter((document) => document.expiresAt)
+    .map((document) => ({
+      id: `calendar-document-${document.id}`,
+      date: document.expiresAt ?? "",
+      title: document.title,
+      detail: `${categoryLabels[document.category] ?? document.category} · ${document.assetCode ?? document.operator ?? "Record"}`,
+      tone: documentStatus(document),
+      tab: "documents" as TabId,
+    }));
+  const taskItems = data.maintenanceTasks.map((task) => ({
+    id: `calendar-task-${task.id}`,
+    date: task.dueAt,
+    title: task.title,
+    detail: `Συντήρηση · ${task.owner}`,
+    tone: task.status,
+    tab: "maintenance" as TabId,
+  }));
+  const operatorItems = data.operators.map((operator) => ({
+    id: `calendar-operator-${operator.id}`,
+    date: operator.licenseExpiresAt,
+    title: `Άδεια ${operator.name}`,
+    detail: operator.role,
+    tone: daysUntil(operator.licenseExpiresAt) <= 30 ? "warning" : "valid",
+    tab: "operators" as TabId,
+  }));
+
+  return [...documentItems, ...taskItems, ...operatorItems].sort(
+    (a, b) => new Date(`${a.date}T12:00:00+03:00`).getTime() - new Date(`${b.date}T12:00:00+03:00`).getTime(),
+  );
+}
+
+function buildSearchResults(data: FleetLeverData, query: string): SearchResult[] {
+  const normalized = query.trim().toLocaleLowerCase("el-GR");
+  if (!normalized) return [];
+
+  const contains = (...values: Array<string | undefined>) =>
+    values.filter(Boolean).join(" ").toLocaleLowerCase("el-GR").includes(normalized);
+  const results: SearchResult[] = [];
+
+  for (const asset of data.assets) {
+    const missing = getMissingDocumentCategoriesForAsset(asset, data.documents, data.complianceTemplates);
+    if (contains(asset.code, asset.name, asset.plate, asset.serial, asset.location, asset.operator, ...missing)) {
+      results.push({
+        id: `asset-${asset.id}`,
+        kind: "asset",
+        title: `${asset.code} · ${asset.name}`,
+        detail: assetBlockerText(asset, missing, data.issues),
+        meta: `Πάγιο · ${asset.location}`,
+        tone: asset.status,
+        tab: "assets",
+        actionLabel: asset.status === "ready" ? "Ανάθεση" : "Άνοιγμα",
+        assetId: asset.id,
+      });
+    }
+  }
+
+  for (const document of data.documents) {
+    const asset = findAsset(data.assets, document.assetId);
+    if (contains(document.title, document.category, asset?.code, asset?.name, document.operator)) {
+      results.push({
+        id: `document-${document.id}`,
+        kind: "document",
+        title: document.title,
+        detail: documentDueText(document),
+        meta: `Έγγραφο · ${asset?.code ?? document.operator ?? "Record"}`,
+        tone: document.reviewState === "under review" ? "under review" : documentStatus(document),
+        tab: "documents",
+        actionLabel: documentAction(document),
+        assetId: document.assetId,
+        documentId: document.id,
+      });
+    }
+  }
+
+  for (const issue of data.issues) {
+    const asset = findAsset(data.assets, issue.assetId);
+    if (contains(issue.title, issue.assignee, asset?.code, asset?.name, issue.severity, issue.status)) {
+      results.push({
+        id: `issue-${issue.id}`,
+        kind: "issue",
+        title: issue.title,
+        detail: `${asset?.code ?? "Πάγιο"} · ${issue.assignee}`,
+        meta: issue.blocking ? "Βλάβη · μπλοκάρει" : "Βλάβη",
+        tone: issue.blocking ? "blocked" : issue.severity,
+        tab: "issues",
+        actionLabel: issue.blocking ? "Δες εμπόδια" : "Άνοιγμα",
+        assetId: issue.assetId,
+        issueId: issue.id,
+      });
+    }
+  }
+
+  for (const task of data.maintenanceTasks) {
+    const asset = findAsset(data.assets, task.assetId);
+    if (contains(task.title, task.owner, asset?.code, asset?.name, task.status)) {
+      results.push({
+        id: `task-${task.id}`,
+        kind: "maintenance",
+        title: task.title,
+        detail: `${asset?.code ?? "Πάγιο"} · ${formatDate(task.dueAt)}`,
+        meta: "Συντήρηση",
+        tone: task.status,
+        tab: "maintenance",
+        actionLabel: task.status === "overdue" ? "Ανάθεση" : "Άνοιγμα",
+        assetId: task.assetId,
+      });
+    }
+  }
+
+  for (const operator of data.operators) {
+    if (contains(operator.name, operator.role, operator.phone, ...operator.licenseCategories)) {
+      results.push({
+        id: `operator-${operator.id}`,
+        kind: "operator",
+        title: operator.name,
+        detail: `${operator.role} · Άδεια έως ${formatDate(operator.licenseExpiresAt)}`,
+        meta: "Χειριστής",
+        tone: daysUntil(operator.licenseExpiresAt) <= 30 ? "warning" : "valid",
+        tab: "operators",
+        actionLabel: "Άνοιγμα",
+      });
+    }
+  }
+
+  return results.slice(0, 8);
+}
+
+function csvEscape(value: unknown) {
+  const textValue = String(value ?? "");
+  return /[",\n]/.test(textValue) ? `"${textValue.replaceAll("\"", "\"\"")}"` : textValue;
+}
+
+function downloadTextFile(fileName: string, content: string, type = "text/csv;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCsv(text: string) {
+  const rows = text
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => line.split(",").map((cell) => cell.trim()));
+  const headers = rows.shift() ?? [];
+
+  return rows
+    .filter((row) => row.some(Boolean))
+    .map((row) =>
+      Object.fromEntries(headers.map((header, index) => [header || `field_${index + 1}`, row[index] ?? ""])),
+    );
+}
+
+function inferDocumentDraft(value: string, data: FleetLeverData) {
+  const normalized = value.toLocaleLowerCase("el-GR");
+  const asset = data.assets.find((item) => normalized.includes(item.code.toLocaleLowerCase("el-GR")));
+  const category =
+    normalized.includes("kteo") || normalized.includes("κτεο")
+      ? "KTEO"
+      : normalized.includes("ασφαλ") || normalized.includes("insurance")
+        ? "Insurance"
+        : normalized.includes("ανύψ") || normalized.includes("lift")
+          ? "Lifting certificate"
+          : normalized.includes("περιοδ") || normalized.includes("inspection")
+            ? "Periodic inspection"
+            : normalized.includes("χειρισ") || normalized.includes("license")
+              ? "Operator license"
+              : normalized.includes("ασφαλείας") || normalized.includes("safety")
+                ? "Safety document"
+                : "";
+  const dateMatch = value.match(/(20\d{2})[-_./ ]?(0[1-9]|1[0-2])[-_./ ]?([0-2]\d|3[01])/);
+  const expiresAt = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : "";
+
+  return { assetId: asset?.id ?? "", category, expiresAt };
+}
+
+function buildReportRows(data: FleetLeverData, reportType: ReportType): Record<string, string | number>[] {
+  if (reportType === "documents") {
+    return data.documents.map((document) => ({
+      title: document.title,
+      category: categoryLabels[document.category] ?? document.category,
+      target: findAsset(data.assets, document.assetId)?.code ?? document.operator ?? "",
+      due: document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη",
+      status: statusLabels[documentStatus(document)] ?? documentStatus(document),
+      review: statusLabels[document.reviewState] ?? document.reviewState,
+    }));
+  }
+
+  if (reportType === "maintenance") {
+    return data.maintenanceTasks.map((task) => ({
+      task: task.title,
+      asset: findAsset(data.assets, task.assetId)?.code ?? "",
+      owner: task.owner,
+      due: formatDate(task.dueAt),
+      status: statusLabels[task.status] ?? task.status,
+      cost: task.cost ? formatCurrency(task.cost) : "",
+    }));
+  }
+
+  if (reportType === "blockers") {
+    return data.issues
+      .filter((issue) => issue.blocking)
+      .map((issue) => ({
+        asset: findAsset(data.assets, issue.assetId)?.code ?? "",
+        issue: issue.title,
+        assignee: issue.assignee,
+        severity: statusLabels[issue.severity] ?? issue.severity,
+        opened: formatDate(issue.openedAt),
+      }));
+  }
+
+  return data.assets.map((asset) => {
+    const missing = getMissingDocumentCategoriesForAsset(asset, data.documents, data.complianceTemplates);
+    return {
+      code: asset.code,
+      asset: asset.name,
+      status: assetStatusLabel(asset.status),
+      readiness: `${getReadinessScoreForAsset(asset, data)}%`,
+      missing: missing.map((item) => categoryLabels[item] ?? item).join(" | "),
+      blocker: assetBlockerText(asset, missing, data.issues),
+    };
+  });
+}
+
+function reportTypeLabel(reportType: ReportType) {
+  const labels: Record<ReportType, string> = {
+    readiness: "Ετοιμότητα παγίων",
+    documents: "Έγγραφα και λήξεις",
+    maintenance: "Συντήρηση",
+    blockers: "Blocking βλάβες",
+  };
+
+  return labels[reportType];
+}
+
+function rowsToCsv(rows: Record<string, string | number>[]) {
+  if (!rows.length) return "";
+
+  const headers = Object.keys(rows[0]);
+  return [
+    headers.map(csvEscape).join(","),
+    ...rows.map((row) => headers.map((header) => csvEscape(row[header])).join(",")),
+  ].join("\n");
+}
+
 function AssetDrawer({
   asset,
   onClose,
@@ -914,6 +1568,9 @@ function AssetDrawer({
   const linkedMaintenance = maintenanceTasks.filter((task) => task.assetId === asset.id);
   const operator = operators.find((item) => item.name === asset.operator);
   const action = assetAction(asset);
+  const readinessInsights = assetReadinessInsights(asset, data);
+  const timeline = assetTimeline(asset, data);
+  const fieldUrl = `/field/${asset.id}`;
 
   async function handleArchive() {
     const formData = new FormData();
@@ -949,6 +1606,15 @@ function AssetDrawer({
               <QrCode size={15} />
               Βλάβη
             </button>
+            <a
+              href={fieldUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <QrCode size={15} />
+              Field
+            </a>
             <button
               type="button"
               onClick={() =>
@@ -1009,6 +1675,59 @@ function AssetDrawer({
 
       <DrawerSection title="Λείπουν">
         <MissingDocumentChips missing={missing} limit={6} />
+      </DrawerSection>
+
+      <DrawerSection title="Γιατί έχει αυτή την ετοιμότητα">
+        <div className="space-y-2">
+          {readinessInsights.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.tab)}
+              className="grid w-full gap-2 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-[#13211f]">{item.title}</span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">{item.detail}</span>
+              </span>
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#11685f]">
+                {item.actionLabel}
+                <ArrowRight size={15} />
+              </span>
+            </button>
+          ))}
+        </div>
+      </DrawerSection>
+
+      <DrawerSection title="Field mode">
+        <div className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#e3f2ec] text-[#11685f] ring-1 ring-[#c7e2d6]">
+            <QrCode size={20} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-[#13211f]">Σύνδεσμος πεδίου για {asset.code}</span>
+            <span className="mt-1 block truncate text-xs text-slate-500">{fieldUrl}</span>
+          </span>
+          <span className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(`${window.location.origin}${fieldUrl}`)}
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-[#123d37] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <Copy size={15} />
+              Copy
+            </button>
+            <a
+              href={fieldUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-[#123d37] transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              Άνοιγμα
+              <ArrowRight size={15} />
+            </a>
+          </span>
+        </div>
       </DrawerSection>
 
       <DrawerSection title="Συνδεδεμένα έγγραφα">
@@ -1075,6 +1794,24 @@ function AssetDrawer({
         </div>
       </DrawerSection>
 
+      <DrawerSection title="Timeline">
+        <div className="space-y-3">
+          {timeline.slice(0, 8).map((item) => (
+            <div key={item.id} className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+              <span className="text-xs font-semibold text-slate-500">{formatDate(item.date)}</span>
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-[#13211f]">{item.title}</span>
+                  <StatusPill label={statusLabels[item.tone] ?? item.tone} tone={item.tone} />
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">{item.detail}</span>
+              </span>
+            </div>
+          ))}
+          {!timeline.length ? <p className="text-sm text-slate-500">Δεν υπάρχει ακόμη ιστορικό για αυτό το πάγιο.</p> : null}
+        </div>
+      </DrawerSection>
+
       <DrawerSection title="Χειριστής">
         <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
           <p className="text-sm font-semibold text-[#13211f]">{asset.operator}</p>
@@ -1089,7 +1826,7 @@ function AssetDrawer({
 }
 
 function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
-  const { runAction, isPending } = useOperationsActions();
+  const { openAction, runAction, isPending } = useOperationsActions();
   const [showImportSteps, setShowImportSteps] = useState(false);
   const [question, setQuestion] = useState("Τι πρέπει να κλείσει σήμερα πριν βγει το πρόγραμμα;");
   const [conversationId, setConversationId] = useState("");
@@ -1364,12 +2101,15 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
           </span>
           <button
             type="button"
-            onClick={() => setShowImportSteps((value) => !value)}
+            onClick={() => {
+              setShowImportSteps(true);
+              openAction("import");
+            }}
             aria-expanded={showImportSteps}
             className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[#d9e2dc] bg-[#fbfaf6] px-3 text-sm font-semibold text-[#123d37] transition hover:border-[#c9ded6] hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <UploadCloud size={15} />
-            {showImportSteps ? "Κρύψε τα βήματα" : "Δες τα βήματα"}
+            Άνοιγμα import
           </button>
         </div>
         {showImportSteps ? (
@@ -1410,6 +2150,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [assetQuery, setAssetQuery] = useState("");
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [showFullRegistry, setShowFullRegistry] = useState(false);
   const readyAssets = assets.filter((asset) => asset.status === "ready");
   const blockedAssets = assets.filter((asset) => asset.status === "blocked");
@@ -1452,13 +2193,8 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   ];
 
   function exportAssets() {
-    const blob = new Blob([JSON.stringify(filteredAssets, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `fleetlever-assets-${new Date().toISOString().slice(0, 10)}.json`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    const selected = selectedAssetIds.length ? filteredAssets.filter((asset) => selectedAssetIds.includes(asset.id)) : filteredAssets;
+    downloadTextFile(`fleetlever-assets-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(selected, null, 2), "application/json");
   }
 
   return (
@@ -1542,6 +2278,23 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
             ))}
           </div>
           <p className="text-sm text-slate-500">{filteredAssets.length} από {assets.length} πάγια</p>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2">
+          <span className="text-sm text-slate-600">
+            Bulk: {selectedAssetIds.length ? `${selectedAssetIds.length} επιλεγμένα` : "χρησιμοποίησε το τρέχον φίλτρο"}
+          </span>
+          <span className="flex flex-wrap gap-2">
+            <TextButton icon={CheckCircle2} onClick={() => setSelectedAssetIds(filteredAssets.map((asset) => asset.id))}>
+              Επιλογή ορατών
+            </TextButton>
+            <TextButton icon={UploadCloud} onClick={() => openAction("document", selectedAssetIds[0] ? { assetId: selectedAssetIds[0] } : {})}>
+              Έγγραφο
+            </TextButton>
+            <TextButton icon={Download} onClick={exportAssets}>Εξαγωγή</TextButton>
+            {selectedAssetIds.length ? (
+              <TextButton icon={X} onClick={() => setSelectedAssetIds([])}>Καθαρισμός</TextButton>
+            ) : null}
+          </span>
         </div>
 
         <div className={showFullRegistry ? "hidden" : "space-y-2"}>
@@ -1880,9 +2633,10 @@ function DocumentDrawer({
 
 function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   const { documents, assets } = useFleetData();
-  const { openAction } = useOperationsActions();
+  const { openAction, runAction, isPending } = useOperationsActions();
   const [documentFilter, setDocumentFilter] = useState<DocumentFilter>("attention");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const filteredDocuments = filterDocuments(documents, documentFilter);
   const selectedDocument = selectedDocumentId ? documents.find((document) => document.id === selectedDocumentId) : undefined;
   const documentsInReview = documents.filter((document) => document.reviewState === "under review");
@@ -1906,6 +2660,51 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
     { id: "valid", label: "Έγκυρα" },
     { id: "all", label: "Όλα" },
   ];
+
+  async function bulkApprove() {
+    for (const documentId of selectedDocumentIds.length ? selectedDocumentIds : filteredDocuments.map((document) => document.id)) {
+      const formData = new FormData();
+      formData.set("documentId", documentId);
+      await runAction(approveDocument, formData);
+    }
+    setSelectedDocumentIds([]);
+  }
+
+  async function bulkRenew() {
+    const targetDocuments = selectedDocumentIds.length
+      ? filteredDocuments.filter((document) => selectedDocumentIds.includes(document.id))
+      : filteredDocuments;
+
+    for (const document of targetDocuments) {
+      const current = document.expiresAt ? new Date(`${document.expiresAt}T12:00:00+03:00`) : new Date();
+      current.setFullYear(current.getFullYear() + 1);
+      const formData = new FormData();
+      formData.set("documentId", document.id);
+      formData.set("expiresAt", current.toISOString().slice(0, 10));
+      await runAction(renewDocument, formData);
+    }
+    setSelectedDocumentIds([]);
+  }
+
+  function exportDocuments() {
+    const selected = selectedDocumentIds.length
+      ? filteredDocuments.filter((document) => selectedDocumentIds.includes(document.id))
+      : filteredDocuments;
+    const csv = [
+      ["title", "category", "target", "expiresAt", "status", "reviewState"].join(","),
+      ...selected.map((document) =>
+        [
+          document.title,
+          categoryLabels[document.category] ?? document.category,
+          findAsset(assets, document.assetId)?.code ?? document.operator ?? "",
+          document.expiresAt ?? "",
+          statusLabels[documentStatus(document)] ?? documentStatus(document),
+          statusLabels[document.reviewState] ?? document.reviewState,
+        ].map(csvEscape).join(","),
+      ),
+    ].join("\n");
+    downloadTextFile(`fleetlever-documents-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  }
 
   return (
     <OperationsPage
@@ -1971,6 +2770,22 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
         </div>
         <div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">
           <span>{filteredDocuments.length} από {documents.length} έγγραφα</span>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2">
+          <span className="text-sm text-slate-600">
+            Bulk: {selectedDocumentIds.length ? `${selectedDocumentIds.length} επιλεγμένα` : "χρησιμοποίησε το τρέχον φίλτρο"}
+          </span>
+          <span className="flex flex-wrap gap-2">
+            <TextButton icon={CheckCircle2} onClick={() => setSelectedDocumentIds(filteredDocuments.map((document) => document.id))}>
+              Επιλογή ορατών
+            </TextButton>
+            <TextButton icon={ShieldCheck} onClick={bulkApprove}>
+              {isPending ? "Γίνεται..." : "Έγκριση"}
+            </TextButton>
+            <TextButton icon={CalendarDays} onClick={bulkRenew}>+1 έτος</TextButton>
+            <TextButton icon={Download} onClick={exportDocuments}>Εξαγωγή</TextButton>
+            {selectedDocumentIds.length ? <TextButton icon={X} onClick={() => setSelectedDocumentIds([])}>Καθαρισμός</TextButton> : null}
+          </span>
         </div>
         <div className="space-y-2">
           {filteredDocuments.map((document) => {
@@ -2454,6 +3269,177 @@ function OperatorsPanel() {
   );
 }
 
+function CalendarBucket({
+  title,
+  items,
+  empty,
+  setActiveTab,
+}: {
+  title: string;
+  items: CalendarItem[];
+  empty: string;
+  setActiveTab: (tab: TabId) => void;
+}) {
+  return (
+    <DataCard title={title}>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setActiveTab(item.tab)}
+            className="grid w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center"
+          >
+            <span className="text-xs font-semibold text-slate-500">{formatDate(item.date)}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-[#13211f]">{item.title}</span>
+              <span className="mt-1 block truncate text-xs text-slate-500">{item.detail}</span>
+            </span>
+            <StatusPill label={statusLabels[item.tone] ?? item.tone} tone={item.tone} />
+          </button>
+        ))}
+        {!items.length ? (
+          <div className="rounded-md border border-dashed border-[#d9e2dc] bg-[#fdfbf7] p-5 text-center text-sm text-slate-500">
+            {empty}
+          </div>
+        ) : null}
+      </div>
+    </DataCard>
+  );
+}
+
+function CalendarPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+  const data = useFleetData();
+  const items = buildCalendarItems(data);
+  const overdue = items.filter((item) => daysUntil(item.date) < 0);
+  const next7 = items.filter((item) => {
+    const days = daysUntil(item.date);
+    return days >= 0 && days <= 7;
+  });
+  const next30 = items.filter((item) => {
+    const days = daysUntil(item.date);
+    return days > 7 && days <= 30;
+  });
+
+  return (
+    <OperationsPage
+      eyebrow="Ημερολόγιο"
+      title="Προθεσμίες και εργασίες"
+      description="Όλες οι λήξεις εγγράφων, άδειες χειριστών και εργασίες service σε μία ήρεμη ημερολογιακή ουρά."
+      metricAriaLabel="Σύνοψη ημερολογίου"
+      metrics={[
+        { icon: AlertTriangle, label: "Εκπρόθεσμα", value: overdue.length, detail: "Θέλουν κλείσιμο τώρα", tone: "red" },
+        { icon: CalendarDays, label: "7 ημέρες", value: next7.length, detail: "Πολύ κοντινές προθεσμίες", tone: "amber" },
+        { icon: ListChecks, label: "30 ημέρες", value: next30.length, detail: "Προγραμματισμός μήνα", tone: "teal" },
+      ]}
+    >
+      <div className="grid gap-4 xl:grid-cols-3">
+        <CalendarBucket title="Εκπρόθεσμα" items={overdue} empty="Δεν υπάρχουν εκπρόθεσμες εγγραφές." setActiveTab={setActiveTab} />
+        <CalendarBucket title="Επόμενες 7 ημέρες" items={next7} empty="Καμία προθεσμία στις επόμενες 7 ημέρες." setActiveTab={setActiveTab} />
+        <CalendarBucket title="Επόμενες 30 ημέρες" items={next30} empty="Δεν υπάρχουν άλλες κοντινές προθεσμίες." setActiveTab={setActiveTab} />
+      </div>
+    </OperationsPage>
+  );
+}
+
+function ReportsPanel() {
+  const data = useFleetData();
+  const { openAction, runAction, isPending } = useOperationsActions();
+  const [reportType, setReportType] = useState<ReportType>("readiness");
+  const rows = buildReportRows(data, reportType);
+  const rowsPreview = rows.slice(0, 6);
+
+  function downloadReport() {
+    downloadTextFile(
+      `fleetlever-${reportType}-${new Date().toISOString().slice(0, 10)}.csv`,
+      rowsToCsv(rows),
+    );
+  }
+
+  async function saveReport() {
+    const formData = new FormData();
+    formData.set("reportType", reportType);
+    formData.set("title", reportTypeLabel(reportType));
+    await runAction(recordReport, formData);
+  }
+
+  return (
+    <OperationsPage
+      eyebrow="Αναφορές"
+      title="Exports και εισαγωγές"
+      description="Κατέβασε καθαρά CSV, κράτησε report history και φόρτωσε μαζικά πάγια ή έγγραφα χωρίς έξτρα οθόνες."
+      action={<ActionButton icon={UploadCloud} onClick={() => openAction("import")}>Import</ActionButton>}
+      metricAriaLabel="Σύνοψη αναφορών"
+      metrics={[
+        { icon: BarChart3, label: "Readiness", value: data.assets.length, detail: "Πάγια στο report", tone: "teal" },
+        { icon: FileText, label: "Έγγραφα", value: data.documents.length, detail: "Λήξεις και review", tone: "amber" },
+        { icon: Wrench, label: "Service", value: data.maintenanceTasks.length, detail: "Εργασίες και κόστος", tone: "slate" },
+      ]}
+    >
+      <SectionGrid variant="two">
+        <DataCard title="Report builder">
+          <div className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+              Τύπος αναφοράς
+              <select
+                value={reportType}
+                onChange={(event) => setReportType(event.target.value as ReportType)}
+                className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+              >
+                <option value="readiness">Ετοιμότητα παγίων</option>
+                <option value="documents">Έγγραφα και λήξεις</option>
+                <option value="maintenance">Συντήρηση</option>
+                <option value="blockers">Blocking βλάβες</option>
+              </select>
+            </label>
+            <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7]">
+              <div className="flex items-center justify-between border-b border-[#e3e9e2] px-3 py-2">
+                <span className="text-sm font-semibold text-[#13211f]">{reportTypeLabel(reportType)}</span>
+                <span className="text-xs text-slate-500">{rows.length} γραμμές</span>
+              </div>
+              <div className="max-h-64 divide-y divide-[#e3e9e2] overflow-y-auto">
+                {rowsPreview.map((row, index) => (
+                  <div key={`${reportType}-${index}`} className="grid gap-1 px-3 py-2 text-sm">
+                    <span className="font-semibold text-[#13211f]">{Object.values(row)[0]}</span>
+                    <span className="truncate text-xs text-slate-500">{Object.values(row).slice(1).join(" · ")}</span>
+                  </div>
+                ))}
+                {!rowsPreview.length ? (
+                  <p className="px-3 py-5 text-sm text-slate-500">Δεν υπάρχουν δεδομένα για αυτή την αναφορά.</p>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <TextButton icon={CheckCircle2} onClick={saveReport}>
+                {isPending ? "Γίνεται..." : "Καταγραφή"}
+              </TextButton>
+              <TextButton icon={Download} onClick={downloadReport}>CSV</TextButton>
+            </div>
+          </div>
+        </DataCard>
+
+        <DataCard title="Import και έλεγχος">
+          <div className="grid gap-3">
+            {[
+              { title: "Πάγια CSV", detail: "code, name, type, plate" },
+              { title: "Έγγραφα CSV", detail: "title, category, assetCode, expiresAt" },
+              { title: "Ασφαλής εισαγωγή", detail: "Κρατά import log και παραλείπει διπλά πάγια." },
+            ].map((item) => (
+              <div key={item.title} className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+                <p className="text-sm font-semibold text-[#13211f]">{item.title}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{item.detail}</p>
+              </div>
+            ))}
+            <div className="flex justify-end">
+              <TextButton icon={UploadCloud} onClick={() => openAction("import")}>Άνοιγμα import</TextButton>
+            </div>
+          </div>
+        </DataCard>
+      </SectionGrid>
+    </OperationsPage>
+  );
+}
+
 function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   const { documents } = useFleetData();
   const expiringDocuments = documents.filter((document) =>
@@ -2604,6 +3590,31 @@ function ActionModal({
   const isDocumentEdit = kind === "document" && Boolean(defaults.documentId);
   const isMaintenanceEdit = kind === "maintenance" && Boolean(defaults.taskId);
   const isOperatorEdit = kind === "operator" && Boolean(defaults.operatorId);
+  const [documentTitle, setDocumentTitle] = useState(defaults.title ?? "");
+  const [documentCategory, setDocumentCategory] = useState(defaults.category ?? "");
+  const [documentAssetId, setDocumentAssetId] = useState(defaults.assetId ?? "");
+  const [documentExpiresAt, setDocumentExpiresAt] = useState(defaults.expiresAt ?? "");
+  const [documentFileName, setDocumentFileName] = useState("");
+  const documentSuggestion = inferDocumentDraft(`${documentTitle} ${documentFileName}`, data);
+  const [importType, setImportType] = useState<"assets_csv" | "documents_csv">("assets_csv");
+  const [importText, setImportText] = useState("code,name,type,plate\nTR-09,Ford Transit,Van,DEM-0005");
+  const importRows = useMemo<ImportPreviewRow[]>(() => {
+    const existingCodes = new Set(data.assets.map((asset) => asset.code.toLocaleUpperCase("el-GR")));
+    return parseCsv(importText).slice(0, 30).map((row, index) => {
+      const code = String(row.code ?? row.internal_code ?? row.κωδικός ?? row.assetCode ?? row.asset ?? row.πάγιο ?? "").toLocaleUpperCase("el-GR");
+      const title = String(row.title ?? row.τίτλος ?? "");
+      const name = String(row.name ?? row.όνομα ?? "");
+      const duplicate = importType === "assets_csv" && code && existingCodes.has(code);
+      const hasMinimum = importType === "documents_csv" ? Boolean(title) : Boolean(code && name);
+
+      return {
+        rowNumber: index + 1,
+        data: row,
+        status: duplicate ? "duplicate" : hasMinimum ? "ready" : "needs_review",
+        note: duplicate ? "Υπάρχει ήδη" : hasMinimum ? "Έτοιμο" : "Θέλει πεδία",
+      };
+    });
+  }, [data.assets, importText, importType]);
   const title =
     kind === "asset"
       ? isAssetEdit ? "Επεξεργασία παγίου" : "Νέο πάγιο"
@@ -2617,7 +3628,9 @@ function ActionModal({
               ? isOperatorEdit ? "Επεξεργασία χειριστή" : "Νέος χειριστής"
               : kind === "workspace"
                 ? "Workspace"
-                : "Νέος κανόνας";
+                : kind === "import"
+                  ? "Import δεδομένων"
+                  : "Νέος κανόνας";
 
   function actionForKind() {
     if (kind === "asset") return isAssetEdit ? updateAsset : createAsset;
@@ -2626,6 +3639,7 @@ function ActionModal({
     if (kind === "maintenance") return isMaintenanceEdit ? updateMaintenanceTask : createMaintenanceTask;
     if (kind === "operator") return isOperatorEdit ? updateOperator : createOperator;
     if (kind === "workspace") return switchWorkspace;
+    if (kind === "import") return importFleetRows;
     return createComplianceRule;
   }
 
@@ -2689,27 +3703,94 @@ function ActionModal({
 
           {kind === "document" ? (
             <>
-              <Field label="Τίτλος" name="title" defaultValue={defaults.title} required placeholder="CR-04 νέο πιστοποιητικό" />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField
-                  label="Κατηγορία"
-                  name="category"
-                  defaultValue={defaults.category}
+              <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                Τίτλος
+                <input
+                  name="title"
                   required
-                  options={documentCategories.map((category) => ({ value: category, label: categoryLabels[category] ?? category }))}
+                  value={documentTitle}
+                  onChange={(event) => setDocumentTitle(event.target.value)}
+                  placeholder="CR-04 νέο πιστοποιητικό"
+                  className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
                 />
-                <SelectField label="Πάγιο" name="assetId" defaultValue={defaults.assetId} options={assetOptions} />
+              </label>
+              {documentSuggestion.category || documentSuggestion.assetId || documentSuggestion.expiresAt ? (
+                <div className="rounded-md border border-[#cfe3da] bg-[#eef7f2] p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <span>
+                      <span className="flex items-center gap-2 text-sm font-semibold text-[#13211f]">
+                        <Sparkles size={15} className="text-[#117064]" />
+                        Πρόταση εγγράφου
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-600">
+                        Από τίτλο/αρχείο βρήκαμε πιθανό τύπο, πάγιο ή λήξη.
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (documentSuggestion.category) setDocumentCategory(documentSuggestion.category);
+                        if (documentSuggestion.assetId) setDocumentAssetId(documentSuggestion.assetId);
+                        if (documentSuggestion.expiresAt) setDocumentExpiresAt(documentSuggestion.expiresAt);
+                      }}
+                      className="inline-flex min-h-8 items-center rounded-md border border-[#c9ded6] bg-[#fbfaf6] px-2.5 text-xs font-semibold text-[#123d37] transition hover:bg-white"
+                    >
+                      Χρήση πρότασης
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                  Κατηγορία
+                  <select
+                    name="category"
+                    required
+                    value={documentCategory}
+                    onChange={(event) => setDocumentCategory(event.target.value)}
+                    className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+                  >
+                    <option value="">Επίλεξε</option>
+                    {documentCategories.map((category) => (
+                      <option key={category} value={category}>{categoryLabels[category] ?? category}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                  Πάγιο
+                  <select
+                    name="assetId"
+                    value={documentAssetId}
+                    onChange={(event) => setDocumentAssetId(event.target.value)}
+                    className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+                  >
+                    <option value="">Επίλεξε</option>
+                    {assetOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
               <SelectField label="Χειριστής" name="operatorId" defaultValue={defaults.operatorId} options={operatorOptions} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Ημερομηνία έκδοσης" name="issuedAt" defaultValue={defaults.issuedAt} type="date" />
-                <Field label="Ημερομηνία λήξης" name="expiresAt" defaultValue={defaults.expiresAt} type="date" />
+                <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                  Ημερομηνία λήξης
+                  <input
+                    name="expiresAt"
+                    type="date"
+                    value={documentExpiresAt}
+                    onChange={(event) => setDocumentExpiresAt(event.target.value)}
+                    className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+                  />
+                </label>
               </div>
               <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
                 {isDocumentEdit ? "Νέο αρχείο (προαιρετικό)" : "Αρχείο"}
                 <input
                   name="file"
                   type="file"
+                  onChange={(event) => setDocumentFileName(event.target.files?.[0]?.name ?? "")}
                   className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-[#e2f0ea] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#123d37] focus:border-[#8fd5c6] focus:outline-none focus:ring-1 focus:ring-[#8fd5c6]"
                 />
               </label>
@@ -2788,6 +3869,63 @@ function ActionModal({
             </>
           ) : null}
 
+          {kind === "import" ? (
+            <>
+              <input type="hidden" name="rowsJson" value={JSON.stringify(importRows.filter((row) => row.status === "ready").map((row) => row.data))} />
+              <Field label="Όνομα αρχείου" name="sourceName" defaultValue="manual-import.csv" required />
+              <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                Τύπος import
+                <select
+                  name="importType"
+                  value={importType}
+                  onChange={(event) => {
+                    const next = event.target.value as "assets_csv" | "documents_csv";
+                    setImportType(next);
+                    setImportText(
+                      next === "assets_csv"
+                        ? "code,name,type,plate\nTR-09,Ford Transit,Van,DEM-0005"
+                        : "title,category,assetCode,expiresAt\nTR-09 KTEO,KTEO,TR-09,2027-06-01",
+                    );
+                  }}
+                  className="h-10 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 text-sm text-slate-700 outline-none transition focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+                >
+                  <option value="assets_csv">Πάγια CSV</option>
+                  <option value="documents_csv">Έγγραφα CSV</option>
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-[#13211f]">
+                CSV preview
+                <textarea
+                  rows={7}
+                  value={importText}
+                  onChange={(event) => setImportText(event.target.value)}
+                  className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 font-mono text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
+                />
+              </label>
+              <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7]">
+                <div className="flex items-center justify-between border-b border-[#e3e9e2] px-3 py-2">
+                  <span className="text-sm font-semibold text-[#13211f]">Έλεγχος γραμμών</span>
+                  <span className="text-xs text-slate-500">{importRows.filter((row) => row.status === "ready").length} έτοιμες</span>
+                </div>
+                <div className="max-h-52 divide-y divide-[#e3e9e2] overflow-y-auto">
+                  {importRows.map((row) => (
+                    <div key={row.rowNumber} className="grid gap-2 px-3 py-2 text-sm sm:grid-cols-[48px_minmax(0,1fr)_auto] sm:items-center">
+                      <span className="font-mono text-xs text-slate-500">#{row.rowNumber}</span>
+                      <span className="truncate text-slate-700">{Object.values(row.data).filter(Boolean).join(" · ")}</span>
+                      <StatusPill
+                        label={row.note}
+                        tone={row.status === "ready" ? "valid" : row.status === "duplicate" ? "warning" : "blocked"}
+                      />
+                    </div>
+                  ))}
+                  {!importRows.length ? (
+                    <p className="px-3 py-4 text-sm text-slate-500">Βάλε header row και τουλάχιστον μία γραμμή.</p>
+                  ) : null}
+                </div>
+              </div>
+            </>
+          ) : null}
+
           {message ? (
             <p className={`rounded-md border px-3 py-2 text-sm ${message.includes("Δεν") || message.includes("Συμπλήρωσε") ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
               {message}
@@ -2823,6 +3961,8 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     kind: null,
     defaults: {},
   });
+  const [globalQuery, setGlobalQuery] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [isPending, startTransition] = useTransition();
   const activeMeta = useMemo(
@@ -2859,6 +3999,12 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     }),
     [isPending],
   );
+  const notifications = buildNotifications(data);
+
+  function handleSearchNavigate(tab: TabId) {
+    setActiveTab(tab);
+    setGlobalQuery("");
+  }
 
   return (
     <FleetDataContext.Provider value={data}>
@@ -2924,15 +4070,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
                 </span>
               </span>
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("command")}
-              className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#f3f5f0] px-3 text-left transition hover:border-teal-200 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-              aria-label="Άνοιγμα αναζήτησης σε πάγια, KTEO, χειριστή ή βλάβη"
-            >
-              <Search className="shrink-0 text-slate-400" size={18} />
-              <span className="truncate text-sm text-slate-500">Αναζήτηση παγίου, KTEO, χειριστή ή βλάβης...</span>
-            </button>
+            <GlobalSearchBox query={globalQuery} onQueryChange={setGlobalQuery} onNavigate={handleSearchNavigate} />
             <div className="hidden items-center gap-2 sm:flex">
               <span className="hidden items-center gap-2 2xl:inline-flex">
                 <IconButton
@@ -2953,16 +4091,13 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
                   description="Γρήγορη αναφορά προβλήματος από πεδίο ή γραφείο."
                   onClick={() => setActionModal({ kind: "issue", defaults: {} })}
                 />
-                <IconButton
-                  icon={Bell}
-                  label="Ειδοποιήσεις"
-                  description="Έλεγχος υπενθυμίσεων, προθεσμιών και αναθέσεων."
-                  onClick={() => {
-                    setActiveTab("dashboard");
-                    setToast("Οι ειδοποιήσεις εμφανίζονται στις προτεραιότητες, τις λήξεις και τις αναθέσεις.");
-                  }}
-                />
               </span>
+              <IconButton
+                icon={Bell}
+                label="Ειδοποιήσεις"
+                description={`${notifications.length} ανοιχτές ειδοποιήσεις για λήξεις, βλάβες και service.`}
+                onClick={() => setNotificationsOpen(true)}
+              />
               <ToolbarMenu />
             </div>
           </div>
@@ -3007,9 +4142,16 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             {activeTab === "maintenance" && <MaintenancePanel />}
             {activeTab === "issues" && <IssuesPanel />}
             {activeTab === "operators" && <OperatorsPanel />}
+            {activeTab === "calendar" && <CalendarPanel setActiveTab={setActiveTab} />}
+            {activeTab === "reports" && <ReportsPanel />}
           </section>
         </main>
       </div>
+      <NotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onNavigate={(tab) => setActiveTab(tab)}
+      />
       {toast ? (
         <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-4 py-2 text-sm font-medium text-[#123d37] shadow-lg">
           {toast}
