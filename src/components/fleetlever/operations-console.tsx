@@ -1468,6 +1468,17 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
   const selectedDocument = selectedDocumentId ? documents.find((document) => document.id === selectedDocumentId) : undefined;
   const documentsInReview = documents.filter((document) => document.reviewState === "under review");
   const validDocuments = documents.filter((document) => documentStatus(document) === "valid");
+  const expiredDocuments = filterDocuments("expired");
+  const upcomingDocuments = filterDocuments("upcoming");
+  const attentionDocuments = filterDocuments("attention");
+  const filterCounts: Record<DocumentFilter, number> = {
+    attention: attentionDocuments.length,
+    expired: expiredDocuments.length,
+    upcoming: upcomingDocuments.length,
+    review: documentsInReview.length,
+    valid: validDocuments.length,
+    all: documents.length,
+  };
   const filters: { id: DocumentFilter; label: string }[] = [
     { id: "attention", label: "Θέλουν ενέργεια" },
     { id: "expired", label: "Ληγμένα" },
@@ -1485,50 +1496,17 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
         description="Λήξεις, έλεγχος και επόμενη ενέργεια σε μία ουρά για το γραφείο."
         action={<ActionButton icon={FileText}>Ανέβασμα εγγράφου</ActionButton>}
       />
-      <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
-        {[
-          { id: "attention" as DocumentFilter, icon: AlertTriangle, label: "Θέλουν ενέργεια", value: filterDocuments("attention").length, detail: "Ανανέωση ή έγκριση", tone: "amber" },
-          { id: "review" as DocumentFilter, icon: ShieldCheck, label: "Σε έλεγχο", value: documentsInReview.length, detail: "Θέλουν επιβεβαίωση", tone: "teal" },
-          { id: "valid" as DocumentFilter, icon: FileText, label: "Έγκυρα", value: validDocuments.length, detail: "Χωρίς άμεση ενέργεια", tone: "slate" },
-        ].map((metric) => {
-          const Icon = metric.icon;
-          const active = documentFilter === metric.id;
-
-          return (
-            <button
-              key={metric.id}
-              type="button"
-              onClick={() => setDocumentFilter(active ? "attention" : metric.id)}
-              className={`flex min-h-[92px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:border-b-0 ${
-                active ? "bg-[#e2f0ea]" : "hover:bg-[#f7faf4]"
-              }`}
-            >
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-slate-500">{metric.label}</span>
-                <span className="mt-1 block text-2xl font-semibold text-[#13211f]">{metric.value}</span>
-                <span className="mt-1 block truncate text-sm text-slate-600">{metric.detail}</span>
-              </span>
-              <span
-                className={`shrink-0 rounded-md p-2 ring-1 ${
-                  metric.tone === "teal"
-                    ? "bg-[#e3f2ec] text-[#11685f] ring-[#c7e2d6]"
-                    : metric.tone === "amber"
-                      ? "bg-[#fff4d7] text-[#8b5d16] ring-[#efd99a]"
-                      : "bg-[#e7ece8] text-slate-700 ring-[#d2dbd5]"
-                }`}
-              >
-                <Icon size={19} />
-              </span>
-            </button>
-          );
-        })}
-      </div>
       <DataCard title="Ουρά εγγράφων">
         <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex flex-wrap gap-2">
             {filters.map((filter) => (
               <FilterChip key={filter.id} active={documentFilter === filter.id} onClick={() => setDocumentFilter(filter.id)}>
-                {filter.label}
+                <span className="inline-flex items-center gap-2">
+                  <span>{filter.label}</span>
+                  <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-[#d9e2dc]">
+                    {filterCounts[filter.id]}
+                  </span>
+                </span>
               </FilterChip>
             ))}
           </div>
