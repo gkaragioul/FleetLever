@@ -92,7 +92,7 @@ const statusLabels: Record<string, string> = {
   attention: "προσοχή",
   blocked: "μη διαθέσιμο",
   inactive: "ανενεργό",
-  valid: "valid",
+  valid: "έγκυρο",
   warning: "προειδοποίηση",
   critical: "κρίσιμο",
   expired: "ληγμένο",
@@ -708,10 +708,26 @@ function AssetDrawer({
           </DataCard>
         </div>
 
-        <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-4 backdrop-blur">
-          <div className="flex flex-wrap justify-end gap-2">
-            <TextButton icon={UploadCloud} onClick={() => setActiveTab("documents")}>Ανέβασμα εγγράφου</TextButton>
-            <TextButton icon={QrCode} onClick={() => setActiveTab("issues")}>Νέα βλάβη</TextButton>
+        <div className="sticky bottom-0 border-t border-[#d9e2dc] bg-[#fbfaf6]/95 p-3 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab("documents")}
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <UploadCloud size={15} />
+                Έγγραφο
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("issues")}
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                <QrCode size={15} />
+                Βλάβη
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => setActiveTab(action.tab)}
