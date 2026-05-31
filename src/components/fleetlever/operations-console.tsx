@@ -1469,9 +1469,9 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
   const documentsInReview = documents.filter((document) => document.reviewState === "under review");
   const validDocuments = documents.filter((document) => documentStatus(document) === "valid");
   const filters: { id: DocumentFilter; label: string }[] = [
-    { id: "attention", label: "Ενέργειες" },
+    { id: "attention", label: "Θέλουν ενέργεια" },
     { id: "expired", label: "Ληγμένα" },
-    { id: "upcoming", label: "30 ημέρες" },
+    { id: "upcoming", label: "Επόμενες 30 ημέρες" },
     { id: "review", label: "Σε έλεγχο" },
     { id: "valid", label: "Έγκυρα" },
     { id: "all", label: "Όλα" },
@@ -1487,7 +1487,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
       />
       <div className="grid overflow-hidden rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:grid-cols-3 sm:divide-x sm:divide-[#d9e2dc]">
         {[
-          { id: "attention" as DocumentFilter, icon: AlertTriangle, label: "Ενέργειες", value: filterDocuments("attention").length, detail: "Ανανέωση ή έγκριση", tone: "amber" },
+          { id: "attention" as DocumentFilter, icon: AlertTriangle, label: "Θέλουν ενέργεια", value: filterDocuments("attention").length, detail: "Ανανέωση ή έγκριση", tone: "amber" },
           { id: "review" as DocumentFilter, icon: ShieldCheck, label: "Σε έλεγχο", value: documentsInReview.length, detail: "Θέλουν επιβεβαίωση", tone: "teal" },
           { id: "valid" as DocumentFilter, icon: FileText, label: "Έγκυρα", value: validDocuments.length, detail: "Χωρίς άμεση ενέργεια", tone: "slate" },
         ].map((metric) => {
@@ -1536,7 +1536,6 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
         </div>
         <div className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-500">
           <span>{filteredDocuments.length} από {documents.length} έγγραφα</span>
-          <span className="hidden sm:inline">Άνοιξε γραμμή για λεπτομέρειες και επόμενη ενέργεια.</span>
         </div>
         <div className="space-y-2">
           {filteredDocuments.map((document) => {
