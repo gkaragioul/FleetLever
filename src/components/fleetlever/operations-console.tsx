@@ -284,18 +284,18 @@ function MetricStrip({ items, ariaLabel }: { items: MetricStripItem[]; ariaLabel
         const content = (
           <>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-slate-500">{item.label}</span>
-              <span className="mt-1 block text-2xl font-semibold text-[#13211f]">{item.value}</span>
-              <span className="mt-1 block line-clamp-2 text-sm leading-5 text-slate-600">{item.detail}</span>
+              <span className="block truncate text-xs font-medium text-slate-500 sm:text-sm">{item.label}</span>
+              <span className="mt-1 block text-xl font-semibold text-[#13211f] sm:text-2xl">{item.value}</span>
+              <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600 sm:text-sm">{item.detail}</span>
             </span>
             {Icon ? (
-              <span className={`shrink-0 rounded-md p-2 ring-1 ${metricAccentClass(item.tone ?? "slate")}`}>
-                <Icon size={18} />
+              <span className={`shrink-0 rounded-md p-1.5 ring-1 sm:p-2 ${metricAccentClass(item.tone ?? "slate")}`}>
+                <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
               </span>
             ) : null}
           </>
         );
-        const className = `flex min-h-[88px] items-center justify-between gap-4 border-b border-[#d9e2dc] p-4 text-left last:border-b-0 sm:border-b-0 ${
+        const className = `flex min-h-[80px] items-center justify-between gap-3 border-b border-[#d9e2dc] p-3 text-left last:border-b-0 sm:min-h-[88px] sm:gap-4 sm:border-b-0 sm:p-4 ${
           item.active ? "bg-[#e2f0ea]" : "bg-[#fbfaf6]"
         }`;
 
@@ -1749,7 +1749,7 @@ function CompliancePanel() {
   );
 }
 
-function MaintenancePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function MaintenancePanel() {
   return (
     <div className="space-y-4">
       <PanelHeader
@@ -1825,10 +1825,6 @@ function MaintenancePanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void
             })}
           </div>
         </DataCard>
-        <div className="grid items-stretch gap-4 lg:grid-cols-2">
-          <DeadlinesCard setActiveTab={setActiveTab} />
-          <AssignmentsCard setActiveTab={setActiveTab} />
-        </div>
       </div>
     </div>
   );
@@ -1847,7 +1843,7 @@ function IssuesPanel() {
         ariaLabel="Σύνοψη βλαβών"
         items={[
           { icon: AlertTriangle, label: "Ανοιχτές", value: issues.length, detail: "Χρειάζονται παρακολούθηση", tone: "slate" },
-          { icon: Truck, label: "Μπλοκάρουν", value: blockingIssues.length, detail: "Μπλοκάρουν ανάθεση", tone: "red" },
+          { icon: Truck, label: "Μπλοκάρουν", value: blockingIssues.length, detail: "Δεν μπαίνουν σε πρόγραμμα", tone: "red" },
           { icon: Users, label: "Με υπεύθυνο", value: issues.filter((issue) => issue.assignee).length, detail: "Έχουν ανάθεση", tone: "teal" },
         ]}
       />
@@ -2135,7 +2131,7 @@ export function OperationsConsole() {
             {activeTab === "assets" && <AssetsPanel setActiveTab={setActiveTab} />}
             {activeTab === "documents" && <DocumentsPanel setActiveTab={setActiveTab} />}
             {activeTab === "compliance" && <CompliancePanel />}
-            {activeTab === "maintenance" && <MaintenancePanel setActiveTab={setActiveTab} />}
+            {activeTab === "maintenance" && <MaintenancePanel />}
             {activeTab === "issues" && <IssuesPanel />}
             {activeTab === "operators" && <OperatorsPanel />}
           </section>
