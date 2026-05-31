@@ -23,6 +23,9 @@ const requiredTables = [
   "audit_logs",
 ];
 
+const demoOrganizationId = process.env.FLEETLEVER_DEMO_ORGANIZATION_ID ?? "00000000-0000-4000-8000-000000000001";
+const demoProfileId = process.env.FLEETLEVER_DEMO_PROFILE_ID ?? "00000000-0000-4000-8000-000000000101";
+
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is required.");
   process.exit(1);
@@ -55,12 +58,13 @@ try {
   const missingTables = tableResult.rows.filter((row) => !row.exists).map((row) => row.table_name);
   const hasOrganizationMembers = !missingTables.includes("organization_members");
   const tenantResult = hasOrganizationMembers
-    ? await pool.query(`
+      ? await pool.query(`
         select count(*)::int as active_members
         from public.organization_members
-        where organization_id = '00000000-0000-4000-8000-000000000001'
+        where organization_id = $1
+          and profile_id = $2
           and status = 'active'
-      `)
+      `, [demoOrganizationId, demoProfileId])
     : { rows: [{ active_members: 0 }] };
   const migrationsResult = migrationTableResult.rows[0]?.exists
     ? await pool.query("select json_agg(version order by version) as applied from public.schema_migrations")
@@ -74,6 +78,8 @@ try {
       missingTables,
     },
     demoTenant: {
+      organizationId: demoOrganizationId,
+      profileId: demoProfileId,
       activeMembers: tenantResult.rows[0]?.active_members ?? 0,
     },
     migrations: {

@@ -20,6 +20,9 @@ const REQUIRED_TABLES = [
   "audit_logs",
 ];
 
+const DEMO_ORGANIZATION_ID = process.env.FLEETLEVER_DEMO_ORGANIZATION_ID ?? "00000000-0000-4000-8000-000000000001";
+const DEMO_PROFILE_ID = process.env.FLEETLEVER_DEMO_PROFILE_ID ?? "00000000-0000-4000-8000-000000000101";
+
 export async function GET() {
   if (!process.env.DATABASE_URL) {
     return NextResponse.json(
@@ -62,9 +65,11 @@ export async function GET() {
           `
             select count(*)::int as active_members
             from public.organization_members
-            where organization_id = '00000000-0000-4000-8000-000000000001'
+            where organization_id = $1
+              and profile_id = $2
               and status = 'active'
           `,
+          [DEMO_ORGANIZATION_ID, DEMO_PROFILE_ID],
         )
       : { rows: [{ active_members: 0 }] };
     const migrationsResult = migrationTableResult.rows[0]?.exists
@@ -89,6 +94,8 @@ export async function GET() {
         missingTables,
       },
       demoTenant: {
+        organizationId: DEMO_ORGANIZATION_ID,
+        profileId: DEMO_PROFILE_ID,
         activeMembers: tenantResult.rows[0]?.active_members ?? 0,
       },
       migrations: {
