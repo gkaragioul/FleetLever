@@ -416,7 +416,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
           {[
             ["B-12", "Κλείσε ανανέωση KTEO πριν ανατεθεί σε διαδρομή.", "issues"],
             ["CR-04", "Ζήτησε ενημέρωση για το πιστοποιητικό ανύψωσης.", "documents"],
-            ["FL-02", "Ανάθεσε το εκπρόθεσμο service και έλεγξε το έγγραφο.", "maintenance"],
+            ["FL-02", "Ανάθεσε την εκπρόθεσμη εργασία συντήρησης και έλεγξε το έγγραφο.", "maintenance"],
           ].map(([title, detail, tab]) => (
             <button
               key={title}
@@ -499,7 +499,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
       tone: "bg-[#fdeceb] text-[#b23838] ring-[#f0c4c0]",
     },
     {
-      label: "Εργασία service",
+      label: "Εργασία συντήρησης",
       detail: "Νέα εργασία συντήρησης με υπεύθυνο και προθεσμία.",
       actionLabel: "Προγραμματισμός",
       icon: Wrench,
@@ -518,7 +518,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
   const suggestedSearches: { query: string; target: string; tab: TabId }[] = [
     { query: "B-12 blocked", target: "Βλάβες", tab: "issues" },
     { query: "Έγγραφα επόμενων 30 ημερών", target: "Έγγραφα", tab: "documents" },
-    { query: "Εκπρόθεσμο service", target: "Συντήρηση", tab: "maintenance" },
+    { query: "Εκπρόθεσμη συντήρηση", target: "Συντήρηση", tab: "maintenance" },
   ];
 
   const importSteps: { label: string; detail: string; status: string; icon: LucideIcon }[] = [
@@ -554,9 +554,9 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
     },
     {
       code: "FL-02",
-      title: "service · εκπρόθεσμο",
+      title: "συντήρηση · εκπρόθεσμη",
       detail: "Χρειάζεται ανάθεση εργασίας συντήρησης.",
-      actionLabel: "Ανάθεση service",
+      actionLabel: "Ανάθεση εργασίας",
       tone: "overdue",
       tab: "maintenance",
     },
@@ -567,7 +567,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
       <PanelHeader
         eyebrow="Εντολές"
         title="Βρες την επόμενη ενέργεια"
-        description="Το κέντρο εντολών βρίσκει πάγια, έγγραφα, βλάβες και service και προτείνει το επόμενο βήμα."
+        description="Το κέντρο εντολών βρίσκει πάγια, έγγραφα, βλάβες και εργασίες συντήρησης και προτείνει το επόμενο βήμα."
       />
 
       <section className="rounded-lg border border-[#cfe3da] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
@@ -582,14 +582,14 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
           </span>
         </div>
 
-        <label className="mt-4 flex min-h-[82px] w-full items-center gap-4 rounded-lg border border-[#9adccb] bg-[#eef9f4] px-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:border-teal-300 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-500">
+        <label className="mt-4 flex min-h-[82px] w-full items-center gap-4 rounded-lg border border-[#c9ded6] bg-[#f2f8f4] px-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition hover:border-[#8fd5c6] focus-within:border-[#8fd5c6] focus-within:ring-1 focus-within:ring-[#8fd5c6]">
           <Search className="shrink-0 text-[#117064]" size={26} />
           <span className="min-w-0 flex-1">
             <span className="block text-base font-semibold text-[#13211f]">Αναζήτηση σε όλα τα records</span>
             <input
               aria-label="Αναζήτηση σε πάγια, έγγραφα, χειριστές, βλάβες και εργασίες συντήρησης"
               className="mt-1 block w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none"
-              placeholder="Δοκίμασε: B-12, KTEO, Νίκος, hydraulic ή service"
+              placeholder="Δοκίμασε: B-12, KTEO, Νίκος, υδραυλικά ή συντήρηση"
               type="search"
             />
           </span>
@@ -683,7 +683,7 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
             {[
               { code: "B-12", label: "Ληγμένο KTEO", tab: "issues" as TabId },
               { code: "CR-04", label: "Πιστοποιητικό ανύψωσης", tab: "documents" as TabId },
-              { code: "FL-02", label: "Εκπρόθεσμο service", tab: "maintenance" as TabId },
+              { code: "FL-02", label: "Εκπρόθεσμη συντήρηση", tab: "maintenance" as TabId },
             ].map((item) => (
               <button
                 key={item.code}
@@ -1279,7 +1279,7 @@ function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => v
           {[
             { title: "B-12 KTEO", detail: "Άνοιγμα βλάβης", tab: "issues" as TabId },
             { title: "CR-04 πιστοποιητικό", detail: "Έλεγχος εγγράφου", tab: "documents" as TabId },
-            { title: "FL-02 service", detail: "Ανάθεση εργασίας", tab: "maintenance" as TabId },
+            { title: "FL-02 συντήρηση", detail: "Ανάθεση εργασίας", tab: "maintenance" as TabId },
           ].map((item) => (
             <button
               key={item.title}
@@ -1312,7 +1312,7 @@ function CommandContextPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => v
             onClick={() => setActiveTab("maintenance")}
             className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
-            <p className="text-sm font-semibold text-[#13211f]">Service FL-02</p>
+            <p className="text-sm font-semibold text-[#13211f]">Συντήρηση FL-02</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">Ανάθεση στον Γιώργο Ράλλη.</p>
           </button>
         </div>
