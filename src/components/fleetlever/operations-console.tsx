@@ -1572,11 +1572,14 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
 function CompliancePanel() {
   const assetsWithGaps = assets.filter((asset) => getMissingDocumentCategories(asset).length > 0);
   const requiredCategories = Array.from(new Set(complianceTemplates.flatMap((template) => template.requiredCategories)));
+  const assetGapSummary = (assetCount: number, gapCount: number) =>
+    `${assetCount} ${assetCount === 1 ? "πάγιο" : "πάγια"} · ${gapCount} ${gapCount === 1 ? "κενό" : "κενά"}`;
+  const gapCountLabel = (gapCount: number) => `${gapCount} ${gapCount === 1 ? "κενό" : "κενά"}`;
   const assetTypeLabels: Record<string, string> = {
     Crane: "Γερανός",
     Bus: "Λεωφορείο",
-    Forklift: "Forklift",
-    Van: "Van",
+    Forklift: "Κλαρκ",
+    Van: "Βαν",
     Excavator: "Εκσκαφέας",
   };
   const assetsWithGapsByType = complianceTemplates.map((template) => {
@@ -1612,15 +1615,15 @@ function CompliancePanel() {
           { label: "Κατηγορίες", value: requiredCategories.length, detail: "KTEO, άδειες, ασφάλειες" },
           { label: "Πάγια με κενά", value: assetsWithGaps.length, detail: "Θέλουν συμπλήρωση" },
         ].map((item) => (
-          <div key={item.label} className="border-b border-[#d9e2dc] p-4 last:border-b-0 sm:border-b-0">
+          <div key={item.label} className="border-b border-[#d9e2dc] p-3 last:border-b-0 sm:border-b-0">
             <p className="text-sm font-medium text-slate-500">{item.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-[#13211f]">{item.value}</p>
+            <p className="mt-1 text-xl font-semibold text-[#13211f]">{item.value}</p>
             <p className="mt-1 text-sm text-slate-600">{item.detail}</p>
           </div>
         ))}
       </div>
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           {assetsWithGapsByType.map((template) => (
             <DataCard key={template.assetType} title={assetTypeLabels[template.assetType] ?? template.assetType}>
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -1628,7 +1631,7 @@ function CompliancePanel() {
                   <p className="text-sm text-slate-600">{template.requiredCategories.length} απαιτούμενα έγγραφα</p>
                   <p className="mt-1 text-xs font-medium text-slate-500">
                     {template.blockedByRule.length
-                      ? `${template.blockedByRule.length} πάγια · ${template.missingCount} κενά`
+                      ? assetGapSummary(template.blockedByRule.length, template.missingCount)
                       : "Χωρίς τρέχοντα κενά"}
                   </p>
                 </div>
@@ -1644,7 +1647,7 @@ function CompliancePanel() {
             </DataCard>
           ))}
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           <DataCard title="Πάγια με ελλείψεις">
             <div className="space-y-3">
               {assetsWithGaps.map((asset) => {
@@ -1661,7 +1664,7 @@ function CompliancePanel() {
                         <span className="block truncate text-sm font-semibold text-[#13211f]">{asset.code}</span>
                         <span className="mt-0.5 block truncate text-xs text-slate-500">{asset.name}</span>
                       </span>
-                      <StatusPill label={`${missing.length} κενά`} tone="warning" />
+                      <StatusPill label={gapCountLabel(missing.length)} tone="warning" />
                     </span>
                     <span className="mt-2 flex flex-wrap gap-1.5">
                       {missing.slice(0, 2).map((category) => (
