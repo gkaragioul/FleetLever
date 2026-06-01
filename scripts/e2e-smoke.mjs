@@ -170,6 +170,27 @@ async function exerciseOperationalControls(page) {
   await closeDialog(page);
 }
 
+async function expectFocusedRecord(page, selector, label) {
+  await page.locator(selector).waitFor({ state: "visible", timeout: 5000 });
+  await page.waitForFunction(
+    (targetSelector) => document.querySelector(targetSelector)?.classList.contains("fleet-record-focus"),
+    selector,
+    { timeout: 5000 },
+  ).catch(() => {
+    throw new Error(`${label}: destination record did not receive focus highlight`);
+  });
+}
+
+async function exerciseDashboardRecordLinks(page) {
+  await openTab(page, "Κέντρο στόλου");
+  await page.getByRole("button", { name: /B-12 KTEO/ }).first().click();
+  await expectFocusedRecord(page, '[data-fleet-record="documents:doc-b12-kteo"]', "Dashboard B-12 KTEO link");
+
+  await openTab(page, "Κέντρο στόλου");
+  await page.getByRole("button", { name: /EX-01/ }).first().click();
+  await expectFocusedRecord(page, '[data-fleet-record="issues:iss-ex01"]', "Dashboard EX-01 assignment link");
+}
+
 async function optionalDatabaseMutation(page, baseUrl, health) {
   if (!health.ok || process.env.E2E_MUTATE_DB !== "1") {
     return {
@@ -215,6 +236,7 @@ async function main() {
 
     await exerciseModals(page);
     await exerciseOperationalControls(page);
+    await exerciseDashboardRecordLinks(page);
 
     const mutation = await optionalDatabaseMutation(page, server.url, health);
     collectConsoleErrors();

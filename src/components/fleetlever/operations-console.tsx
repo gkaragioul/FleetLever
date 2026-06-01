@@ -130,6 +130,15 @@ type SearchResult = {
   assetId?: string;
   documentId?: string;
   issueId?: string;
+  taskId?: string;
+  operatorId?: string;
+};
+
+type FocusRecord = (tab: TabId, recordId?: string) => void;
+
+type FocusTarget = {
+  tab: TabId;
+  recordId: string;
 };
 
 type InsightItem = {
@@ -181,6 +190,12 @@ function useFleetData() {
 
 function useOperationsActions() {
   return useContext(OperationsActionsContext);
+}
+
+function searchResultRecordId(result?: SearchResult) {
+  if (!result) return undefined;
+
+  return result.documentId ?? result.issueId ?? result.taskId ?? result.operatorId ?? result.assetId;
 }
 
 const statusLabels: Record<string, string> = {
@@ -770,7 +785,7 @@ function NotificationsDrawer({
 }: {
   open: boolean;
   onClose: () => void;
-  onNavigate: (tab: TabId) => void;
+  onNavigate: FocusRecord;
 }) {
   const data = useFleetData();
   const notifications = buildNotifications(data);
@@ -802,7 +817,7 @@ function NotificationsDrawer({
               key={notification.id}
               type="button"
               onClick={() => {
-                onNavigate(notification.tab);
+                onNavigate(notification.tab, notification.recordId);
                 onClose();
               }}
               className="grid w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
@@ -825,7 +840,7 @@ function NotificationsDrawer({
   );
 }
 
-function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function DashboardPanel({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabId) => void; focusRecord: FocusRecord }) {
   const data = useFleetData();
   const { assets, documents, maintenanceTasks } = data;
   const readyAssets = assets.filter((asset) => asset.status === "ready");
@@ -841,10 +856,13 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
     { icon: FileText, label: "Λήξεις", value: expiringDocuments.length, detail: "Έγγραφα με προθεσμία", tab: "documents" as TabId },
     { icon: Wrench, label: "Service", value: overdueMaintenance.length, detail: "Εκπρόθεσμες εργασίες", tab: "maintenance" as TabId },
   ];
+  const b12KteoDocument = documents.find((document) => document.title.includes("B-12") && document.title.toLowerCase().includes("kteo"));
+  const cr04Certificate = documents.find((document) => document.title.includes("CR-04") && document.title.includes("πιστοποιητικό"));
+  const fl02Maintenance = maintenanceTasks.find((task) => findAsset(assets, task.assetId)?.code === "FL-02");
   const priorityItems = [
-    { title: "B-12 KTEO", detail: "Κλείσε ανανέωση πριν μπει σε διαδρομή.", tab: "documents" as TabId },
-    { title: "CR-04 πιστοποιητικό", detail: "Έλεγξε τη λήξη ανύψωσης στις 03 Ιουν.", tab: "documents" as TabId },
-    { title: "FL-02 συντήρηση", detail: "Ανάθεσε την εκπρόθεσμη εργασία και κράτησε κόστος.", tab: "maintenance" as TabId },
+    { title: "B-12 KTEO", detail: "Κλείσε ανανέωση πριν μπει σε διαδρομή.", tab: "documents" as TabId, recordId: b12KteoDocument?.id },
+    { title: "CR-04 πιστοποιητικό", detail: "Έλεγξε τη λήξη ανύψωσης στις 03 Ιουν.", tab: "documents" as TabId, recordId: cr04Certificate?.id },
+    { title: "FL-02 συντήρηση", detail: "Ανάθεσε την εκπρόθεσμη εργασία και κράτησε κόστος.", tab: "maintenance" as TabId, recordId: fl02Maintenance?.id },
   ];
 
   return (
@@ -925,7 +943,7 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               <button
                 key={item.title}
                 type="button"
-                onClick={() => setActiveTab(item.tab)}
+                onClick={() => focusRecord(item.tab, item.recordId)}
                 className="grid w-full gap-3 py-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
                 <span className="min-w-0">
@@ -941,8 +959,8 @@ function DashboardPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
           </div>
         </DataCard>
 
-        <DeadlinesCard setActiveTab={setActiveTab} />
-        <AssignmentsCard setActiveTab={setActiveTab} />
+        <DeadlinesCard setActiveTab={setActiveTab} focusRecord={focusRecord} />
+        <AssignmentsCard setActiveTab={setActiveTab} focusRecord={focusRecord} />
       </div>
     </div>
   );
@@ -1413,6 +1431,7 @@ function buildSearchResults(data: FleetLeverData, query: string): SearchResult[]
         tab: "maintenance",
         actionLabel: task.status === "overdue" ? "Ανάθεση" : "Άνοιγμα",
         assetId: task.assetId,
+        taskId: task.id,
       });
     }
   }
@@ -1428,6 +1447,7 @@ function buildSearchResults(data: FleetLeverData, query: string): SearchResult[]
         tone: daysUntil(operator.licenseExpiresAt) <= 30 ? "warning" : "valid",
         tab: "operators",
         actionLabel: "Άνοιγμα",
+        operatorId: operator.id,
       });
     }
   }
@@ -2319,6 +2339,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
               <button
                 key={asset.id}
                 type="button"
+                data-fleet-record={`assets:${asset.id}`}
                 onClick={() => setSelectedAssetId(asset.id)}
                 className="grid min-h-[104px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[180px_minmax(0,1fr)_200px_112px] xl:items-stretch"
               >
@@ -2377,7 +2398,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
                   const action = assetAction(asset);
 
                   return (
-                    <tr key={asset.id} className="border-b border-[#e3e9e2] align-top last:border-0">
+                    <tr key={asset.id} data-fleet-record={`assets:${asset.id}`} tabIndex={-1} className="border-b border-[#e3e9e2] align-top last:border-0">
                       <td className="py-4 pr-4">
                         <p className="font-semibold text-[#13211f]">{asset.code}</p>
                         <p className="truncate text-slate-600">{asset.name}</p>
@@ -2805,6 +2826,7 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               <button
                 key={document.id}
                 type="button"
+                data-fleet-record={`documents:${document.id}`}
                 onClick={() => setSelectedDocumentId(document.id)}
                 className="grid min-h-[80px] w-full gap-2.5 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-4 py-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[minmax(220px,1fr)_170px_220px] xl:items-center"
               >
@@ -3009,6 +3031,8 @@ function MaintenancePanel() {
               return (
                 <article
                   key={task.id}
+                  data-fleet-record={`maintenance:${task.id}`}
+                  tabIndex={-1}
                   className={`grid min-h-[88px] min-w-0 gap-3 rounded-md border p-4 xl:grid-cols-[minmax(260px,1fr)_170px_150px_auto] xl:items-center ${
                     isOverdue ? "border-red-200 bg-red-50/40" : "border-[#d9e2dc] bg-[#fdfbf7]"
                   }`}
@@ -3113,7 +3137,12 @@ function IssuesPanel() {
               const asset = findAsset(assets, issue.assetId);
 
               return (
-                <div key={issue.id} className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div
+                  key={issue.id}
+                  data-fleet-record={`issues:${issue.id}`}
+                  tabIndex={-1}
+                  className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
                   <div className="min-w-0">
                     <p className="font-semibold text-[#13211f]">{issue.title}</p>
                     <p className="mt-1 text-sm text-slate-600">
@@ -3193,6 +3222,8 @@ function OperatorsPanel() {
             return (
               <div
                 key={operator.id}
+                data-fleet-record={`operators:${operator.id}`}
+                tabIndex={-1}
                 className="grid gap-4 py-4 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,1.4fr)_minmax(150px,0.75fr)_minmax(150px,0.85fr)_auto] md:items-center"
               >
                 <div className="flex min-w-0 items-center gap-3">
@@ -3438,7 +3469,7 @@ function ReportsPanel() {
   );
 }
 
-function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function DeadlinesCard({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabId) => void; focusRecord: FocusRecord }) {
   const { documents } = useFleetData();
   const expiringDocuments = documents.filter((document) =>
     ["expired", "critical", "warning"].includes(documentStatus(document)),
@@ -3456,7 +3487,7 @@ function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void })
           <button
             key={document.id}
             type="button"
-            onClick={() => setActiveTab("documents")}
+            onClick={() => focusRecord("documents", document.id)}
             className="grid min-h-[58px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[#e3e9e2] py-3 text-left transition hover:text-teal-900 first:pt-0 last:border-0 last:pb-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500"
           >
             <div className="min-w-0">
@@ -3473,7 +3504,7 @@ function DeadlinesCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void })
   );
 }
 
-function AssignmentsCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function AssignmentsCard({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabId) => void; focusRecord: FocusRecord }) {
   const { assets, issues } = useFleetData();
 
   return (
@@ -3488,7 +3519,7 @@ function AssignmentsCard({ setActiveTab }: { setActiveTab: (tab: TabId) => void 
           <button
             key={issue.id}
             type="button"
-            onClick={() => setActiveTab("issues")}
+            onClick={() => focusRecord("issues", issue.id)}
             className="grid min-h-[82px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3.5 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <span className="min-w-0">
@@ -3994,6 +4025,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     defaults: {},
   });
   const [globalQuery, setGlobalQuery] = useState("");
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -4008,6 +4040,36 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     const timer = window.setTimeout(() => setToast(""), 4200);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!focusTarget || focusTarget.tab !== activeTab) return undefined;
+
+    let highlightTimer: number | undefined;
+    const timer = window.setTimeout(() => {
+      const target = document.querySelector<HTMLElement>(`[data-fleet-record="${focusTarget.tab}:${focusTarget.recordId}"]`);
+
+      if (!target) {
+        setFocusTarget(null);
+        return;
+      }
+
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+      target.classList.add("fleet-record-focus");
+
+      highlightTimer = window.setTimeout(() => {
+        target.classList.remove("fleet-record-focus");
+        setFocusTarget((current) =>
+          current?.tab === focusTarget.tab && current.recordId === focusTarget.recordId ? null : current,
+        );
+      }, 2600);
+    }, 80);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (highlightTimer) window.clearTimeout(highlightTimer);
+    };
+  }, [activeTab, focusTarget]);
 
   const actionContext = useMemo<OperationsActions>(
     () => ({
@@ -4042,8 +4104,13 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
   );
   const notifications = buildNotifications(data);
 
-  function handleSearchNavigate(tab: TabId) {
+  function focusRecord(tab: TabId, recordId?: string) {
     setActiveTab(tab);
+    setFocusTarget(recordId ? { tab, recordId } : null);
+  }
+
+  function handleSearchNavigate(tab: TabId, result?: SearchResult) {
+    focusRecord(tab, searchResultRecordId(result));
     setGlobalQuery("");
   }
 
@@ -4176,7 +4243,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             aria-label={activeMeta.label}
             className="min-w-0"
           >
-            {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} />}
+            {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} focusRecord={focusRecord} />}
             {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
             {activeTab === "assets" && <AssetsPanel setActiveTab={setActiveTab} />}
             {activeTab === "documents" && <DocumentsPanel setActiveTab={setActiveTab} />}
@@ -4192,7 +4259,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
       <NotificationsDrawer
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
-        onNavigate={(tab) => setActiveTab(tab)}
+        onNavigate={focusRecord}
       />
       {toast ? (
         <div role="status" aria-live="polite" className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full border border-[#d9e2dc] bg-[#fbfaf6] px-4 py-2 text-sm font-medium text-[#123d37] shadow-lg">
