@@ -892,7 +892,7 @@ function DashboardPanel({
         className="overflow-hidden rounded-lg border border-[#bfd7ce] bg-[#fbfaf6] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
         aria-labelledby="fleet-overview-title"
       >
-        <div className="grid gap-5 border-b border-[#d9e2dc] p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="border-b border-[#d9e2dc] p-5 sm:p-6">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#117064]">Κέντρο στόλου</p>
             <h1 id="fleet-overview-title" className="mt-2 max-w-3xl text-2xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
@@ -901,9 +901,6 @@ function DashboardPanel({
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Τι είναι έτοιμο, τι μπλοκάρει και τι χρειάζεται κλείσιμο πριν βγει το πρόγραμμα.
             </p>
-          </div>
-          <div className="self-start">
-            <ActionButton icon={Command} onClick={() => setActiveTab("command")}>Copilot</ActionButton>
           </div>
         </div>
 
