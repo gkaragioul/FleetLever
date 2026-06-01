@@ -136,7 +136,7 @@ type SearchResult = {
 
 type FocusRecord = (tab: TabId, recordId?: string) => void;
 
-type FocusTarget = {
+type OpenTarget = {
   tab: TabId;
   recordId: string;
 };
@@ -2184,7 +2184,15 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
   );
 }
 
-function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function AssetsPanel({
+  setActiveTab,
+  openRecordId,
+  onOpenRecordHandled,
+}: {
+  setActiveTab: (tab: TabId) => void;
+  openRecordId?: string;
+  onOpenRecordHandled: () => void;
+}) {
   const data = useFleetData();
   const { assets, documents, complianceTemplates, issues } = data;
   const { openAction } = useOperationsActions();
@@ -2196,7 +2204,8 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
   const readyAssets = assets.filter((asset) => asset.status === "ready");
   const blockedAssets = assets.filter((asset) => asset.status === "blocked");
   const assetsWithMissing = assets.filter((asset) => getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates).length > 0);
-  const selectedAsset = selectedAssetId ? assets.find((asset) => asset.id === selectedAssetId) : undefined;
+  const selectedAssetIdForDrawer = openRecordId && assets.some((asset) => asset.id === openRecordId) ? openRecordId : selectedAssetId;
+  const selectedAsset = selectedAssetIdForDrawer ? assets.find((asset) => asset.id === selectedAssetIdForDrawer) : undefined;
   const normalizedQuery = assetQuery.trim().toLocaleLowerCase("el-GR");
   const filteredAssets = assets.filter((asset) => {
     const missing = getMissingDocumentCategoriesForAsset(asset, documents, complianceTemplates);
@@ -2348,7 +2357,6 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
               <button
                 key={asset.id}
                 type="button"
-                data-fleet-record={`assets:${asset.id}`}
                 onClick={() => setSelectedAssetId(asset.id)}
                 className="grid min-h-[104px] w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[180px_minmax(0,1fr)_200px_112px] xl:items-stretch"
               >
@@ -2407,7 +2415,7 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
                   const action = assetAction(asset);
 
                   return (
-                    <tr key={asset.id} data-fleet-record={`assets:${asset.id}`} tabIndex={-1} className="border-b border-[#e3e9e2] align-top last:border-0">
+                    <tr key={asset.id} className="border-b border-[#e3e9e2] align-top last:border-0">
                       <td className="py-4 pr-4">
                         <p className="font-semibold text-[#13211f]">{asset.code}</p>
                         <p className="truncate text-slate-600">{asset.name}</p>
@@ -2449,7 +2457,14 @@ function AssetsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
         ) : null}
       </DataCard>
       {selectedAsset ? (
-        <AssetDrawer asset={selectedAsset} onClose={() => setSelectedAssetId(null)} setActiveTab={setActiveTab} />
+        <AssetDrawer
+          asset={selectedAsset}
+          onClose={() => {
+            setSelectedAssetId(null);
+            onOpenRecordHandled();
+          }}
+          setActiveTab={setActiveTab}
+        />
       ) : null}
     </OperationsPage>
   );
@@ -2669,14 +2684,23 @@ function DocumentDrawer({
   );
 }
 
-function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) {
+function DocumentsPanel({
+  setActiveTab,
+  openRecordId,
+  onOpenRecordHandled,
+}: {
+  setActiveTab: (tab: TabId) => void;
+  openRecordId?: string;
+  onOpenRecordHandled: () => void;
+}) {
   const { documents, assets } = useFleetData();
   const { openAction, runAction, isPending } = useOperationsActions();
   const [documentFilter, setDocumentFilter] = useState<DocumentFilter>("attention");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const filteredDocuments = filterDocuments(documents, documentFilter);
-  const selectedDocument = selectedDocumentId ? documents.find((document) => document.id === selectedDocumentId) : undefined;
+  const selectedDocumentIdForDrawer = openRecordId && documents.some((document) => document.id === openRecordId) ? openRecordId : selectedDocumentId;
+  const selectedDocument = selectedDocumentIdForDrawer ? documents.find((document) => document.id === selectedDocumentIdForDrawer) : undefined;
   const documentsInReview = documents.filter((document) => document.reviewState === "under review");
   const validDocuments = documents.filter((document) => documentStatus(document) === "valid");
   const expiredDocuments = filterDocuments(documents, "expired");
@@ -2835,7 +2859,6 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
               <button
                 key={document.id}
                 type="button"
-                data-fleet-record={`documents:${document.id}`}
                 onClick={() => setSelectedDocumentId(document.id)}
                 className="grid min-h-[80px] w-full gap-2.5 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-4 py-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:grid-cols-[minmax(220px,1fr)_170px_220px] xl:items-center"
               >
@@ -2870,7 +2893,14 @@ function DocumentsPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }
         </div>
       </DataCard>
       {selectedDocument ? (
-        <DocumentDrawer document={selectedDocument} onClose={() => setSelectedDocumentId(null)} setActiveTab={setActiveTab} />
+        <DocumentDrawer
+          document={selectedDocument}
+          onClose={() => {
+            setSelectedDocumentId(null);
+            onOpenRecordHandled();
+          }}
+          setActiveTab={setActiveTab}
+        />
       ) : null}
     </OperationsPage>
   );
@@ -2984,7 +3014,13 @@ function CompliancePanel() {
   );
 }
 
-function MaintenancePanel() {
+function MaintenancePanel({
+  openRecordId,
+  onOpenRecordHandled,
+}: {
+  openRecordId?: string;
+  onOpenRecordHandled: () => void;
+}) {
   const data = useFleetData();
   const { assets, maintenanceTasks } = data;
   const { openAction, runAction, isPending } = useOperationsActions();
@@ -2997,6 +3033,23 @@ function MaintenancePanel() {
     if (maintenanceFilter === "cost") return Boolean(task.cost);
     return true;
   });
+
+  useEffect(() => {
+    if (!openRecordId) return;
+
+    const task = maintenanceTasks.find((item) => item.id === openRecordId);
+    if (task) {
+      openAction("maintenance", {
+        taskId: task.id,
+        assetId: task.assetId,
+        title: task.title,
+        dueAt: task.dueAt,
+        cost: task.cost ? String(task.cost) : "",
+      });
+    }
+
+    onOpenRecordHandled();
+  }, [maintenanceTasks, onOpenRecordHandled, openAction, openRecordId]);
 
   async function handleAssign(task: MaintenanceTask) {
     const formData = new FormData();
@@ -3040,8 +3093,6 @@ function MaintenancePanel() {
               return (
                 <article
                   key={task.id}
-                  data-fleet-record={`maintenance:${task.id}`}
-                  tabIndex={-1}
                   className={`grid min-h-[88px] min-w-0 gap-3 rounded-md border p-4 xl:grid-cols-[minmax(260px,1fr)_170px_150px_auto] xl:items-center ${
                     isOverdue ? "border-red-200 bg-red-50/40" : "border-[#d9e2dc] bg-[#fdfbf7]"
                   }`}
@@ -3102,7 +3153,13 @@ function MaintenancePanel() {
   );
 }
 
-function IssuesPanel() {
+function IssuesPanel({
+  openRecordId,
+  onOpenRecordHandled,
+}: {
+  openRecordId?: string;
+  onOpenRecordHandled: () => void;
+}) {
   const { assets, issues } = useFleetData();
   const { openAction, runAction, isPending } = useOperationsActions();
   const [issueFilter, setIssueFilter] = useState<IssueFilter>("all");
@@ -3113,6 +3170,23 @@ function IssuesPanel() {
     if (issueFilter === "progress") return issue.status === "in progress" || issue.status === "triaged";
     return true;
   });
+
+  useEffect(() => {
+    if (!openRecordId) return;
+
+    const issue = issues.find((item) => item.id === openRecordId);
+    if (issue) {
+      openAction("issue", {
+        issueId: issue.id,
+        assetId: issue.assetId,
+        title: issue.title,
+        severity: issue.severity,
+        blocking: issue.blocking ? "true" : "",
+      });
+    }
+
+    onOpenRecordHandled();
+  }, [issues, onOpenRecordHandled, openAction, openRecordId]);
 
   async function handleResolve(issue: Issue) {
     const formData = new FormData();
@@ -3148,8 +3222,6 @@ function IssuesPanel() {
               return (
                 <div
                   key={issue.id}
-                  data-fleet-record={`issues:${issue.id}`}
-                  tabIndex={-1}
                   className="grid gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                 >
                   <div className="min-w-0">
@@ -3197,11 +3269,35 @@ function IssuesPanel() {
   );
 }
 
-function OperatorsPanel() {
+function OperatorsPanel({
+  openRecordId,
+  onOpenRecordHandled,
+}: {
+  openRecordId?: string;
+  onOpenRecordHandled: () => void;
+}) {
   const { assets, operators } = useFleetData();
   const { openAction, runAction, isPending } = useOperationsActions();
   const totalAssignments = operators.reduce((sum, operator) => sum + operator.assignedAssetIds.length, 0);
   const expiringLicenses = operators.filter((operator) => daysUntil(operator.licenseExpiresAt) <= 30);
+
+  useEffect(() => {
+    if (!openRecordId) return;
+
+    const operator = operators.find((item) => item.id === openRecordId);
+    if (operator) {
+      openAction("operator", {
+        operatorId: operator.id,
+        name: operator.name,
+        role: operator.role,
+        phone: operator.phone,
+        licenseCategories: operator.licenseCategories.join(", "),
+        licenseExpiresAt: operator.licenseExpiresAt,
+      });
+    }
+
+    onOpenRecordHandled();
+  }, [onOpenRecordHandled, openAction, openRecordId, operators]);
 
   async function handleArchive(operator: FleetLeverData["operators"][number]) {
     const formData = new FormData();
@@ -3231,8 +3327,6 @@ function OperatorsPanel() {
             return (
               <div
                 key={operator.id}
-                data-fleet-record={`operators:${operator.id}`}
-                tabIndex={-1}
                 className="grid gap-4 py-4 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,1.4fr)_minmax(150px,0.75fr)_minmax(150px,0.85fr)_auto] md:items-center"
               >
                 <div className="flex min-w-0 items-center gap-3">
@@ -4034,7 +4128,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     defaults: {},
   });
   const [globalQuery, setGlobalQuery] = useState("");
-  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+  const [openTarget, setOpenTarget] = useState<OpenTarget | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -4049,36 +4143,6 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     const timer = window.setTimeout(() => setToast(""), 4200);
     return () => window.clearTimeout(timer);
   }, [toast]);
-
-  useEffect(() => {
-    if (!focusTarget || focusTarget.tab !== activeTab) return undefined;
-
-    let highlightTimer: number | undefined;
-    const timer = window.setTimeout(() => {
-      const target = document.querySelector<HTMLElement>(`[data-fleet-record="${focusTarget.tab}:${focusTarget.recordId}"]`);
-
-      if (!target) {
-        setFocusTarget(null);
-        return;
-      }
-
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.focus({ preventScroll: true });
-      target.classList.add("fleet-record-focus");
-
-      highlightTimer = window.setTimeout(() => {
-        target.classList.remove("fleet-record-focus");
-        setFocusTarget((current) =>
-          current?.tab === focusTarget.tab && current.recordId === focusTarget.recordId ? null : current,
-        );
-      }, 2600);
-    }, 80);
-
-    return () => {
-      window.clearTimeout(timer);
-      if (highlightTimer) window.clearTimeout(highlightTimer);
-    };
-  }, [activeTab, focusTarget]);
 
   const actionContext = useMemo<OperationsActions>(
     () => ({
@@ -4115,7 +4179,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
 
   function focusRecord(tab: TabId, recordId?: string) {
     setActiveTab(tab);
-    setFocusTarget(recordId ? { tab, recordId } : null);
+    setOpenTarget(recordId ? { tab, recordId } : null);
   }
 
   function handleSearchNavigate(tab: TabId, result?: SearchResult) {
@@ -4254,12 +4318,39 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
           >
             {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} focusRecord={focusRecord} />}
             {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
-            {activeTab === "assets" && <AssetsPanel setActiveTab={setActiveTab} />}
-            {activeTab === "documents" && <DocumentsPanel setActiveTab={setActiveTab} />}
+            {activeTab === "assets" && (
+              <AssetsPanel
+                setActiveTab={setActiveTab}
+                openRecordId={openTarget?.tab === "assets" ? openTarget.recordId : undefined}
+                onOpenRecordHandled={() => setOpenTarget(null)}
+              />
+            )}
+            {activeTab === "documents" && (
+              <DocumentsPanel
+                setActiveTab={setActiveTab}
+                openRecordId={openTarget?.tab === "documents" ? openTarget.recordId : undefined}
+                onOpenRecordHandled={() => setOpenTarget(null)}
+              />
+            )}
             {activeTab === "compliance" && <CompliancePanel />}
-            {activeTab === "maintenance" && <MaintenancePanel />}
-            {activeTab === "issues" && <IssuesPanel />}
-            {activeTab === "operators" && <OperatorsPanel />}
+            {activeTab === "maintenance" && (
+              <MaintenancePanel
+                openRecordId={openTarget?.tab === "maintenance" ? openTarget.recordId : undefined}
+                onOpenRecordHandled={() => setOpenTarget(null)}
+              />
+            )}
+            {activeTab === "issues" && (
+              <IssuesPanel
+                openRecordId={openTarget?.tab === "issues" ? openTarget.recordId : undefined}
+                onOpenRecordHandled={() => setOpenTarget(null)}
+              />
+            )}
+            {activeTab === "operators" && (
+              <OperatorsPanel
+                openRecordId={openTarget?.tab === "operators" ? openTarget.recordId : undefined}
+                onOpenRecordHandled={() => setOpenTarget(null)}
+              />
+            )}
             {activeTab === "calendar" && <CalendarPanel setActiveTab={setActiveTab} />}
             {activeTab === "reports" && <ReportsPanel />}
           </section>
