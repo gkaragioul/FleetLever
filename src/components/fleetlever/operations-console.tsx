@@ -4182,6 +4182,11 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     setOpenTarget(recordId ? { tab, recordId } : null);
   }
 
+  function goHome() {
+    setActiveTab("dashboard");
+    setOpenTarget(null);
+  }
+
   function handleSearchNavigate(tab: TabId, result?: SearchResult) {
     focusRecord(tab, searchResultRecordId(result));
     setGlobalQuery("");
@@ -4192,9 +4197,14 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
       <OperationsActionsContext.Provider value={actionContext}>
     <div className="min-h-screen bg-[#edf1ee] text-[#13211f]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-[#d9e2dc] bg-[#f8f7f2]/95 px-4 py-5 backdrop-blur xl:block">
-        <div>
+        <button
+          type="button"
+          onClick={goHome}
+          className="rounded-md text-left transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+          aria-label="Μετάβαση στο Κέντρο στόλου"
+        >
           <FleetLeverLogo />
-        </div>
+        </button>
 
         <nav className="mt-8" aria-label="FleetLever sections">
           <div className="space-y-1" role="tablist" aria-orientation="vertical">
@@ -4226,9 +4236,14 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
       <div className="xl:pl-72">
         <header className="sticky top-0 z-20 border-b border-[#d9e2dc] bg-[#f8f7f2]/92 backdrop-blur">
           <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <div className="shrink-0 xl:hidden">
+            <button
+              type="button"
+              onClick={goHome}
+              className="shrink-0 rounded-md transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 xl:hidden"
+              aria-label="Μετάβαση στο Κέντρο στόλου"
+            >
               <FleetLeverLogo compact />
-            </div>
+            </button>
             <button
               type="button"
               onClick={() =>

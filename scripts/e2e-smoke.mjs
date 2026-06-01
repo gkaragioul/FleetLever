@@ -170,6 +170,12 @@ async function exerciseOperationalControls(page) {
   await closeDialog(page);
 }
 
+async function exerciseLogoHomeNavigation(page) {
+  await openTab(page, "Έγγραφα");
+  await page.getByRole("button", { name: "Μετάβαση στο Κέντρο στόλου" }).first().click();
+  await page.getByRole("heading", { name: "Σήμερα στον στόλο" }).waitFor({ state: "visible", timeout: 5000 });
+}
+
 async function exerciseDashboardRecordLinks(page) {
   await openTab(page, "Κέντρο στόλου");
   await page.getByRole("button", { name: /B-12 KTEO/ }).first().click();
@@ -233,6 +239,7 @@ async function main() {
 
     await exerciseModals(page);
     await exerciseOperationalControls(page);
+    await exerciseLogoHomeNavigation(page);
     await exerciseDashboardRecordLinks(page);
 
     const mutation = await optionalDatabaseMutation(page, server.url, health);

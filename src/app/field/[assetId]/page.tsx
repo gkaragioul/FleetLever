@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { AlertTriangle, FileUp, QrCode, Truck } from "lucide-react";
 import { createDocument, createIssue } from "@/app/actions";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
@@ -74,7 +75,13 @@ export default async function FieldAssetPage({
     <main className="min-h-screen bg-[#edf1ee] px-4 py-5 text-[#13211f] sm:px-6">
       <div className="mx-auto max-w-4xl space-y-4">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-          <FleetLeverLogo />
+          <Link
+            href="/"
+            className="rounded-md transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            aria-label="Μετάβαση στο Κέντρο στόλου"
+          >
+            <FleetLeverLogo />
+          </Link>
           <span className="inline-flex items-center gap-2 rounded-md border border-[#cfe3da] bg-[#eaf5ef] px-3 py-2 text-sm font-semibold text-[#123d37]">
             <QrCode size={16} />
             Field mode
