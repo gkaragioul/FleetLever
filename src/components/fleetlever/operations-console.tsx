@@ -859,11 +859,20 @@ function DashboardPanel({ setActiveTab, focusRecord }: { setActiveTab: (tab: Tab
   const b12KteoDocument = documents.find((document) => document.title.includes("B-12") && document.title.toLowerCase().includes("kteo"));
   const cr04Certificate = documents.find((document) => document.title.includes("CR-04") && document.title.includes("πιστοποιητικό"));
   const fl02Maintenance = maintenanceTasks.find((task) => findAsset(assets, task.assetId)?.code === "FL-02");
+  const fl02InspectionDocument = documents.find((document) => document.title.includes("FL-02") && document.title.includes("περιοδικός"));
   const priorityItems = [
-    { title: "B-12 KTEO", detail: "Κλείσε ανανέωση πριν μπει σε διαδρομή.", tab: "documents" as TabId, recordId: b12KteoDocument?.id },
-    { title: "CR-04 πιστοποιητικό", detail: "Έλεγξε τη λήξη ανύψωσης στις 03 Ιουν.", tab: "documents" as TabId, recordId: cr04Certificate?.id },
-    { title: "FL-02 συντήρηση", detail: "Ανάθεσε την εκπρόθεσμη εργασία και κράτησε κόστος.", tab: "maintenance" as TabId, recordId: fl02Maintenance?.id },
-  ];
+    b12KteoDocument
+      ? { title: "B-12 KTEO", detail: "Κλείσε ανανέωση πριν μπει σε διαδρομή.", tab: "documents" as TabId, recordId: b12KteoDocument.id }
+      : null,
+    cr04Certificate
+      ? { title: "CR-04 πιστοποιητικό", detail: "Έλεγξε τη λήξη ανύψωσης στις 03 Ιουν.", tab: "documents" as TabId, recordId: cr04Certificate.id }
+      : null,
+    fl02Maintenance
+      ? { title: "FL-02 συντήρηση", detail: "Ανάθεσε την εκπρόθεσμη εργασία και κράτησε κόστος.", tab: "maintenance" as TabId, recordId: fl02Maintenance.id }
+      : fl02InspectionDocument
+        ? { title: "FL-02 περιοδικός έλεγχος", detail: "Ολοκλήρωσε τον έλεγχο πριν μπει σε πρόγραμμα.", tab: "documents" as TabId, recordId: fl02InspectionDocument.id }
+        : null,
+  ].filter((item): item is { title: string; detail: string; tab: TabId; recordId: string } => Boolean(item));
 
   return (
     <div className="space-y-4">
