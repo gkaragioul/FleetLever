@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import LandingPage from "./landing/page";
-import { OperationsConsole } from "@/components/fleetlever/operations-console";
-import { getFleetLeverData } from "@/lib/db/fleetlever-data";
+import { ConstructionPrototype } from "@/components/fleetlever/construction-prototype";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +16,7 @@ export default async function Home() {
   const requestHeaders = await headers();
 
   if (isAppRootHost(requestHeaders.get("host"))) {
-    const initialData = await getFleetLeverData();
-
-    return <OperationsConsole initialData={initialData} />;
+    return <ConstructionPrototype />;
   }
 
   return <LandingPage />;

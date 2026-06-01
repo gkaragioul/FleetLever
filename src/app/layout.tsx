@@ -17,19 +17,20 @@ const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever.
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   title: {
-    default: "FleetLever | Διαχείριση στόλου, KTEO και service για την Ελλάδα",
+    default: "FleetLever | Prevent Expensive Construction Downtime",
     template: "%s | FleetLever",
   },
   description:
-    "Greek-first λογισμικό για στόλο, εξοπλισμό, KTEO, έγγραφα, service, βλάβες και αναθέσεις.",
+    "FleetLever is the operational gate construction companies use before releasing machines to tomorrow's work.",
   applicationName: "FleetLever",
   keywords: [
-    "διαχείριση στόλου",
-    "KTEO",
-    "service στόλου",
-    "έγγραφα οχημάτων",
-    "εξοπλισμός",
-    "fleet management Ελλάδα",
+    "construction downtime",
+    "construction equipment management",
+    "machine passport",
+    "release for work",
+    "εργοτάξιο",
+    "μηχανήματα έργου",
+    "τεχνικές εταιρείες",
   ],
   authors: [{ name: "FleetLever" }],
   creator: "FleetLever",
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "FleetLever",
-    description: "Το κέντρο λειτουργίας για ελληνικές επιχειρήσεις με στόλο, εξοπλισμό, KTEO και service.",
+    description: "Prevent expensive construction downtime before tomorrow's work starts.",
     url: "/",
     siteName: "FleetLever",
     locale: "el_GR",
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "FleetLever",
-    description: "Διαχείριση στόλου, KTEO, εγγράφων, service και βλαβών για την ελληνική αγορά.",
+    description: "Know exactly what will stop tomorrow's work before it happens.",
   },
   robots: {
     index: true,

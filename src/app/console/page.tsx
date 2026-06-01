@@ -1,10 +1,5 @@
-import { OperationsConsole } from "@/components/fleetlever/operations-console";
-import { getFleetLeverData } from "@/lib/db/fleetlever-data";
+import { ConstructionPrototype } from "@/components/fleetlever/construction-prototype";
 
-export const dynamic = "force-dynamic";
-
-export default async function ConsolePage() {
-  const initialData = await getFleetLeverData();
-
-  return <OperationsConsole initialData={initialData} />;
+export default function ConsolePage() {
+  return <ConstructionPrototype />;
 }

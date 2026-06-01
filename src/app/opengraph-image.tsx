@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 
 export const runtime = "edge";
-export const alt = "FleetLever - διαχείριση στόλου, KTEO και service";
+export const alt = "FleetLever - prevent expensive construction downtime";
 export const size = {
   width: 1200,
   height: 630,
@@ -41,18 +41,18 @@ export default function Image() {
           <FleetLeverLogo />
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             <div style={{ color: "#007C89", fontSize: 28, fontWeight: 700 }}>
-              Για ελληνικές επιχειρήσεις με στόλο και εξοπλισμό
+              Construction teams · machines · worksites
             </div>
             <div style={{ fontSize: 72, fontWeight: 800, letterSpacing: 0, lineHeight: 1.02 }}>
-              KTEO, έγγραφα, service και βλάβες σε μία εικόνα.
+              Prevent Expensive Construction Downtime
             </div>
           </div>
           <div style={{ color: "#3a4d49", display: "flex", fontSize: 28, gap: 22 }}>
-            <span>Στόλος</span>
+            <span>Release For Work</span>
             <span>•</span>
-            <span>Συντήρηση</span>
+            <span>Machine Passport</span>
             <span>•</span>
-            <span>Αναθέσεις</span>
+            <span>Why Blocked</span>
           </div>
         </div>
       </div>
