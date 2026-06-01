@@ -24,7 +24,7 @@ const MODAL_CHECKS = [
   { tab: "Χειριστές", button: /Νέος χειριστής/ },
 ];
 
-const CONSOLE_PATH = process.env.E2E_APP_PATH ?? "/console";
+const CONSOLE_PATH = process.env.E2E_APP_PATH ?? "/";
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
