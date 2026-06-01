@@ -22,8 +22,8 @@ export const dynamic = "force-dynamic";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever.gr";
 
 const operatingSignals = [
-  { label: "Έτοιμα πάγια", value: "12", tone: "ready" },
-  { label: "Κοντινές λήξεις", value: "4", tone: "warning" },
+  { label: "Διαθέσιμα πάγια", value: "12", tone: "ready" },
+  { label: "Λήγουν σύντομα", value: "4", tone: "warning" },
   { label: "Ανοιχτές βλάβες", value: "2", tone: "danger" },
   { label: "Service", value: "7", tone: "service" },
 ];
@@ -32,40 +32,40 @@ const productCapabilities = [
   {
     icon: Gauge,
     title: "Ετοιμότητα πριν την ανάθεση",
-    body: "Βλέπεις ποιο όχημα, μηχάνημα ή εργαλείο μπορεί να δουλέψει σήμερα και τι το κρατά πίσω.",
+    body: "Η ομάδα βλέπει ποιο όχημα, μηχάνημα ή εργαλείο μπορεί να δουλέψει σήμερα.",
   },
   {
     icon: FileCheck2,
     title: "KTEO, άδειες και έγγραφα",
-    body: "Λήξεις, αρχεία, ανανεώσεις και έλεγχοι μπαίνουν σε μία καθημερινή λίστα προτεραιοτήτων.",
+    body: "Λήξεις, ανανεώσεις και αρχεία μπαίνουν στην ίδια σειρά προτεραιότητας.",
   },
   {
     icon: Wrench,
     title: "Service, βλάβες και κόστος",
-    body: "Η ομάδα βλέπει εργασίες, blockers και εκκρεμότητες πριν φορτώσει πρόγραμμα ή διαδρομή.",
+    body: "Οι εκκρεμότητες φαίνονται πριν φορτωθεί πρόγραμμα, διαδρομή ή εργοτάξιο.",
   },
 ];
 
 const workflowSteps = [
   {
-    title: "Πρωινή εικόνα",
-    body: "Ξεκινάς από readiness, προθεσμίες και blockers. Όχι από διάσπαρτα μηνύματα και excel.",
+    title: "Δες τι θέλει προσοχή",
+    body: "Λήξεις, βλάβες και service εμφανίζονται πρώτα, ώστε να ξέρεις τι πρέπει να κλείσει.",
   },
   {
-    title: "Κλείσιμο κινδύνου",
-    body: "Ανοίγεις KTEO, service ή έγγραφο και αναθέτεις την επόμενη ενέργεια στην ομάδα.",
+    title: "Άνοιξε την εκκρεμότητα",
+    body: "Κάθε προτεραιότητα οδηγεί στο σωστό πάγιο, έγγραφο ή εργασία χωρίς ψάξιμο σε τρίτα αρχεία.",
   },
   {
-    title: "Ανάθεση με σιγουριά",
-    body: "Πάγια, χειριστές και έγγραφα έχουν κοινή κατάσταση πριν βγουν στον δρόμο ή στο έργο.",
+    title: "Ανάθεσε με σιγουριά",
+    body: "Πάγιο, χειριστής και έγγραφα έχουν κοινή κατάσταση πριν ξεκινήσει η δουλειά.",
   },
 ];
 
 const trustPoints = [
-  { icon: Building2, label: "Workspaces και δεδομένα χωρισμένα ανά οργανισμό" },
-  { icon: Lock, label: "Όρια για έγγραφα, ρόλους και ευαίσθητες ενέργειες" },
+  { icon: Building2, label: "Δεδομένα χωρισμένα ανά οργανισμό" },
+  { icon: Lock, label: "Ρόλοι και δικαιώματα για έγγραφα, αρχεία και ευαίσθητες ενέργειες" },
   { icon: ClipboardCheck, label: "Ιστορικό ενεργειών για ελέγχους και καθημερινή λογοδοσία" },
-  { icon: ShieldCheck, label: "Σχεδιασμένο για λειτουργίες που χρειάζονται έλεγχο πριν την ανάπτυξη" },
+  { icon: ShieldCheck, label: "Σχεδιασμένο για ομάδες που χρειάζονται έλεγχο πριν την ανάθεση" },
 ];
 
 const customerFits = [
@@ -75,11 +75,11 @@ const customerFits = [
   },
   {
     title: "Τεχνικές εταιρείες και εργοτάξια",
-    body: "Ξέρεις ποιο μηχάνημα πάει σε έργο, τι λήγει και ποια εργασία θέλει κλείσιμο.",
+    body: "Ξέρεις ποιο μηχάνημα πάει σε έργο, τι λήγει και ποια εργασία μένει ανοιχτή.",
   },
   {
     title: "Μικτοί στόλοι με εξοπλισμό",
-    body: "Οχήματα, εργαλεία, πιστοποιητικά και service μπαίνουν στο ίδιο λειτουργικό πλαίσιο.",
+    body: "Οχήματα, εργαλεία, πιστοποιητικά και service μπαίνουν στην ίδια καθημερινή εικόνα.",
   },
 ];
 
@@ -92,7 +92,7 @@ const schema = {
   url: siteUrl,
   inLanguage: "el-GR",
   description:
-    "Greek-first λογισμικό για στόλο, εξοπλισμό, KTEO, έγγραφα, service, βλάβες και αναθέσεις.",
+    "Λογισμικό για ελληνικές ομάδες που διαχειρίζονται στόλο, εξοπλισμό, KTEO, έγγραφα, service, βλάβες και αναθέσεις.",
   offers: {
     "@type": "Offer",
     availability: "https://schema.org/PreOrder",
@@ -156,7 +156,7 @@ function MarketingHome() {
         <div className="absolute inset-x-4 top-16 -z-20 mx-auto hidden h-[62svh] max-w-6xl overflow-hidden rounded-2xl border border-[#bdcbc4] bg-[#f8faf8] shadow-2xl lg:block">
           <Image
             src="/fleetlever-console-dashboard.png"
-            alt="FleetLever demo console με ετοιμότητα στόλου, προθεσμίες και αναθέσεις."
+            alt="FleetLever με ετοιμότητα στόλου, προθεσμίες και αναθέσεις."
             fill
             priority
             sizes="(min-width: 1024px) 1152px, 100vw"
@@ -167,7 +167,7 @@ function MarketingHome() {
         <div className="absolute inset-x-5 top-10 -z-20 h-48 overflow-hidden rounded-2xl border border-[#bdcbc4] bg-white shadow-xl sm:inset-x-8 lg:hidden">
           <Image
             src="/fleetlever-console-mobile.png"
-            alt="FleetLever mobile demo console με κατάσταση στόλου."
+            alt="FleetLever σε κινητό με κατάσταση στόλου."
             fill
             priority
             sizes="100vw"
@@ -179,20 +179,20 @@ function MarketingHome() {
           <div className="max-w-3xl pb-8 pt-64 sm:pt-72 lg:pb-14 lg:pt-20">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#b9c8bf] bg-white/85 px-3 py-1 text-sm font-semibold text-[#24413d] shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-[#007C89]" aria-hidden="true" />
-              Για ελληνικές ομάδες με στόλο, εξοπλισμό και προθεσμίες
+              KTEO, service και βλάβες πριν την ανάθεση
             </div>
             <h1 className="max-w-2xl text-4xl font-semibold leading-[1.04] tracking-normal text-[#13211f] sm:text-5xl lg:text-6xl">
               FleetLever
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-[#263b37] sm:text-xl">
-              Το console λειτουργίας που δείχνει τι είναι έτοιμο, τι λήγει και τι μπλοκάρει την ανάθεση πριν χαθεί χρόνος στο πρόγραμμα.
+              Βλέπεις ποια πάγια μπορούν να ανατεθούν, τι λήγει και ποια βλάβη κρατά τον στόλο πίσω.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/console"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#007C89] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#007c8930] transition hover:bg-[#056b73] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007C89] focus-visible:ring-offset-2"
               >
-                Δες το demo console
+                Δες το demo
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <a
@@ -235,7 +235,7 @@ function MarketingHome() {
               Από πρωινό έλεγχο σε καθαρή ανάθεση.
             </h2>
             <p className="mt-5 text-lg leading-8 text-[#53665f]">
-              Το FleetLever οργανώνει την καθημερινή απόφαση: τι δουλεύει, τι θέλει κλείσιμο και ποιος το αναλαμβάνει.
+              Το FleetLever οργανώνει την καθημερινή απόφαση: τι δουλεύει, τι μένει ανοιχτό και ποιος το αναλαμβάνει.
             </p>
           </div>
           <div className="grid gap-3">
@@ -258,7 +258,7 @@ function MarketingHome() {
         <div className="overflow-hidden rounded-2xl border border-[#cbd8d1] bg-white shadow-2xl shadow-slate-900/10">
           <Image
             src="/fleetlever-console-dashboard.png"
-            alt="FleetLever console με κάρτες readiness, προτεραιότητες και προθεσμίες."
+            alt="FleetLever με ετοιμότητα στόλου, προθεσμίες και ανοιχτές αναθέσεις."
             width={1440}
             height={1000}
             sizes="(min-width: 1024px) 620px, 100vw"
@@ -271,10 +271,10 @@ function MarketingHome() {
             Η εικόνα του στόλου δεν πρέπει να είναι κρυμμένη σε αρχεία.
           </h2>
           <p className="mt-5 text-lg leading-8 text-[#53665f]">
-            Η αρχική οθόνη συγκεντρώνει readiness, λήξεις, service, βλάβες και αναθέσεις, ώστε η ομάδα να δουλεύει από ένα σημείο αλήθειας.
+            Η αρχική οθόνη δείχνει ετοιμότητα, λήξεις, service, βλάβες και αναθέσεις, ώστε όλοι να ξεκινούν από την ίδια ενημερωμένη εικόνα.
           </p>
           <div className="mt-7 grid gap-3">
-            {["Κρίσιμες προθεσμίες πριν γίνουν πρόβλημα.", "Σαφείς ενέργειες για έγγραφα, βλάβες και service.", "Κατάσταση ανά workspace, πάγιο και χειριστή."].map((item) => (
+            {["Κρίσιμες προθεσμίες πριν γίνουν πρόβλημα.", "Καθαρές ενέργειες για έγγραφα, βλάβες και service.", "Κατάσταση ανά οργανισμό, πάγιο και χειριστή."].map((item) => (
               <div key={item} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
                 <p className="text-base font-medium leading-7 text-[#263b37]">{item}</p>
@@ -290,10 +290,10 @@ function MarketingHome() {
             <ShieldCheck className="h-8 w-8 text-[#79d9e3]" aria-hidden="true" />
             <p className="mt-6 text-sm font-semibold uppercase tracking-normal text-[#79d9e3]">Έλεγχος και εμπιστοσύνη</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">
-              Χτισμένο για σοβαρή λειτουργία, όχι για απλή καταγραφή.
+              Χτισμένο για έλεγχο πριν την ανάθεση.
             </h2>
             <p className="mt-5 text-lg leading-8 text-[#c9d8d2]">
-              Όταν η ανάθεση εξαρτάται από έγγραφα, ρόλους και ιστορικό, το σύστημα πρέπει να κρατά καθαρά όρια από την πρώτη μέρα.
+              Όταν η ανάθεση εξαρτάται από έγγραφα, ρόλους και ιστορικό, η ομάδα χρειάζεται καθαρά όρια από την πρώτη μέρα.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -338,14 +338,14 @@ function MarketingHome() {
             </p>
             <h2 className="mt-3 text-2xl font-semibold text-[#13211f]">Δες αν ταιριάζει στη δική σου λειτουργία.</h2>
             <p className="mt-2 max-w-2xl text-base leading-7 text-[#53665f]">
-              Άνοιξε το demo και δες πώς φαίνονται λήξεις, βλάβες, service και αναθέσεις μέσα σε μία καθημερινή εικόνα.
+              Άνοιξε το demo και δες πώς εμφανίζονται λήξεις, βλάβες, service και αναθέσεις στην καθημερινή εικόνα του στόλου.
             </p>
           </div>
           <Link
             href="/console"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#13211f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007C89] focus-visible:ring-offset-2"
           >
-            Άνοιγμα demo console
+            Άνοιγμα demo
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
