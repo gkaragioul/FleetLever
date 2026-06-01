@@ -1553,11 +1553,11 @@ export async function askCopilot(formData: FormData): Promise<ActionResult> {
 
   const data = await getFleetLeverData();
   const response = buildCopilotResponse(question, data);
+  let activeConversationId = text(formData, "conversationId");
 
   await runTenantMutation(async (client, context) => {
-    const conversationId = text(formData, "conversationId");
-    const conversation = conversationId
-      ? { rows: [{ id: conversationId }] }
+    const conversation = activeConversationId
+      ? { rows: [{ id: activeConversationId }] }
       : await client.query<{ id: string }>(
           `
             insert into public.ai_conversations (organization_id, profile_id, title, mode)
@@ -1567,7 +1567,7 @@ export async function askCopilot(formData: FormData): Promise<ActionResult> {
           [context.organizationId, context.profileId, question.slice(0, 80)],
         );
 
-    const activeConversationId = conversation.rows[0].id;
+    activeConversationId = conversation.rows[0].id;
 
     await client.query(
       `
@@ -1597,12 +1597,11 @@ export async function askCopilot(formData: FormData): Promise<ActionResult> {
     }
 
     response.citations = response.citations.slice(0, 6);
-    Object.assign(response, { conversationId: activeConversationId });
     await writeAudit(client, context, "copilot.answered", "ai_conversations", activeConversationId, {
       question: question.slice(0, 160),
       citations: response.citations.length,
     });
   });
 
-  return { ok: true, message: "Το Copilot απάντησε.", data: response };
+  return { ok: true, message: "Το Copilot απάντησε.", data: { ...response, conversationId: activeConversationId } };
 }

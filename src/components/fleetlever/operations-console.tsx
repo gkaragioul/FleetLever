@@ -845,11 +845,9 @@ function NotificationsDrawer({
 }
 
 function DashboardPanel({
-  setActiveTab,
   focusRecord,
   focusFilteredView,
 }: {
-  setActiveTab: (tab: TabId) => void;
   focusRecord: FocusRecord;
   focusFilteredView: (tab: TabId, filter: string) => void;
 }) {
@@ -977,8 +975,8 @@ function DashboardPanel({
           </div>
         </DataCard>
 
-        <DeadlinesCard setActiveTab={setActiveTab} focusRecord={focusRecord} />
-        <AssignmentsCard setActiveTab={setActiveTab} focusRecord={focusRecord} />
+        <DeadlinesCard focusRecord={focusRecord} />
+        <AssignmentsCard focusRecord={focusRecord} />
       </div>
     </div>
   );
@@ -3665,7 +3663,7 @@ function ReportsPanel() {
   );
 }
 
-function DeadlinesCard({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabId) => void; focusRecord: FocusRecord }) {
+function DeadlinesCard({ focusRecord }: { focusRecord: FocusRecord }) {
   const { documents } = useFleetData();
   const expiringDocuments = documents.filter((document) =>
     ["expired", "critical", "warning"].includes(documentStatus(document)),
@@ -3673,11 +3671,6 @@ function DeadlinesCard({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabI
 
   return (
     <DataCard title="Προθεσμίες">
-      <div className="mb-3 flex justify-end">
-        <TextButton icon={FileText} onClick={() => setActiveTab("documents")}>
-          Έγγραφα
-        </TextButton>
-      </div>
       <div className="space-y-0">
         {expiringDocuments.slice(0, 4).map((document) => (
           <button
@@ -3700,16 +3693,11 @@ function DeadlinesCard({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabI
   );
 }
 
-function AssignmentsCard({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabId) => void; focusRecord: FocusRecord }) {
+function AssignmentsCard({ focusRecord }: { focusRecord: FocusRecord }) {
   const { assets, issues } = useFleetData();
 
   return (
     <DataCard title="Αναθέσεις">
-      <div className="mb-3 flex justify-end">
-        <TextButton icon={AlertTriangle} onClick={() => setActiveTab("issues")}>
-          Βλάβες
-        </TextButton>
-      </div>
       <div className="space-y-2">
         {issues.slice(0, 2).map((issue) => (
           <button
@@ -4429,7 +4417,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             aria-label={activeMeta.label}
             className="min-w-0"
           >
-            {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} focusRecord={focusRecord} focusFilteredView={focusFilteredView} />}
+            {activeTab === "dashboard" && <DashboardPanel focusRecord={focusRecord} focusFilteredView={focusFilteredView} />}
             {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
             {activeTab === "assets" && (
               <AssetsPanel
