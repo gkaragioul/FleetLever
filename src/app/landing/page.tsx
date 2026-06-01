@@ -43,7 +43,7 @@ export default function LandingPage() {
           <FleetLeverLogo />
         </Link>
         <Link
-          href="/"
+          href="/console"
           className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#13211f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007C89] focus-visible:ring-offset-2"
         >
           Άνοιγμα εφαρμογής
@@ -70,7 +70,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/"
+                href="/console"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#00aebe] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[#0794a0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#74dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
               >
                 Δες την εφαρμογή
