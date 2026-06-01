@@ -5,31 +5,22 @@ import { getFleetLeverData } from "@/lib/db/fleetlever-data";
 
 export const dynamic = "force-dynamic";
 
-function isLocalSiteHost(host: string | null) {
-  if (!host) {
-    return process.env.NODE_ENV === "development";
+function isAppRootHost(host: string | null) {
+  if (process.env.FLEETLEVER_ROOT_EXPERIENCE === "app" || process.env.RAILWAY_ENVIRONMENT) {
+    return true;
   }
 
-  const normalizedHost = host.toLowerCase();
-
-  return (
-    normalizedHost.startsWith("localhost:") ||
-    normalizedHost === "localhost" ||
-    normalizedHost.startsWith("127.0.0.1:") ||
-    normalizedHost === "127.0.0.1" ||
-    normalizedHost.startsWith("[::1]:") ||
-    normalizedHost === "[::1]"
-  );
+  return Boolean(host?.toLowerCase().includes("railway.app"));
 }
 
 export default async function Home() {
   const requestHeaders = await headers();
 
-  if (isLocalSiteHost(requestHeaders.get("host"))) {
-    return <LandingPage />;
+  if (isAppRootHost(requestHeaders.get("host"))) {
+    const initialData = await getFleetLeverData();
+
+    return <OperationsConsole initialData={initialData} />;
   }
 
-  const initialData = await getFleetLeverData();
-
-  return <OperationsConsole initialData={initialData} />;
+  return <LandingPage />;
 }
