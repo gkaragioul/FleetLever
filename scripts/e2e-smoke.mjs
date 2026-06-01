@@ -194,6 +194,28 @@ async function exerciseDashboardRecordLinks(page) {
   await closeDialog(page);
 }
 
+async function exerciseNestedRecordLinks(page) {
+  await openTab(page, "Πάγια");
+  await page.locator("button").filter({ hasText: "Mercedes Tourismo" }).first().click();
+  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("heading", { name: /B-12 · Mercedes Tourismo/ }).waitFor({ state: "visible", timeout: 5000 });
+
+  await page.getByRole("button", { name: /Blocking βλάβη/ }).first().click();
+  await page.locator('input[name="title"]').waitFor({ state: "visible", timeout: 5000 });
+  const issueTitle = await page.locator('input[name="title"]').inputValue();
+  if (!issueTitle.includes("Ληγμένο KTEO")) {
+    throw new Error(`Nested Blocking βλάβη opened the wrong issue: ${issueTitle}`);
+  }
+  await closeDialog(page);
+
+  await openTab(page, "Πάγια");
+  await page.locator("button").filter({ hasText: "Mercedes Tourismo" }).first().click();
+  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: /Λήξη εγγράφου/ }).first().click();
+  await page.getByRole("heading", { name: /B-12 έλεγχος KTEO/ }).waitFor({ state: "visible", timeout: 5000 });
+  await closeDialog(page);
+}
+
 async function optionalDatabaseMutation(page, baseUrl, health) {
   if (!health.ok || process.env.E2E_MUTATE_DB !== "1") {
     return {
@@ -241,6 +263,7 @@ async function main() {
     await exerciseOperationalControls(page);
     await exerciseLogoHomeNavigation(page);
     await exerciseDashboardRecordLinks(page);
+    await exerciseNestedRecordLinks(page);
 
     const mutation = await optionalDatabaseMutation(page, server.url, health);
     collectConsoleErrors();

@@ -149,6 +149,7 @@ type InsightItem = {
   tab: TabId;
   actionLabel: string;
   recordId?: string;
+  category?: string;
 };
 
 type TimelineItem = {
@@ -157,6 +158,8 @@ type TimelineItem = {
   title: string;
   detail: string;
   tone: string;
+  tab?: TabId;
+  recordId?: string;
 };
 
 type CalendarItem = {
@@ -1217,7 +1220,7 @@ function assetReadinessInsights(asset: Asset, data: FleetLeverData): InsightItem
       tone: "warning",
       tab: "documents",
       actionLabel: "Συμπλήρωση",
-      recordId: asset.id,
+      category,
     });
   }
 
@@ -1248,6 +1251,8 @@ function assetTimeline(asset: Asset, data: FleetLeverData): TimelineItem[] {
         title: `${categoryLabels[document.category] ?? document.category} καταχωρήθηκε`,
         detail: document.title,
         tone: document.reviewState === "under review" ? "under review" : "valid",
+        tab: "documents",
+        recordId: document.id,
       });
     }
     if (document.expiresAt) {
@@ -1257,6 +1262,8 @@ function assetTimeline(asset: Asset, data: FleetLeverData): TimelineItem[] {
         title: documentDueText(document),
         detail: document.title,
         tone: documentStatus(document),
+        tab: "documents",
+        recordId: document.id,
       });
     }
   }
@@ -1268,6 +1275,8 @@ function assetTimeline(asset: Asset, data: FleetLeverData): TimelineItem[] {
       title: issue.blocking ? "Blocking βλάβη" : "Βλάβη",
       detail: issue.title,
       tone: issue.blocking ? "blocked" : issue.severity,
+      tab: "issues",
+      recordId: issue.id,
     });
   }
 
@@ -1278,6 +1287,8 @@ function assetTimeline(asset: Asset, data: FleetLeverData): TimelineItem[] {
       title: task.status === "overdue" ? "Εκπρόθεσμη εργασία" : "Προγραμματισμένη εργασία",
       detail: task.title,
       tone: task.status,
+      tab: "maintenance",
+      recordId: task.id,
     });
   }
 
@@ -1589,10 +1600,12 @@ function AssetDrawer({
   asset,
   onClose,
   setActiveTab,
+  focusRecord,
 }: {
   asset: Asset;
   onClose: () => void;
   setActiveTab: (tab: TabId) => void;
+  focusRecord: FocusRecord;
 }) {
   const data = useFleetData();
   const { documents, issues, maintenanceTasks, operators, complianceTemplates } = data;
@@ -1613,6 +1626,11 @@ function AssetDrawer({
     formData.set("assetId", asset.id);
     await runAction(archiveAsset, formData);
     onClose();
+  }
+
+  function openNestedRecord(tab: TabId, recordId?: string) {
+    onClose();
+    focusRecord(tab, recordId);
   }
 
   return (
@@ -1719,7 +1737,19 @@ function AssetDrawer({
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveTab(item.tab)}
+              onClick={() => {
+                if (item.recordId) {
+                  openNestedRecord(item.tab, item.recordId);
+                  return;
+                }
+
+                if (item.category) {
+                  openAction("document", { assetId: asset.id, category: item.category });
+                  return;
+                }
+
+                openNestedRecord(item.tab);
+              }}
               className="grid w-full gap-2 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
             >
               <span className="min-w-0">
@@ -1773,7 +1803,7 @@ function AssetDrawer({
               <button
                 key={document.id}
                 type="button"
-                onClick={() => setActiveTab("documents")}
+                onClick={() => openNestedRecord("documents", document.id)}
                 className="grid min-h-12 w-full gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
                 <span className="min-w-0">
@@ -1799,7 +1829,7 @@ function AssetDrawer({
                 <button
                   key={issue.id}
                   type="button"
-                  onClick={() => setActiveTab("issues")}
+                  onClick={() => openNestedRecord("issues", issue.id)}
                   className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1813,7 +1843,7 @@ function AssetDrawer({
                 <button
                   key={task.id}
                   type="button"
-                  onClick={() => setActiveTab("maintenance")}
+                  onClick={() => openNestedRecord("maintenance", task.id)}
                   className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1832,30 +1862,51 @@ function AssetDrawer({
 
       <DrawerSection title="Timeline">
         <div className="space-y-3">
-          {timeline.slice(0, 8).map((item) => (
-            <div key={item.id} className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
-              <span className="text-xs font-semibold text-slate-500">{formatDate(item.date)}</span>
-              <span className="min-w-0">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-[#13211f]">{item.title}</span>
-                  <StatusPill label={statusLabels[item.tone] ?? item.tone} tone={item.tone} />
+          {timeline.slice(0, 8).map((item) => {
+            const content = (
+              <>
+                <span className="text-xs font-semibold text-slate-500">{formatDate(item.date)}</span>
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-[#13211f]">{item.title}</span>
+                    <StatusPill label={statusLabels[item.tone] ?? item.tone} tone={item.tone} />
+                  </span>
+                  <span className="mt-1 block text-sm leading-6 text-slate-600">{item.detail}</span>
                 </span>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">{item.detail}</span>
-              </span>
-            </div>
-          ))}
+              </>
+            );
+
+            return item.tab && item.recordId ? (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => openNestedRecord(item.tab!, item.recordId)}
+                className="grid w-full grid-cols-[92px_minmax(0,1fr)] gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              >
+                {content}
+              </button>
+            ) : (
+              <div key={item.id} className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+                {content}
+              </div>
+            );
+          })}
           {!timeline.length ? <p className="text-sm text-slate-500">Δεν υπάρχει ακόμη ιστορικό για αυτό το πάγιο.</p> : null}
         </div>
       </DrawerSection>
 
       <DrawerSection title="Χειριστής">
-        <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
+        <button
+          type="button"
+          onClick={() => (operator ? openNestedRecord("operators", operator.id) : openNestedRecord("operators"))}
+          className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+        >
           <p className="text-sm font-semibold text-[#13211f]">{asset.operator}</p>
           <p className="mt-1 text-sm text-slate-600">{operator?.role ?? "Χειριστής"}</p>
           <p className="mt-1 text-xs text-slate-500">
             Άδεια έως {operator ? formatDate(operator.licenseExpiresAt) : "άγνωστο"}
           </p>
-        </div>
+        </button>
       </DrawerSection>
     </InspectorDrawer>
   );
@@ -2186,10 +2237,12 @@ function CommandPanel({ setActiveTab }: { setActiveTab: (tab: TabId) => void }) 
 
 function AssetsPanel({
   setActiveTab,
+  focusRecord,
   openRecordId,
   onOpenRecordHandled,
 }: {
   setActiveTab: (tab: TabId) => void;
+  focusRecord: FocusRecord;
   openRecordId?: string;
   onOpenRecordHandled: () => void;
 }) {
@@ -2464,6 +2517,7 @@ function AssetsPanel({
             onOpenRecordHandled();
           }}
           setActiveTab={setActiveTab}
+          focusRecord={focusRecord}
         />
       ) : null}
     </OperationsPage>
@@ -2473,11 +2527,11 @@ function AssetsPanel({
 function DocumentDrawer({
   document,
   onClose,
-  setActiveTab,
+  focusRecord,
 }: {
   document: FleetDocument;
   onClose: () => void;
-  setActiveTab: (tab: TabId) => void;
+  focusRecord: FocusRecord;
 }) {
   const data = useFleetData();
   const { assets, issues, maintenanceTasks } = data;
@@ -2512,6 +2566,11 @@ function DocumentDrawer({
     onClose();
   }
 
+  function openNestedRecord(tab: TabId, recordId?: string) {
+    onClose();
+    focusRecord(tab, recordId);
+  }
+
   return (
     <InspectorDrawer
       titleId="document-drawer-title"
@@ -2525,7 +2584,7 @@ function DocumentDrawer({
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setActiveTab("assets")}
+              onClick={() => (asset ? openNestedRecord("assets", asset.id) : openNestedRecord("assets"))}
               className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#eef7f2] hover:text-[#123d37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <Truck size={15} />
@@ -2631,13 +2690,17 @@ function DocumentDrawer({
       <DrawerSection title={asset ? "Συνδεδεμένο πάγιο" : "Συνδεδεμένη εγγραφή"}>
         <div className="rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3">
           {asset ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => openNestedRecord("assets", asset.id)}
+              className="flex w-full flex-col gap-2 rounded-md text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:flex-row sm:items-center sm:justify-between"
+            >
               <span>
                 <span className="block text-sm font-semibold text-[#13211f]">{asset.code} · {asset.name}</span>
                 <span className="mt-1 block text-xs text-slate-500">{asset.plate ?? asset.serial} · {asset.location}</span>
               </span>
               <StatusPill label={assetStatusLabel(asset.status)} tone={asset.status} />
-            </div>
+            </button>
           ) : (
             <>
               <p className="text-sm font-semibold text-[#13211f]">{document.operator}</p>
@@ -2652,7 +2715,7 @@ function DocumentDrawer({
           {linkedIssue ? (
             <button
               type="button"
-              onClick={() => setActiveTab("issues")}
+              onClick={() => openNestedRecord("issues", linkedIssue.id)}
               className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -2665,7 +2728,7 @@ function DocumentDrawer({
           {linkedTask ? (
             <button
               type="button"
-              onClick={() => setActiveTab("maintenance")}
+              onClick={() => openNestedRecord("maintenance", linkedTask.id)}
               className="w-full rounded-md border border-[#d9e2dc] bg-[#fdfbf7] p-3 text-left transition hover:border-teal-300 hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -2685,11 +2748,11 @@ function DocumentDrawer({
 }
 
 function DocumentsPanel({
-  setActiveTab,
+  focusRecord,
   openRecordId,
   onOpenRecordHandled,
 }: {
-  setActiveTab: (tab: TabId) => void;
+  focusRecord: FocusRecord;
   openRecordId?: string;
   onOpenRecordHandled: () => void;
 }) {
@@ -2899,7 +2962,7 @@ function DocumentsPanel({
             setSelectedDocumentId(null);
             onOpenRecordHandled();
           }}
-          setActiveTab={setActiveTab}
+          focusRecord={focusRecord}
         />
       ) : null}
     </OperationsPage>
@@ -4336,13 +4399,14 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             {activeTab === "assets" && (
               <AssetsPanel
                 setActiveTab={setActiveTab}
+                focusRecord={focusRecord}
                 openRecordId={openTarget?.tab === "assets" ? openTarget.recordId : undefined}
                 onOpenRecordHandled={() => setOpenTarget(null)}
               />
             )}
             {activeTab === "documents" && (
               <DocumentsPanel
-                setActiveTab={setActiveTab}
+                focusRecord={focusRecord}
                 openRecordId={openTarget?.tab === "documents" ? openTarget.recordId : undefined}
                 onOpenRecordHandled={() => setOpenTarget(null)}
               />
