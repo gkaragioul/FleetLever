@@ -24,6 +24,8 @@ const MODAL_CHECKS = [
   { tab: "Χειριστές", button: /Νέος χειριστής/ },
 ];
 
+const CONSOLE_PATH = process.env.E2E_APP_PATH ?? "/console";
+
 function getFreePort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -194,6 +196,28 @@ async function exerciseDashboardRecordLinks(page) {
   await closeDialog(page);
 }
 
+async function exerciseDashboardMetricDrilldowns(page) {
+  await openTab(page, "Κέντρο στόλου");
+  await page.getByRole("button", { name: /Έτοιμα\s+1\s+Μπορούν να ανατεθούν/ }).first().click();
+  await page.getByRole("heading", { name: /Τι μπορεί να ανατεθεί σήμερα/ }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: "Έτοιμα", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+
+  await openTab(page, "Κέντρο στόλου");
+  await page.getByRole("button", { name: /Μη διαθέσιμα\s+2\s+Μένουν εκτός/ }).first().click();
+  await page.getByRole("heading", { name: /Τι μπορεί να ανατεθεί σήμερα/ }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: "Δεν ανατίθενται", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+
+  await openTab(page, "Κέντρο στόλου");
+  await page.getByRole("button", { name: /Λήξεις\s+4\s+Έγγραφα με προθεσμία/ }).first().click();
+  await page.getByRole("heading", { name: /Έγγραφα που θέλουν ενέργεια/ }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: "Θέλουν ενέργεια 4", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+
+  await openTab(page, "Κέντρο στόλου");
+  await page.getByRole("button", { name: /Service\s+\d+\s+Εκπρόθεσμες εργασίες/ }).first().click();
+  await page.getByRole("heading", { name: /Τι service πρέπει να γίνει/ }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: "Εκπρόθεσμες", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+}
+
 async function exerciseNestedRecordLinks(page) {
   await openTab(page, "Πάγια");
   await page.locator("button").filter({ hasText: "Mercedes Tourismo" }).first().click();
@@ -252,7 +276,7 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 1280, height: 840 } });
     const collectConsoleErrors = await assertNoConsoleErrors(page, failures);
 
-    await page.goto(server.url, { waitUntil: "networkidle" });
+    await page.goto(new URL(CONSOLE_PATH, server.url).toString(), { waitUntil: "networkidle" });
 
     for (const label of TAB_LABELS) {
       await openTab(page, label);
@@ -263,6 +287,7 @@ async function main() {
     await exerciseOperationalControls(page);
     await exerciseLogoHomeNavigation(page);
     await exerciseDashboardRecordLinks(page);
+    await exerciseDashboardMetricDrilldowns(page);
     await exerciseNestedRecordLinks(page);
 
     const mutation = await optionalDatabaseMutation(page, server.url, health);

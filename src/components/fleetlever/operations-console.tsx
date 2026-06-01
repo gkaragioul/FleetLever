@@ -138,7 +138,8 @@ type FocusRecord = (tab: TabId, recordId?: string) => void;
 
 type OpenTarget = {
   tab: TabId;
-  recordId: string;
+  recordId?: string;
+  filter?: string;
 };
 
 type InsightItem = {
@@ -843,7 +844,15 @@ function NotificationsDrawer({
   );
 }
 
-function DashboardPanel({ setActiveTab, focusRecord }: { setActiveTab: (tab: TabId) => void; focusRecord: FocusRecord }) {
+function DashboardPanel({
+  setActiveTab,
+  focusRecord,
+  focusFilteredView,
+}: {
+  setActiveTab: (tab: TabId) => void;
+  focusRecord: FocusRecord;
+  focusFilteredView: (tab: TabId, filter: string) => void;
+}) {
   const data = useFleetData();
   const { assets, documents, maintenanceTasks } = data;
   const readyAssets = assets.filter((asset) => asset.status === "ready");
@@ -854,10 +863,10 @@ function DashboardPanel({ setActiveTab, focusRecord }: { setActiveTab: (tab: Tab
   const overdueMaintenance = maintenanceTasks.filter((task) => task.status === "overdue");
   const readinessPercent = assets.length ? Math.round((readyAssets.length / assets.length) * 100) : 0;
   const overviewItems = [
-    { icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tab: "assets" as TabId },
-    { icon: AlertTriangle, label: "Μη διαθέσιμα", value: blockedAssets.length, detail: "Μένουν εκτός", tab: "issues" as TabId },
-    { icon: FileText, label: "Λήξεις", value: expiringDocuments.length, detail: "Έγγραφα με προθεσμία", tab: "documents" as TabId },
-    { icon: Wrench, label: "Service", value: overdueMaintenance.length, detail: "Εκπρόθεσμες εργασίες", tab: "maintenance" as TabId },
+    { icon: Truck, label: "Έτοιμα", value: readyAssets.length, detail: "Μπορούν να ανατεθούν", tab: "assets" as TabId, filter: "ready" },
+    { icon: AlertTriangle, label: "Μη διαθέσιμα", value: blockedAssets.length, detail: "Μένουν εκτός", tab: "assets" as TabId, filter: "blocked" },
+    { icon: FileText, label: "Λήξεις", value: expiringDocuments.length, detail: "Έγγραφα με προθεσμία", tab: "documents" as TabId, filter: "attention" },
+    { icon: Wrench, label: "Service", value: overdueMaintenance.length, detail: "Εκπρόθεσμες εργασίες", tab: "maintenance" as TabId, filter: "overdue" },
   ];
   const b12KteoDocument = documents.find((document) => document.title.includes("B-12") && document.title.toLowerCase().includes("kteo"));
   const cr04Certificate = documents.find((document) => document.title.includes("CR-04") && document.title.includes("πιστοποιητικό"));
@@ -930,7 +939,7 @@ function DashboardPanel({ setActiveTab, focusRecord }: { setActiveTab: (tab: Tab
                 <button
                   key={item.label}
                   type="button"
-                  onClick={() => setActiveTab(item.tab)}
+                  onClick={() => focusFilteredView(item.tab, item.filter)}
                   className="grid min-h-[112px] grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-b border-r border-[#d9e2dc] p-4 text-left transition hover:bg-[#eef7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 [&:nth-child(2n)]:border-r-0 [&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0"
                 >
                   <span className="min-w-0">
@@ -2239,17 +2248,19 @@ function AssetsPanel({
   setActiveTab,
   focusRecord,
   openRecordId,
+  openFilter,
   onOpenRecordHandled,
 }: {
   setActiveTab: (tab: TabId) => void;
   focusRecord: FocusRecord;
   openRecordId?: string;
+  openFilter?: AssetFilter;
   onOpenRecordHandled: () => void;
 }) {
   const data = useFleetData();
   const { assets, documents, complianceTemplates, issues } = data;
   const { openAction } = useOperationsActions();
-  const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
+  const [assetFilter, setAssetFilter] = useState<AssetFilter>(openFilter ?? "all");
   const [assetQuery, setAssetQuery] = useState("");
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
@@ -2294,6 +2305,12 @@ function AssetsPanel({
     { id: "blocked", label: "Δεν ανατίθενται" },
     { id: "missing", label: "Θέλουν έλεγχο" },
   ];
+
+  useEffect(() => {
+    if (!openFilter) return;
+
+    onOpenRecordHandled();
+  }, [onOpenRecordHandled, openFilter]);
 
   function exportAssets() {
     const selected = selectedAssetIds.length ? filteredAssets.filter((asset) => selectedAssetIds.includes(asset.id)) : filteredAssets;
@@ -2750,15 +2767,17 @@ function DocumentDrawer({
 function DocumentsPanel({
   focusRecord,
   openRecordId,
+  openFilter,
   onOpenRecordHandled,
 }: {
   focusRecord: FocusRecord;
   openRecordId?: string;
+  openFilter?: DocumentFilter;
   onOpenRecordHandled: () => void;
 }) {
   const { documents, assets } = useFleetData();
   const { openAction, runAction, isPending } = useOperationsActions();
-  const [documentFilter, setDocumentFilter] = useState<DocumentFilter>("attention");
+  const [documentFilter, setDocumentFilter] = useState<DocumentFilter>(openFilter ?? "attention");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const filteredDocuments = filterDocuments(documents, documentFilter);
@@ -2785,6 +2804,12 @@ function DocumentsPanel({
     { id: "valid", label: "Έγκυρα" },
     { id: "all", label: "Όλα" },
   ];
+
+  useEffect(() => {
+    if (!openFilter) return;
+
+    onOpenRecordHandled();
+  }, [onOpenRecordHandled, openFilter]);
 
   async function bulkApprove() {
     for (const documentId of selectedDocumentIds.length ? selectedDocumentIds : filteredDocuments.map((document) => document.id)) {
@@ -3079,15 +3104,17 @@ function CompliancePanel() {
 
 function MaintenancePanel({
   openRecordId,
+  openFilter,
   onOpenRecordHandled,
 }: {
   openRecordId?: string;
+  openFilter?: MaintenanceFilter;
   onOpenRecordHandled: () => void;
 }) {
   const data = useFleetData();
   const { assets, maintenanceTasks } = data;
   const { openAction, runAction, isPending } = useOperationsActions();
-  const [maintenanceFilter, setMaintenanceFilter] = useState<MaintenanceFilter>("all");
+  const [maintenanceFilter, setMaintenanceFilter] = useState<MaintenanceFilter>(openFilter ?? "all");
   const overdueMaintenance = maintenanceTasks.filter((task) => task.status === "overdue");
   const totalMaintenanceCost = maintenanceTasks.reduce((sum, task) => sum + (task.cost ?? 0), 0);
   const filteredTasks = maintenanceTasks.filter((task) => {
@@ -3113,6 +3140,12 @@ function MaintenancePanel({
 
     onOpenRecordHandled();
   }, [maintenanceTasks, onOpenRecordHandled, openAction, openRecordId]);
+
+  useEffect(() => {
+    if (!openFilter) return;
+
+    onOpenRecordHandled();
+  }, [onOpenRecordHandled, openFilter]);
 
   async function handleAssign(task: MaintenanceTask) {
     const formData = new FormData();
@@ -4245,6 +4278,11 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
     setOpenTarget(recordId ? { tab, recordId } : null);
   }
 
+  function focusFilteredView(tab: TabId, filter: string) {
+    setActiveTab(tab);
+    setOpenTarget({ tab, filter });
+  }
+
   function goHome() {
     setActiveTab("dashboard");
     setOpenTarget(null);
@@ -4394,13 +4432,14 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             aria-label={activeMeta.label}
             className="min-w-0"
           >
-            {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} focusRecord={focusRecord} />}
+            {activeTab === "dashboard" && <DashboardPanel setActiveTab={setActiveTab} focusRecord={focusRecord} focusFilteredView={focusFilteredView} />}
             {activeTab === "command" && <CommandPanel setActiveTab={setActiveTab} />}
             {activeTab === "assets" && (
               <AssetsPanel
                 setActiveTab={setActiveTab}
                 focusRecord={focusRecord}
                 openRecordId={openTarget?.tab === "assets" ? openTarget.recordId : undefined}
+                openFilter={openTarget?.tab === "assets" ? (openTarget.filter as AssetFilter | undefined) : undefined}
                 onOpenRecordHandled={() => setOpenTarget(null)}
               />
             )}
@@ -4408,6 +4447,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
               <DocumentsPanel
                 focusRecord={focusRecord}
                 openRecordId={openTarget?.tab === "documents" ? openTarget.recordId : undefined}
+                openFilter={openTarget?.tab === "documents" ? (openTarget.filter as DocumentFilter | undefined) : undefined}
                 onOpenRecordHandled={() => setOpenTarget(null)}
               />
             )}
@@ -4415,6 +4455,7 @@ export function OperationsConsole({ initialData = fallbackFleetData }: { initial
             {activeTab === "maintenance" && (
               <MaintenancePanel
                 openRecordId={openTarget?.tab === "maintenance" ? openTarget.recordId : undefined}
+                openFilter={openTarget?.tab === "maintenance" ? (openTarget.filter as MaintenanceFilter | undefined) : undefined}
                 onOpenRecordHandled={() => setOpenTarget(null)}
               />
             )}
