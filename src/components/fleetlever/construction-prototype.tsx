@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   BadgeCheck,
   Bell,
@@ -10,13 +11,13 @@ import {
   CircleUserRound,
   ArrowRight,
   Download,
-  FileText,
   History,
   Menu,
   Plus,
   Search,
   Settings,
   ShieldAlert,
+  Smartphone,
   Upload,
   Wrench,
   X,
@@ -28,14 +29,13 @@ type ViewKey =
   | "tomorrow"
   | "worksites"
   | "machines"
-  | "passports"
   | "blockers"
   | "certificates"
   | "service"
   | "history"
   | "settings";
 type DrawerMode = "why" | "passport";
-type PassportTab = "overview" | "documents" | "certificates" | "service" | "issues" | "photos" | "history";
+type PassportTab = "overview" | "documents" | "service" | "issues" | "photos" | "history";
 
 type Certificate = {
   name: string;
@@ -44,6 +44,9 @@ type Certificate = {
   daysLeft: string;
   owner: string;
   action: string;
+  due?: string;
+  assignmentStatus?: "Unassigned" | "Assigned" | "Accepted" | "Overdue";
+  assignedAt?: string;
 };
 
 type ServiceBlocker = {
@@ -53,6 +56,8 @@ type ServiceBlocker = {
   owner: string;
   due: string;
   status: "Open" | "In Progress" | "Waiting" | "Resolved";
+  assignmentStatus?: "Unassigned" | "Assigned" | "Accepted" | "Overdue";
+  assignedAt?: string;
 };
 
 type Machine = {
@@ -105,7 +110,38 @@ type Toast = {
   message: string;
 };
 
+type TeamMember = {
+  name: string;
+  role: string;
+};
+
+type OperationalNotification = {
+  id: number;
+  title: string;
+  detail: string;
+  createdAt: string;
+  read: boolean;
+};
+
+type BlockerKind = "certificate" | "service";
+type UploadSource = "action-queue" | "documents" | "passport";
+
+type DrawerAction =
+  | { type: "assign-owner"; blockerId?: string }
+  | { type: "complete-action"; blockerId?: string }
+  | { type: "upload-document"; blockerId?: string; source?: UploadSource }
+  | { type: "override" }
+  | null;
+
 const clientName = "Athens Crane Services";
+
+const teamMembers: TeamMember[] = [
+  { name: "Dimitris", role: "Fleet Coordinator" },
+  { name: "Maria", role: "Compliance" },
+  { name: "Kostas", role: "Service Lead" },
+  { name: "Workshop", role: "Workshop Queue" },
+  { name: "George", role: "Operations Manager" },
+];
 
 const worksites: Worksite[] = [
   {
@@ -386,14 +422,37 @@ const releaseHistory: ReleaseRecord[] = [
   },
 ];
 
+const initialNotifications: OperationalNotification[] = [
+  {
+    id: 1,
+    title: "CR-04 certificate blocks release",
+    detail: "Dimitris owns the lifting certificate renewal.",
+    createdAt: "Today, 07:05",
+    read: false,
+  },
+  {
+    id: 2,
+    title: "LD-03 service blocker open",
+    detail: "Workshop must complete the hydraulic service action.",
+    createdAt: "Today, 07:10",
+    read: false,
+  },
+  {
+    id: 3,
+    title: "Daily morning report ready",
+    detail: "2 ready, 1 review, 2 blocked for Athens Metro Extension.",
+    createdAt: "Today, 07:30",
+    read: false,
+  },
+];
+
 const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: "tomorrow", label: "Tomorrow's Work", icon: CalendarDays },
   { key: "worksites", label: "Worksites", icon: Building2 },
+  { key: "blockers", label: "Action Queue", icon: ShieldAlert },
   { key: "machines", label: "Machines", icon: Building2 },
-  { key: "passports", label: "Machine Passports", icon: FileText },
-  { key: "blockers", label: "Blockers", icon: ShieldAlert },
-  { key: "certificates", label: "Certificates", icon: BadgeCheck },
-  { key: "service", label: "Service Blockers", icon: Wrench },
+  { key: "certificates", label: "Documents", icon: BadgeCheck },
+  { key: "service", label: "Workshop", icon: Wrench },
   { key: "history", label: "Release History", icon: History },
   { key: "settings", label: "Settings", icon: Settings },
 ];
@@ -401,12 +460,61 @@ const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{
 const passportTabs: Array<{ key: PassportTab; label: string }> = [
   { key: "overview", label: "Overview" },
   { key: "documents", label: "Documents" },
-  { key: "certificates", label: "Certificates" },
   { key: "service", label: "Service" },
   { key: "issues", label: "Issues" },
   { key: "photos", label: "Photos" },
   { key: "history", label: "Release History" },
 ];
+
+const assignmentChannels: Array<{ label: "In-app" | "SMS"; icon: React.ComponentType<{ className?: string }> }> = [
+  { label: "In-app", icon: Bell },
+  { label: "SMS", icon: Smartphone },
+];
+
+function padDate(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function localDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${padDate(date.getMonth() + 1)}-${padDate(date.getDate())}`;
+}
+
+function localTimeInputValue(date: Date) {
+  return `${padDate(date.getHours())}:${padDate(date.getMinutes())}`;
+}
+
+function duePresetDate(preset: "today-1700" | "tomorrow-0900" | "tomorrow-1200" | "custom") {
+  const date = new Date();
+  if (preset === "tomorrow-0900" || preset === "tomorrow-1200") date.setDate(date.getDate() + 1);
+  if (preset === "today-1700") date.setHours(17, 0, 0, 0);
+  if (preset === "tomorrow-0900") date.setHours(9, 0, 0, 0);
+  if (preset === "tomorrow-1200") date.setHours(12, 0, 0, 0);
+  return date;
+}
+
+function buildDueIso(dateValue: string, timeValue: string) {
+  if (!dateValue || !timeValue) return "";
+  return `${dateValue}T${timeValue}`;
+}
+
+function formatDueLabel(dueIso: string) {
+  if (!dueIso) return "No due time";
+  const date = new Date(dueIso);
+  if (Number.isNaN(date.getTime())) return dueIso;
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const sameDay = (left: Date, right: Date) => left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
+  const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
+  if (sameDay(date, today)) return `Today, ${time}`;
+  if (sameDay(date, tomorrow)) return `Tomorrow, ${time}`;
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function isDueOverdue(dueIso: string) {
+  const date = new Date(dueIso);
+  return !Number.isNaN(date.getTime()) && date.getTime() < Date.now();
+}
 
 function emitPrototypeToast(message: string) {
   if (typeof window === "undefined") return;
@@ -429,25 +537,31 @@ function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
 }
 
+function valuesMatchSearch(query: string, values: string[]) {
+  const normalized = normalizeSearch(query);
+  if (!normalized) return true;
+  return values.some((value) => value.toLowerCase().includes(normalized));
+}
+
 function machineMatchesQuery(machine: Machine, query: string) {
   const normalized = normalizeSearch(query);
   if (!normalized) return true;
-  return [
+  return valuesMatchSearch(normalized, [
     machine.code,
     machine.name,
     machine.type,
     machine.owner,
     machine.reason,
     machine.serial,
-    machine.certificates.map((certificate) => certificate.name).join(" "),
+    machine.certificates.map((certificate) => `${certificate.name} ${certificate.status} ${certificate.owner} ${certificate.action} ${certificate.expiry}`).join(" "),
     machine.service.map((service) => service.issue).join(" "),
-  ].some((value) => value.toLowerCase().includes(normalized));
+  ]);
 }
 
 function worksiteMatchesQuery(worksite: Worksite, query: string) {
   const normalized = normalizeSearch(query);
   if (!normalized) return true;
-  return [worksite.name, worksite.location, worksite.date].some((value) => value.toLowerCase().includes(normalized));
+  return valuesMatchSearch(normalized, [worksite.name, worksite.location, worksite.date]);
 }
 
 function formatPlannerDate(value: string) {
@@ -515,33 +629,6 @@ function countsForMachines(machineList: Machine[]) {
   };
 }
 
-function impactForMachine(machine: Machine) {
-  if (machine.state === "ready") return "Can be released to tomorrow's work.";
-  if (machine.state === "at_risk") return "Can work, but needs action before release.";
-  if (machine.id === "cr04") return "Blocks Athens Metro release.";
-  if (machine.id === "ld03") return "Cannot release to worksite.";
-  return `Cannot release to ${machineWorksite(machine).name}.`;
-}
-
-function certificateSummary(machine: Machine) {
-  const expired = machine.certificates.filter((certificate) => certificate.status === "Expired").length;
-  const missing = machine.certificates.filter((certificate) => certificate.status === "Missing").length;
-  const critical = machine.certificates.filter((certificate) => certificate.status === "Critical").length;
-  const valid = machine.certificates.filter((certificate) => certificate.status === "Valid").length;
-  return [
-    expired ? `${expired} expired` : null,
-    missing ? `${missing} missing` : null,
-    critical ? `${critical} critical` : null,
-    valid ? `${valid} valid` : null,
-  ].filter(Boolean).join(" · ");
-}
-
-function serviceSummary(machine: Machine) {
-  const blocking = machine.service.filter((item) => item.blocksRelease && item.status !== "Resolved").length;
-  if (blocking) return `${blocking} blocker`;
-  return machine.service[0]?.status ?? "Clear";
-}
-
 export function ConstructionPrototype() {
   const [activeView, setActiveView] = useState<ViewKey>("tomorrow");
   const [worksiteId, setWorksiteId] = useState(worksites[0].id);
@@ -557,8 +644,12 @@ export function ConstructionPrototype() {
   const [addModalType, setAddModalType] = useState<AddItemType | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [drawerAction, setDrawerAction] = useState<DrawerAction>(null);
+  const [notifications, setNotifications] = useState<OperationalNotification[]>(initialNotifications);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [version, setVersion] = useState(0);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     function handleToast(event: Event) {
@@ -575,6 +666,15 @@ export function ConstructionPrototype() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (!searchBoxRef.current?.contains(event.target as Node)) setSearchOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
   const selectedWorksite = findWorksite(worksiteId);
   const selectedMachine = machines.find((machine) => machine.id === selectedMachineId) ?? machines[0];
   void version;
@@ -583,6 +683,8 @@ export function ConstructionPrototype() {
   const allPlannedMachines = (() => {
     return machinesForWorksite(selectedWorksite);
   })();
+  const unreadNotifications = notifications.filter((notification) => !notification.read).length;
+  const normalizedGlobalSearch = normalizeSearch(searchTerm);
 
   const counts = {
     ready: allPlannedMachines.filter((machine) => machine.state === "ready").length,
@@ -598,9 +700,51 @@ export function ConstructionPrototype() {
     if (mode === "passport") setPassportTab("overview");
   }
 
+  function openMachineFromSearch(machine: Machine, view: ViewKey = "machines", mode: DrawerMode = machine.state === "blocked" ? "why" : "passport", tab?: PassportTab) {
+    setActiveView(view);
+    setMobileNavOpen(false);
+    setSearchTerm("");
+    setSearchOpen(false);
+    setDrawerAction(null);
+    setSelectedMachineId(machine.id);
+    setDrawerMode(mode);
+    setDrawerOpen(true);
+    if (mode === "passport") setPassportTab(tab ?? "overview");
+  }
+
+  function openActionFromSearch(machine: Machine, action: Exclude<DrawerAction, null>) {
+    setActiveView("blockers");
+    setMobileNavOpen(false);
+    setSearchTerm("");
+    setSearchOpen(false);
+    setDrawerOpen(false);
+    setSelectedMachineId(machine.id);
+    setDrawerAction(action);
+  }
+
+  function openWorksiteFromSearch(worksite: Worksite) {
+    setWorksiteId(worksite.id);
+    setActiveView("tomorrow");
+    setMobileNavOpen(false);
+    setSearchTerm("");
+    setSearchOpen(false);
+    setDrawerOpen(false);
+    setDrawerAction(null);
+  }
+
+  function startMachineAction(machine: Machine, action: Exclude<DrawerAction, null>) {
+    setSelectedMachineId(machine.id);
+    setDrawerOpen(false);
+    setDrawerAction(action);
+  }
+
   function showView(nextView: ViewKey) {
     setActiveView(nextView);
     setMobileNavOpen(false);
+    setDrawerOpen(false);
+    setDrawerAction(null);
+    setSearchTerm("");
+    setSearchOpen(false);
   }
 
   function refreshPrototype(message: string) {
@@ -608,81 +752,194 @@ export function ConstructionPrototype() {
     emitPrototypeToast(message);
   }
 
-  function completeMachine(machineId: string, message = "Blockers cleared.") {
-    const machine = machines.find((item) => item.id === machineId);
-    if (!machine) return;
+  function addOperationalNotification(title: string, detail: string) {
+    setNotifications((current) => [
+      {
+        id: Date.now(),
+        title,
+        detail,
+        createdAt: "Just now",
+        read: false,
+      },
+      ...current,
+    ]);
+  }
+
+  function syncMachineReleaseState(machine: Machine) {
+    const activeCertificates = machine.certificates.filter((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status));
+    const activeServices = machine.service.filter((service) => service.blocksRelease && service.status !== "Resolved");
+    const activeCertificate = activeCertificates[0];
+    const activeService = activeServices[0];
+    const activeIssueCount = machine.issues.filter((issue) => issue.status !== "Resolved").length;
+    const activeBlockerCount = activeCertificates.length + activeServices.length;
+
+    machine.activeBlockers = String(activeBlockerCount);
+    machine.lastUpdated = "Just now";
+
+    if (activeCertificate) {
+      machine.state = "blocked";
+      machine.reason = activeCertificate.status === "Missing" ? `${activeCertificate.name} missing` : `${activeCertificate.name} ${activeCertificate.status.toLowerCase()}`;
+      machine.owner = activeCertificate.owner;
+      machine.nextAction = activeCertificate.action;
+      machine.eta = activeCertificate.daysLeft.startsWith("-") ? "Today" : activeCertificate.expiry;
+      return;
+    }
+
+    if (activeService) {
+      machine.state = "blocked";
+      machine.reason = activeService.issue;
+      machine.owner = activeService.owner;
+      machine.nextAction = "Complete service action";
+      machine.eta = activeService.due;
+      return;
+    }
+
+    if (activeIssueCount) {
+      const nextIssue = machine.issues.find((issue) => issue.status !== "Resolved");
+      machine.state = "at_risk";
+      machine.reason = nextIssue?.title ?? "Needs review";
+      machine.owner = nextIssue?.owner ?? machine.owner;
+      machine.nextAction = "Review open issue";
+      machine.eta = "Today";
+      return;
+    }
+
     machine.state = "ready";
     machine.reason = "No blocker found";
     machine.nextAction = "-";
     machine.eta = "-";
-    machine.activeBlockers = "0";
-    machine.lastUpdated = "Just now";
+  }
+
+  function assignOwner(
+    machineId: string,
+    owner: string,
+    blockerId?: string,
+    dueIso?: string,
+    note?: string,
+    assignmentStatus: NonNullable<Certificate["assignmentStatus"]> = "Assigned",
+    channels: string[] = ["In-app"],
+  ) {
+    const machine = machines.find((item) => item.id === machineId);
+    if (!machine) return;
+    const assignedAt = "Just now";
+    const assignmentDue = formatDueLabel(dueIso ?? "");
+    const computedStatus: NonNullable<Certificate["assignmentStatus"]> = isDueOverdue(dueIso ?? "") ? "Overdue" : assignmentStatus;
+    const assignedBlocker = blockerId ? blockerCardsForMachine(machine).find((blocker) => blocker.id === blockerId) : undefined;
+    const assignmentSummary = assignedBlocker?.summary ?? "Open blockers";
+    machine.owner = owner;
     machine.certificates = machine.certificates.map((certificate) =>
-      certificate.status === "Expired" || certificate.status === "Missing" || certificate.status === "Critical"
-        ? { ...certificate, status: "Valid", expiry: "Renewed today", daysLeft: "365", action: "No action" }
+      blockerId === `certificate:${certificate.name}` || (!blockerId && (certificate.status === "Expired" || certificate.status === "Missing" || certificate.status === "Critical"))
+        ? {
+            ...certificate,
+            owner,
+            due: assignmentDue,
+            assignmentStatus: computedStatus,
+            assignedAt,
+          }
         : certificate,
     );
-    machine.service = machine.service.map((service) => ({ ...service, blocksRelease: false, status: "Resolved", due: "Completed" }));
-    machine.issues = [];
+    machine.service = machine.service.map((service) =>
+      blockerId === `service:${service.issue}` || (!blockerId && service.blocksRelease && service.status !== "Resolved")
+        ? { ...service, owner, due: assignmentDue, assignmentStatus: computedStatus, assignedAt }
+        : service,
+    );
+    machine.issues = machine.issues.map((issue) => (blockerId ? issue : { ...issue, owner }));
+    machine.lastUpdated = "Just now";
     releaseHistory.unshift({
       date: "Today",
       worksite: machineWorksite(machine).name,
       machine: machine.code,
-      result: "Ready For Work",
-      reason: "Blockers cleared",
-      action: message,
+      result: computedStatus === "Overdue" ? "Assignment Overdue" : computedStatus === "Accepted" ? "Assignment Accepted" : "Owner Assigned",
+      reason: assignmentSummary,
+      action: `${computedStatus} by ${owner} · Due ${assignmentDue} · Notified via ${channels.join(", ")}${note ? ` · ${note}` : ""}`,
       user: "George",
       override: "No",
     });
-    refreshPrototype(`${machine.code}: ${message}`);
+    addOperationalNotification(`${machine.code} ${computedStatus.toLowerCase()} to ${owner}`, `${assignmentSummary} · Due ${assignmentDue} · ${channels.join(", ")}`);
+    refreshPrototype(`${machine.code}: ${blockerId ? "blocker" : "open blockers"} ${computedStatus.toLowerCase()} to ${owner}.`);
   }
 
-  function assignOwner(machineId: string) {
+  function completeBlocker(machineId: string, blockerId: string, note: string) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
-    machine.owner = machine.owner === "Dimitris" ? "Maria" : "Dimitris";
-    machine.lastUpdated = "Just now";
-    refreshPrototype(`${machine.code} assigned to ${machine.owner}.`);
+
+    if (blockerId.startsWith("certificate:")) {
+      const certificateName = blockerId.replace("certificate:", "");
+      machine.certificates = machine.certificates.map((certificate) =>
+        certificate.name === certificateName
+          ? { ...certificate, status: "Valid", expiry: "Renewed today", daysLeft: "365", action: "No action" }
+          : certificate,
+      );
+      machine.issues = machine.issues.map((issue) =>
+        issue.title.toLowerCase().includes(certificateName.toLowerCase().replace("certificate", "").trim()) ? { ...issue, status: "Resolved" } : issue,
+      );
+    }
+
+    if (blockerId.startsWith("service:")) {
+      const serviceIssue = blockerId.replace("service:", "");
+      machine.service = machine.service.map((service) =>
+        service.issue === serviceIssue ? { ...service, blocksRelease: false, status: "Resolved", due: "Completed" } : service,
+      );
+      machine.issues = machine.issues.map((issue) => (issue.title === serviceIssue ? { ...issue, status: "Resolved" } : issue));
+    }
+
+    syncMachineReleaseState(machine);
+    releaseHistory.unshift({
+      date: "Today",
+      worksite: machineWorksite(machine).name,
+      machine: machine.code,
+      result: machine.state === "ready" ? "Ready For Work" : "Blocker Updated",
+      reason: machine.reason,
+      action: note || "Action completed",
+      user: "George",
+      override: "No",
+    });
+    refreshPrototype(`${machine.code}: action completed.`);
   }
 
-  function uploadDocument(machineId: string) {
+  function uploadDocument(machineId: string, blockerId: string, documentName: string, expiryDate: string) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
     const currentCount = Number.parseInt(machine.documents, 10) || 0;
     machine.documents = `${currentCount + 1} files`;
     machine.certificates = machine.certificates.map((certificate) =>
-      certificate.status === "Expired" || certificate.status === "Missing"
-        ? { ...certificate, status: "Valid", expiry: "Uploaded today", daysLeft: "365", action: "No action" }
+      blockerId === `certificate:${certificate.name}`
+        ? { ...certificate, status: "Valid", expiry: expiryDate || "Uploaded today", daysLeft: "365", action: "No action" }
         : certificate,
     );
-    if (!machine.service.some((service) => service.blocksRelease) && machine.certificates.every((certificate) => certificate.status === "Valid")) {
-      machine.state = "ready";
-      machine.reason = "No blocker found";
-      machine.nextAction = "-";
-      machine.eta = "-";
-      machine.activeBlockers = "0";
-    }
-    machine.lastUpdated = "Just now";
-    refreshPrototype(`${machine.code}: document uploaded.`);
+    machine.photos.push({ title: documentName || "Uploaded evidence", category: "Evidence", date: "Today" });
+    syncMachineReleaseState(machine);
+    releaseHistory.unshift({
+      date: "Today",
+      worksite: machineWorksite(machine).name,
+      machine: machine.code,
+      result: machine.state === "ready" ? "Ready For Work" : "Evidence Uploaded",
+      reason: documentName || "Evidence uploaded",
+      action: `Evidence uploaded · Validity ${expiryDate || "Uploaded today"}`,
+      user: "George",
+      override: "No",
+    });
+    addOperationalNotification(`${machine.code} evidence uploaded`, `${documentName || "Evidence"} updated in Documents and Machine Passport.`);
+    refreshPrototype(`${machine.code}: ${documentName || "evidence"} uploaded and synced.`);
   }
 
-  function releaseWithOverride(machineId: string) {
+  function releaseWithOverride(machineId: string, reason: string, approver: string, acceptedUntil: string) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
     releaseHistory.unshift({
       date: "Today",
       worksite: machineWorksite(machine).name,
       machine: machine.code,
-      result: "Ready For Work",
+      result: "Released With Override",
       reason: machine.reason,
-      action: "Released with override",
-      user: "George",
+      action: `${reason} · Approved by ${approver} · Accepted until ${acceptedUntil}`,
+      user: approver,
       override: "Yes",
     });
     machine.state = "at_risk";
     machine.reason = "Released with override";
-    machine.nextAction = "Complete audit follow-up";
-    machine.eta = "Today";
+    machine.nextAction = `Resolve override reason: ${reason}`;
+    machine.eta = acceptedUntil || "Today";
     machine.lastUpdated = "Just now";
     refreshPrototype(`${machine.code}: released with override and logged.`);
   }
@@ -763,11 +1020,183 @@ export function ConstructionPrototype() {
       targetMachine.activeBlockers = "1";
       refreshPrototype(`${cleanName} added as a blocker for ${targetMachine.code}.`);
     } else {
-      uploadDocument(selectedMachineId);
+      const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
+      const documentBlocker = targetMachine?.certificates.find((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status));
+      if (targetMachine && documentBlocker) {
+        uploadDocument(selectedMachineId, `certificate:${documentBlocker.name}`, cleanName, "Uploaded today");
+      } else {
+        refreshPrototype("No document blocker selected.");
+      }
     }
     setAddModalType(null);
     setAddMenuOpen(false);
   }
+
+  const globalSearchGroups: GlobalSearchGroup[] = normalizedGlobalSearch.length >= 2
+    ? [
+        {
+          title: "Machines",
+          results: machines
+            .filter((machine) =>
+              valuesMatchSearch(normalizedGlobalSearch, [
+                machine.code,
+                machine.name,
+                machine.type,
+                machine.owner,
+                machine.reason,
+                machine.serial,
+                machineWorksite(machine).name,
+              ]),
+            )
+            .slice(0, 4)
+            .map((machine) => ({
+              id: `machine:${machine.id}`,
+              title: machine.code,
+              subtitle: machine.name,
+              meta: `${machine.type} · ${machineWorksite(machine).name}`,
+              label: externalStatus(machine.state),
+              tone: machine.state === "ready" ? "ready" as const : machine.state === "at_risk" ? "attention" as const : "blocked" as const,
+              imageUrl: machinePhotoPlaceholder(machine),
+              onSelect: () => {
+                openMachineFromSearch(machine, "machines");
+              },
+            })),
+        },
+        {
+          title: "Worksites",
+          results: worksites
+            .filter((worksite) => {
+              const siteMachines = machinesForWorksite(worksite);
+              return valuesMatchSearch(normalizedGlobalSearch, [
+                worksite.name,
+                worksite.location,
+                worksite.date,
+                siteMachines.map((machine) => `${machine.code} ${machine.name} ${machine.reason} ${machine.owner}`).join(" "),
+              ]);
+            })
+            .slice(0, 3)
+            .map((worksite) => {
+              const siteMachines = machinesForWorksite(worksite);
+              const siteCounts = countsForMachines(siteMachines);
+              return {
+                id: `worksite:${worksite.id}`,
+                title: worksite.name,
+                subtitle: worksite.location,
+                meta: `${siteCounts.ready}/${siteCounts.total} ready · ${siteCounts.blocked} blocked`,
+                label: siteCounts.blocked ? "Blocked" : siteCounts.attention ? "Review" : "Ready",
+                tone: siteCounts.blocked ? "blocked" as const : siteCounts.attention ? "attention" as const : "ready" as const,
+                onSelect: () => {
+                  openWorksiteFromSearch(worksite);
+                },
+              };
+            }),
+        },
+        {
+          title: "Documents",
+          results: machines
+            .flatMap((machine) => machine.certificates.map((certificate) => ({ certificate, machine })))
+            .filter(({ certificate, machine }) =>
+              valuesMatchSearch(normalizedGlobalSearch, [
+                machine.code,
+                machine.name,
+                machineWorksite(machine).name,
+                certificate.name,
+                certificate.status,
+                certificate.owner,
+                certificate.action,
+                certificate.expiry,
+              ]),
+            )
+            .slice(0, 4)
+            .map(({ certificate, machine }) => ({
+              id: `document:${machine.id}:${certificate.name}`,
+              title: certificate.name,
+              subtitle: `${machine.code} · ${certificate.action}`,
+              meta: `${certificate.owner} · ${certificate.expiry}`,
+              label: certificate.status,
+              tone: certificate.status === "Valid" ? "ready" as const : certificate.status === "Critical" || certificate.status === "Expiring soon" ? "attention" as const : "blocked" as const,
+              onSelect: () => {
+                openMachineFromSearch(machine, "certificates", "passport", "documents");
+              },
+            })),
+        },
+        {
+          title: "Actions",
+          results: actionQueueRows(machines)
+            .filter((row) =>
+              valuesMatchSearch(normalizedGlobalSearch, [
+                row.machine.code,
+                row.machine.name,
+                row.nextStep,
+                row.blocker.summary,
+                row.owner,
+                row.due,
+                row.impact,
+                row.actionLabel,
+              ]),
+            )
+            .slice(0, 4)
+            .map((row) => ({
+              id: `action:${actionQueueRowKey(row)}`,
+              title: row.actionLabel,
+              subtitle: `${row.machine.code} · ${row.nextStep}`,
+              meta: `${row.blocker.summary} · ${row.owner} · ${row.due}`,
+              label: row.priority === "blocking" ? "Blocking" : "Review",
+              tone: row.priority === "blocking" ? "blocked" as const : "attention" as const,
+              onSelect: () => {
+                openActionFromSearch(row.machine, row.action);
+              },
+            })),
+        },
+        {
+          title: "Workshop",
+          results: machines
+            .flatMap((machine) => machine.service.map((service) => ({ machine, service })))
+            .filter(({ machine, service }) =>
+              valuesMatchSearch(normalizedGlobalSearch, [
+                machine.code,
+                machine.name,
+                machineWorksite(machine).name,
+                service.issue,
+                service.owner,
+                service.due,
+                service.status,
+              ]),
+            )
+            .slice(0, 3)
+            .map(({ machine, service }) => ({
+              id: `service:${machine.id}:${service.issue}`,
+              title: service.issue,
+              subtitle: `${machine.code} · ${machineWorksite(machine).name}`,
+              meta: `${service.owner} · ${service.due}`,
+              label: service.blocksRelease ? "Blocks release" : service.status,
+              tone: service.blocksRelease ? "blocked" as const : service.status === "Resolved" ? "ready" as const : "attention" as const,
+              onSelect: () => {
+                openMachineFromSearch(machine, "service", "passport", "service");
+              },
+            })),
+        },
+        {
+          title: "Release History",
+          results: releaseHistory
+            .filter((item) => valuesMatchSearch(normalizedGlobalSearch, [item.date, item.worksite, item.machine, item.result, item.reason, item.action, item.user]))
+            .slice(0, 3)
+            .map((item) => ({
+              id: `history:${item.date}:${item.machine}:${item.reason}`,
+              title: `${item.machine} · ${item.result}`,
+              subtitle: item.reason,
+              meta: `${item.date} · ${item.user}`,
+              label: "History",
+              tone: item.result === "Ready For Work" ? "ready" as const : item.result === "Needs Attention" ? "attention" as const : "neutral" as const,
+              onSelect: () => {
+                setSearchOpen(false);
+                showView("history");
+              },
+            })),
+        },
+      ].filter((group) => group.results.length)
+    : [];
+  const globalSearchResultCount = globalSearchGroups.reduce((total, group) => total + group.results.length, 0);
 
   return (
     <main className="min-h-screen bg-[#F6F5F2] text-[#0D2F2D]">
@@ -813,15 +1242,33 @@ export function ConstructionPrototype() {
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
-              <div className="relative min-w-0 flex-1">
+              <div ref={searchBoxRef} className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64748B]" aria-hidden="true" />
                 <input
                   type="search"
                   value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setSearchOpen(true);
+                  }}
+                  onFocus={() => setSearchOpen(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setSearchOpen(false);
+                  }}
                   placeholder="Search machine, worksite, certificate, owner...  ⌘K"
                   className="h-9 w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] pl-9 pr-3 text-[13px] text-[#1F2933] outline-none transition placeholder:text-[#64748B] focus:border-[#0D2F2D] focus:bg-white focus:ring-2 focus:ring-[#0D2F2D]/10"
                 />
+                {searchOpen && normalizedGlobalSearch.length >= 2 ? (
+                  <GlobalSearchViewer
+                    groups={globalSearchGroups}
+                    query={searchTerm}
+                    resultCount={globalSearchResultCount}
+                    onClear={() => {
+                      setSearchTerm("");
+                      setSearchOpen(false);
+                    }}
+                  />
+                ) : null}
               </div>
               <div className="relative hidden md:block">
                 <button
@@ -859,28 +1306,35 @@ export function ConstructionPrototype() {
                   setAddMenuOpen(false);
                   setUserMenuOpen(false);
                 }}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933]"
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933]"
                 aria-label="Notifications"
               >
                 <Bell className="h-4 w-4" aria-hidden="true" />
+                {unreadNotifications ? (
+                  <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#DC2626] px-1 text-[10px] font-bold text-white">
+                    {unreadNotifications}
+                  </span>
+                ) : null}
               </button>
               {notificationOpen ? (
                 <div className="absolute right-16 top-14 z-50 w-80 rounded-lg border border-[#E2E8F0] bg-white p-3 shadow-xl">
-                  <p className="text-xs font-bold uppercase text-[#64748B]">Notifications</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-bold uppercase text-[#64748B]">Notifications</p>
+                    <span className="rounded-full bg-[#F1F5F9] px-2 py-1 text-[11px] font-bold text-[#64748B]">{unreadNotifications} unread</span>
+                  </div>
                   <div className="mt-3 space-y-2">
-                    {[
-                      "CR-04 certificate blocks tomorrow's release.",
-                      "LD-03 hydraulic check is still open.",
-                      "Daily morning report is ready.",
-                    ].map((item) => (
-                      <div key={item} className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-sm font-semibold text-[#1F2933]">
-                        {item}
+                    {notifications.slice(0, 5).map((item) => (
+                      <div key={item.id} className={`rounded-md border p-3 text-sm ${item.read ? "border-[#E2E8F0] bg-white" : "border-[#CFFAFE] bg-[#ECFEFF]"}`}>
+                        <p className="font-bold text-[#1F2933]">{item.title}</p>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-[#64748B]">{item.detail}</p>
+                        <p className="mt-2 text-[11px] font-bold uppercase text-[#94A3B8]">{item.createdAt}</p>
                       </div>
                     ))}
                   </div>
                   <button
                     type="button"
                     onClick={() => {
+                      setNotifications((current) => current.map((item) => ({ ...item, read: true })));
                       setNotificationOpen(false);
                       refreshPrototype("Notifications marked as reviewed.");
                     }}
@@ -943,17 +1397,34 @@ export function ConstructionPrototype() {
             {activeView === "worksites" ? (
               <WorksitesView
                 worksitesList={visibleWorksites}
-                onReview={(worksite) => {
+                onOpenPlanner={(worksite) => {
                   setWorksiteId(worksite.id);
                   showView("tomorrow");
+                  emitPrototypeToast(`${worksite.name} opened in Tomorrow's Work Planner.`);
                 }}
               />
             ) : null}
             {activeView === "machines" ? <MachinesView machinesList={visibleMachines} onMachineOpen={openMachine} /> : null}
-            {activeView === "passports" ? <PassportsView machinesList={visibleMachines} onMachineOpen={(machine) => openMachine(machine, "passport")} /> : null}
-            {activeView === "blockers" ? <BlockersView machinesList={visibleMachines} onMachineOpen={(machine) => openMachine(machine, "why")} /> : null}
-            {activeView === "certificates" ? <CertificatesView machinesList={visibleMachines} onMachineOpen={(machine) => openMachine(machine, "passport")} /> : null}
-            {activeView === "service" ? <ServiceView machinesList={visibleMachines} onMachineOpen={(machine) => openMachine(machine, "passport")} /> : null}
+            {activeView === "blockers" ? <ActionQueueView machinesList={visibleMachines} onActionStart={startMachineAction} onMachineOpen={openMachine} /> : null}
+            {activeView === "certificates" ? (
+              <DocumentsView
+                machinesList={visibleMachines}
+                onActionStart={startMachineAction}
+                onMachineOpen={(machine) => {
+                  setPassportTab("documents");
+                  openMachine(machine, "passport");
+                }}
+              />
+            ) : null}
+            {activeView === "service" ? (
+              <WorkshopView
+                machinesList={visibleMachines}
+                onMachineOpen={(machine) => {
+                  setPassportTab("service");
+                  openMachine(machine, "passport");
+                }}
+              />
+            ) : null}
             {activeView === "history" ? <ReleaseHistoryView searchTerm={searchTerm} /> : null}
             {activeView === "settings" ? <SettingsView /> : null}
           </div>
@@ -964,13 +1435,13 @@ export function ConstructionPrototype() {
             machine={selectedMachine}
             mode={drawerMode}
             onClose={() => setDrawerOpen(false)}
-            onAssignOwner={() => assignOwner(selectedMachine.id)}
-            onCompleteAction={() => completeMachine(selectedMachine.id, "Action completed.")}
+            onAssignOwner={(blockerId) => setDrawerAction({ type: "assign-owner", blockerId })}
+            onCompleteAction={(blockerId) => setDrawerAction({ type: "complete-action", blockerId })}
             onExportPassport={() => downloadTextFile(`${selectedMachine.code}-passport.txt`, `${selectedMachine.code}\n${selectedMachine.name}\n${externalStatus(selectedMachine.state)}`)}
-            onReleaseOverride={() => releaseWithOverride(selectedMachine.id)}
+            onReleaseOverride={() => setDrawerAction({ type: "override" })}
             onModeChange={setDrawerMode}
             onPassportTabChange={setPassportTab}
-            onUploadDocument={() => uploadDocument(selectedMachine.id)}
+            onUploadDocument={(blockerId) => setDrawerAction({ type: "upload-document", blockerId, source: "passport" })}
             passportTab={passportTab}
           />
         ) : null}
@@ -991,6 +1462,30 @@ export function ConstructionPrototype() {
           onClose={() => setReleaseModalOpen(false)}
           onReleaseReady={() => releaseReadyMachines(allPlannedMachines)}
           onReviewBlocked={() => emitPrototypeToast("Blocked machines are visible in the release checklist.")}
+        />
+      ) : null}
+      {drawerAction ? (
+        <DrawerActionModal
+          action={drawerAction}
+          blockers={blockerCardsForMachine(selectedMachine)}
+          machine={selectedMachine}
+          onAssign={(owner, blockerId, dueIso, note, assignmentStatus, channels) => {
+            assignOwner(selectedMachine.id, owner, blockerId, dueIso, note, assignmentStatus, channels);
+            setDrawerAction(null);
+          }}
+          onClose={() => setDrawerAction(null)}
+          onComplete={(blockerId, note) => {
+            completeBlocker(selectedMachine.id, blockerId, note);
+            setDrawerAction(null);
+          }}
+          onOverride={(reason, approver, acceptedUntil) => {
+            releaseWithOverride(selectedMachine.id, reason, approver, acceptedUntil);
+            setDrawerAction(null);
+          }}
+          onUpload={(blockerId, documentName, expiryDate) => {
+            uploadDocument(selectedMachine.id, blockerId, documentName, expiryDate);
+            setDrawerAction(null);
+          }}
         />
       ) : null}
       {addModalType ? <AddItemModal type={addModalType} onAdd={addPrototypeItem} onClose={() => setAddModalType(null)} /> : null}
@@ -1425,8 +1920,10 @@ function KpiStrip({
 }: {
   items: Array<[string, number | string, "ready" | "attention" | "blocked" | "neutral"]>;
 }) {
+  const xlColumns = items.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-5";
+
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+    <div className={`grid gap-3 md:grid-cols-2 ${xlColumns}`}>
       {items.map(([label, value, tone]) => {
         const toneClass =
           tone === "ready"
@@ -1462,14 +1959,14 @@ function DetailDrawer({
 }: {
   machine: Machine;
   mode: DrawerMode;
-  onAssignOwner: () => void;
+  onAssignOwner: (blockerId?: string) => void;
   onClose: () => void;
-  onCompleteAction: () => void;
+  onCompleteAction: (blockerId?: string) => void;
   onExportPassport: () => void;
   onReleaseOverride: () => void;
   onModeChange: (mode: DrawerMode) => void;
   onPassportTabChange: (tab: PassportTab) => void;
-  onUploadDocument: () => void;
+  onUploadDocument: (blockerId?: string) => void;
   passportTab: PassportTab;
 }) {
   return (
@@ -1532,6 +2029,69 @@ function DetailDrawer({
   );
 }
 
+type BlockerCard = {
+  id: string;
+  kind: BlockerKind;
+  title: string;
+  status: string;
+  summary: string;
+  primaryAction: string;
+  lines: Array<[string, string]>;
+};
+
+function blockerStatusClasses(status: string) {
+  const normalized = status.toLowerCase();
+  if (["valid", "resolved", "clear"].includes(normalized)) return "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]";
+  if (normalized.includes("soon") || normalized.includes("progress") || normalized.includes("waiting") || normalized.includes("open")) {
+    return "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]";
+  }
+  return "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]";
+}
+
+function blockerCardsForMachine(machine: Machine): BlockerCard[] {
+  const certificateCards: BlockerCard[] = machine.certificates
+    .filter((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status))
+    .map((certificate) => ({
+      id: `certificate:${certificate.name}`,
+      kind: "certificate",
+      title: certificate.status === "Missing" ? "Inspection Problem" : "Certificate Problem",
+      status: certificate.status,
+      summary:
+        certificate.status === "Missing"
+          ? `${certificate.name} is missing.`
+          : `${certificate.name} ${certificate.status.toLowerCase()}${certificate.expiry !== "Required" ? ` on ${certificate.expiry}` : ""}.`,
+      primaryAction: "Upload to passport",
+      lines: [
+        [certificate.status === "Missing" ? "Required document" : "Document", certificate.name],
+        [certificate.status === "Missing" ? "Status" : "Expiry", certificate.expiry],
+        ["Owner", certificate.owner],
+        ["Assignment", certificate.assignmentStatus ?? "Unassigned"],
+        ["Due", certificate.due ?? "Not set"],
+        ["Next step", certificate.action],
+      ],
+    }));
+
+  const serviceCards: BlockerCard[] = machine.service
+    .filter((service) => service.blocksRelease && service.status !== "Resolved")
+    .map((service) => ({
+      id: `service:${service.issue}`,
+      kind: "service",
+      title: "Service Problem",
+      status: service.due === "Today" ? "Due today" : service.status,
+      summary: `${service.issue} is blocking release.`,
+      primaryAction: "Complete service",
+      lines: [
+        ["Task", service.issue],
+        ["Owner", service.owner],
+        ["Assignment", service.assignmentStatus ?? "Unassigned"],
+        ["Due", service.due],
+        ["Next step", "Complete service action"],
+      ],
+    }));
+
+  return [...certificateCards, ...serviceCards];
+}
+
 function WhyBlocked({
   machine,
   onAssignOwner,
@@ -1541,45 +2101,13 @@ function WhyBlocked({
   onUploadDocument,
 }: {
   machine: Machine;
-  onAssignOwner: () => void;
-  onCompleteAction: () => void;
+  onAssignOwner: (blockerId?: string) => void;
+  onCompleteAction: (blockerId?: string) => void;
   onOpenPassport: () => void;
   onReleaseOverride: () => void;
-  onUploadDocument: () => void;
+  onUploadDocument: (blockerId?: string) => void;
 }) {
-  const blockerCards = [
-    {
-      title: "Certificate Problem",
-      status: machine.certificates.find((certificate) => certificate.status === "Expired")?.status ?? "Valid",
-      lines: [
-        ["Document", "Lifting Certificate"],
-        ["Expired", "28 May 2026"],
-        ["Action", "Upload renewed certificate"],
-        ["Owner", "Dimitris"],
-        ["Due", "2 June 2026"],
-      ],
-    },
-    {
-      title: "Inspection Problem",
-      status: "Missing",
-      lines: [
-        ["Required", "Periodic inspection"],
-        ["Action", "Book inspection"],
-        ["Owner", "Maria"],
-        ["Due", "3 June 2026"],
-      ],
-    },
-    {
-      title: "Service Problem",
-      status: "Overdue",
-      lines: [
-        ["Task", "Hydraulic check"],
-        ["Action", "Complete service"],
-        ["Owner", "Workshop"],
-        ["Due", "Today"],
-      ],
-    },
-  ];
+  const blockerCards = blockerCardsForMachine(machine);
 
   if (machine.state !== "blocked") {
     return (
@@ -1600,17 +2128,15 @@ function WhyBlocked({
           This machine cannot be released to {machineWorksite(machine).name} tomorrow because:
         </p>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[#1F2933]">
-          <li>Lifting certificate expired on 28 May 2026.</li>
-          <li>Periodic inspection is missing.</li>
-          <li>Service task is overdue by 12 days.</li>
+          {blockerCards.length ? blockerCards.map((card) => <li key={card.summary}>{card.summary}</li>) : <li>{machine.reason}.</li>}
         </ol>
       </div>
       <div className="mt-4 space-y-3">
         {blockerCards.map((card) => (
-          <div key={card.title} className="rounded-lg border border-[#E2E8F0] bg-white p-4">
+          <div key={`${card.title}-${card.summary}`} className="rounded-lg border border-[#E2E8F0] bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-bold text-[#0D2F2D]">{card.title}</h3>
-              <span className="rounded-full border border-[#fecaca] bg-[#fef2f2] px-2.5 py-1 text-xs font-bold text-[#B91C1C]">
+              <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${blockerStatusClasses(card.status)}`}>
                 {card.status}
               </span>
             </div>
@@ -1622,23 +2148,30 @@ function WhyBlocked({
                 </div>
               ))}
             </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onAssignOwner(card.id)}
+                className="min-h-9 rounded-md border border-[#E2E8F0] bg-white px-3 text-xs font-bold text-[#0D2F2D]"
+              >
+                Assign
+              </button>
+              <button
+                type="button"
+                onClick={() => (card.kind === "certificate" ? onUploadDocument(card.id) : onCompleteAction(card.id))}
+                className="min-h-9 rounded-md bg-[#0D2F2D] px-3 text-xs font-bold text-white"
+              >
+                {card.primaryAction}
+              </button>
+            </div>
           </div>
         ))}
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button type="button" onClick={onAssignOwner} className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#0D2F2D]">
-          Assign owner
-        </button>
-        <button type="button" onClick={onCompleteAction} className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#0D2F2D]">
-          Mark action complete
-        </button>
+      <div className="mt-4 grid gap-2">
         <button type="button" onClick={onOpenPassport} className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#0D2F2D]">
           Open Machine Passport
         </button>
-        <button type="button" onClick={onUploadDocument} className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#0D2F2D]">
-          Upload document
-        </button>
-        <button type="button" onClick={onReleaseOverride} className="col-span-2 min-h-10 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 text-sm font-bold text-[#92400e]">
+        <button type="button" onClick={onReleaseOverride} className="min-h-10 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 text-sm font-bold text-[#92400e]">
           Release with override
         </button>
       </div>
@@ -1656,7 +2189,7 @@ function MachinePassport({
   machine: Machine;
   onExportPassport: () => void;
   onPassportTabChange: (tab: PassportTab) => void;
-  onUploadDocument: () => void;
+  onUploadDocument: (blockerId?: string) => void;
   passportTab: PassportTab;
 }) {
   return (
@@ -1698,13 +2231,33 @@ function MachinePassport({
       </div>
       <div className="mt-5">
         {passportTab === "overview" ? <PassportOverview machine={machine} /> : null}
-        {passportTab === "documents" ? <SimpleRows rows={[["Machine registration", "Identity", "Valid"], ["Insurance file", "Insurance", "Valid"], ["Operator assignment", "Worksite", "Updated today"]]} /> : null}
-        {passportTab === "certificates" ? <CertificateCards machine={machine} onUploadDocument={onUploadDocument} /> : null}
+        {passportTab === "documents" ? <PassportDocuments machine={machine} onUploadDocument={onUploadDocument} /> : null}
         {passportTab === "service" ? <ServiceCards machine={machine} /> : null}
         {passportTab === "issues" ? <SimpleRows rows={machine.issues.map((issue) => [issue.title, issue.severity, issue.status])} empty="No open issues." /> : null}
         {passportTab === "photos" ? <SimpleRows rows={machine.photos.map((photo) => [photo.title, photo.category, photo.date])} empty="No photos uploaded." /> : null}
         {passportTab === "history" ? <SimpleRows rows={releaseHistory.filter((item) => item.machine === machine.code).map((item) => [item.date, item.result, item.reason])} empty="No release history yet." /> : null}
       </div>
+    </div>
+  );
+}
+
+function PassportDocuments({ machine, onUploadDocument }: { machine: Machine; onUploadDocument: (blockerId?: string) => void }) {
+  const identityDocuments = [
+    ["Machine registration", "Identity", "Valid"],
+    ["Insurance file", "Insurance", "Valid"],
+    ["Operator assignment", "Worksite", "Updated today"],
+  ];
+
+  return (
+    <div className="space-y-4">
+      <section>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Identity files</p>
+        <SimpleRows rows={identityDocuments} />
+      </section>
+      <section>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Release evidence</p>
+        <CertificateCards machine={machine} onUploadDocument={onUploadDocument} />
+      </section>
     </div>
   );
 }
@@ -1728,7 +2281,7 @@ function PassportOverview({ machine }: { machine: Machine }) {
   );
 }
 
-function CertificateCards({ machine, onUploadDocument }: { machine: Machine; onUploadDocument: () => void }) {
+function CertificateCards({ machine, onUploadDocument }: { machine: Machine; onUploadDocument: (blockerId?: string) => void }) {
   return (
     <div className="space-y-3">
       {machine.certificates.map((certificate) => (
@@ -1746,8 +2299,8 @@ function CertificateCards({ machine, onUploadDocument }: { machine: Machine; onU
             >
               Download
             </button>
-            <button type="button" onClick={onUploadDocument} className="rounded-md border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#0D2F2D]">
-              Replace
+            <button type="button" onClick={() => onUploadDocument(blockerIdForCertificate(certificate))} className="rounded-md border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#0D2F2D]">
+              Upload to passport
             </button>
           </div>
         </div>
@@ -1785,6 +2338,360 @@ function SimpleRows({ empty = "No records.", rows }: { empty?: string; rows: str
           <p className="mt-1 text-[#64748B]">{row.slice(1).join(" · ")}</p>
         </div>
       ))}
+    </div>
+  );
+}
+
+function DrawerActionModal({
+  action,
+  blockers,
+  machine,
+  onAssign,
+  onClose,
+  onComplete,
+  onOverride,
+  onUpload,
+}: {
+  action: Exclude<DrawerAction, null>;
+  blockers: BlockerCard[];
+  machine: Machine;
+  onAssign: (owner: string, blockerId?: string, dueIso?: string, note?: string, assignmentStatus?: NonNullable<Certificate["assignmentStatus"]>, channels?: string[]) => void;
+  onClose: () => void;
+  onComplete: (blockerId: string, note: string) => void;
+  onOverride: (reason: string, approver: string, acceptedUntil: string) => void;
+  onUpload: (blockerId: string, documentName: string, expiryDate: string) => void;
+}) {
+  const certificateBlockers = blockers.filter((blocker) => blocker.kind === "certificate");
+  const actionBlockerId = action.type === "override" ? undefined : action.blockerId;
+  const initialBlockerId = action.type === "upload-document" ? actionBlockerId ?? certificateBlockers[0]?.id ?? blockers[0]?.id ?? "" : actionBlockerId ?? blockers[0]?.id ?? "";
+  const [blockerId, setBlockerId] = useState(initialBlockerId);
+  const [owner, setOwner] = useState(machine.owner);
+  const [assignmentStatus, setAssignmentStatus] = useState<NonNullable<Certificate["assignmentStatus"]>>("Assigned");
+  const initialDue = duePresetDate("today-1700");
+  const [dueDate, setDueDate] = useState(localDateInputValue(initialDue));
+  const [dueTime, setDueTime] = useState(localTimeInputValue(initialDue));
+  const [notifyChannels, setNotifyChannels] = useState<string[]>(["In-app"]);
+  const [note, setNote] = useState("");
+  const [documentName, setDocumentName] = useState(certificateBlockers.find((blocker) => blocker.id === initialBlockerId)?.summary ?? "");
+  const [expiryDate, setExpiryDate] = useState("30 June 2026");
+  const [approver, setApprover] = useState("George");
+  const [acceptedUntil, setAcceptedUntil] = useState("Today, 18:00");
+  const [overrideReason, setOverrideReason] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const selectedBlocker = blockers.find((blocker) => blocker.id === blockerId);
+  const dueIso = buildDueIso(dueDate, dueTime);
+  const dueLabel = formatDueLabel(dueIso);
+  const dueOverdue = isDueOverdue(dueIso);
+  const selectableBlockers = action.type === "upload-document" && certificateBlockers.length ? certificateBlockers : blockers;
+  const canSubmitAssign = owner.trim().length > 1 && Boolean(dueIso) && notifyChannels.length > 0;
+  const canSubmitComplete = Boolean(blockerId);
+  const canSubmitUpload = Boolean(blockerId && documentName.trim());
+  const canSubmitOverride = overrideReason.trim().length >= 8 && approver.trim().length > 1 && acceptedUntil.trim().length > 1 && confirmation === "OVERRIDE";
+  const uploadSource = action.type === "upload-document" ? action.source ?? "passport" : undefined;
+  const uploadTitle =
+    uploadSource === "action-queue"
+      ? "Resolve evidence upload"
+      : uploadSource === "documents"
+        ? "Upload evidence"
+        : "Upload to passport";
+  const uploadDescription =
+    uploadSource === "action-queue"
+      ? "Upload the evidence that clears this release action. The document record and machine passport update together."
+      : uploadSource === "documents"
+        ? "Add or renew evidence in document control. Matching release actions and machine passport records update together."
+        : "Attach evidence to this machine passport. The document record and release action update from the same upload.";
+  const uploadSubmitLabel =
+    uploadSource === "action-queue"
+      ? "Upload and resolve"
+      : uploadSource === "documents"
+        ? "Upload evidence"
+        : "Upload to passport";
+
+  const title =
+    action.type === "assign-owner"
+      ? "Assign owner"
+      : action.type === "complete-action"
+        ? "Complete blocker action"
+        : action.type === "upload-document"
+          ? uploadTitle
+          : "Release with override";
+  const description =
+    action.type === "assign-owner"
+      ? "Choose who owns this blocker and when the next action is due."
+      : action.type === "complete-action"
+        ? "Clear one blocker at a time so the release state stays auditable."
+        : action.type === "upload-document"
+          ? uploadDescription
+          : "Overrides require an approver, expiry, reason, and typed confirmation.";
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0D2F2D]/45 p-4">
+      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[#E2E8F0] p-5">
+          <div>
+            <p className="text-xs font-bold uppercase text-[#008C95]">{machine.code}</p>
+            <h2 className="mt-1 text-xl font-bold text-[#0D2F2D]">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-[#64748B]">{description}</p>
+          </div>
+          <button type="button" onClick={onClose} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0]">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="space-y-4 p-5">
+          {action.type !== "override" ? (
+            <label className="block">
+              <span className="text-xs font-bold uppercase text-[#64748B]">Blocker</span>
+              <select
+                value={blockerId}
+                onChange={(event) => {
+                  setBlockerId(event.target.value);
+                  const nextBlocker = selectableBlockers.find((blocker) => blocker.id === event.target.value);
+                  if (action.type === "upload-document") setDocumentName(nextBlocker?.summary ?? "");
+                }}
+                className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+              >
+                {selectableBlockers.map((blocker) => (
+                  <option key={blocker.id} value={blocker.id}>
+                    {blocker.title}: {blocker.summary}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          {selectedBlocker && action.type !== "override" ? (
+            <div className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+              <p className="text-sm font-bold text-[#0D2F2D]">{selectedBlocker.summary}</p>
+              <p className="mt-1 text-xs font-semibold text-[#64748B]">{selectedBlocker.lines.map(([label, value]) => `${label}: ${value}`).join(" · ")}</p>
+            </div>
+          ) : null}
+
+          {action.type === "assign-owner" ? (
+            <>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Owner</span>
+                <select
+                  value={owner}
+                  onChange={(event) => setOwner(event.target.value)}
+                  className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                >
+                  {teamMembers.map((person) => (
+                    <option key={person.name} value={person.name}>
+                      {person.name} · {person.role}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Assignment status</span>
+                <select
+                  value={assignmentStatus}
+                  onChange={(event) => setAssignmentStatus(event.target.value as NonNullable<Certificate["assignmentStatus"]>)}
+                  className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                >
+                  {["Assigned", "Accepted", "Overdue"].map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Due</span>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(event) => setDueDate(event.target.value)}
+                    className="min-h-11 rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                  />
+                  <input
+                    type="time"
+                    value={dueTime}
+                    onChange={(event) => setDueTime(event.target.value)}
+                    className="min-h-11 rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                  />
+                </div>
+                <div className={`mt-2 rounded-md border p-3 text-sm font-bold ${dueOverdue ? "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]" : "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]"}`}>
+                  Due: {dueLabel}
+                  {dueOverdue ? " · will be marked overdue" : ""}
+                </div>
+              </label>
+              <div>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Notify</span>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {assignmentChannels.map((channel) => {
+                    const selected = notifyChannels.includes(channel.label);
+                    const Icon = channel.icon;
+                    return (
+                      <button
+                        key={channel.label}
+                        type="button"
+                        onClick={() => {
+                          setNotifyChannels((current) => selected ? current.filter((item) => item !== channel.label) : [...current, channel.label]);
+                        }}
+                        className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-2 text-xs font-bold ${selected ? "border-[#0D2F2D] bg-[#0D2F2D] text-white" : "border-[#E2E8F0] bg-white text-[#1F2933]"}`}
+                      >
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                        {channel.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs font-semibold text-[#64748B]">This creates an in-app notification now. SMS is recorded as a delivery channel for backend wiring.</p>
+              </div>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Note</span>
+                <textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Optional context for the owner"
+                  className="mt-2 min-h-20 w-full rounded-md border border-[#E2E8F0] p-3 text-sm outline-none focus:border-[#0D2F2D]"
+                />
+              </label>
+            </>
+          ) : null}
+
+          {action.type === "complete-action" ? (
+            <label className="block">
+              <span className="text-xs font-bold uppercase text-[#64748B]">Completion note</span>
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="What was completed?"
+                className="mt-2 min-h-24 w-full rounded-md border border-[#E2E8F0] p-3 text-sm outline-none focus:border-[#0D2F2D]"
+              />
+            </label>
+          ) : null}
+
+          {action.type === "upload-document" ? (
+            <>
+              <div className="rounded-md border border-[#CFFAFE] bg-[#ECFEFF] p-3">
+                <p className="text-sm font-bold text-[#0F766E]">One evidence upload updates Documents, Machine Passport, Action Queue, and Release History.</p>
+              </div>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Evidence name</span>
+                <input
+                  value={documentName}
+                  onChange={(event) => setDocumentName(event.target.value)}
+                  placeholder="Renewed lifting certificate"
+                  className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">New expiry / validity</span>
+                <input
+                  value={expiryDate}
+                  onChange={(event) => setExpiryDate(event.target.value)}
+                  className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                />
+              </label>
+              <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 text-sm font-bold text-[#0D2F2D]">
+                <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
+                Select evidence file
+                <input type="file" className="sr-only" />
+              </label>
+            </>
+          ) : null}
+
+          {action.type === "override" ? (
+            <>
+              <div className="rounded-md border border-[#FECACA] bg-[#FEF2F2] p-3">
+                <p className="text-sm font-bold text-[#B91C1C]">This releases a blocked machine with an audit record. Use only when the site accepts the risk.</p>
+              </div>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Override reason</span>
+                <textarea
+                  value={overrideReason}
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                  placeholder="Why is this machine being released despite blockers?"
+                  className="mt-2 min-h-24 w-full rounded-md border border-[#E2E8F0] p-3 text-sm outline-none focus:border-[#0D2F2D]"
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-bold uppercase text-[#64748B]">Approved by</span>
+                  <input
+                    value={approver}
+                    onChange={(event) => setApprover(event.target.value)}
+                    className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase text-[#64748B]">Risk accepted until</span>
+                  <input
+                    value={acceptedUntil}
+                    onChange={(event) => setAcceptedUntil(event.target.value)}
+                    className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                  />
+                </label>
+              </div>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-[#64748B]">Type OVERRIDE to confirm</span>
+                <input
+                  value={confirmation}
+                  onChange={(event) => setConfirmation(event.target.value)}
+                  className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-bold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
+                />
+              </label>
+            </>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-[#E2E8F0] p-5">
+          <button type="button" onClick={onClose} className="min-h-10 rounded-md border border-[#E2E8F0] px-4 text-sm font-bold text-[#1F2933]">
+            Cancel
+          </button>
+          {action.type === "assign-owner" ? (
+            <button
+              type="button"
+              disabled={!canSubmitAssign}
+              onClick={() => onAssign(owner.trim(), blockerId || undefined, dueIso, note.trim(), dueOverdue ? "Overdue" : assignmentStatus, notifyChannels)}
+              className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            >
+              Assign owner
+            </button>
+          ) : null}
+          {action.type === "complete-action" ? (
+            <button
+              type="button"
+              disabled={!canSubmitComplete}
+              onClick={() => onComplete(blockerId, note.trim() || "Action completed")}
+              className="min-h-10 rounded-md bg-[#15803D] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            >
+              Complete blocker
+            </button>
+          ) : null}
+          {action.type === "upload-document" ? (
+            <button
+              type="button"
+              disabled={!canSubmitUpload}
+              onClick={() => onUpload(blockerId, documentName.trim(), expiryDate.trim())}
+              className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            >
+              {uploadSubmitLabel}
+            </button>
+          ) : null}
+          {action.type === "override" ? (
+            <button
+              type="button"
+              disabled={!canSubmitOverride}
+              onClick={() => onOverride(overrideReason.trim(), approver.trim(), acceptedUntil.trim())}
+              className="min-h-10 rounded-md bg-[#B45309] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            >
+              Release with override
+            </button>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1965,7 +2872,8 @@ function AddItemModal({
   );
 }
 
-function WorksitesView({ onReview, worksitesList }: { onReview: (worksite: Worksite) => void; worksitesList: Worksite[] }) {
+function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (worksite: Worksite) => void; worksitesList: Worksite[] }) {
+  const [reviewWorksite, setReviewWorksite] = useState<Worksite | null>(null);
   const worksiteRows = worksitesList.map((worksite) => {
     const list = machinesForWorksite(worksite);
     const counts = countsForMachines(list);
@@ -1973,82 +2881,281 @@ function WorksitesView({ onReview, worksitesList }: { onReview: (worksite: Works
     return { worksite, list, counts, mainBlocker };
   });
   const sortedRows = [...worksiteRows].sort((a, b) => b.counts.blocked - a.counts.blocked || b.counts.attention - a.counts.attention);
+  const blockedSites = sortedRows.filter(({ counts }) => counts.blocked > 0).length;
+  const reviewSites = sortedRows.filter(({ counts }) => counts.blocked === 0 && counts.attention > 0).length;
+  const readySites = sortedRows.filter(({ counts }) => counts.blocked === 0 && counts.attention === 0).length;
 
   return (
     <div className="space-y-5">
       <ViewHeader
         title="Worksites"
-        description="Start with the job, then see which machine, owner, and action controls tomorrow's release."
+        description="Compare tomorrow's worksites, spot the release risk, and open the one that needs attention."
         showActions={false}
       />
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Surface className="p-5">
-          <p className="text-xs font-bold uppercase text-[#008C95]">Tomorrow work queue</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#0D2F2D]">Which work packages can leave the gate?</h2>
-          <div className="mt-5 grid gap-3 lg:grid-cols-3">
-            {sortedRows.map(({ counts, mainBlocker, worksite }) => {
-              const state: MachineState = counts.blocked ? "blocked" : counts.attention ? "at_risk" : "ready";
-              return (
-                <button
-                  key={worksite.id}
-                  type="button"
-                  onClick={() => onReview(worksite)}
-                  className={`rounded-lg border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${statusClasses(state)}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-base font-bold text-[#0D2F2D]">{worksite.name}</p>
-                      <p className="mt-1 text-xs font-semibold text-[#64748B]">{worksite.location}</p>
-                    </div>
-                    <span className="rounded-full bg-white/70 px-2 py-1 text-xs font-bold">{counts.ready}/{counts.total}</span>
-                  </div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/70">
-                    <div className="h-full rounded-full bg-[#008C95]" style={{ width: `${counts.total ? (counts.ready / counts.total) * 100 : 0}%` }} />
-                  </div>
-                  <p className="mt-3 text-xs font-bold uppercase">{state === "ready" ? "Ready to release" : state === "at_risk" ? "Review before release" : "Blocked"}</p>
-                  <p className="mt-1 min-h-10 text-sm font-semibold text-[#1F2933]">
-                    {mainBlocker ? `${mainBlocker.code}: ${mainBlocker.reason}` : "No blocker found"}
-                  </p>
-                </button>
-              );
-            })}
+      <Surface className="p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Worksite release queue</p>
+            <h2 className="mt-2 text-xl font-bold leading-tight text-[#0D2F2D]">Where should operations focus first?</h2>
+            <p className="mt-2 text-sm font-semibold text-[#64748B]">Sorted by blockers, then review items.</p>
           </div>
-        </Surface>
-        <Surface className="p-5">
-          <p className="text-xs font-bold uppercase text-[#64748B]">Operator focus</p>
-          <h2 className="mt-2 text-lg font-bold text-[#0D2F2D]">Review blocked worksites first</h2>
-          <div className="mt-4 space-y-3">
-            {sortedRows.filter(({ counts }) => counts.blocked).map(({ mainBlocker, worksite }) => (
+          <div className="grid min-w-full grid-cols-3 overflow-hidden rounded-lg border border-[#E5E7EB] text-sm font-bold xl:min-w-[360px]">
+            <div className="bg-[#FEF2F2] px-3 py-2 text-[#B91C1C]">
+              <p className="text-[11px] uppercase">Blocked</p>
+              <p className="mt-1 text-lg">{blockedSites}</p>
+            </div>
+            <div className="border-x border-[#E5E7EB] bg-[#FFFBEB] px-3 py-2 text-[#B45309]">
+              <p className="text-[11px] uppercase">Review</p>
+              <p className="mt-1 text-lg">{reviewSites}</p>
+            </div>
+            <div className="bg-[#F0FDF4] px-3 py-2 text-[#15803D]">
+              <p className="text-[11px] uppercase">Ready</p>
+              <p className="mt-1 text-lg">{readySites}</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 overflow-x-auto rounded-lg border border-[#E5E7EB]">
+          <div className="grid min-w-[1180px] grid-cols-[minmax(220px,1.1fr)_150px_150px_minmax(260px,1.1fr)_minmax(240px,1.2fr)_150px] bg-[#F9FAFB] px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">
+            <span>Worksite</span>
+            <span>Release State</span>
+            <span>Ready</span>
+            <span>Main Blocker</span>
+            <span>Owner Action</span>
+            <span>Next Step</span>
+          </div>
+          {sortedRows.map(({ counts, mainBlocker, worksite }) => {
+            const state: MachineState = counts.blocked ? "blocked" : counts.attention ? "at_risk" : "ready";
+            const stateLabel = state === "ready" ? "Ready" : state === "at_risk" ? "Review" : "Blocked";
+            const rowTone = state === "blocked" ? "bg-[#FEF2F2]/45" : state === "at_risk" ? "bg-[#FFFBEB]/55" : "bg-white";
+            const readyWidth = counts.total ? (counts.ready / counts.total) * 100 : 0;
+            return (
               <button
                 key={worksite.id}
                 type="button"
-                onClick={() => onReview(worksite)}
-                className="w-full rounded-lg border border-[#fecaca] bg-[#fff7f7] p-3 text-left"
+                onClick={() => setReviewWorksite(worksite)}
+                className={`grid min-w-[1180px] w-full grid-cols-[minmax(220px,1.1fr)_150px_150px_minmax(260px,1.1fr)_minmax(240px,1.2fr)_150px] items-center gap-4 border-t border-[#E5E7EB] px-4 py-4 text-left transition hover:bg-[#F8FAFC] ${rowTone}`}
               >
-                <p className="font-bold text-[#0D2F2D]">{worksite.name}</p>
-                <p className="mt-1 text-sm font-semibold text-[#B91C1C]">{mainBlocker ? mainBlocker.reason : "Blocked"}</p>
-                <p className="mt-2 text-xs font-semibold text-[#64748B]">{mainBlocker ? `${mainBlocker.owner} · ${mainBlocker.nextAction}` : "Assign owner"}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-[#111827]">{worksite.name}</p>
+                  <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{worksite.location}</p>
+                </div>
+                <span className={`inline-flex w-fit min-w-[86px] items-center justify-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase ${statusClasses(state)}`}>
+                  {stateLabel}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-[#111827]">
+                    {counts.ready}/{counts.total}
+                  </p>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]">
+                    <div className="h-full rounded-full bg-[#008C95]" style={{ width: `${readyWidth}%` }} />
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-[#1F2933]">
+                  {mainBlocker ? `${mainBlocker.code}: ${mainBlocker.reason}` : "No blocker found"}
+                </p>
+                <p className="text-xs font-semibold leading-5 text-[#64748B]">
+                  {mainBlocker ? `${mainBlocker.owner} · ${mainBlocker.nextAction}` : "No action needed"}
+                </p>
+                <span className="inline-flex min-h-8 items-center justify-center rounded-md border border-[#E2E8F0] bg-white px-3 text-xs font-bold text-[#0D2F2D]">
+                  Review release
+                </span>
               </button>
-            ))}
-          </div>
-        </Surface>
-      </div>
+            );
+          })}
+        </div>
+      </Surface>
+      {reviewWorksite ? (
+        <WorksiteReleaseReview
+          worksite={reviewWorksite}
+          onClose={() => setReviewWorksite(null)}
+          onOpenPlanner={() => {
+            setReviewWorksite(null);
+            onOpenPlanner(reviewWorksite);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
+function WorksiteReleaseReview({
+  onClose,
+  onOpenPlanner,
+  worksite,
+}: {
+  onClose: () => void;
+  onOpenPlanner: () => void;
+  worksite: Worksite;
+}) {
+  const list = machinesForWorksite(worksite);
+  const counts = countsForMachines(list);
+  const blockers = list.filter((machine) => machine.state === "blocked");
+  const reviewItems = list.filter((machine) => machine.state === "at_risk");
+  const ownerActions = [...blockers, ...reviewItems].map((machine) => ({
+    id: machine.id,
+    code: machine.code,
+    owner: machine.owner,
+    action: machine.nextAction === "-" ? "No action" : machine.nextAction,
+    eta: machine.eta,
+    reason: machine.reason,
+    state: machine.state,
+  }));
+  const canRelease = counts.blocked === 0;
+
+  return (
+    <aside className="fixed bottom-0 right-0 top-16 z-40 w-full max-w-[520px] border-l border-[#E2E8F0] bg-white shadow-2xl">
+      <div className="flex h-full flex-col">
+        <div className="border-b border-[#E2E8F0] p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Worksite Release Review</p>
+              <h2 className="mt-1 truncate text-xl font-bold text-[#0D2F2D]">{worksite.name}</h2>
+              <p className="mt-1 text-sm font-semibold text-[#64748B]">
+                {worksite.date} · {worksite.location}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0] text-[#64748B]"
+              aria-label="Close worksite release review"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          <div className={`rounded-lg border p-4 ${canRelease ? "border-[#BBF7D0] bg-[#F0FDF4]" : "border-[#FECACA] bg-[#FEF2F2]"}`}>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Release Decision</p>
+            <p className={`mt-2 text-lg font-bold ${canRelease ? "text-[#15803D]" : "text-[#B91C1C]"}`}>
+              {canRelease ? "Ready to release" : "Cannot release yet"}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[#475569]">
+              {canRelease ? "No blocking machines found for this worksite." : `${counts.blocked} blocker${counts.blocked === 1 ? "" : "s"} must be cleared first.`}
+            </p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-lg border border-[#E5E7EB] text-sm font-bold">
+            <div className="bg-[#F0FDF4] px-3 py-3 text-[#15803D]">
+              <p className="text-[11px] uppercase">Ready</p>
+              <p className="mt-1 text-xl">{counts.ready}</p>
+            </div>
+            <div className="border-x border-[#E5E7EB] bg-[#FFFBEB] px-3 py-3 text-[#B45309]">
+              <p className="text-[11px] uppercase">Review</p>
+              <p className="mt-1 text-xl">{counts.attention}</p>
+            </div>
+            <div className="bg-[#FEF2F2] px-3 py-3 text-[#B91C1C]">
+              <p className="text-[11px] uppercase">Blocked</p>
+              <p className="mt-1 text-xl">{counts.blocked}</p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-[#111827]">Owner action queue</h3>
+              <span className="rounded-full bg-[#F1F5F9] px-2 py-1 text-xs font-bold text-[#64748B]">{ownerActions.length} open</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {ownerActions.length ? (
+                ownerActions.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`rounded-lg border p-3 ${item.state === "blocked" ? "border-[#FECACA] bg-[#FFF7F7]" : "border-[#FDE68A] bg-[#FFFBEB]"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-[#111827]">{item.code}</p>
+                        <p className={item.state === "blocked" ? "mt-1 text-sm font-bold text-[#B91C1C]" : "mt-1 text-sm font-bold text-[#B45309]"}>{item.reason}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full border border-white/80 bg-white px-2 py-1 text-xs font-bold text-[#475569]">{item.eta}</span>
+                    </div>
+                    <p className="mt-3 text-xs font-bold uppercase text-[#64748B]">Owner</p>
+                    <p className="mt-1 text-sm font-semibold text-[#1F2933]">
+                      {item.owner} · {item.action}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm font-semibold text-[#15803D]">No owner action needed before release.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-sm font-bold text-[#111827]">Required machines</h3>
+            <div className="mt-3 overflow-hidden rounded-lg border border-[#E5E7EB]">
+              {list.map((machine) => (
+                <div key={machine.id} className="grid grid-cols-[80px_1fr_auto] items-center gap-3 border-b border-[#E5E7EB] px-3 py-3 text-sm last:border-0">
+                  <p className="font-bold text-[#111827]">{machine.code}</p>
+                  <p className="min-w-0 truncate font-semibold text-[#475569]">{machine.reason}</p>
+                  <MachineStatusBadge state={machine.state} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-[#E2E8F0] p-4">
+          <button type="button" onClick={onOpenPlanner} className="min-h-10 w-full rounded-md bg-[#0F172A] px-4 text-sm font-bold text-white">
+            Open full planner
+          </button>
+          <button type="button" onClick={onClose} className="mt-2 min-h-10 w-full rounded-md border border-[#E2E8F0] px-4 text-sm font-bold text-[#1F2933]">
+            Close review
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function machinePhotoPlaceholder(machine: Machine) {
+  const photoMap: Record<string, string> = {
+    cr04: "/fleetlever/machines/cr04-crane.jpg",
+    ex12: "/fleetlever/machines/ex12-excavator.jpg",
+    tr08: "/fleetlever/machines/tr08-truck.jpg",
+    ld03: "/fleetlever/machines/ld03-loader.jpg",
+    gn02: "/fleetlever/machines/gn02-generator.jpg",
+  };
+
+  return photoMap[machine.id] ?? photoMap.ex12;
+}
+
 function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine, mode?: DrawerMode) => void }) {
+  const [photoUploads, setPhotoUploads] = useState<Record<string, string>>({});
+  const photoUploadUrls = useRef<string[]>([]);
   const grouped = {
     blocked: machinesList.filter((machine) => machine.state === "blocked"),
     at_risk: machinesList.filter((machine) => machine.state === "at_risk"),
     ready: machinesList.filter((machine) => machine.state === "ready"),
   };
 
+  useEffect(() => {
+    return () => {
+      photoUploadUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  function handlePhotoUpload(machine: Machine, file: File | undefined) {
+    if (!file) return;
+    const nextUrl = URL.createObjectURL(file);
+    setPhotoUploads((current) => {
+      const previousUrl = current[machine.id];
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl);
+        photoUploadUrls.current = photoUploadUrls.current.filter((url) => url !== previousUrl);
+      }
+      photoUploadUrls.current.push(nextUrl);
+      return { ...current, [machine.id]: nextUrl };
+    });
+    emitPrototypeToast(`${machine.code} photo updated.`);
+  }
+
   return (
     <div className="space-y-5">
       <ViewHeader
         title="Machines"
-        description="A compact release inventory: what is blocked, what needs review, and what can work."
+        description="Asset inventory: find a machine, inspect its status, and open the passport or current release issue."
         importLabel="Import Machines"
         exportLabel="Export Machine List"
       />
@@ -2058,31 +3165,22 @@ function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]
           ["Needs review", grouped.at_risk, "at_risk"],
           ["Ready", grouped.ready, "ready"],
         ].map(([label, list, state]) => (
-          <Surface key={label as string} className="p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-bold text-[#0D2F2D]">{label as string}</h2>
+          <Surface key={label as string} className={`overflow-hidden border-t-4 p-0 ${columnToneClasses(state as MachineState)}`}>
+            <div className={`flex items-center justify-between gap-3 border-b border-[#E5E7EB] px-4 py-3 ${columnHeaderClasses(state as MachineState)}`}>
+              <h2 className="text-sm font-bold text-[#0D2F2D]">{label as string}</h2>
               <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusClasses(state as MachineState)}`}>
                 {(list as Machine[]).length}
               </span>
             </div>
-            <div className="mt-4 space-y-3">
+            <div className="space-y-3 p-3">
               {(list as Machine[]).map((machine) => (
-                <button
+                <MachineInventoryCard
                   key={machine.id}
-                  type="button"
-                  onClick={() => onMachineOpen(machine, machine.state === "blocked" ? "why" : "passport")}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-white p-3 text-left hover:border-[#008C95]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-[#0D2F2D]">{machine.code}</p>
-                      <p className="text-xs font-semibold text-[#64748B]">{machine.name}</p>
-                    </div>
-                    <span className="text-xs font-bold uppercase text-[#64748B]">{machine.type}</span>
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-[#1F2933]">{machine.reason}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#64748B]">{machine.owner} · {machine.nextAction === "-" ? "No action" : machine.nextAction}</p>
-                </button>
+                  machine={machine}
+                  photoUrl={photoUploads[machine.id] ?? machinePhotoPlaceholder(machine)}
+                  onOpen={() => onMachineOpen(machine, machine.state === "blocked" ? "why" : "passport")}
+                  onPhotoUpload={(file) => handlePhotoUpload(machine, file)}
+                />
               ))}
             </div>
           </Surface>
@@ -2092,139 +3190,551 @@ function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]
   );
 }
 
-function PassportsView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine) => void }) {
-  const [passportFilter, setPassportFilter] = useState<"all" | MachineState | "missing" | "expiring">("all");
-  const filteredMachines = machinesList.filter((machine) => {
-    if (passportFilter === "all") return true;
-    if (passportFilter === "missing") return machine.certificates.some((certificate) => certificate.status === "Missing");
-    if (passportFilter === "expiring") return machine.certificates.some((certificate) => certificate.status === "Critical" || certificate.status === "Expiring soon");
-    return machine.state === passportFilter;
+function MachineInventoryCard({
+  machine,
+  onOpen,
+  onPhotoUpload,
+  photoUrl,
+}: {
+  machine: Machine;
+  onOpen: () => void;
+  onPhotoUpload: (file: File | undefined) => void;
+  photoUrl: string;
+}) {
+  const uploadId = `machine-photo-${machine.id}`;
+  const action = machine.state === "blocked" ? "Open issue" : machine.state === "at_risk" ? "Review status" : "Open passport";
+  const tone = machineCardTone(machine.state);
+
+  return (
+    <article className={`overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md ${tone.border}`}>
+      <div className="relative aspect-[16/9] overflow-hidden bg-[#E2E8F0]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photoUrl}
+          alt={`${machine.code} ${machine.type}`}
+          width={1200}
+          height={675}
+          decoding="async"
+          loading="eager"
+          className="h-full w-full object-cover saturate-[0.94] transition duration-300 hover:scale-[1.02]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/0 to-black/35" aria-hidden="true" />
+        <div className={`absolute inset-x-0 top-0 h-1.5 ${tone.accent}`} aria-hidden="true" />
+        <div className="absolute left-3 top-3">
+          <MachineStatusBadge state={machine.state} />
+        </div>
+        <div className="absolute bottom-3 left-3 text-white drop-shadow">
+          <p className="text-sm font-bold">{machine.code}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-white/80">{machine.type}</p>
+        </div>
+        <label
+          htmlFor={uploadId}
+          className="absolute bottom-3 right-3 inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-md border border-white/60 bg-white/90 px-3 text-xs font-bold text-[#0D2F2D] shadow-sm backdrop-blur transition hover:bg-white"
+        >
+          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+          Upload photo
+        </label>
+        <input
+          id={uploadId}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(event) => onPhotoUpload(event.target.files?.[0])}
+        />
+      </div>
+      <div className={`${tone.body} p-4`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-base font-bold text-[#0D2F2D]">{machine.code}</p>
+            <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{machine.name}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-[#F1F5F9] px-2 py-1 text-[11px] font-bold uppercase text-[#64748B]">{machine.type}</span>
+        </div>
+        <p className="mt-3 text-sm font-bold text-[#1F2933]">{machine.reason}</p>
+        <p className="mt-1 text-xs font-semibold text-[#64748B]">
+          {machine.owner} · {machine.nextAction === "-" ? "No action" : machine.nextAction}
+        </p>
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-3">
+          <p className="text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
+          <button type="button" onClick={onOpen} className={`min-h-8 rounded-md px-3 text-xs font-bold ${tone.action}`}>
+            {action}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function columnToneClasses(state: MachineState) {
+  if (state === "ready") return "border-t-[#15803D]";
+  if (state === "at_risk") return "border-t-[#D97706]";
+  return "border-t-[#DC2626]";
+}
+
+function columnHeaderClasses(state: MachineState) {
+  if (state === "ready") return "bg-[#F0FDF4]";
+  if (state === "at_risk") return "bg-[#FFFBEB]";
+  return "bg-[#FEF2F2]";
+}
+
+function machineCardTone(state: MachineState) {
+  if (state === "ready") {
+    return {
+      accent: "bg-[#15803D]",
+      action: "bg-[#15803D] text-white hover:bg-[#166534]",
+      body: "bg-[#F8FFFB]",
+      border: "border-[#BBF7D0] hover:border-[#15803D]",
+    };
+  }
+  if (state === "at_risk") {
+    return {
+      accent: "bg-[#D97706]",
+      action: "bg-[#B45309] text-white hover:bg-[#92400E]",
+      body: "bg-[#FFFCF2]",
+      border: "border-[#FDE68A] hover:border-[#D97706]",
+    };
+  }
+  return {
+    accent: "bg-[#DC2626]",
+    action: "bg-[#B91C1C] text-white hover:bg-[#991B1B]",
+    body: "bg-[#FFF7F7]",
+    border: "border-[#FECACA] hover:border-[#DC2626]",
+  };
+}
+
+type ActionQueueRow = {
+  action: Exclude<DrawerAction, null>;
+  actionLabel: string;
+  blocker: BlockerCard;
+  due: string;
+  impact: string;
+  machine: Machine;
+  nextStep: string;
+  owner: string;
+  priority: "blocking" | "review";
+};
+
+type QueueFilter = "all" | "blocking" | "review" | "documents" | "workshop";
+type DocumentFilter = "needs-action" | "expired" | "missing" | "critical" | "valid";
+type SearchResultTone = "ready" | "attention" | "blocked" | "neutral";
+type GlobalSearchResult = {
+  id: string;
+  title: string;
+  subtitle: string;
+  meta: string;
+  label: string;
+  tone: SearchResultTone;
+  imageUrl?: string;
+  onSelect: () => void;
+};
+type GlobalSearchGroup = {
+  title: string;
+  results: GlobalSearchResult[];
+};
+
+function GlobalSearchViewer({
+  groups,
+  onClear,
+  query,
+  resultCount,
+}: {
+  groups: GlobalSearchGroup[];
+  onClear: () => void;
+  query: string;
+  resultCount: number;
+}) {
+  return (
+    <div data-global-search-panel className="absolute left-0 right-0 top-11 z-[80] max-h-[72vh] overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white shadow-2xl">
+      <div className="flex items-center justify-between gap-3 border-b border-[#E2E8F0] px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Search FleetLever</p>
+          <p className="mt-1 truncate text-sm font-semibold text-[#64748B]">
+            {resultCount ? `${resultCount} results for "${query}"` : `No results for "${query}"`}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClear}
+          className="min-h-8 rounded-md border border-[#E2E8F0] bg-white px-3 text-xs font-bold text-[#1F2933] transition hover:border-[#0D2F2D] hover:text-[#0D2F2D]"
+        >
+          Clear
+        </button>
+      </div>
+      {groups.length ? (
+        <div className="grid gap-4 p-4 xl:grid-cols-2">
+          {groups.map((group) => (
+            <section key={group.title} className="min-w-0">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="truncate text-[11px] font-bold uppercase tracking-wide text-[#64748B]">{group.title}</h3>
+                <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[11px] font-bold text-[#64748B]">{group.results.length}</span>
+              </div>
+              <div className="space-y-2">
+                {group.results.map((result) => (
+                  <GlobalSearchResultCard key={result.id} result={result} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="p-5 text-sm font-semibold text-[#64748B]">
+          No matching machines, worksites, documents, actions, workshop jobs, or release history.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GlobalSearchResultCard({ result }: { result: GlobalSearchResult }) {
+  return (
+    <button
+      type="button"
+      onClick={result.onSelect}
+      className="flex min-h-[74px] w-full items-center gap-3 rounded-lg border border-[#E2E8F0] bg-white p-3 text-left transition hover:border-[#008C95] hover:bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#0D2F2D]/15"
+    >
+      {result.imageUrl ? (
+        <Image src={result.imageUrl} alt="" width={56} height={48} className="h-12 w-14 shrink-0 rounded-md object-cover" priority />
+      ) : (
+        <div className="flex h-12 w-14 shrink-0 items-center justify-center rounded-md bg-[#F1F5F9] text-xs font-bold text-[#64748B]">
+          {result.title.slice(0, 2).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="truncate text-sm font-bold text-[#0D2F2D]">{result.title}</p>
+          <SearchResultBadge label={result.label} tone={result.tone} />
+        </div>
+        <p className="mt-1 truncate text-xs font-semibold text-[#1F2933]">{result.subtitle}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{result.meta}</p>
+      </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-[#94A3B8]" aria-hidden="true" />
+    </button>
+  );
+}
+
+function SearchResultBadge({ label, tone }: { label: string; tone: SearchResultTone }) {
+  const toneClass =
+    tone === "ready"
+      ? "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]"
+      : tone === "attention"
+        ? "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]"
+        : tone === "blocked"
+          ? "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]"
+          : "border-[#E2E8F0] bg-[#F8FAFC] text-[#475569]";
+
+  return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${toneClass}`}>{label}</span>;
+}
+
+function actionForQueueRow(machine: Machine, blocker: BlockerCard): Exclude<DrawerAction, null> {
+  if (machine.state === "at_risk") return { type: "assign-owner", blockerId: blocker.id };
+  if (blocker.kind === "service") return { type: "complete-action", blockerId: blocker.id };
+  return { type: "upload-document", blockerId: blocker.id, source: "action-queue" };
+}
+
+function blockerIdForCertificate(certificate: Certificate) {
+  return `certificate:${certificate.name}`;
+}
+
+function documentActionForCertificate(certificate: Certificate): Exclude<DrawerAction, null> {
+  if (certificate.status === "Critical" || certificate.status === "Expiring soon") return { type: "assign-owner", blockerId: blockerIdForCertificate(certificate) };
+  return { type: "upload-document", blockerId: blockerIdForCertificate(certificate), source: "documents" };
+}
+
+function documentCommandLabel(certificate: Certificate) {
+  if (certificate.status === "Missing") return "Upload evidence";
+  if (certificate.status === "Critical" || certificate.status === "Expiring soon") return "Assign renewal owner";
+  if (certificate.status === "Valid") return "View file";
+  return "Upload evidence";
+}
+
+function actionLabelForQueueRow(machine: Machine, blocker: BlockerCard) {
+  if (machine.state === "at_risk") return "Assign owner";
+  if (blocker.kind === "certificate") return "Resolve upload";
+  return blocker.primaryAction;
+}
+
+function blockerLineValue(blocker: BlockerCard, label: string) {
+  return blocker.lines.find(([lineLabel]) => lineLabel === label)?.[1];
+}
+
+function actionQueueRows(machinesList: Machine[]): ActionQueueRow[] {
+  const stateWeight = { blocked: 0, at_risk: 1, ready: 2 } satisfies Record<MachineState, number>;
+  return machinesList
+    .filter((machine) => machine.state !== "ready")
+    .flatMap((machine) => {
+      const blockers = blockerCardsForMachine(machine);
+      const fallbackRows: BlockerCard[] = [
+        {
+          id: `issue:${machine.reason}`,
+          kind: "certificate",
+          title: "Review Item",
+          status: externalStatus(machine.state),
+          summary: machine.reason,
+          primaryAction: "Review",
+          lines: [
+            ["Owner", machine.owner],
+            ["Due", machine.eta],
+            ["Next step", machine.nextAction === "-" ? "Review machine state" : machine.nextAction],
+          ],
+        },
+      ];
+      const rows = blockers.length
+        ? blockers
+        : fallbackRows;
+
+      return rows.map((blocker) => ({
+        action: actionForQueueRow(machine, blocker),
+        actionLabel: actionLabelForQueueRow(machine, blocker),
+        blocker,
+        due: blockerLineValue(blocker, "Due") ?? machine.eta,
+        impact: machine.state === "blocked" ? `Stops ${machineWorksite(machine).name}` : `Review before ${machineWorksite(machine).name}`,
+        machine,
+        nextStep: blockerLineValue(blocker, "Next step") ?? machine.nextAction,
+        owner: blockerLineValue(blocker, "Owner") ?? machine.owner,
+        priority: machine.state === "blocked" ? "blocking" as const : "review" as const,
+      }));
+    })
+    .sort((left, right) => stateWeight[left.machine.state] - stateWeight[right.machine.state] || left.machine.eta.localeCompare(right.machine.eta));
+}
+
+function actionQueueRowKey(row: ActionQueueRow) {
+  return `${row.machine.id}:${row.blocker.id}`;
+}
+
+function ActionQueueView({
+  machinesList,
+  onActionStart,
+  onMachineOpen,
+}: {
+  machinesList: Machine[];
+  onActionStart: (machine: Machine, action: Exclude<DrawerAction, null>) => void;
+  onMachineOpen: (machine: Machine, mode?: DrawerMode) => void;
+}) {
+  const [filter, setFilter] = useState<QueueFilter>("all");
+  const rows = actionQueueRows(machinesList);
+  const filteredRows = rows.filter((row) => {
+    if (filter === "blocking") return row.priority === "blocking";
+    if (filter === "review") return row.priority === "review";
+    if (filter === "documents") return row.blocker.kind === "certificate";
+    if (filter === "workshop") return row.blocker.kind === "service";
+    return true;
+  });
+  const blockingActionCount = rows.filter((row) => row.priority === "blocking").length;
+  const reviewActionCount = rows.filter((row) => row.priority === "review").length;
+  const owners = new Set(rows.map((row) => row.owner)).size;
+  const certificateActions = rows.filter((row) => row.blocker.kind === "certificate").length;
+  const serviceActions = rows.filter((row) => row.blocker.kind === "service").length;
+  const filterItems: Array<{ key: QueueFilter; label: string; tone: "blocked" | "attention" | "neutral"; value: number }> = [
+    { key: "all", label: "All", tone: "neutral", value: rows.length },
+    { key: "blocking", label: "Blocking", tone: "blocked", value: blockingActionCount },
+    { key: "review", label: "Review", tone: "attention", value: reviewActionCount },
+    { key: "documents", label: "Documents", tone: "neutral", value: certificateActions },
+    { key: "workshop", label: "Workshop", tone: "neutral", value: serviceActions },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <ViewHeader
+        title="Action Queue"
+        description="Cross-machine commands: do the next release action here, then open the machine case only when detail is needed."
+        showActions={false}
+      />
+      <KpiStrip
+        items={[
+          ["Open Actions", rows.length, "neutral"],
+          ["Blocking", blockingActionCount, "blocked"],
+          ["Review", reviewActionCount, "attention"],
+          ["Documents", certificateActions, "blocked"],
+          ["Workshop", serviceActions, "neutral"],
+        ]}
+      />
+      <Surface className="overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-[#E2E8F0] px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Release action queue</p>
+            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Actions that need owner command</h2>
+            <p className="mt-1 text-sm font-semibold text-[#64748B]">{rows.length} actions · {owners} owners · sorted by release impact and due time.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {filterItems.map((item) => (
+              <ActionQueueFilterChip
+                key={item.key}
+                active={filter === item.key}
+                label={item.label}
+                onClick={() => setFilter(item.key)}
+                tone={item.tone}
+                value={item.value}
+              />
+            ))}
+          </div>
+        </div>
+
+        {rows.length ? (
+          filteredRows.length ? (
+            <div className="divide-y divide-[#E2E8F0]">
+              {filteredRows.map((row, index) => (
+                <ActionQueueRowItem
+                  key={actionQueueRowKey(row)}
+                  featured={index === 0 && filter === "all"}
+                  onActionStart={onActionStart}
+                  onMachineOpen={onMachineOpen}
+                  row={row}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="m-5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">
+              No actions match this filter.
+            </div>
+          )
+        ) : (
+          <div className="m-5 rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] p-4 text-sm font-bold text-[#15803D]">
+            No open blockers. Tomorrow&apos;s work can move to release review.
+          </div>
+        )}
+      </Surface>
+    </div>
+  );
+}
+
+function ActionQueueFilterChip({
+  active,
+  label,
+  onClick,
+  tone,
+  value,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  tone: "blocked" | "attention" | "neutral";
+  value: number;
+}) {
+  const toneClass =
+    tone === "blocked"
+      ? "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]"
+      : tone === "attention"
+        ? "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]"
+        : "border-[#E2E8F0] bg-[#F8FAFC] text-[#0D2F2D]";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-sm font-bold transition hover:border-[#0D2F2D] ${
+        active ? "ring-2 ring-[#0D2F2D]/15" : ""
+      } ${toneClass}`}
+    >
+      <span className="text-lg leading-none">{value}</span>
+      <span className="text-[11px] uppercase tracking-wide">{label}</span>
+    </button>
+  );
+}
+
+function ActionQueueRowItem({
+  featured,
+  onActionStart,
+  onMachineOpen,
+  row,
+}: {
+  featured: boolean;
+  onActionStart: (machine: Machine, action: Exclude<DrawerAction, null>) => void;
+  onMachineOpen: (machine: Machine, mode?: DrawerMode) => void;
+  row: ActionQueueRow;
+}) {
+  const toneClass = row.priority === "blocking" ? "bg-[#FFF7F7]" : "bg-[#FFFCF0]";
+  const actionTone = row.priority === "blocking" ? "bg-[#0D2F2D] text-white hover:bg-[#092321]" : "bg-[#B45309] text-white hover:bg-[#92400E]";
+
+  return (
+    <div className={`grid gap-4 px-5 py-4 lg:grid-cols-[220px_minmax(0,1.4fr)_minmax(0,1fr)_150px_130px_170px] lg:items-center ${toneClass}`}>
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-base font-bold text-[#0D2F2D]">{row.machine.code}</p>
+          {featured ? <span className="rounded-full border border-[#FECACA] bg-white px-2.5 py-1 text-[11px] font-bold uppercase text-[#B91C1C]">Next</span> : null}
+        </div>
+        <p className="mt-1 text-xs font-semibold text-[#64748B]">{machineWorksite(row.machine).name}</p>
+      </div>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${row.priority === "blocking" ? statusClasses("blocked") : statusClasses("at_risk")}`}>
+            {row.blocker.kind === "certificate" ? "Document" : "Workshop"}
+          </span>
+          <span className="rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-[11px] font-bold uppercase text-[#64748B]">{row.blocker.status}</span>
+        </div>
+        <p className="mt-2 text-sm font-bold leading-snug text-[#111827]">{row.nextStep}</p>
+        <p className="mt-1 text-xs font-semibold leading-snug text-[#64748B]">{row.blocker.summary}</p>
+      </div>
+      <div>
+        <p className="text-[11px] font-bold uppercase text-[#64748B]">Impact</p>
+        <p className="mt-1 text-sm font-bold text-[#1F2933]">{row.impact}</p>
+      </div>
+      <div>
+        <p className="text-[11px] font-bold uppercase text-[#64748B]">Owner</p>
+        <p className="mt-1 font-bold text-[#0D2F2D]">{row.owner}</p>
+      </div>
+      <div>
+        <p className="text-[11px] font-bold uppercase text-[#64748B]">Due</p>
+        <p className="mt-1 font-semibold text-[#1F2933]">{row.due}</p>
+      </div>
+      <div className="grid gap-2">
+        <button
+          type="button"
+          onClick={() => onActionStart(row.machine, row.action)}
+          className={`min-h-10 rounded-md px-3 text-sm font-bold ${actionTone}`}
+        >
+          {row.actionLabel}
+        </button>
+        <button
+          type="button"
+          onClick={() => onMachineOpen(row.machine, "why")}
+          className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#475569] hover:border-[#008C95]"
+        >
+          Open case
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DocumentsView({
+  machinesList,
+  onActionStart,
+  onMachineOpen,
+}: {
+  machinesList: Machine[];
+  onActionStart: (machine: Machine, action: Exclude<DrawerAction, null>) => void;
+  onMachineOpen: (machine: Machine) => void;
+}) {
+  const [filter, setFilter] = useState<DocumentFilter>("needs-action");
+  const allCertificates = machinesList.flatMap((machine) => machine.certificates.map((certificate) => ({ certificate, machine })));
+  const priorityCertificates = allCertificates.filter(({ certificate }) => certificate.status !== "Valid");
+  const filterItems: Array<{ key: DocumentFilter; label: string; tone: "ready" | "attention" | "blocked" | "neutral"; value: number }> = [
+    ["needs-action", "Needs Action", "neutral", priorityCertificates.length],
+    ["expired", "Expired", "blocked", allCertificates.filter(({ certificate }) => certificate.status === "Expired").length],
+    ["missing", "Missing", "blocked", allCertificates.filter(({ certificate }) => certificate.status === "Missing").length],
+    ["critical", "Critical", "attention", allCertificates.filter(({ certificate }) => certificate.status === "Critical" || certificate.status === "Expiring soon").length],
+    ["valid", "Valid", "ready", allCertificates.filter(({ certificate }) => certificate.status === "Valid").length],
+  ].map(([key, label, tone, value]) => ({ key, label, tone, value })) as Array<{ key: DocumentFilter; label: string; tone: "ready" | "attention" | "blocked" | "neutral"; value: number }>;
+  const visibleCertificates = allCertificates.filter(({ certificate }) => {
+    const matchesFilter =
+      filter === "needs-action"
+        ? certificate.status !== "Valid"
+        : filter === "critical"
+          ? certificate.status === "Critical" || certificate.status === "Expiring soon"
+          : filter === "expired"
+            ? certificate.status === "Expired"
+            : filter === "missing"
+              ? certificate.status === "Missing"
+              : certificate.status === "Valid";
+    return matchesFilter;
   });
 
   return (
     <div className="space-y-5">
       <ViewHeader
-        title="Machine Passports"
-        description="The evidence file behind each release decision: certificates, service, issues and history."
-        importLabel="Import Passports"
-        exportLabel="Export Report"
-      />
-      <div className="flex flex-wrap gap-2">
-        {[
-          ["All", "all"],
-          ["Ready For Work", "ready"],
-          ["Needs Attention", "at_risk"],
-          ["Cannot Be Released", "blocked"],
-          ["Missing Documents", "missing"],
-          ["Expiring Soon", "expiring"],
-        ].map(([label, value]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setPassportFilter(value as typeof passportFilter)}
-            className={`min-h-9 rounded-full border px-3 text-xs font-bold uppercase ${
-              passportFilter === value ? "border-[#0D2F2D] bg-[#0D2F2D] text-white" : "border-[#E2E8F0] bg-white text-[#64748B]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-        {filteredMachines.map((machine) => (
-          <Surface key={machine.id} className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold text-[#0D2F2D]">{machine.code}</h2>
-                <p className="text-sm text-[#64748B]">{machine.name}</p>
-              </div>
-              <StatusPill state={machine.state} />
-            </div>
-            <p className="mt-3 text-sm font-semibold text-[#64748B]">Worksite: {machineWorksite(machine).name}</p>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <p className="rounded-md bg-[#F8FAFC] p-3"><span className="block text-xs font-bold uppercase text-[#64748B]">Documents</span>{machine.documents}</p>
-              <p className="rounded-md bg-[#F8FAFC] p-3"><span className="block text-xs font-bold uppercase text-[#64748B]">Service</span>{serviceSummary(machine)}</p>
-              <p className="col-span-2 rounded-md bg-[#F8FAFC] p-3"><span className="block text-xs font-bold uppercase text-[#64748B]">Certificates</span>{certificateSummary(machine)}</p>
-            </div>
-            <p className="mt-4 rounded-lg border border-[#E2E8F0] bg-white p-3 text-sm font-bold text-[#0D2F2D]">{impactForMachine(machine)}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => onMachineOpen(machine)} className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white">
-                Open Passport
-              </button>
-              {machine.state === "blocked" ? (
-                <button type="button" onClick={() => onMachineOpen(machine)} className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-4 text-sm font-bold text-[#0D2F2D]">
-                  Review Blockers
-                </button>
-              ) : null}
-            </div>
-          </Surface>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BlockersView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine) => void }) {
-  const blockedMachines = machinesList.filter((machine) => machine.state === "blocked");
-  return (
-    <div className="space-y-5">
-      <ViewHeader title="Blockers" description="The owner queue for anything that stops release." showActions={false} />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Surface className="p-5">
-          <p className="text-xs font-bold uppercase text-[#B91C1C]">Resolve first</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#0D2F2D]">{blockedMachines.length} blockers stop the release tomorrow</h2>
-          <div className="mt-5 space-y-3">
-            {blockedMachines.map((machine) => (
-              <button
-                key={machine.id}
-                type="button"
-                onClick={() => onMachineOpen(machine)}
-                className="grid w-full gap-3 rounded-lg border border-[#fecaca] bg-[#fff7f7] p-4 text-left md:grid-cols-[180px_minmax(0,1fr)_180px]"
-              >
-                <div>
-                  <p className="font-bold text-[#0D2F2D]">{machine.code}</p>
-                  <p className="text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
-                </div>
-                <div>
-                  <p className="font-bold text-[#B91C1C]">{machine.reason}</p>
-                  <p className="mt-1 text-sm text-[#64748B]">{impactForMachine(machine)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase text-[#64748B]">Owner</p>
-                  <p className="font-bold text-[#0D2F2D]">{machine.owner}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#64748B]">{machine.eta}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </Surface>
-        <Surface className="p-5">
-          <p className="text-xs font-bold uppercase text-[#64748B]">Next actions</p>
-          <div className="mt-4 space-y-3">
-            {blockedMachines.map((machine) => (
-              <div key={machine.id} className="rounded-lg border border-[#E2E8F0] p-3">
-                <p className="font-bold text-[#0D2F2D]">{machine.owner}</p>
-                <p className="mt-1 text-sm font-semibold text-[#1F2933]">{machine.nextAction}</p>
-              </div>
-            ))}
-          </div>
-        </Surface>
-      </div>
-    </div>
-  );
-}
-
-function CertificatesView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine) => void }) {
-  const allCertificates = machinesList.flatMap((machine) => machine.certificates.map((certificate) => ({ certificate, machine })));
-  const priorityCertificates = allCertificates.filter(({ certificate }) => certificate.status !== "Valid");
-
-  return (
-    <div className="space-y-5">
-      <ViewHeader
-        title="Certificates"
-        description="Document deadlines translated into release risk."
-        importLabel="Import Certificates"
-        exportLabel="Export Certificate Report"
+        title="Documents"
+        description="Specialist document control: missing, expired, and near-expiry evidence across machines."
+        importLabel="Import Documents"
+        exportLabel="Export Document Report"
       />
       <KpiStrip
         items={[
@@ -2232,75 +3742,194 @@ function CertificatesView({ machinesList, onMachineOpen }: { machinesList: Machi
           ["Missing", allCertificates.filter(({ certificate }) => certificate.status === "Missing").length, "blocked"],
           ["Critical Soon", allCertificates.filter(({ certificate }) => certificate.status === "Critical" || certificate.status === "Expiring soon").length, "attention"],
           ["Valid", allCertificates.filter(({ certificate }) => certificate.status === "Valid").length, "ready"],
-          ["Blocking Release", machinesList.filter((machine) => machine.state === "blocked" && machine.certificates.some((certificate) => certificate.status !== "Valid")).length, "blocked"],
+          ["Release Impact", machinesList.filter((machine) => machine.state === "blocked" && machine.certificates.some((certificate) => certificate.status !== "Valid")).length, "blocked"],
         ]}
       />
-      <div className="grid gap-4 lg:grid-cols-2">
-        {priorityCertificates.map(({ certificate, machine }) => (
-          <Surface key={`${machine.id}-${certificate.name}`} className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase text-[#64748B]">{machine.code} · {machineWorksite(machine).name}</p>
-                <h2 className="mt-2 text-lg font-bold text-[#0D2F2D]">{certificate.name}</h2>
+      <Surface className="overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-[#E2E8F0] px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Document control queue</p>
+            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Files that need office action</h2>
+            <p className="mt-1 text-sm font-semibold text-[#64748B]">Upload evidence, assign renewal owners, or open the full machine file.</p>
+          </div>
+          <div className="flex flex-col gap-2 lg:max-w-[560px]">
+            <div className="flex flex-wrap gap-2">
+              {filterItems.map((item) => (
+                <DocumentFilterChip
+                  key={item.key}
+                  active={filter === item.key}
+                  label={item.label}
+                  onClick={() => setFilter(item.key)}
+                  tone={item.tone}
+                  value={item.value}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {visibleCertificates.length ? (
+          <div className="divide-y divide-[#E2E8F0]">
+            {visibleCertificates.map(({ certificate, machine }) => {
+            const blocksRelease = machine.state === "blocked" && ["Expired", "Missing"].includes(certificate.status);
+            const primaryLabel = documentCommandLabel(certificate);
+            const primaryAction = documentActionForCertificate(certificate);
+            return (
+              <div key={`${machine.id}-${certificate.name}`} className={`grid gap-4 px-5 py-4 lg:grid-cols-[220px_minmax(0,1.1fr)_minmax(0,0.9fr)_140px_170px] lg:items-center ${blocksRelease ? "bg-[#FEF2F2]/45" : "bg-white"}`}>
+                <div>
+                  <p className="text-base font-bold text-[#0D2F2D]">{machine.code}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-bold text-[#111827]">{certificate.name}</h3>
+                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${certificateClasses(certificate.status)}`}>{certificate.status}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-[#64748B]">{certificate.action}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Impact</p>
+                  <p className={`mt-1 text-sm font-bold ${blocksRelease ? "text-[#B91C1C]" : certificate.status === "Valid" ? "text-[#15803D]" : "text-[#B45309]"}`}>
+                    {blocksRelease ? `Stops ${machineWorksite(machine).name}` : certificate.status === "Valid" ? "Evidence accepted" : `Review before ${machineWorksite(machine).name}`}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Owner</p>
+                  <p className="mt-1 font-bold text-[#0D2F2D]">{certificate.owner}</p>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Expiry</p>
+                  <p className="mt-1 font-semibold text-[#1F2933]">{certificate.expiry}</p>
+                </div>
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (certificate.status === "Valid") {
+                        emitPrototypeToast(`${machine.code}: ${certificate.name} file preview opened.`);
+                        return;
+                      }
+                      onActionStart(machine, primaryAction);
+                    }}
+                    className={`min-h-10 rounded-md px-3 text-sm font-bold ${
+                      certificate.status === "Critical" || certificate.status === "Expiring soon"
+                        ? "bg-[#B45309] text-white hover:bg-[#92400E]"
+                        : certificate.status === "Valid"
+                          ? "border border-[#BBF7D0] bg-white text-[#15803D] hover:border-[#15803D]"
+                          : "bg-[#0D2F2D] text-white hover:bg-[#092321]"
+                    }`}
+                  >
+                    {primaryLabel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMachineOpen(machine)}
+                    className="min-h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#475569] hover:border-[#008C95]"
+                  >
+                    Open passport
+                  </button>
+                </div>
               </div>
-              <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${certificateClasses(certificate.status)}`}>{certificate.status}</span>
-            </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <p className="rounded-md bg-[#F8FAFC] p-3 text-sm"><span className="block text-xs font-bold uppercase text-[#64748B]">Expiry</span>{certificate.expiry}</p>
-              <p className="rounded-md bg-[#F8FAFC] p-3 text-sm"><span className="block text-xs font-bold uppercase text-[#64748B]">Owner</span>{certificate.owner}</p>
-              <p className="rounded-md bg-[#F8FAFC] p-3 text-sm"><span className="block text-xs font-bold uppercase text-[#64748B]">Days left</span>{certificate.daysLeft}</p>
-            </div>
-            <p className="mt-4 text-sm font-semibold text-[#64748B]">
-              {certificate.status === "Expired" || certificate.status === "Missing" ? `Blocks ${machineWorksite(machine).name} release.` : "Needs attention before the next release."}
-            </p>
-            <button type="button" onClick={() => onMachineOpen(machine)} className="mt-4 min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white">
-              {certificate.status === "Expired" || certificate.status === "Missing" ? "Resolve certificate" : "Review certificate"}
-            </button>
-          </Surface>
-        ))}
-      </div>
+            );
+            })}
+          </div>
+        ) : (
+          <div className="m-5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">
+            No documents match this filter.
+          </div>
+        )}
+      </Surface>
     </div>
   );
 }
 
-function ServiceView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine) => void }) {
+function DocumentFilterChip({
+  active,
+  label,
+  onClick,
+  tone,
+  value,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  tone: "ready" | "attention" | "blocked" | "neutral";
+  value: number;
+}) {
+  const toneClass =
+    tone === "ready"
+      ? "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]"
+      : tone === "attention"
+        ? "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]"
+        : tone === "blocked"
+          ? "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]"
+          : "border-[#E2E8F0] bg-[#F8FAFC] text-[#0D2F2D]";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-3 text-xs font-bold transition hover:border-[#0D2F2D] ${active ? "ring-2 ring-[#0D2F2D]/15" : ""} ${toneClass}`}
+    >
+      <span className="text-sm leading-none">{value}</span>
+      <span className="uppercase tracking-wide">{label}</span>
+    </button>
+  );
+}
+
+function WorkshopView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine) => void }) {
   const allService = machinesList.flatMap((machine) => machine.service);
   const activeService = machinesList.flatMap((machine) => machine.service.map((service) => ({ machine, service }))).filter(({ service }) => service.status !== "Resolved");
 
   return (
     <div className="space-y-5">
-      <ViewHeader title="Service Blockers" description="Workshop work that can delay a machine release." showActions={false} />
+      <ViewHeader title="Workshop" description="Specialist maintenance queue: service work, workshop ownership, and release impact." showActions={false} />
       <KpiStrip
         items={[
-          ["Open Service Blockers", allService.filter((service) => service.status !== "Resolved").length, "blocked"],
-          ["Blocking Release", allService.filter((service) => service.blocksRelease && service.status !== "Resolved").length, "blocked"],
+          ["Open Jobs", allService.filter((service) => service.status !== "Resolved").length, "blocked"],
+          ["Release Impact", allService.filter((service) => service.blocksRelease && service.status !== "Resolved").length, "blocked"],
           ["In Progress", allService.filter((service) => service.status === "In Progress").length, "attention"],
           ["Resolved", allService.filter((service) => service.status === "Resolved").length, "ready"],
         ]}
       />
-      <div className="grid gap-4 lg:grid-cols-2">
-        {activeService.map(({ machine, service }) => (
-          <Surface key={`${machine.id}-${service.issue}`} className={`p-5 ${service.blocksRelease ? "border-[#fecaca] bg-[#fff7f7]" : ""}`}>
-            <div className="flex items-start justify-between gap-3">
+      <Surface className="overflow-hidden">
+        <div className="border-b border-[#E2E8F0] px-5 py-4">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Workshop job queue</p>
+          <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Service work owned by the workshop</h2>
+          <p className="mt-1 text-sm font-semibold text-[#64748B]">Use this page to manage mechanical work. Open the machine passport for full service history.</p>
+        </div>
+        <div className="divide-y divide-[#E2E8F0]">
+          {activeService.map(({ machine, service }) => (
+            <div key={`${machine.id}-${service.issue}`} className={`grid gap-4 px-5 py-4 lg:grid-cols-[220px_minmax(0,1fr)_150px_140px_160px_170px] lg:items-center ${service.blocksRelease ? "bg-[#FEF2F2]/45" : "bg-white"}`}>
               <div>
-                <p className="text-xs font-bold uppercase text-[#64748B]">{machine.code} · {machineWorksite(machine).name}</p>
-                <h2 className="mt-2 text-lg font-bold text-[#0D2F2D]">{service.issue}</h2>
+                <p className="text-base font-bold text-[#0D2F2D]">{machine.code}</p>
+                <p className="mt-1 text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
               </div>
-              <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${service.blocksRelease ? statusClasses("blocked") : statusClasses("at_risk")}`}>
-                {service.blocksRelease ? "Blocks release" : "Review"}
-              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-bold text-[#111827]">{service.issue}</h3>
+                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${service.blocksRelease ? statusClasses("blocked") : statusClasses("at_risk")}`}>
+                    {service.blocksRelease ? "Release impact" : "Review"}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-[#64748B]">{service.severity} severity · {service.blocksRelease ? "blocks release" : "does not block release"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase text-[#64748B]">Owner</p>
+                <p className="mt-1 font-bold text-[#0D2F2D]">{service.owner}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase text-[#64748B]">Due</p>
+                <p className="mt-1 font-semibold text-[#1F2933]">{service.due}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase text-[#64748B]">Status</p>
+                <p className="mt-1 font-semibold text-[#1F2933]">{service.status}</p>
+              </div>
+              <button type="button" onClick={() => onMachineOpen(machine)} className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white">
+                Open service
+              </button>
             </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <p className="rounded-md bg-white p-3 text-sm"><span className="block text-xs font-bold uppercase text-[#64748B]">Owner</span>{service.owner}</p>
-              <p className="rounded-md bg-white p-3 text-sm"><span className="block text-xs font-bold uppercase text-[#64748B]">Due</span>{service.due}</p>
-              <p className="rounded-md bg-white p-3 text-sm"><span className="block text-xs font-bold uppercase text-[#64748B]">Status</span>{service.status}</p>
-            </div>
-            <button type="button" onClick={() => onMachineOpen(machine)} className="mt-4 min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white">
-              Open service blocker
-            </button>
-          </Surface>
-        ))}
-      </div>
+          ))}
+        </div>
+      </Surface>
     </div>
   );
 }
@@ -2329,7 +3958,12 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
       <Surface className="overflow-hidden">
         <div className="divide-y divide-[#E2E8F0]">
           {visibleHistory.map((item) => {
-            const state: MachineState = item.result === "Ready For Work" ? "ready" : item.result === "Needs Attention" ? "at_risk" : "blocked";
+            const state: MachineState =
+              item.result === "Ready For Work"
+                ? "ready"
+                : item.result === "Needs Attention" || item.result === "Owner Assigned" || item.result === "Assignment Accepted"
+                  ? "at_risk"
+                  : "blocked";
             return (
               <div key={`${item.date}-${item.machine}-${item.reason}`} className="grid gap-4 p-4 md:grid-cols-[120px_180px_minmax(0,1fr)_180px]">
                 <div>
@@ -2364,11 +3998,11 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
 function SettingsView() {
   return (
     <div className="space-y-5">
-      <ViewHeader title="Settings" description="Rules that control release decisions, reports and team ownership." />
+      <ViewHeader title="Settings" description="Rules that control release decisions, reports and team ownership." showActions={false} />
       <div className="grid gap-4 lg:grid-cols-3">
         {[
           ["Release gate", "Blocked machines cannot be released without owner override and audit reason."],
-          ["Morning report", "Daily email at 06:30 with ready, review and blocked machines."],
+          ["Daily report", "06:30 in-app summary with ready, review and blocked machines."],
           ["Document warning", "Certificate warnings at 60, 30, 14 and 7 days."],
           ["Owners", "Dimitris operations · Maria office · Kostas workshop."],
           ["Worksites", worksites.map((worksite) => worksite.name).join(" · ")],
