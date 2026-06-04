@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
+import { ScreenshotCarousel } from "@/components/fleetlever/screenshot-carousel";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
 
 const landingCopy = {
@@ -258,6 +259,41 @@ const copy = landingCopy.el;
 
 const loginHref = "/login";
 
+const whyStopsCarouselSlides = [
+  {
+    src: "/fleetlever/site/machine-why-tomorrow-stops-drawer.png",
+    alt: "Drawer μηχανήματος που δείχνει lifting certificate, inspection και service blockers",
+    label: "Ακριβής αιτία",
+    caption: "Το blocker εμφανίζεται με λόγο, owner και επόμενη ενέργεια.",
+    width: 3840,
+    height: 2400,
+  },
+  {
+    src: "/fleetlever/site/machine-drawer-why-tomorrow-stops-from-inventory.png",
+    alt: "Inventory μηχανημάτων με ανοιχτό Why tomorrow stops drawer",
+    label: "Μηχάνημα σε context",
+    caption: "Βλέπεις ποιο μηχάνημα μπλοκάρει και γιατί.",
+    width: 3840,
+    height: 2442,
+  },
+  {
+    src: "/fleetlever/site/stop-list.png",
+    alt: "Stop List με blockers που χρειάζονται ενέργεια πριν το πρόγραμμα",
+    label: "Λίστα ενεργειών",
+    caption: "Τα ανοιχτά θέματα δεν χάνονται σε email και μηνύματα.",
+    width: 3840,
+    height: 2400,
+  },
+  {
+    src: "/fleetlever/site/decision-history-audit-trail.png",
+    alt: "Decision History audit trail με καταγεγραμμένες αποφάσεις",
+    label: "Απόφαση με ιστορικό",
+    caption: "Κρατά ποιος έκανε τι, πότε και με ποια απόδειξη.",
+    width: 3840,
+    height: 2644,
+  },
+] as const;
+
 function BrowserFrame({
   src,
   alt,
@@ -508,7 +544,7 @@ export default function LandingPage() {
 
       <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8">
         <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <BrowserFrame src="/fleetlever/site/machine-why-tomorrow-stops-drawer.png" alt={copy.stopsAlt} />
+          <ScreenshotCarousel slides={whyStopsCarouselSlides} />
           <div>
             <p className="text-sm font-bold uppercase tracking-normal text-[#72dce5]">{copy.stopsEyebrow}</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
