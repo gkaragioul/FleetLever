@@ -393,8 +393,8 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
           <div className="relative min-w-0">
             <BrowserFrame
-              src="/fleetlever/site/machine-drawer-from-inventory.png"
-              alt="FleetLever machine inventory with a machine passport drawer open"
+              src="/fleetlever/site/machine-drawer-why-tomorrow-stops-from-inventory.png"
+              alt="FleetLever machine inventory with the Why tomorrow stops drawer open"
               width={3840}
               height={2442}
               zoom={4.25}
