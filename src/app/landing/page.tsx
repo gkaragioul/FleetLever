@@ -285,12 +285,12 @@ const whyStopsCarouselSlides = [
     height: 2400,
   },
   {
-    src: "/fleetlever/site/decision-history-audit-trail.png",
+    src: "/fleetlever/site/decision-history-audit-trail-carousel.png",
     alt: "Decision History audit trail με καταγεγραμμένες αποφάσεις",
     label: "Απόφαση με ιστορικό",
     caption: "Κρατά ποιος έκανε τι, πότε και με ποια απόδειξη.",
     width: 3840,
-    height: 2644,
+    height: 2442,
   },
 ] as const;
 
@@ -525,16 +525,17 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="relative mx-auto mt-12 max-w-6xl">
+          <div className="mx-auto mt-8 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {["Τι συμβαίνει", "Ποιος είναι υπεύθυνος", "Τι πρέπει να γίνει", "Πότε πρέπει να γίνει"].map((item) => (
+              <div key={item} className="flex min-h-20 items-center gap-3 rounded-lg border border-white/10 bg-white/8 p-5 text-base font-bold text-[#eef7f4] shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+                <CheckCircle2 className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <div className="relative mx-auto mt-10 max-w-6xl">
             <ScreenshotCarousel slides={whyStopsCarouselSlides} />
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {["Τι συμβαίνει", "Ποιος είναι υπεύθυνος", "Τι πρέπει να γίνει", "Πότε πρέπει να γίνει"].map((item) => (
-                <div key={item} className="flex min-h-20 items-center gap-3 rounded-lg border border-white/10 bg-white/8 p-5 text-base font-bold text-[#eef7f4] shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
-                  <CheckCircle2 className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
-                  {item}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

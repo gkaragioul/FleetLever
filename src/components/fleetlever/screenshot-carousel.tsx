@@ -19,21 +19,34 @@ type ScreenshotCarouselProps = {
 
 export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [isImageOpen, setIsImageOpen] = useState(false);
 
   useEffect(() => {
     if (slides.length < 2) return;
+    if (isInteracting || isImageOpen) return;
 
     const intervalId = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, 4200);
 
     return () => window.clearInterval(intervalId);
-  }, [slides.length]);
+  }, [isImageOpen, isInteracting, slides.length]);
 
   if (!slides.length) return null;
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onBlur={(event) => {
+        if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+          setIsInteracting(false);
+        }
+      }}
+      onFocus={() => setIsInteracting(true)}
+      onPointerEnter={() => setIsInteracting(true)}
+      onPointerLeave={() => setIsInteracting(false)}
+    >
       <div className="overflow-hidden rounded-lg border border-white/15 bg-white shadow-[0_34px_110px_rgba(0,0,0,0.32)]">
         <div className="flex h-10 items-center gap-2 border-b border-[#e3e9e5] bg-[#f8faf7] px-4">
           <span className="h-3 w-3 rounded-full bg-[#ff6b5f]" />
@@ -56,6 +69,7 @@ export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
                       width={slide.width}
                       height={slide.height}
                       imageClassName="h-full w-full object-contain"
+                      onOpenChange={setIsImageOpen}
                       sizes="(min-width: 1280px) 72rem, 100vw"
                     />
                   ) : (

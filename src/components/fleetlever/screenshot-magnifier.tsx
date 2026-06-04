@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 type ScreenshotMagnifierProps = {
@@ -13,6 +13,7 @@ type ScreenshotMagnifierProps = {
   priority?: boolean;
   imageClassName?: string;
   zoom?: number;
+  onOpenChange?: (isOpen: boolean) => void;
 };
 
 export function ScreenshotMagnifier({
@@ -23,8 +24,14 @@ export function ScreenshotMagnifier({
   sizes,
   priority = false,
   imageClassName = "h-auto w-full",
+  onOpenChange,
 }: ScreenshotMagnifierProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const updateOpen = useCallback((nextOpen: boolean) => {
+    setIsOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }, [onOpenChange]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -33,7 +40,7 @@ export function ScreenshotMagnifier({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        updateOpen(false);
       }
     };
 
@@ -45,7 +52,7 @@ export function ScreenshotMagnifier({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, updateOpen]);
 
   return (
     <>
@@ -53,7 +60,7 @@ export function ScreenshotMagnifier({
         type="button"
         aria-label={`Άνοιγμα μεγέθυνσης: ${alt}`}
         className="group/preview relative block h-full w-full cursor-pointer overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-4"
-        onClick={() => setIsOpen(true)}
+        onClick={() => updateOpen(true)}
       >
         <Image
           src={src}
@@ -74,7 +81,7 @@ export function ScreenshotMagnifier({
               role="dialog"
               aria-modal="true"
               aria-label={alt}
-              onClick={() => setIsOpen(false)}
+              onClick={() => updateOpen(false)}
             >
               <div
                 className="relative w-full max-w-[min(94vw,1500px)] rounded-lg border border-white/15 bg-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]"
@@ -84,7 +91,7 @@ export function ScreenshotMagnifier({
                   type="button"
                   className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#13211f] text-lg font-bold text-white shadow-lg transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
                   aria-label="Κλείσιμο εικόνας"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => updateOpen(false)}
                 >
                   ×
                 </button>
