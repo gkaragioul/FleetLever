@@ -404,6 +404,7 @@ export default function LandingPage() {
             <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Το πρόβλημα</p>
             <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
               Το μηχάνημα ήταν στο πρόγραμμα.
+              <span className="block">Αλλά...</span>
               <span className="block text-[#b42318]">Δεν ήταν έτοιμο.</span>
             </h2>
             <div className="mt-8 grid gap-4">
