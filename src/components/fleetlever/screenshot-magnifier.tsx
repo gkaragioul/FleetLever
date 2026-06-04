@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ScreenshotMagnifierProps = {
   src: string;
@@ -36,11 +37,12 @@ export function ScreenshotMagnifier({
       }
     };
 
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
@@ -65,38 +67,41 @@ export function ScreenshotMagnifier({
         />
       </button>
 
-      {isOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#071513]/78 p-4 backdrop-blur-sm sm:p-8"
-          role="dialog"
-          aria-modal="true"
-          aria-label={alt}
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-[min(94vw,1500px)] rounded-lg border border-white/15 bg-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#13211f] text-lg font-bold text-white shadow-lg transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
-              aria-label="Κλείσιμο εικόνας"
+      {isOpen
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#071513]/78 p-4 backdrop-blur-sm sm:p-8"
+              role="dialog"
+              aria-modal="true"
+              aria-label={alt}
               onClick={() => setIsOpen(false)}
             >
-              ×
-            </button>
-            <Image
-              src={src}
-              alt={alt}
-              width={width}
-              height={height}
-              draggable={false}
-              className="max-h-[86vh] w-full rounded-lg object-contain"
-              sizes="94vw"
-            />
-          </div>
-        </div>
-      ) : null}
+              <div
+                className="relative w-full max-w-[min(94vw,1500px)] rounded-lg border border-white/15 bg-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#13211f] text-lg font-bold text-white shadow-lg transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+                  aria-label="Κλείσιμο εικόνας"
+                  onClick={() => setIsOpen(false)}
+                >
+                  ×
+                </button>
+                <Image
+                  src={src}
+                  alt={alt}
+                  width={width}
+                  height={height}
+                  draggable={false}
+                  className="max-h-[86vh] w-full rounded-lg object-contain"
+                  sizes="94vw"
+                />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
