@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type ScreenshotCarouselSlide = {
   src: string;
@@ -20,18 +20,53 @@ type ScreenshotCarouselProps = {
 export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInteracting, setIsInteracting] = useState(false);
-  const [isImageOpen, setIsImageOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  const activeSlide = slides[activeIndex];
+
+  const goToPrevious = useCallback(() => {
+    setActiveIndex((current) => (current - 1 + slides.length) % slides.length);
+  }, [slides.length]);
+
+  const goToNext = useCallback(() => {
+    setActiveIndex((current) => (current + 1) % slides.length);
+  }, [slides.length]);
 
   useEffect(() => {
     if (slides.length < 2) return;
-    if (isInteracting || isImageOpen) return;
+    if (isInteracting || isLightboxOpen) return;
 
     const intervalId = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, 4200);
 
     return () => window.clearInterval(intervalId);
-  }, [isImageOpen, isInteracting, slides.length]);
+  }, [isInteracting, isLightboxOpen, slides.length]);
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsLightboxOpen(false);
+      }
+      if (event.key === "ArrowLeft") {
+        goToPrevious();
+      }
+      if (event.key === "ArrowRight") {
+        goToNext();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [goToNext, goToPrevious, isLightboxOpen]);
 
   if (!slides.length) return null;
 
@@ -63,15 +98,22 @@ export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
               <div key={slide.src} className="min-w-full">
                 <div className="aspect-[3840/2442] bg-white">
                   {index === activeIndex ? (
-                    <ScreenshotMagnifier
-                      src={slide.src}
-                      alt={slide.alt}
-                      width={slide.width}
-                      height={slide.height}
-                      imageClassName="h-full w-full object-contain"
-                      onOpenChange={setIsImageOpen}
-                      sizes="(min-width: 1280px) 72rem, 100vw"
-                    />
+                    <button
+                      type="button"
+                      aria-label={`Άνοιγμα μεγέθυνσης: ${slide.alt}`}
+                      className="relative block h-full w-full cursor-pointer overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-4"
+                      onClick={() => setIsLightboxOpen(true)}
+                    >
+                      <Image
+                        src={slide.src}
+                        alt={slide.alt}
+                        width={slide.width}
+                        height={slide.height}
+                        draggable={false}
+                        className="h-full w-full object-contain"
+                        sizes="(min-width: 1280px) 72rem, 100vw"
+                      />
+                    </button>
                   ) : (
                     <Image
                       src={slide.src}
@@ -113,6 +155,65 @@ export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
           );
         })}
       </div>
+
+      {isLightboxOpen
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#071513]/82 p-4 backdrop-blur-sm sm:p-8"
+              role="dialog"
+              aria-modal="true"
+              aria-label={activeSlide.alt}
+              onClick={() => setIsLightboxOpen(false)}
+            >
+              <div
+                className="relative w-full max-w-[min(94vw,1600px)] rounded-lg border border-white/15 bg-white shadow-[0_40px_120px_rgba(0,0,0,0.45)]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#13211f] text-lg font-bold text-white shadow-lg transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+                  aria-label="Κλείσιμο εικόνας"
+                  onClick={() => setIsLightboxOpen(false)}
+                >
+                  ×
+                </button>
+                <button
+                  type="button"
+                  className="absolute left-3 top-1/2 z-20 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-[#13211f]/92 text-3xl font-semibold text-white shadow-lg transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+                  aria-label="Προηγούμενη εικόνα"
+                  onClick={goToPrevious}
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 z-20 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-[#13211f]/92 text-3xl font-semibold text-white shadow-lg transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+                  aria-label="Επόμενη εικόνα"
+                  onClick={goToNext}
+                >
+                  ›
+                </button>
+                <Image
+                  src={activeSlide.src}
+                  alt={activeSlide.alt}
+                  width={activeSlide.width}
+                  height={activeSlide.height}
+                  draggable={false}
+                  className="max-h-[82vh] w-full rounded-lg object-contain"
+                  sizes="94vw"
+                />
+                <div className="border-t border-[#e3e9e5] bg-white px-5 py-4">
+                  <p className="text-xs font-bold uppercase tracking-normal text-[#007C89]">
+                    {String(activeIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-[#13211f]">{activeSlide.label}</p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-[#53635f]">{activeSlide.caption}</p>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
