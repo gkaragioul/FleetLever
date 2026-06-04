@@ -1,6 +1,6 @@
 # FleetLever Interaction Inventory
 
-Last reviewed: 2026-06-01
+Last reviewed: 2026-06-03
 
 ## Product Pattern
 
@@ -36,11 +36,14 @@ The dashboard is the exception. It can feel more like an overview surface, but i
 
 ## Backend Wiring
 
-- Server actions require `DATABASE_URL`; otherwise the UI uses fallback demo data and mutation actions return a clear environment message.
+- Railway Postgres is the production source of truth for the sellable app runtime.
+- Server actions require `DATABASE_URL`; production must fail loudly when the database is missing.
+- Local fallback/demo data is only for development without `DATABASE_URL`.
+- Construction console state is persisted through `/api/fleetlever/console-state` into `public.console_snapshots` when Railway Postgres is configured.
 - Mutations run through tenant-scoped database helpers.
 - Asset, document, issue, maintenance, operator, compliance, import, report, and Copilot mutations write audit events.
 - Issue mutations synchronize asset availability so blocking problems remove assets from assignment.
-- Document uploads validate size and file type before writing file/version rows.
+- Document uploads validate size and file type before writing metadata/version rows. File bytes live in Railway Bucket object storage in production, with `.fleetlever/uploads` used only for local development.
 
 ## QA Checklist
 

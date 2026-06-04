@@ -12,16 +12,34 @@ const notoMono = Noto_Sans_Mono({
   subsets: ["greek", "latin"],
 });
 
-const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever.gr");
+const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.fleetlever.com");
+
+const metadataCopy = {
+  en: {
+    title: "FleetLever | Prevent Expensive Construction Downtime",
+    description:
+      "FleetLever is the operational gate construction companies use before releasing machines to tomorrow's work.",
+    ogDescription: "Prevent expensive construction downtime before tomorrow's work starts.",
+    twitterDescription: "Know exactly what will stop tomorrow's work before it happens.",
+  },
+  el: {
+    title: "FleetLever | Πρόληψη ακριβών καθυστερήσεων στα έργα",
+    description:
+      "Το FleetLever είναι ο έλεγχος readiness που χρησιμοποιούν οι κατασκευαστικές εταιρείες πριν στείλουν μηχανήματα στην αυριανή δουλειά.",
+    ogDescription: "Προλάβετε ακριβές καθυστερήσεις στα έργα πριν ξεκινήσει η αυριανή δουλειά.",
+    twitterDescription: "Μάθετε τι θα σταματήσει την αυριανή δουλειά πριν συμβεί.",
+  },
+} as const;
+
+const meta = metadataCopy.el;
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   title: {
-    default: "FleetLever | Prevent Expensive Construction Downtime",
+    default: meta.title,
     template: "%s | FleetLever",
   },
-  description:
-    "FleetLever is the operational gate construction companies use before releasing machines to tomorrow's work.",
+  description: meta.description,
   applicationName: "FleetLever",
   keywords: [
     "construction downtime",
@@ -40,7 +58,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "FleetLever",
-    description: "Prevent expensive construction downtime before tomorrow's work starts.",
+    description: meta.ogDescription,
     url: "/",
     siteName: "FleetLever",
     locale: "el_GR",
@@ -49,7 +67,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "FleetLever",
-    description: "Know exactly what will stop tomorrow's work before it happens.",
+    description: meta.twitterDescription,
   },
   robots: {
     index: true,

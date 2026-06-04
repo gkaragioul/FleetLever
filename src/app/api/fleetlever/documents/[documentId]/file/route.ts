@@ -1,5 +1,7 @@
 import { getActiveTenantContext } from "@/lib/db/tenant-context";
 import { withTenant } from "@/lib/db/client";
+import { readObject } from "@/lib/storage/object-storage";
+import { requireSuperAdminApiSession } from "@/lib/auth/super-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,9 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ documentId: string }> },
 ) {
+  const authError = await requireSuperAdminApiSession();
+  if (authError) return authError;
+
   const { documentId } = await context.params;
   const tenant = await getActiveTenantContext();
 
@@ -20,6 +25,9 @@ export async function GET(
       file_name: string;
       mime_type: string;
       file_size_bytes: number;
+      storage_key: string;
+      storage_provider: string;
+      storage_bucket: string | null;
       content: Buffer;
     }>(
       `
@@ -27,6 +35,9 @@ export async function GET(
           file.file_name,
           file.mime_type,
           file.file_size_bytes,
+          file.storage_key,
+          file.storage_provider,
+          file.storage_bucket,
           file.content
         from public.document_files file
         join public.documents document on document.id = file.document_id
@@ -46,7 +57,9 @@ export async function GET(
     return Response.json({ error: "File not found" }, { status: 404 });
   }
 
-  return new Response(new Uint8Array(file.content), {
+  const content = file.content ?? (await readObject(file.storage_key, file.storage_provider, file.storage_bucket));
+
+  return new Response(new Uint8Array(content), {
     headers: {
       "Content-Type": file.mime_type,
       "Content-Length": String(file.file_size_bytes),

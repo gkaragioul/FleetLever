@@ -81,8 +81,38 @@ a {
   }
 }
 
+.hero-photo-float {
+  animation: hero-photo-float 9s ease-in-out infinite;
+}
+
+.hero-photo-float-delay-1 {
+  animation-delay: -2.1s;
+}
+
+.hero-photo-float-delay-2 {
+  animation-delay: -4.4s;
+}
+
+.hero-photo-float-delay-3 {
+  animation-delay: -6.2s;
+}
+
+@keyframes hero-photo-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--hero-photo-rotate, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -10px, 0) rotate(var(--hero-photo-rotate, 0deg));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .release-flow-fill::after {
+    animation: none;
+  }
+
+  .hero-photo-float {
     animation: none;
   }
 }

@@ -1,0 +1,11 @@
+node_modules
+.next
+.vercel
+out
+build
+coverage
+reference-repos
+.fleetlever
+.DS_Store
+*.log
+*.tsbuildinfo

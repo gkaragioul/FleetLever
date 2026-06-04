@@ -12,6 +12,7 @@ import {
 import { getFleetLeverData, runTenantMutation } from "@/lib/db/fleetlever-data";
 import type { TenantContext } from "@/lib/db/queries";
 import { setActiveTenantContext } from "@/lib/db/tenant-context";
+import { requireObjectStorageForProduction, uploadObject } from "@/lib/storage/object-storage";
 
 export type ActionResult = {
   ok: boolean;
@@ -373,6 +374,11 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
   const fileError = validateDocumentFile(file);
   if (fileError) return fileError;
 
+  if (file) {
+    const storageError = requireObjectStorageForProduction();
+    if (storageError) return storageError;
+  }
+
   if (issuedAt && expiresAt && expiresAt < issuedAt) {
     return { ok: false, message: "Η λήξη δεν μπορεί να είναι πριν την έκδοση." };
   }
@@ -383,6 +389,14 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
     const storageKey = `uploads/${context.organizationId}/${crypto.randomUUID()}-${storageSlug(title)}${extension}`;
     const fileSize = file?.size ?? null;
     const mimeType = file?.type || "application/pdf";
+    const storedFile = file
+      ? await uploadObject({
+          key: storageKey,
+          body: Buffer.from(await file.arrayBuffer()),
+          contentType: mimeType,
+          fileName: safeName,
+        })
+      : null;
     const document = await client.query<{ id: string }>(
       `
         insert into public.documents (
@@ -417,24 +431,35 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
 
     const documentId = document.rows[0].id;
 
-    if (file) {
-      const content = Buffer.from(await file.arrayBuffer());
-
+    if (file && storedFile) {
       await client.query(
         `
           insert into public.document_files (
             organization_id,
             document_id,
             storage_key,
+            storage_provider,
+            storage_bucket,
             file_name,
             mime_type,
             file_size_bytes,
-            content,
+            content_sha256,
             uploaded_by_profile_id
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         `,
-        [context.organizationId, documentId, storageKey, safeName, mimeType, file.size, content, context.profileId],
+        [
+          context.organizationId,
+          documentId,
+          storedFile.storageKey,
+          storedFile.storageProvider,
+          storedFile.storageBucket,
+          safeName,
+          mimeType,
+          file.size,
+          storedFile.sha256,
+          context.profileId,
+        ],
       );
 
       await client.query(
@@ -444,13 +469,26 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
             document_id,
             version_number,
             storage_key,
+            storage_provider,
+            storage_bucket,
             file_name,
             file_size_bytes,
+            content_sha256,
             uploaded_by_profile_id
           )
-          values ($1, $2, 1, $3, $4, $5, $6)
+          values ($1, $2, 1, $3, $4, $5, $6, $7, $8)
         `,
-        [context.organizationId, documentId, storageKey, safeName, file.size, context.profileId],
+        [
+          context.organizationId,
+          documentId,
+          storedFile.storageKey,
+          storedFile.storageProvider,
+          storedFile.storageBucket,
+          safeName,
+          file.size,
+          storedFile.sha256,
+          context.profileId,
+        ],
       );
     }
 
@@ -533,6 +571,11 @@ export async function updateDocument(formData: FormData): Promise<ActionResult> 
   const fileError = validateDocumentFile(file);
   if (fileError) return fileError;
 
+  if (file) {
+    const storageError = requireObjectStorageForProduction();
+    if (storageError) return storageError;
+  }
+
   if (issuedAt && expiresAt && expiresAt < issuedAt) {
     return { ok: false, message: "Η λήξη δεν μπορεί να είναι πριν την έκδοση." };
   }
@@ -541,12 +584,19 @@ export async function updateDocument(formData: FormData): Promise<ActionResult> 
     let storageKey: string | null = null;
     let safeName: string | null = null;
     let mimeType: string | null = null;
+    let storedFile: Awaited<ReturnType<typeof uploadObject>> | null = null;
 
     if (file) {
       safeName = sanitizeFileName(file.name);
       const extension = safeName.includes(".") ? safeName.slice(safeName.lastIndexOf(".")) : ".pdf";
       storageKey = `uploads/${context.organizationId}/${crypto.randomUUID()}-${storageSlug(title)}${extension}`;
       mimeType = file.type || "application/octet-stream";
+      storedFile = await uploadObject({
+        key: storageKey,
+        body: Buffer.from(await file.arrayBuffer()),
+        contentType: mimeType,
+        fileName: safeName,
+      });
     }
 
     await client.query(
@@ -609,8 +659,7 @@ export async function updateDocument(formData: FormData): Promise<ActionResult> 
       );
     }
 
-    if (file && storageKey && safeName && mimeType) {
-      const content = Buffer.from(await file.arrayBuffer());
+    if (file && storageKey && safeName && mimeType && storedFile) {
       const version = await client.query<{ version_number: number }>(
         `
           select coalesce(max(version_number), 0) + 1 as version_number
@@ -626,15 +675,28 @@ export async function updateDocument(formData: FormData): Promise<ActionResult> 
             organization_id,
             document_id,
             storage_key,
+            storage_provider,
+            storage_bucket,
             file_name,
             mime_type,
             file_size_bytes,
-            content,
+            content_sha256,
             uploaded_by_profile_id
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         `,
-        [context.organizationId, documentId, storageKey, safeName, mimeType, file.size, content, context.profileId],
+        [
+          context.organizationId,
+          documentId,
+          storedFile.storageKey,
+          storedFile.storageProvider,
+          storedFile.storageBucket,
+          safeName,
+          mimeType,
+          file.size,
+          storedFile.sha256,
+          context.profileId,
+        ],
       );
 
       await client.query(
@@ -644,19 +706,25 @@ export async function updateDocument(formData: FormData): Promise<ActionResult> 
             document_id,
             version_number,
             storage_key,
+            storage_provider,
+            storage_bucket,
             file_name,
             file_size_bytes,
+            content_sha256,
             uploaded_by_profile_id
           )
-          values ($1, $2, $3, $4, $5, $6, $7)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `,
         [
           context.organizationId,
           documentId,
           version.rows[0]?.version_number ?? 1,
-          storageKey,
+          storedFile.storageKey,
+          storedFile.storageProvider,
+          storedFile.storageBucket,
           safeName,
           file.size,
+          storedFile.sha256,
           context.profileId,
         ],
       );

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDbPool, withTenant } from "@/lib/db/client";
+import { objectStorageHealth } from "@/lib/storage/object-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ const REQUIRED_TABLES = [
   "assets",
   "documents",
   "document_files",
+  "console_snapshots",
   "issues",
   "maintenance_tasks",
   "operators",
@@ -22,13 +24,38 @@ const REQUIRED_TABLES = [
 
 const DEMO_ORGANIZATION_ID = process.env.FLEETLEVER_DEMO_ORGANIZATION_ID ?? "00000000-0000-4000-8000-000000000001";
 const DEMO_PROFILE_ID = process.env.FLEETLEVER_DEMO_PROFILE_ID ?? "00000000-0000-4000-8000-000000000101";
+const KNOWN_DEMO_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
+const KNOWN_DEMO_PROFILE_ID = "00000000-0000-4000-8000-000000000101";
+const isProductionDeployment = process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT);
+
+function healthTenant() {
+  const organizationId = process.env.FLEETLEVER_DEFAULT_ORGANIZATION_ID;
+  const profileId = process.env.FLEETLEVER_DEFAULT_PROFILE_ID;
+
+  if (organizationId && profileId) {
+    return {
+      kind: organizationId === KNOWN_DEMO_ORGANIZATION_ID || profileId === KNOWN_DEMO_PROFILE_ID ? "demo-configured" : "configured",
+      organizationId,
+      profileId,
+    };
+  }
+
+  return {
+    kind: "demo",
+    organizationId: DEMO_ORGANIZATION_ID,
+    profileId: DEMO_PROFILE_ID,
+  };
+}
 
 export async function GET() {
+  const storage = objectStorageHealth();
+
   if (!process.env.DATABASE_URL) {
     return NextResponse.json(
       {
         ok: false,
         service: "fleetlever",
+        storage,
         database: {
           configured: false,
           reachable: false,
@@ -60,8 +87,9 @@ export async function GET() {
 
     const missingTables = tableResult.rows.filter((row) => !row.exists).map((row) => row.table_name);
     const database = dbResult.rows[0];
+    const tenant = healthTenant();
     const tenantResult = !missingTables.includes("organization_members")
-      ? await withTenant({ organizationId: DEMO_ORGANIZATION_ID, profileId: DEMO_PROFILE_ID }, async () => ({ active: true }))
+      ? await withTenant({ organizationId: tenant.organizationId, profileId: tenant.profileId }, async () => ({ active: true }))
           .catch(() => ({ active: false }))
       : { active: false };
     const migrationsResult = migrationTableResult.rows[0]?.exists
@@ -70,9 +98,13 @@ export async function GET() {
         )
       : { rows: [{ applied: [] }] };
 
+    const tenantProductionReady = !isProductionDeployment || tenant.kind === "configured";
+    const ok = missingTables.length === 0 && (!storage.required || storage.configured) && tenantProductionReady && tenantResult.active;
+
     return NextResponse.json({
-      ok: missingTables.length === 0,
+      ok,
       service: "fleetlever",
+      storage,
       database: {
         configured: true,
         reachable: true,
@@ -85,16 +117,18 @@ export async function GET() {
         requiredTables: REQUIRED_TABLES.length,
         missingTables,
       },
-      demoTenant: {
-        organizationId: DEMO_ORGANIZATION_ID,
-        profileId: DEMO_PROFILE_ID,
+      tenant: {
+        kind: tenant.kind,
+        organizationId: tenant.organizationId,
+        profileId: tenant.profileId,
         active: tenantResult.active,
+        productionReady: tenantProductionReady,
       },
       migrations: {
         tableExists: Boolean(migrationTableResult.rows[0]?.exists),
         applied: migrationsResult.rows[0]?.applied ?? [],
       },
-    }, { status: missingTables.length === 0 ? 200 : 503 });
+    }, { status: ok ? 200 : 503 });
   } catch (error) {
     console.error("FleetLever health check failed", error);
 
@@ -102,6 +136,7 @@ export async function GET() {
       {
         ok: false,
         service: "fleetlever",
+        storage,
         database: {
           configured: true,
           reachable: false,

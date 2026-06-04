@@ -4,17 +4,63 @@ import pg from "pg";
 
 const { Pool } = pg;
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrls = [
+  process.env.MIGRATION_DATABASE_URL,
+  process.env.DATABASE_PUBLIC_URL,
+  process.env.DATABASE_URL,
+].filter(Boolean);
+const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT);
 
-if (!databaseUrl) {
-  console.error("DATABASE_URL is required.");
+if (!databaseUrls.length) {
+  console.error("MIGRATION_DATABASE_URL, DATABASE_PUBLIC_URL, or DATABASE_URL is required.");
   process.exit(1);
 }
 
-const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
-});
+if (process.env.SEED_DEMO === "true" && isProduction && process.env.FLEETLEVER_ALLOW_PRODUCTION_DEMO_SEED !== "true") {
+  console.error("Refusing to seed demo data in production. Set FLEETLEVER_ALLOW_PRODUCTION_DEMO_SEED=true only for an intentional staging/demo environment.");
+  process.exit(1);
+}
+
+function createPool(databaseUrl) {
+  return new Pool({
+    connectionString: databaseUrl,
+    ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  });
+}
+
+function connectionHost(databaseUrl) {
+  try {
+    return new URL(databaseUrl).hostname;
+  } catch {
+    return "unknown-host";
+  }
+}
+
+async function connectWithFallback() {
+  let lastError;
+
+  for (const databaseUrl of [...new Set(databaseUrls)]) {
+    const pool = createPool(databaseUrl);
+
+    try {
+      const client = await pool.connect();
+      return { client, pool, databaseUrl };
+    } catch (error) {
+      await pool.end().catch(() => {});
+      lastError = error;
+      const hostname = connectionHost(databaseUrl);
+
+      if (hostname.endsWith(".railway.internal")) {
+        console.warn(`Could not reach ${hostname}; trying the next configured database URL.`);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
 
 async function ensureMigrationTable(client) {
   await client.query(`
@@ -53,9 +99,10 @@ async function runSqlDirectory(client, directory, tableName = "schema_migrations
 }
 
 async function main() {
-  const client = await pool.connect();
+  const { client, pool, databaseUrl } = await connectWithFallback();
 
   try {
+    console.log(`using database host ${connectionHost(databaseUrl)}`);
     await client.query("select pg_advisory_lock(hashtext('fleetlever_migrations'))");
     await ensureMigrationTable(client);
     await runSqlDirectory(client, join(process.cwd(), "db", "migrations"));

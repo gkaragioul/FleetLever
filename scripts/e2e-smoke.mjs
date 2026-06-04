@@ -3,33 +3,21 @@ import net from "node:net";
 import process from "node:process";
 import { chromium } from "playwright";
 
-const TAB_LABELS = [
-  "Κέντρο στόλου",
-  "Πάγια",
-  "Έγγραφα",
-  "Συμμόρφωση",
-  "Συντήρηση",
-  "Βλάβες",
-  "Χειριστές",
-  "Ημερολόγιο",
-  "Αναφορές",
+const APP_PATH = process.env.E2E_APP_PATH ?? "/console";
+const NAV_LABELS = [
+  "Tomorrow's Work",
+  "Worksites",
+  "Action Queue",
+  "Machines",
+  "Documents",
+  "Workshop",
+  "Release History",
+  "Settings",
 ];
-
-const MODAL_CHECKS = [
-  { tab: "Πάγια", button: /Νέο πάγιο/ },
-  { tab: "Έγγραφα", button: /Ανέβασμα εγγράφου/ },
-  { tab: "Συμμόρφωση", button: /Νέος κανόνας/ },
-  { tab: "Συντήρηση", button: /Νέα εργασία/ },
-  { tab: "Βλάβες", button: /Νέα βλάβη/ },
-  { tab: "Χειριστές", button: /Νέος χειριστής/ },
-];
-
-const CONSOLE_PATH = process.env.E2E_APP_PATH ?? "/";
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
-
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => {
       const address = server.address();
@@ -88,39 +76,9 @@ async function startServer() {
   };
 }
 
-async function openTab(page, label) {
-  await page.getByRole("tab", { name: label }).first().click();
+async function openNav(page, label) {
+  await page.getByRole("button", { name: label, exact: true }).first().click();
   await page.waitForTimeout(120);
-}
-
-async function closeDialog(page) {
-  await page.getByRole("button", { name: /^Κλείσιμο/ }).last().click();
-  await page.getByRole("dialog").waitFor({ state: "detached", timeout: 5000 });
-}
-
-async function healthStatus(baseUrl) {
-  const response = await fetch(`${baseUrl}/api/health`, { cache: "no-store" });
-  const body = await response.json().catch(() => ({}));
-
-  return {
-    ok: response.ok && body.ok === true,
-    status: response.status,
-    body,
-  };
-}
-
-async function assertOneHeading(page, label) {
-  const visibleCount = await page.locator("h1").evaluateAll((headings) =>
-    headings.filter((heading) => {
-      const style = window.getComputedStyle(heading);
-      const rect = heading.getBoundingClientRect();
-      return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
-    }).length,
-  );
-
-  if (visibleCount !== 1) {
-    throw new Error(`${label}: expected one visible h1, found ${visibleCount}`);
-  }
 }
 
 async function assertNoConsoleErrors(page, failures) {
@@ -137,133 +95,73 @@ async function assertNoConsoleErrors(page, failures) {
   };
 }
 
-async function exerciseModals(page) {
-  for (const check of MODAL_CHECKS) {
-    await openTab(page, check.tab);
-    await page.getByRole("button", { name: check.button }).first().click();
-    await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-    await closeDialog(page);
+async function assertVisibleHeading(page, name) {
+  await page.getByRole("heading", { name }).first().waitFor({ state: "visible", timeout: 5000 });
+}
+
+async function exerciseNavigation(page) {
+  const expectedHeadings = {
+    "Tomorrow's Work": /Will tomorrow's work start|Know Before Tomorrow/i,
+    Worksites: "Worksites",
+    "Action Queue": "Action Queue",
+    Machines: "Machines",
+    Documents: "Documents",
+    Workshop: "Workshop",
+    "Release History": "Release History",
+    Settings: "Settings",
+  };
+
+  for (const label of NAV_LABELS) {
+    await openNav(page, label);
+    await assertVisibleHeading(page, expectedHeadings[label]);
   }
 }
 
-async function exerciseOperationalControls(page) {
-  await page.getByRole("button", { name: /Ειδοποιήσεις/ }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await closeDialog(page);
+async function exerciseGlobalSearch(page) {
+  const search = page.getByPlaceholder(/Search machine, worksite/i);
+  await search.fill("CR-");
+  await page.getByText(/Search FleetLever/i).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: /CR-04[\s\S]*Liebherr LTM 1040 Crane/ }).first().click();
+  await assertVisibleHeading(page, "Machines");
+  await page.getByRole("heading", { name: /CR-04/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/This machine will stop/i).waitFor({ state: "visible", timeout: 5000 });
 
-  await page.getByRole("button", { name: /Περισσότερες ενέργειες/ }).first().click();
-  await page.getByRole("menu").waitFor({ state: "visible", timeout: 5000 });
-  await page.keyboard.press("Escape");
-
-  await openTab(page, "Πάγια");
-  await page.getByRole("button", { name: /CR-04/ }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await closeDialog(page);
-
-  await openTab(page, "Έγγραφα");
-  await page.getByRole("button", { name: /Μαζικό ανέβασμα/ }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("heading", { name: /Import δεδομένων/ }).waitFor({ state: "visible", timeout: 5000 });
-  await closeDialog(page);
-
-  await openTab(page, "Βλάβες");
-  await page.getByRole("button", { name: /Επεξεργασία/ }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await closeDialog(page);
-}
-
-async function exerciseLogoHomeNavigation(page) {
-  await openTab(page, "Έγγραφα");
-  await page.getByRole("button", { name: "Μετάβαση στο Κέντρο στόλου" }).first().click();
-  await page.getByRole("heading", { name: "Σήμερα στον στόλο" }).waitFor({ state: "visible", timeout: 5000 });
-}
-
-async function exerciseDashboardRecordLinks(page) {
-  await openTab(page, "Κέντρο στόλου");
-  await page.getByRole("button", { name: /B-12 KTEO/ }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("heading", { name: /B-12 έλεγχος KTEO/ }).waitFor({ state: "visible", timeout: 5000 });
-  await closeDialog(page);
-
-  await openTab(page, "Κέντρο στόλου");
-  await page.getByRole("button", { name: /EX-01/ }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await page.locator('input[name="title"]').waitFor({ state: "visible", timeout: 5000 });
-  const issueTitle = await page.locator('input[name="title"]').inputValue();
-  if (!issueTitle.includes("Πτώση υδραυλικής πίεσης")) {
-    throw new Error(`Dashboard EX-01 assignment opened the wrong issue: ${issueTitle}`);
+  await openNav(page, "Worksites");
+  const searchValue = await search.inputValue();
+  if (searchValue) {
+    throw new Error(`Search was not cleared after navigation: ${searchValue}`);
   }
-  await closeDialog(page);
+  await page.getByRole("heading", { name: "Worksites" }).waitFor({ state: "visible", timeout: 5000 });
 }
 
-async function exerciseDashboardMetricDrilldowns(page) {
-  await openTab(page, "Κέντρο στόλου");
-  await page.getByRole("button", { name: /Έτοιμα\s+1\s+Μπορούν να ανατεθούν/ }).first().click();
-  await page.getByRole("heading", { name: /Τι μπορεί να ανατεθεί σήμερα/ }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: "Έτοιμα", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+async function exerciseWorkshop(page) {
+  await openNav(page, "Workshop");
+  await page.getByRole("button", { name: /New service job/ }).click();
+  await page.getByRole("heading", { name: "New service job" }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByLabel("Job").fill(`QA steering check ${Date.now()}`);
+  await page.getByRole("button", { name: /Add to board/ }).click();
+  await page.getByText(/QA steering check/).waitFor({ state: "visible", timeout: 5000 });
 
-  await openTab(page, "Κέντρο στόλου");
-  await page.getByRole("button", { name: /Μη διαθέσιμα\s+2\s+Μένουν εκτός/ }).first().click();
-  await page.getByRole("heading", { name: /Τι μπορεί να ανατεθεί σήμερα/ }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: "Δεν ανατίθενται", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+  const card = page.getByRole("button", { name: /QA steering check/ }).first();
+  const doingLane = page.locator('[data-workshop-drop-status="In Progress"]').first();
+  const cardBox = await card.boundingBox();
+  const laneBox = await doingLane.boundingBox();
+  if (!cardBox || !laneBox) throw new Error("Workshop drag target was not measurable.");
 
-  await openTab(page, "Κέντρο στόλου");
-  await page.getByRole("button", { name: /Λήξεις\s+4\s+Έγγραφα με προθεσμία/ }).first().click();
-  await page.getByRole("heading", { name: /Έγγραφα που θέλουν ενέργεια/ }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: "Θέλουν ενέργεια 4", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+  await page.mouse.move(cardBox.x + 20, cardBox.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(laneBox.x + laneBox.width / 2, laneBox.y + laneBox.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
 
-  await openTab(page, "Κέντρο στόλου");
-  await page.getByRole("button", { name: /Service\s+\d+\s+Εκπρόθεσμες εργασίες/ }).first().click();
-  await page.getByRole("heading", { name: /Τι service πρέπει να γίνει/ }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: "Εκπρόθεσμες", pressed: true, exact: true }).waitFor({ state: "visible", timeout: 5000 });
+  await doingLane.getByText(/QA steering check/).waitFor({ state: "visible", timeout: 5000 });
 }
 
-async function exerciseNestedRecordLinks(page) {
-  await openTab(page, "Πάγια");
-  await page.locator("button").filter({ hasText: "Mercedes Tourismo" }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("heading", { name: /B-12 · Mercedes Tourismo/ }).waitFor({ state: "visible", timeout: 5000 });
-
-  await page.getByRole("button", { name: /Blocking βλάβη/ }).first().click();
-  await page.locator('input[name="title"]').waitFor({ state: "visible", timeout: 5000 });
-  const issueTitle = await page.locator('input[name="title"]').inputValue();
-  if (!issueTitle.includes("Ληγμένο KTEO")) {
-    throw new Error(`Nested Blocking βλάβη opened the wrong issue: ${issueTitle}`);
-  }
-  await closeDialog(page);
-
-  await openTab(page, "Πάγια");
-  await page.locator("button").filter({ hasText: "Mercedes Tourismo" }).first().click();
-  await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: /Λήξη εγγράφου/ }).first().click();
-  await page.getByRole("heading", { name: /B-12 έλεγχος KTEO/ }).waitFor({ state: "visible", timeout: 5000 });
-  await closeDialog(page);
-}
-
-async function optionalDatabaseMutation(page, baseUrl, health) {
-  if (!health.ok || process.env.E2E_MUTATE_DB !== "1") {
-    return {
-      skipped: true,
-      reason: health.ok ? "Set E2E_MUTATE_DB=1 to run write-path checks." : "Database health is not ready.",
-    };
-  }
-
-  const code = `QA-${Date.now().toString().slice(-6)}`;
-  await openTab(page, "Πάγια");
-  await page.getByRole("button", { name: /Νέο πάγιο/ }).first().click();
-  await page.getByLabel("Κωδικός").fill(code);
-  await page.getByLabel("Όνομα").fill("QA Smoke Asset");
-  await page.getByRole("button", { name: "Αποθήκευση" }).click();
-  await page.getByRole("status").waitFor({ state: "visible", timeout: 8000 });
-
-  const snapshot = await fetch(`${baseUrl}/api/fleetlever/snapshot`, { cache: "no-store" }).then((response) => response.json());
-  const created = Array.isArray(snapshot.assets) && snapshot.assets.some((asset) => asset.code === code);
-
-  if (!created) {
-    throw new Error(`Database mutation smoke did not find created asset ${code}`);
-  }
-
-  return { skipped: false, code };
+async function exerciseReleaseHistory(page) {
+  await openNav(page, "Release History");
+  await page.getByRole("button", { name: /View packet/ }).first().click();
+  await page.getByRole("heading", { name: /CR-04 release decision/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: "Close" }).click();
 }
 
 async function main() {
@@ -272,54 +170,30 @@ async function main() {
   const failures = [];
 
   try {
-    const health = await healthStatus(server.url);
-    const page = await browser.newPage({ viewport: { width: 1280, height: 840 } });
-    const collectConsoleErrors = await assertNoConsoleErrors(page, failures);
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const flushConsoleErrors = await assertNoConsoleErrors(page, failures);
 
-    await page.goto(new URL(CONSOLE_PATH, server.url).toString(), { waitUntil: "networkidle" });
+    await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "networkidle" });
+    await exerciseNavigation(page);
+    await exerciseGlobalSearch(page);
+    await exerciseWorkshop(page);
+    await exerciseReleaseHistory(page);
 
-    for (const label of TAB_LABELS) {
-      await openTab(page, label);
-      await assertOneHeading(page, label);
-    }
-
-    await exerciseModals(page);
-    await exerciseOperationalControls(page);
-    await exerciseLogoHomeNavigation(page);
-    await exerciseDashboardRecordLinks(page);
-    await exerciseDashboardMetricDrilldowns(page);
-    await exerciseNestedRecordLinks(page);
-
-    const mutation = await optionalDatabaseMutation(page, server.url, health);
-    collectConsoleErrors();
-
+    flushConsoleErrors();
     await page.close();
-
-    if (failures.length) {
-      throw new Error(failures.map((failure) => `- ${failure}`).join("\n"));
-    }
-
-    console.log(
-      JSON.stringify(
-        {
-          ok: true,
-          health: {
-            ok: health.ok,
-            status: health.status,
-            databaseConfigured: health.body.database?.configured ?? false,
-            databaseReachable: health.body.database?.reachable ?? false,
-            missingTables: health.body.schema?.missingTables ?? [],
-          },
-          mutation,
-        },
-        null,
-        2,
-      ),
-    );
+  } catch (error) {
+    failures.push(error.message);
   } finally {
     await browser.close();
     server.stop();
   }
+
+  if (failures.length) {
+    console.error(failures.map((failure) => `- ${failure}`).join("\n"));
+    process.exit(1);
+  }
+
+  console.log("E2E smoke passed: current console navigation, search, drawers, workshop drag, and evidence packets are wired.");
 }
 
 main().catch((error) => {

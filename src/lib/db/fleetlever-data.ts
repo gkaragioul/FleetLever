@@ -335,6 +335,10 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
 
 export async function getFleetLeverData(context?: TenantContext): Promise<FleetLeverData> {
   if (!process.env.DATABASE_URL) {
+    if (process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT) {
+      throw new Error("DATABASE_URL is required in production.");
+    }
+
     return fallbackFleetData;
   }
 

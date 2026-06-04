@@ -5,18 +5,22 @@ import Image from "next/image";
 import {
   BadgeCheck,
   Bell,
+  Bot,
   Building2,
   CalendarDays,
   ChevronDown,
   CircleUserRound,
   ArrowRight,
   Download,
+  FileText,
+  GripVertical,
   History,
   Menu,
   Plus,
   Search,
-  Settings,
+  Send,
   ShieldAlert,
+  Sparkles,
   Smartphone,
   Upload,
   Wrench,
@@ -32,8 +36,7 @@ type ViewKey =
   | "blockers"
   | "certificates"
   | "service"
-  | "history"
-  | "settings";
+  | "history";
 type DrawerMode = "why" | "passport";
 type PassportTab = "overview" | "documents" | "service" | "issues" | "photos" | "history";
 
@@ -123,8 +126,49 @@ type OperationalNotification = {
   read: boolean;
 };
 
+type ConsoleSnapshot = {
+  organizationName?: string;
+  schemaVersion: 1;
+  machines: Machine[];
+  notifications: OperationalNotification[];
+  releaseHistory: ReleaseRecord[];
+  updatedAt: string;
+  worksites: Worksite[];
+};
+
+type ServerConsoleSnapshotPayload = {
+  dataSource?: "database" | "database-derived" | "server-file" | "empty";
+  production?: boolean;
+  snapshot?: Partial<ConsoleSnapshot> | null;
+};
+
 type BlockerKind = "certificate" | "service";
 type UploadSource = "action-queue" | "documents" | "passport";
+type WorkshopJobDraft = {
+  machineId: string;
+  issue: string;
+  owner: string;
+  due: string;
+  blocksRelease: boolean;
+};
+type LeavyIntent = "morning-check" | "blockers" | "next-action" | "documents" | "workshop" | "history";
+type LeavyMessage = {
+  id: number;
+  role: "leavy" | "user";
+  text: string;
+  bullets?: string[];
+};
+type WorkshopDragState = {
+  jobId: string;
+  x: number;
+  y: number;
+  startX: number;
+  startY: number;
+  width: number;
+  height: number;
+  offsetX: number;
+  offsetY: number;
+};
 
 type DrawerAction =
   | { type: "assign-owner"; blockerId?: string }
@@ -133,17 +177,18 @@ type DrawerAction =
   | { type: "override" }
   | null;
 
-const clientName = "Athens Crane Services";
+const defaultClientName = "FleetLever Developer";
+const allowDemoConsoleData = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_FLEETLEVER_ALLOW_DEMO_CONSOLE === "true";
 
 const teamMembers: TeamMember[] = [
   { name: "Dimitris", role: "Fleet Coordinator" },
   { name: "Maria", role: "Compliance" },
   { name: "Kostas", role: "Service Lead" },
-  { name: "Workshop", role: "Workshop Queue" },
+  { name: "Workshop", role: "Service Team" },
   { name: "George", role: "Operations Manager" },
 ];
 
-const worksites: Worksite[] = [
+const seedWorksites: Worksite[] = [
   {
     id: "athens-metro",
     name: "Athens Metro Extension",
@@ -167,7 +212,7 @@ const worksites: Worksite[] = [
   },
 ];
 
-const machines: Machine[] = [
+const seedMachines: Machine[] = [
   {
     id: "cr04",
     code: "CR-04",
@@ -221,6 +266,22 @@ const machines: Machine[] = [
         due: "Today",
         status: "Open",
       },
+      {
+        issue: "Boom grease points check",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Today",
+        status: "Open",
+      },
+      {
+        issue: "Outrigger pad inspection",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Tomorrow morning",
+        status: "Open",
+      },
     ],
     issues: [
       { title: "Periodic inspection missing", severity: "Critical", owner: "Maria", status: "Open" },
@@ -268,6 +329,22 @@ const machines: Machine[] = [
         due: "Completed",
         status: "Resolved",
       },
+      {
+        issue: "Bucket teeth wear check",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Today",
+        status: "Open",
+      },
+      {
+        issue: "Track tension adjustment",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Tomorrow morning",
+        status: "Open",
+      },
     ],
     issues: [],
     photos: [{ title: "Service completion", category: "Service", date: "1 June" }],
@@ -300,7 +377,24 @@ const machines: Machine[] = [
         action: "Renew inspection",
       },
     ],
-    service: [],
+    service: [
+      {
+        issue: "Brake pressure test",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Today",
+        status: "Open",
+      },
+      {
+        issue: "Tailgate latch repair",
+        severity: "Low",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Tomorrow noon",
+        status: "Open",
+      },
+    ],
     issues: [{ title: "Inspection due soon", severity: "Medium", owner: "Maria", status: "Open" }],
     photos: [{ title: "Rental handover", category: "Handover", date: "27 May" }],
   },
@@ -341,6 +435,22 @@ const machines: Machine[] = [
         due: "Today",
         status: "In Progress",
       },
+      {
+        issue: "Tyre sidewall inspection",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Today",
+        status: "Open",
+      },
+      {
+        issue: "Cab steps safety repair",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Tomorrow morning",
+        status: "Open",
+      },
     ],
     issues: [{ title: "Hydraulic leak reported", severity: "High", owner: "Workshop", status: "Open" }],
     photos: [{ title: "Hydraulic hose", category: "Condition", date: "1 June" }],
@@ -373,13 +483,30 @@ const machines: Machine[] = [
         action: "No action",
       },
     ],
-    service: [],
+    service: [
+      {
+        issue: "Battery terminal inspection",
+        severity: "Low",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Today",
+        status: "Open",
+      },
+      {
+        issue: "Fuel filter replacement",
+        severity: "Medium",
+        blocksRelease: false,
+        owner: "Workshop",
+        due: "Tomorrow noon",
+        status: "Open",
+      },
+    ],
     issues: [],
     photos: [{ title: "Condition check", category: "Inspection", date: "31 May" }],
   },
 ];
 
-const releaseHistory: ReleaseRecord[] = [
+const seedReleaseHistory: ReleaseRecord[] = [
   {
     date: "1 June",
     worksite: "Athens Metro Extension",
@@ -416,7 +543,7 @@ const releaseHistory: ReleaseRecord[] = [
     machine: "LD-03",
     result: "Cannot Be Released",
     reason: "Hydraulic service blocker",
-    action: "Workshop assigned",
+    action: "Service assigned",
     user: "Kostas",
     override: "No",
   },
@@ -425,45 +552,198 @@ const releaseHistory: ReleaseRecord[] = [
 const initialNotifications: OperationalNotification[] = [
   {
     id: 1,
-    title: "CR-04 certificate blocks release",
+    title: "CR-04 certificate could stop work",
     detail: "Dimitris owns the lifting certificate renewal.",
     createdAt: "Today, 07:05",
     read: false,
   },
   {
     id: 2,
-    title: "LD-03 service blocker open",
-    detail: "Workshop must complete the hydraulic service action.",
+    title: "LD-03 service job could stop work",
+    detail: "Workshop team must complete the hydraulic check.",
     createdAt: "Today, 07:10",
     read: false,
   },
   {
     id: 3,
-    title: "Daily morning report ready",
+    title: "Tomorrow check ready",
     detail: "2 ready, 1 review, 2 blocked for Athens Metro Extension.",
     createdAt: "Today, 07:30",
     read: false,
   },
 ];
 
+const emptyWorksite: Worksite = {
+  id: "no-worksite",
+  name: "No work package selected",
+  location: "Add assets and work packages to start release planning",
+  date: "Not scheduled",
+  requiredMachineIds: [],
+};
+
+const emptyMachine: Machine = {
+  id: "no-machine",
+  code: "-",
+  name: "No machine selected",
+  type: "Machine",
+  manufacturer: "FleetLever",
+  model: "Not set",
+  serial: "Not set",
+  ownership: "Owned",
+  worksiteId: emptyWorksite.id,
+  state: "ready",
+  reason: "No machine data loaded",
+  owner: "Unassigned",
+  nextAction: "-",
+  eta: "-",
+  lastUpdated: "Not synced",
+  activeBlockers: "0",
+  documents: "0 files",
+  certificates: [],
+  service: [],
+  issues: [],
+  photos: [],
+};
+
+const worksites: Worksite[] = allowDemoConsoleData ? cloneConsoleData(seedWorksites) : [];
+const machines: Machine[] = allowDemoConsoleData ? cloneConsoleData(seedMachines) : [];
+const releaseHistory: ReleaseRecord[] = allowDemoConsoleData ? cloneConsoleData(seedReleaseHistory) : [];
+
+const consoleSnapshotKey = "fleetlever-console-state-v1";
+const consoleSnapshotEndpoint = "/api/fleetlever/console-state";
+
+function cloneConsoleData<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function replaceConsoleArray<T>(target: T[], next: T[]) {
+  target.splice(0, target.length, ...cloneConsoleData(next));
+}
+
+function consoleSnapshot(notifications: OperationalNotification[], organizationName = defaultClientName): ConsoleSnapshot {
+  return {
+    organizationName,
+    schemaVersion: 1,
+    machines: cloneConsoleData(machines),
+    notifications: cloneConsoleData(notifications),
+    releaseHistory: cloneConsoleData(releaseHistory),
+    updatedAt: new Date().toISOString(),
+    worksites: cloneConsoleData(worksites),
+  };
+}
+
+function saveConsoleSnapshot(notifications: OperationalNotification[]) {
+  if (typeof window === "undefined") return;
+  if (!allowDemoConsoleData) return;
+  window.localStorage.setItem(consoleSnapshotKey, JSON.stringify(consoleSnapshot(notifications)));
+}
+
+function loadConsoleSnapshot() {
+  if (typeof window === "undefined") return null;
+  if (!allowDemoConsoleData) return null;
+  const rawSnapshot = window.localStorage.getItem(consoleSnapshotKey);
+  if (!rawSnapshot) return null;
+
+  try {
+    const parsed = JSON.parse(rawSnapshot) as Partial<ConsoleSnapshot>;
+    if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.machines) || !Array.isArray(parsed.worksites) || !Array.isArray(parsed.releaseHistory)) return null;
+    return parsed as ConsoleSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+async function loadServerConsoleSnapshot() {
+  const response = await fetch(consoleSnapshotEndpoint, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) return null;
+
+  const payload = await response.json() as ServerConsoleSnapshotPayload;
+  const snapshot = payload.snapshot;
+  if (
+    snapshot?.schemaVersion !== 1 ||
+    !Array.isArray(snapshot.machines) ||
+    !Array.isArray(snapshot.worksites) ||
+    !Array.isArray(snapshot.releaseHistory) ||
+    !Array.isArray(snapshot.notifications)
+  ) {
+    return null;
+  }
+
+  return snapshot as ConsoleSnapshot;
+}
+
+async function saveServerConsoleSnapshot(notifications: OperationalNotification[], organizationName = defaultClientName) {
+  await fetch(consoleSnapshotEndpoint, {
+    body: JSON.stringify(consoleSnapshot(notifications, organizationName)),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "PUT",
+  });
+}
+
+async function recordConsoleAction(payload: {
+  action: string;
+  detail: string;
+  metadata?: Record<string, unknown>;
+  recordId?: string;
+  recordTable?: string;
+  title: string;
+}) {
+  if (!process.env.NEXT_PUBLIC_FLEETLEVER_RECORD_CONSOLE_ACTIONS && allowDemoConsoleData) return;
+
+  await fetch("/api/fleetlever/console-actions", {
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+}
+
+let initialSnapshotRestored = false;
+let initialConsoleSnapshot: ConsoleSnapshot | null = null;
+
+function restoreInitialConsoleSnapshot() {
+  if (typeof window === "undefined") return null;
+  if (initialSnapshotRestored) return initialConsoleSnapshot;
+
+  initialSnapshotRestored = true;
+  initialConsoleSnapshot = loadConsoleSnapshot();
+
+  if (initialConsoleSnapshot) {
+    replaceConsoleArray(worksites, initialConsoleSnapshot.worksites);
+    replaceConsoleArray(machines, initialConsoleSnapshot.machines);
+    replaceConsoleArray(releaseHistory, initialConsoleSnapshot.releaseHistory);
+  }
+
+  return initialConsoleSnapshot;
+}
+
+function todayDecisionDate() {
+  return "Today";
+}
+
 const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: "tomorrow", label: "Tomorrow's Work", icon: CalendarDays },
   { key: "worksites", label: "Worksites", icon: Building2 },
-  { key: "blockers", label: "Action Queue", icon: ShieldAlert },
+  { key: "blockers", label: "Stop List", icon: ShieldAlert },
   { key: "machines", label: "Machines", icon: Building2 },
-  { key: "certificates", label: "Documents", icon: BadgeCheck },
-  { key: "service", label: "Workshop", icon: Wrench },
-  { key: "history", label: "Release History", icon: History },
-  { key: "settings", label: "Settings", icon: Settings },
+  { key: "certificates", label: "Evidence", icon: BadgeCheck },
+  { key: "service", label: "Service Jobs", icon: Wrench },
+  { key: "history", label: "Decision History", icon: History },
 ];
 
 const passportTabs: Array<{ key: PassportTab; label: string }> = [
   { key: "overview", label: "Overview" },
-  { key: "documents", label: "Documents" },
+  { key: "documents", label: "Evidence" },
   { key: "service", label: "Service" },
   { key: "issues", label: "Issues" },
   { key: "photos", label: "Photos" },
-  { key: "history", label: "Release History" },
+  { key: "history", label: "Decision History" },
 ];
 
 const assignmentChannels: Array<{ label: "In-app" | "SMS"; icon: React.ComponentType<{ className?: string }> }> = [
@@ -516,7 +796,7 @@ function isDueOverdue(dueIso: string) {
   return !Number.isNaN(date.getTime()) && date.getTime() < Date.now();
 }
 
-function emitPrototypeToast(message: string) {
+function emitConsoleToast(message: string) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent<string>("fleetlever:toast", { detail: message }));
 }
@@ -530,7 +810,41 @@ function downloadTextFile(filename: string, content: string) {
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
-  emitPrototypeToast(`${filename} exported.`);
+  emitConsoleToast(`${filename} exported.`);
+}
+
+function dateInputFromLabel(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+async function uploadConsoleFile(
+  file: File,
+  scope: string,
+  machine: Pick<Machine, "id" | "code">,
+  metadata: { documentCategory?: string; documentTitle?: string; expiresAt?: string } = {},
+) {
+  const formData = new FormData();
+  formData.set("file", file);
+  formData.set("scope", scope);
+  formData.set("assetId", machine.id);
+  formData.set("machineCode", machine.code);
+  if (metadata.documentTitle) formData.set("documentTitle", metadata.documentTitle);
+  if (metadata.documentCategory) formData.set("documentCategory", metadata.documentCategory);
+  if (metadata.expiresAt) formData.set("expiresAt", metadata.expiresAt);
+
+  const response = await fetch("/api/fleetlever/uploads", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? "Upload failed.");
+  }
+
+  return response.json();
 }
 
 function normalizeSearch(value: string) {
@@ -606,8 +920,202 @@ function Surface({
   return <section className={`rounded-lg border border-[#E2E8F0] bg-white shadow-sm ${className}`}>{children}</section>;
 }
 
+function LeavyAssistant({
+  counts,
+  machinesList,
+  onOpenMachine,
+  onToggle,
+  onViewOpen,
+  open,
+  selectedWorksite,
+}: {
+  counts: { ready: number; attention: number; blocked: number; total: number };
+  machinesList: Machine[];
+  onOpenMachine: (machine: Machine) => void;
+  onToggle: () => void;
+  onViewOpen: (view: ViewKey) => void;
+  open: boolean;
+  selectedWorksite: Worksite;
+}) {
+  const [messages, setMessages] = useState<LeavyMessage[]>([
+    {
+      id: 1,
+      role: "leavy",
+      text: "I can help you know before tomorrow. Pick a question and I’ll use the current FleetLever data.",
+      bullets: [`${counts.ready}/${counts.total} ready`, `${counts.blocked} blockers`, `${counts.attention} need review`],
+    },
+  ]);
+  const [draft, setDraft] = useState("");
+  const messageIdRef = useRef(1);
+  const blockedMachines = machinesForWorksite(selectedWorksite).filter((machine) => machine.state === "blocked");
+  const primaryBlockedMachine = blockedMachines[0];
+  const quickOptions: Array<{ label: string; intent: LeavyIntent; view?: ViewKey }> = [
+    { label: "What stops tomorrow?", intent: "morning-check", view: "tomorrow" },
+    { label: "Show blockers", intent: "blockers", view: "blockers" },
+    { label: "Best next action", intent: "next-action", view: "blockers" },
+    { label: "Evidence risks", intent: "documents", view: "certificates" },
+    { label: "Service jobs", intent: "workshop", view: "service" },
+  ];
+
+  function askLeavy(label: string, intent: LeavyIntent, view?: ViewKey) {
+    messageIdRef.current += 1;
+    const userMessage: LeavyMessage = { id: messageIdRef.current, role: "user", text: label };
+    messageIdRef.current += 1;
+    const answer = { ...leavyAnswerForIntent(intent, selectedWorksite, machinesList), id: messageIdRef.current };
+    setMessages((current) => [...current.slice(-5), userMessage, answer]);
+    if (view) onViewOpen(view);
+  }
+
+  function submitDraft(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = draft.trim();
+    if (!value) return;
+    const normalized = value.toLowerCase();
+    const intent: LeavyIntent =
+      normalized.includes("document") || normalized.includes("certificate") || normalized.includes("inspection")
+        ? "documents"
+        : normalized.includes("workshop") || normalized.includes("service")
+          ? "workshop"
+          : normalized.includes("history") || normalized.includes("evidence")
+            ? "history"
+            : normalized.includes("action") || normalized.includes("owner") || normalized.includes("next")
+              ? "next-action"
+              : normalized.includes("block")
+                ? "blockers"
+                : "morning-check";
+    askLeavy(value, intent);
+    setDraft("");
+  }
+
+  if (!open) {
+    return (
+      <div className="fixed bottom-5 left-5 z-[70]">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="group relative inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#20B7C9] text-[#062321] shadow-[0_18px_45px_rgba(8,47,73,0.35)] ring-4 ring-[#0D2F2D] transition hover:-translate-y-0.5 hover:bg-[#67E8F9] focus:outline-none focus:ring-4 focus:ring-[#B7F5F7]"
+          aria-label="Open Leavy assistant"
+        >
+          <Bot className="h-6 w-6" aria-hidden="true" />
+          {counts.blocked ? (
+            <span className="absolute -right-1 -top-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-[#0D2F2D] bg-[#FEE2E2] px-1.5 text-[11px] font-black text-[#B91C1C]">
+              {counts.blocked}
+            </span>
+          ) : null}
+          <span className="pointer-events-none absolute left-16 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded-full bg-[#102A27] px-3 py-1.5 text-xs font-bold text-white shadow-xl group-hover:block">
+            Ask Leavy
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-5 left-5 z-[70]">
+      <section className="flex max-h-[560px] w-[340px] flex-col overflow-hidden rounded-2xl border border-[#D9E2EC] bg-white text-[#102A27] shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
+        <div className="flex items-start justify-between gap-3 bg-[#0D2F2D] p-4 text-white">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#20B7C9] text-[#062321] ring-2 ring-white/15">
+              <Bot className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-base font-black text-white">Leavy</h2>
+              <p className="mt-0.5 text-xs font-semibold text-white/70">FleetLever assistant preview</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/75 transition hover:bg-white/10 hover:text-white"
+            aria-label="Close Leavy assistant"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="min-h-0 space-y-3 overflow-y-auto p-4">
+          <div className="rounded-xl bg-[#F6F5F2] p-3">
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wide text-[#008C91]">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              Current account data
+            </div>
+            <p className="mt-1 text-sm font-bold">{selectedWorksite.name}</p>
+            <p className="mt-1 text-xs font-semibold text-[#64748B]">
+              {counts.ready} ready · {counts.attention} review · {counts.blocked} blocked
+            </p>
+          </div>
+
+          <div className="max-h-44 space-y-2 overflow-y-auto pr-1">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`rounded-2xl px-3 py-2.5 text-sm ${
+                  message.role === "user" ? "ml-8 bg-[#20B7C9] text-[#062321]" : "mr-6 bg-[#F8FAFC] text-[#102A27]"
+                }`}
+              >
+                <p className="font-semibold leading-5">{message.text}</p>
+                {message.bullets?.length ? (
+                  <ul className="mt-2 space-y-1 text-xs font-semibold leading-5 text-[#52616B]">
+                    {message.bullets.map((bullet) => (
+                      <li key={bullet} className="flex gap-2">
+                        <span aria-hidden="true">•</span>
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {quickOptions.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => askLeavy(option.label, option.intent, option.view)}
+                className="min-h-10 rounded-xl border border-[#D9E2EC] bg-white px-3 text-left text-xs font-bold leading-4 text-[#102A27] transition hover:border-[#20B7C9] hover:bg-[#ECFEFF]"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {primaryBlockedMachine ? (
+            <button
+              type="button"
+              onClick={() => onOpenMachine(primaryBlockedMachine)}
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#FEE2E2] px-3 text-left text-xs font-black text-[#991B1B] transition hover:bg-[#FECACA]"
+            >
+              <span>Open {primaryBlockedMachine.code} blocker case</span>
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </button>
+          ) : null}
+
+          <form onSubmit={submitDraft} className="flex gap-2">
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Ask Leavy..."
+              className="h-11 min-w-0 flex-1 rounded-xl border border-[#D9E2EC] bg-white px-3 text-sm font-semibold text-[#102A27] outline-none placeholder:text-[#94A3B8] focus:border-[#20B7C9]"
+            />
+            <button
+              type="submit"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0D2F2D] text-white transition hover:bg-[#123C38]"
+              aria-label="Send Leavy message"
+            >
+              <Send className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </form>
+          <p className="text-[11px] font-semibold leading-4 text-[#64748B]">Scripted assistant preview. No AI is connected yet.</p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function findWorksite(id: string) {
-  return worksites.find((worksite) => worksite.id === id) ?? worksites[0];
+  return worksites.find((worksite) => worksite.id === id) ?? worksites[0] ?? emptyWorksite;
 }
 
 function machineWorksite(machine: Machine) {
@@ -629,12 +1137,90 @@ function countsForMachines(machineList: Machine[]) {
   };
 }
 
+function leavyAnswerForIntent(intent: LeavyIntent, worksite: Worksite, machineList: Machine[]): LeavyMessage {
+  const list = machinesForWorksite(worksite).length ? machinesForWorksite(worksite) : machineList;
+  const counts = countsForMachines(list);
+  const blocked = list.filter((machine) => machine.state === "blocked");
+  const review = list.filter((machine) => machine.state === "at_risk");
+  const firstBlocker = blocked[0] ?? review[0];
+  const documentActions = list.flatMap((machine) =>
+    machine.certificates
+      .filter((certificate) => certificate.status !== "Valid")
+      .map((certificate) => `${machine.code}: ${certificate.name} ${certificate.status.toLowerCase()} · ${certificate.owner}`),
+  );
+  const workshopActions = list.flatMap((machine) =>
+    machine.service
+      .filter((service) => service.status !== "Resolved")
+      .map((service) => `${machine.code}: ${service.issue} · ${service.status} · ${service.due}`),
+  );
+
+  if (intent === "morning-check") {
+    return {
+      id: 0,
+      role: "leavy",
+      text: counts.blocked ? `${worksite.name} will not start cleanly tomorrow.` : `${worksite.name} can start tomorrow.`,
+      bullets: [
+        `${counts.ready}/${counts.total} machines ready`,
+        `${counts.attention} need review`,
+        `${counts.blocked} blocked before release`,
+      ],
+    };
+  }
+
+  if (intent === "blockers") {
+    return {
+      id: 0,
+      role: "leavy",
+      text: blocked.length ? "These are the blockers I would clear first." : "No hard blockers found for this worksite.",
+      bullets: blocked.length ? blocked.map((machine) => `${machine.code}: ${machine.reason} · ${machine.owner} · ${machine.eta}`) : ["Run the final check when you are ready."],
+    };
+  }
+
+  if (intent === "next-action") {
+    return {
+      id: 0,
+      role: "leavy",
+      text: firstBlocker ? `Best next action: ${firstBlocker.nextAction}.` : "Best next action: release the clear machines.",
+      bullets: firstBlocker
+        ? [`Machine: ${firstBlocker.code}`, `Owner: ${firstBlocker.owner}`, `ETA: ${firstBlocker.eta}`]
+        : [`${counts.ready} machines are ready for tomorrow.`],
+    };
+  }
+
+  if (intent === "documents") {
+    return {
+      id: 0,
+      role: "leavy",
+      text: documentActions.length ? "Evidence risks that can affect tomorrow:" : "No evidence item is currently blocking this worksite.",
+      bullets: documentActions.length ? documentActions.slice(0, 4) : ["Valid evidence is available for the selected worksite."],
+    };
+  }
+
+  if (intent === "workshop") {
+    return {
+      id: 0,
+      role: "leavy",
+      text: workshopActions.length ? "Service jobs still on the board:" : "No open service jobs for the selected worksite.",
+      bullets: workshopActions.length ? workshopActions.slice(0, 4) : ["No service job is stopping tomorrow's work."],
+    };
+  }
+
+  return {
+    id: 0,
+    role: "leavy",
+    text: "Decision History is where the proof lives.",
+    bullets: ["Who decided", "Why the machine was released or blocked", "Evidence packet for audit or dispute"],
+  };
+}
+
 export function ConstructionPrototype() {
+  const bootSnapshot = restoreInitialConsoleSnapshot();
+  const [clientName, setClientName] = useState(bootSnapshot?.organizationName ?? defaultClientName);
   const [activeView, setActiveView] = useState<ViewKey>("tomorrow");
-  const [worksiteId, setWorksiteId] = useState(worksites[0].id);
+  const [worksiteId, setWorksiteId] = useState(worksites[0]?.id ?? emptyWorksite.id);
   const [dateMode, setDateMode] = useState<"Today" | "Tomorrow" | "Custom">("Tomorrow");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMachineId, setSelectedMachineId] = useState("cr04");
+  const [selectedMachineId, setSelectedMachineId] = useState(machines[0]?.id ?? emptyMachine.id);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>("why");
   const [passportTab, setPassportTab] = useState<PassportTab>("overview");
@@ -645,11 +1231,55 @@ export function ConstructionPrototype() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState<DrawerAction>(null);
-  const [notifications, setNotifications] = useState<OperationalNotification[]>(initialNotifications);
+  const [leavyOpen, setLeavyOpen] = useState(false);
+  const [notifications, setNotifications] = useState<OperationalNotification[]>(bootSnapshot?.notifications ?? (allowDemoConsoleData ? initialNotifications : []));
   const [searchOpen, setSearchOpen] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [version, setVersion] = useState(0);
+  const [serverHydrated, setServerHydrated] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    saveConsoleSnapshot(notifications);
+    if (!serverHydrated) return;
+    void saveServerConsoleSnapshot(notifications, clientName).catch(() => {
+      emitConsoleToast("Saved locally. Server sync will retry on the next change.");
+    });
+  }, [clientName, notifications, serverHydrated, version]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateFromServer() {
+      try {
+        const serverSnapshot = await loadServerConsoleSnapshot();
+        if (cancelled) return;
+
+        if (serverSnapshot) {
+          replaceConsoleArray(worksites, serverSnapshot.worksites);
+          replaceConsoleArray(machines, serverSnapshot.machines);
+          replaceConsoleArray(releaseHistory, serverSnapshot.releaseHistory);
+          setClientName(serverSnapshot.organizationName ?? defaultClientName);
+          setNotifications(serverSnapshot.notifications);
+          setWorksiteId(serverSnapshot.worksites[0]?.id ?? worksites[0]?.id ?? emptyWorksite.id);
+          setSelectedMachineId(serverSnapshot.machines[0]?.id ?? machines[0]?.id ?? emptyMachine.id);
+          setVersion((current) => current + 1);
+        }
+      } catch {
+        if (!cancelled) {
+          emitConsoleToast("FleetLever server state is unavailable.");
+        }
+      } finally {
+        if (!cancelled) setServerHydrated(true);
+      }
+    }
+
+    void hydrateFromServer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     function handleToast(event: Event) {
@@ -676,7 +1306,7 @@ export function ConstructionPrototype() {
   }, []);
 
   const selectedWorksite = findWorksite(worksiteId);
-  const selectedMachine = machines.find((machine) => machine.id === selectedMachineId) ?? machines[0];
+  const selectedMachine = machines.find((machine) => machine.id === selectedMachineId) ?? machines[0] ?? emptyMachine;
   void version;
   const visibleWorksites = worksites.filter((worksite) => worksiteMatchesQuery(worksite, searchTerm));
   const visibleMachines = machines.filter((machine) => machineMatchesQuery(machine, searchTerm));
@@ -693,11 +1323,11 @@ export function ConstructionPrototype() {
     total: allPlannedMachines.length,
   };
 
-  function openMachine(machine: Machine, mode: DrawerMode = machine.state === "blocked" ? "why" : "passport") {
+  function openMachine(machine: Machine, mode: DrawerMode = machine.state === "blocked" ? "why" : "passport", tab?: PassportTab) {
     setSelectedMachineId(machine.id);
     setDrawerMode(mode);
     setDrawerOpen(true);
-    if (mode === "passport") setPassportTab("overview");
+    if (mode === "passport") setPassportTab(tab ?? "overview");
   }
 
   function openMachineFromSearch(machine: Machine, view: ViewKey = "machines", mode: DrawerMode = machine.state === "blocked" ? "why" : "passport", tab?: PassportTab) {
@@ -747,9 +1377,38 @@ export function ConstructionPrototype() {
     setSearchOpen(false);
   }
 
-  function refreshPrototype(message: string) {
+  function refreshConsole(message: string) {
     setVersion((version) => version + 1);
-    emitPrototypeToast(message);
+    emitConsoleToast(message);
+  }
+
+  function recordDecision(machine: Machine, result: string, reason: string, action: string, user: string, override: "Yes" | "No" = "No") {
+    releaseHistory.unshift({
+      date: todayDecisionDate(),
+      worksite: machineWorksite(machine).name,
+      machine: machine.code,
+      result,
+      reason,
+      action,
+      user,
+      override,
+    });
+    void recordConsoleAction({
+      action: result === "Released With Override" ? "console.override_released" : "console.release_decision",
+      detail: `${machine.code}: ${reason} · ${action}`,
+      metadata: {
+        action,
+        machine: machine.code,
+        override,
+        reason,
+        result,
+        user,
+        worksite: machineWorksite(machine).name,
+      },
+      recordId: machine.id,
+      recordTable: "assets",
+      title: `${machine.code} · ${result}`,
+    }).catch(() => {});
   }
 
   function addOperationalNotification(title: string, detail: string) {
@@ -763,6 +1422,12 @@ export function ConstructionPrototype() {
       },
       ...current,
     ]);
+    void recordConsoleAction({
+      action: "console.notification",
+      detail,
+      metadata: { source: "construction-console" },
+      title,
+    }).catch(() => {});
   }
 
   function syncMachineReleaseState(machine: Machine) {
@@ -845,18 +1510,9 @@ export function ConstructionPrototype() {
     );
     machine.issues = machine.issues.map((issue) => (blockerId ? issue : { ...issue, owner }));
     machine.lastUpdated = "Just now";
-    releaseHistory.unshift({
-      date: "Today",
-      worksite: machineWorksite(machine).name,
-      machine: machine.code,
-      result: computedStatus === "Overdue" ? "Assignment Overdue" : computedStatus === "Accepted" ? "Assignment Accepted" : "Owner Assigned",
-      reason: assignmentSummary,
-      action: `${computedStatus} by ${owner} · Due ${assignmentDue} · Notified via ${channels.join(", ")}${note ? ` · ${note}` : ""}`,
-      user: "George",
-      override: "No",
-    });
-    addOperationalNotification(`${machine.code} ${computedStatus.toLowerCase()} to ${owner}`, `${assignmentSummary} · Due ${assignmentDue} · ${channels.join(", ")}`);
-    refreshPrototype(`${machine.code}: ${blockerId ? "blocker" : "open blockers"} ${computedStatus.toLowerCase()} to ${owner}.`);
+    recordDecision(machine, "Owner Assigned", assignmentSummary, `${owner} owns next action · Due ${assignmentDue}${note ? ` · ${note}` : ""}`, "FleetLever", "No");
+    addOperationalNotification(`${machine.code} ${computedStatus.toLowerCase()} to ${owner}`, `${assignmentSummary} · Due ${assignmentDue} · ${channels.join(", ")}${note ? ` · ${note}` : ""}`);
+    refreshConsole(`${machine.code}: ${blockerId ? "blocker" : "open blockers"} ${computedStatus.toLowerCase()} to ${owner}.`);
   }
 
   function completeBlocker(machineId: string, blockerId: string, note: string) {
@@ -884,17 +1540,80 @@ export function ConstructionPrototype() {
     }
 
     syncMachineReleaseState(machine);
-    releaseHistory.unshift({
-      date: "Today",
-      worksite: machineWorksite(machine).name,
-      machine: machine.code,
-      result: machine.state === "ready" ? "Ready For Work" : "Blocker Updated",
-      reason: machine.reason,
-      action: note || "Action completed",
-      user: "George",
-      override: "No",
-    });
-    refreshPrototype(`${machine.code}: action completed.`);
+    recordDecision(machine, machine.state === "ready" ? "Ready For Work" : "Action Completed", machine.reason, note || "Owner action completed", "FleetLever", "No");
+    addOperationalNotification(`${machine.code} blocker completed`, `${machine.reason} · ${note || "Action completed"}`);
+    refreshConsole(`${machine.code}: action completed.`);
+  }
+
+  function updateServiceStatus(machineId: string, issue: string, status: ServiceBlocker["status"]) {
+    const machine = machines.find((item) => item.id === machineId);
+    if (!machine) return;
+    const service = machine.service.find((item) => item.issue === issue);
+    if (!service) return;
+    const nextDue = status === "Resolved" ? "Completed" : status === "Waiting" ? "Waiting parts" : service.due === "Completed" || service.due === "Waiting parts" ? "Today" : service.due;
+
+    machine.service = machine.service.map((item) =>
+      item.issue === issue
+        ? {
+            ...item,
+            status,
+            due: nextDue,
+            blocksRelease: status === "Resolved" ? false : item.blocksRelease,
+          }
+        : item,
+    );
+
+    if (status === "Resolved") {
+      machine.issues = machine.issues.map((item) => (item.title === issue || item.title.toLowerCase().includes(issue.toLowerCase()) ? { ...item, status: "Resolved" } : item));
+    }
+
+    syncMachineReleaseState(machine);
+    recordDecision(machine, status === "Resolved" ? "Service Cleared" : "Service Updated", issue, `Service job marked ${status.toLowerCase()}`, "Workshop", "No");
+    addOperationalNotification(`${machine.code} workshop job ${status.toLowerCase()}`, `${issue} · ${machineWorksite(machine).name}`);
+    refreshConsole(`${machine.code}: workshop job marked ${status.toLowerCase()}.`);
+  }
+
+  function addWorkshopJob(draft: WorkshopJobDraft) {
+    const machine = machines.find((item) => item.id === draft.machineId);
+    if (!machine) return;
+    const issue = draft.issue.trim();
+    if (!issue) return;
+    const existingJob = machine.service.find((service) => service.issue.toLowerCase() === issue.toLowerCase());
+
+    if (existingJob) {
+      emitConsoleToast(`${machine.code}: that workshop job already exists.`);
+      return;
+    }
+
+    machine.service = [
+      {
+        issue,
+        severity: draft.blocksRelease ? "High" : "Medium",
+        blocksRelease: draft.blocksRelease,
+        owner: draft.owner,
+        due: draft.due,
+        status: "Open",
+        assignmentStatus: "Assigned",
+        assignedAt: "Just now",
+      },
+      ...machine.service,
+    ];
+    machine.issues = [
+      {
+        title: issue,
+        severity: draft.blocksRelease ? "High" : "Medium",
+        owner: draft.owner,
+        status: "Open",
+      },
+      ...machine.issues,
+    ];
+    machine.nextAction = "Complete service action";
+    machine.owner = draft.owner;
+    machine.eta = draft.due;
+    syncMachineReleaseState(machine);
+    recordDecision(machine, "Service Job Added", issue, `${draft.blocksRelease ? "Blocks tomorrow's work" : "Service follow-up"} · ${draft.owner} · ${draft.due}`, draft.owner, "No");
+    addOperationalNotification(`${machine.code} workshop job added`, `${issue} · ${draft.owner} · ${draft.due}`);
+    refreshConsole(`${machine.code}: workshop job added.`);
   }
 
   function uploadDocument(machineId: string, blockerId: string, documentName: string, expiryDate: string) {
@@ -909,60 +1628,34 @@ export function ConstructionPrototype() {
     );
     machine.photos.push({ title: documentName || "Uploaded evidence", category: "Evidence", date: "Today" });
     syncMachineReleaseState(machine);
-    releaseHistory.unshift({
-      date: "Today",
-      worksite: machineWorksite(machine).name,
-      machine: machine.code,
-      result: machine.state === "ready" ? "Ready For Work" : "Evidence Uploaded",
-      reason: documentName || "Evidence uploaded",
-      action: `Evidence uploaded · Validity ${expiryDate || "Uploaded today"}`,
-      user: "George",
-      override: "No",
-    });
-    addOperationalNotification(`${machine.code} evidence uploaded`, `${documentName || "Evidence"} updated in Documents and Machine Passport.`);
-    refreshPrototype(`${machine.code}: ${documentName || "evidence"} uploaded and synced.`);
+    recordDecision(machine, machine.state === "ready" ? "Ready For Work" : "Evidence Uploaded", documentName || "Evidence uploaded", `${expiryDate || "Uploaded today"} · Machine passport updated`, "FleetLever", "No");
+    addOperationalNotification(`${machine.code} evidence uploaded`, `${documentName || "Evidence"} updated in Evidence and Machine Passport.`);
+    refreshConsole(`${machine.code}: ${documentName || "evidence"} uploaded and synced.`);
   }
 
   function releaseWithOverride(machineId: string, reason: string, approver: string, acceptedUntil: string) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
-    releaseHistory.unshift({
-      date: "Today",
-      worksite: machineWorksite(machine).name,
-      machine: machine.code,
-      result: "Released With Override",
-      reason: machine.reason,
-      action: `${reason} · Approved by ${approver} · Accepted until ${acceptedUntil}`,
-      user: approver,
-      override: "Yes",
-    });
+    recordDecision(machine, "Released With Override", machine.reason, `${reason} · Approved by ${approver} · Accepted until ${acceptedUntil}`, approver, "Yes");
     machine.state = "at_risk";
     machine.reason = "Released with override";
     machine.nextAction = `Resolve override reason: ${reason}`;
     machine.eta = acceptedUntil || "Today";
     machine.lastUpdated = "Just now";
-    refreshPrototype(`${machine.code}: released with override and logged.`);
+    refreshConsole(`${machine.code}: released with override and logged.`);
   }
 
   function releaseReadyMachines(releaseMachines: Machine[]) {
     const readyMachines = releaseMachines.filter((machine) => machine.state === "ready");
     readyMachines.forEach((machine) => {
-      releaseHistory.unshift({
-        date: "Today",
-        worksite: selectedWorksite.name,
-        machine: machine.code,
-        result: "Ready For Work",
-        reason: "No blocker found",
-        action: "Released",
-        user: "Dimitris",
-        override: "No",
-      });
+      recordDecision(machine, "Ready For Work", "No blocker found", `Released to ${selectedWorksite.name}`, "Dimitris", "No");
     });
+    addOperationalNotification(`${selectedWorksite.name} release updated`, `${readyMachines.length} clear machine${readyMachines.length === 1 ? "" : "s"} released. Decision History updated.`);
     setReleaseModalOpen(false);
-    refreshPrototype(`${readyMachines.length} ready machines released for ${selectedWorksite.name}.`);
+    refreshConsole(`${readyMachines.length} ready machines released for ${selectedWorksite.name}.`);
   }
 
-  function addPrototypeItem(type: AddItemType, name: string) {
+  function addConsoleItem(type: AddItemType, name: string) {
     const cleanName = name.trim();
     if (!cleanName) return;
     if (type === "Worksite") {
@@ -970,16 +1663,17 @@ export function ConstructionPrototype() {
       worksites.push({ id, name: cleanName, location: "New worksite", date: "Tomorrow, 07:00", requiredMachineIds: [] });
       setWorksiteId(id);
       setActiveView("tomorrow");
-      refreshPrototype(`${cleanName} added as a worksite.`);
+      addOperationalNotification(`${cleanName} added`, "New worksite is ready for machine assignment.");
+      refreshConsole(`${cleanName} added as a worksite.`);
     } else if (type === "Machine") {
       const id = `machine-${Date.now()}`;
       const code = `M-${String(machines.length + 1).padStart(2, "0")}`;
-      machines.push({
+      const newMachine: Machine = {
         id,
         code,
         name: cleanName,
         type: "Machine",
-        manufacturer: "Prototype",
+        manufacturer: "FleetLever",
         model: "New",
         serial: `SN-${Date.now()}`,
         ownership: "Owned",
@@ -996,36 +1690,41 @@ export function ConstructionPrototype() {
         service: [],
         issues: [{ title: "Passport incomplete", severity: "Medium", owner: "Dimitris", status: "Open" }],
         photos: [],
-      });
+      };
+      machines.push(newMachine);
       selectedWorksite.requiredMachineIds.push(id);
       setSelectedMachineId(id);
       setDrawerMode("passport");
       setDrawerOpen(true);
-      refreshPrototype(`${cleanName} added to ${selectedWorksite.name}.`);
+      recordDecision(newMachine, "Needs Attention", "New machine needs review", "Machine added and passport opened", "FleetLever", "No");
+      addOperationalNotification(`${code} added to ${selectedWorksite.name}`, "Complete the machine passport before release.");
+      refreshConsole(`${cleanName} added to ${selectedWorksite.name}.`);
     } else if (type === "Certificate") {
       const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
       if (!targetMachine) return;
       targetMachine.certificates.push({ name: cleanName, status: "Expiring soon", expiry: "30 June 2026", daysLeft: "29", owner: "Maria", action: "Review certificate" });
       targetMachine.state = targetMachine.state === "ready" ? "at_risk" : targetMachine.state;
       targetMachine.reason = targetMachine.state === "at_risk" ? "Certificate needs review" : targetMachine.reason;
-      refreshPrototype(`${cleanName} added to ${targetMachine.code}.`);
+      targetMachine.lastUpdated = "Just now";
+      recordDecision(targetMachine, "Evidence Added", cleanName, "Certificate added for review", "Maria", "No");
+      addOperationalNotification(`${targetMachine.code} evidence added`, `${cleanName} needs review.`);
+      refreshConsole(`${cleanName} added to ${targetMachine.code}.`);
     } else if (type === "Service Blocker") {
       const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
       if (!targetMachine) return;
       targetMachine.service.push({ issue: cleanName, severity: "High", blocksRelease: true, owner: "Workshop", due: "Today", status: "Open" });
-      targetMachine.state = "blocked";
-      targetMachine.reason = cleanName;
-      targetMachine.nextAction = "Complete service action";
-      targetMachine.eta = "Today";
-      targetMachine.activeBlockers = "1";
-      refreshPrototype(`${cleanName} added as a blocker for ${targetMachine.code}.`);
+      targetMachine.issues.push({ title: cleanName, severity: "High", owner: "Workshop", status: "Open" });
+      syncMachineReleaseState(targetMachine);
+      recordDecision(targetMachine, "Service Job Added", cleanName, "Service blocker added from console", "Workshop", "No");
+      addOperationalNotification(`${targetMachine.code} service job added`, `${cleanName} could stop tomorrow's work.`);
+      refreshConsole(`${cleanName} added as a blocker for ${targetMachine.code}.`);
     } else {
       const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
       const documentBlocker = targetMachine?.certificates.find((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status));
       if (targetMachine && documentBlocker) {
         uploadDocument(selectedMachineId, `certificate:${documentBlocker.name}`, cleanName, "Uploaded today");
       } else {
-        refreshPrototype("No document blocker selected.");
+        refreshConsole("No document blocker selected.");
       }
     }
     setAddModalType(null);
@@ -1092,7 +1791,7 @@ export function ConstructionPrototype() {
             }),
         },
         {
-          title: "Documents",
+          title: "Evidence",
           results: machines
             .flatMap((machine) => machine.certificates.map((certificate) => ({ certificate, machine })))
             .filter(({ certificate, machine }) =>
@@ -1121,7 +1820,7 @@ export function ConstructionPrototype() {
             })),
         },
         {
-          title: "Actions",
+          title: "Stop List",
           results: actionQueueRows(machines)
             .filter((row) =>
               valuesMatchSearch(normalizedGlobalSearch, [
@@ -1149,7 +1848,7 @@ export function ConstructionPrototype() {
             })),
         },
         {
-          title: "Workshop",
+          title: "Service Jobs",
           results: machines
             .flatMap((machine) => machine.service.map((service) => ({ machine, service })))
             .filter(({ machine, service }) =>
@@ -1169,7 +1868,7 @@ export function ConstructionPrototype() {
               title: service.issue,
               subtitle: `${machine.code} · ${machineWorksite(machine).name}`,
               meta: `${service.owner} · ${service.due}`,
-              label: service.blocksRelease ? "Blocks release" : service.status,
+              label: service.blocksRelease ? "Could stop work" : service.status,
               tone: service.blocksRelease ? "blocked" as const : service.status === "Resolved" ? "ready" as const : "attention" as const,
               onSelect: () => {
                 openMachineFromSearch(machine, "service", "passport", "service");
@@ -1177,7 +1876,7 @@ export function ConstructionPrototype() {
             })),
         },
         {
-          title: "Release History",
+          title: "Decision History",
           results: releaseHistory
             .filter((item) => valuesMatchSearch(normalizedGlobalSearch, [item.date, item.worksite, item.machine, item.result, item.reason, item.action, item.user]))
             .slice(0, 3)
@@ -1186,7 +1885,7 @@ export function ConstructionPrototype() {
               title: `${item.machine} · ${item.result}`,
               subtitle: item.reason,
               meta: `${item.date} · ${item.user}`,
-              label: "History",
+              label: "Decision",
               tone: item.result === "Ready For Work" ? "ready" as const : item.result === "Needs Attention" ? "attention" as const : "neutral" as const,
               onSelect: () => {
                 setSearchOpen(false);
@@ -1202,7 +1901,7 @@ export function ConstructionPrototype() {
     <main className="min-h-screen bg-[#F6F5F2] text-[#0D2F2D]">
       <div className="flex min-h-screen">
         <aside
-          className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-[#E2E8F0] bg-[#0D2F2D] text-white transition lg:static lg:block ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-[#E2E8F0] bg-[#0D2F2D] text-white transition lg:relative lg:flex ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
         >
@@ -1212,7 +1911,7 @@ export function ConstructionPrototype() {
               <p className="mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-white/55">{clientName}</p>
             </div>
           </div>
-          <nav aria-label="App navigation" className="space-y-1 px-3 py-4">
+          <nav aria-label="App navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
             {navItems.map((item) => (
               <button
                 key={item.key}
@@ -1230,6 +1929,23 @@ export function ConstructionPrototype() {
             ))}
           </nav>
         </aside>
+
+        <LeavyAssistant
+          counts={counts}
+          machinesList={visibleMachines}
+          onOpenMachine={(machine) => {
+            setActiveView("machines");
+            setMobileNavOpen(false);
+            setSearchTerm("");
+            setSearchOpen(false);
+            setDrawerAction(null);
+            openMachine(machine, machine.state === "blocked" ? "why" : "passport");
+          }}
+          onToggle={() => setLeavyOpen((open) => !open)}
+          onViewOpen={showView}
+          open={leavyOpen}
+          selectedWorksite={selectedWorksite}
+        />
 
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-30 border-b border-[#E2E8F0] bg-white/95 backdrop-blur">
@@ -1336,7 +2052,7 @@ export function ConstructionPrototype() {
                     onClick={() => {
                       setNotifications((current) => current.map((item) => ({ ...item, read: true })));
                       setNotificationOpen(false);
-                      refreshPrototype("Notifications marked as reviewed.");
+                      refreshConsole("Notifications marked as reviewed.");
                     }}
                     className="mt-3 min-h-9 w-full rounded-md bg-[#0D2F2D] px-3 text-sm font-bold text-white"
                   >
@@ -1358,14 +2074,13 @@ export function ConstructionPrototype() {
               </button>
               {userMenuOpen ? (
                 <div className="absolute right-4 top-14 z-50 w-56 rounded-lg border border-[#E2E8F0] bg-white p-2 shadow-xl">
-                  {["Profile", "Settings", "Sign out"].map((item) => (
+                  {["Profile", "Sign out"].map((item) => (
                     <button
                       key={item}
                       type="button"
                       onClick={() => {
                         setUserMenuOpen(false);
-                        if (item === "Settings") showView("settings");
-                        refreshPrototype(item === "Sign out" ? "Prototype session remains active." : `${item} opened.`);
+                        refreshConsole(item === "Sign out" ? "Session remains active." : `${item} opened.`);
                       }}
                       className="flex min-h-9 w-full items-center rounded-md px-3 text-left text-sm font-semibold text-[#1F2933] hover:bg-[#F8FAFC]"
                     >
@@ -1400,7 +2115,7 @@ export function ConstructionPrototype() {
                 onOpenPlanner={(worksite) => {
                   setWorksiteId(worksite.id);
                   showView("tomorrow");
-                  emitPrototypeToast(`${worksite.name} opened in Tomorrow's Work Planner.`);
+                  emitConsoleToast(`${worksite.name} opened in Tomorrow's Work Planner.`);
                 }}
               />
             ) : null}
@@ -1411,22 +2126,21 @@ export function ConstructionPrototype() {
                 machinesList={visibleMachines}
                 onActionStart={startMachineAction}
                 onMachineOpen={(machine) => {
-                  setPassportTab("documents");
-                  openMachine(machine, "passport");
+                  openMachine(machine, "passport", "documents");
                 }}
               />
             ) : null}
             {activeView === "service" ? (
               <WorkshopView
                 machinesList={visibleMachines}
+                onJobCreate={addWorkshopJob}
                 onMachineOpen={(machine) => {
-                  setPassportTab("service");
-                  openMachine(machine, "passport");
+                  openMachine(machine, "passport", "service");
                 }}
+                onServiceStatusChange={updateServiceStatus}
               />
             ) : null}
             {activeView === "history" ? <ReleaseHistoryView searchTerm={searchTerm} /> : null}
-            {activeView === "settings" ? <SettingsView /> : null}
           </div>
         </div>
 
@@ -1461,7 +2175,7 @@ export function ConstructionPrototype() {
           machines={allPlannedMachines}
           onClose={() => setReleaseModalOpen(false)}
           onReleaseReady={() => releaseReadyMachines(allPlannedMachines)}
-          onReviewBlocked={() => emitPrototypeToast("Blocked machines are visible in the release checklist.")}
+          onReviewBlocked={() => emitConsoleToast("Blocked machines are visible in the release checklist.")}
         />
       ) : null}
       {drawerAction ? (
@@ -1488,7 +2202,7 @@ export function ConstructionPrototype() {
           }}
         />
       ) : null}
-      {addModalType ? <AddItemModal type={addModalType} onAdd={addPrototypeItem} onClose={() => setAddModalType(null)} /> : null}
+      {addModalType ? <AddItemModal type={addModalType} onAdd={addConsoleItem} onClose={() => setAddModalType(null)} /> : null}
       {toast ? (
         <div className="fixed bottom-5 right-5 z-[60] max-w-sm rounded-lg border border-[#CFFAFE] bg-[#ECFEFF] px-4 py-3 text-sm font-bold text-[#0F766E] shadow-xl">
           {toast.message}
@@ -1542,7 +2256,7 @@ function TomorrowPlanner({
   const pagedMachines = filteredMachines.slice((safeMachinePage - 1) * machinePageSize, safeMachinePage * machinePageSize);
   const rangeStart = filteredMachines.length === 0 ? 0 : (safeMachinePage - 1) * machinePageSize + 1;
   const rangeEnd = Math.min(safeMachinePage * machinePageSize, filteredMachines.length);
-  const releaseStatus = isReadyForRelease ? "Ready to release" : "Cannot release yet";
+  const releaseStatus = isReadyForRelease ? "Will start" : "Will not start";
   const releaseTone = isReadyForRelease ? "border-[#15803D]" : "border-[#B91C1C]";
   const selectedDateLabel = dateMode === "Custom" ? formatPlannerDate(customDate) : dateMode;
 
@@ -1562,24 +2276,24 @@ function TomorrowPlanner({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-[#0F766E]">Tomorrow&apos;s Work Planner</p>
-        <h1 className="mt-1 text-2xl font-semibold leading-tight text-[#111827] sm:text-[26px]">17:00 release checklist</h1>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#0F766E]">Prevent expensive construction downtime</p>
+        <h1 className="mt-1 text-2xl font-semibold leading-tight text-[#111827] sm:text-[26px]">Know what will stop tomorrow&apos;s work before it happens.</h1>
         <p className="mt-2 max-w-2xl text-[14px] leading-6 text-[#6B7280]">
-          Select the worksite, clear blockers, then release the machines that are ready.
+          FleetLever checks the worksite, machines, evidence, inspections, and service jobs before tomorrow&apos;s work is released.
         </p>
       </div>
 
       <Surface className={`overflow-visible border-l-4 p-0 ${releaseTone}`}>
         <div className="flex flex-col gap-3 border-b border-[#E5E7EB] px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B7280]">Selected Worksite</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B7280]">Tomorrow readiness check</p>
             <div className="mt-1 flex flex-wrap items-center gap-3">
               <h2 className="truncate text-lg font-semibold leading-tight text-[#111827] sm:text-xl">{selectedWorksite.name}</h2>
               <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${isReadyForRelease ? statusClasses("ready") : statusClasses("blocked")}`}>
                 {releaseStatus}
               </span>
             </div>
-            <p className="mt-1 text-[13px] text-[#6B7280]">{selectedDateLabel} · {counts.total} required machines</p>
+            <p className="mt-1 text-[13px] text-[#6B7280]">{selectedDateLabel} · {counts.total} required machines · readiness check</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -1650,7 +2364,7 @@ function TomorrowPlanner({
               className="inline-flex min-h-9 items-center gap-2 rounded-md bg-[#0F172A] px-4 text-[13px] font-bold uppercase text-white shadow-sm transition hover:bg-[#1F2937]"
             >
               <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-              Release Ready
+              Release clear machines
             </button>
           </div>
         </div>
@@ -1671,9 +2385,9 @@ function TomorrowPlanner({
           <Surface className="min-w-0 overflow-hidden">
             <div className="flex flex-col gap-4 border-b border-[#E5E7EB] px-5 py-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <h2 className="text-lg font-semibold leading-tight text-[#111827]">Required Machines</h2>
+                <h2 className="text-lg font-semibold leading-tight text-[#111827]">Readiness checklist</h2>
                 <p className="mt-1 text-[13px] text-[#6B7280]">
-                  Assigned to the selected worksite. Showing {rangeStart}-{rangeEnd} of {filteredMachines.length}.
+                  What FleetLever checks before tomorrow can start. Showing {rangeStart}-{rangeEnd} of {filteredMachines.length}.
                 </p>
               </div>
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
@@ -1722,7 +2436,7 @@ function TomorrowPlanner({
                 </colgroup>
                 <thead className="bg-[#F9FAFB] text-[11px] font-bold uppercase tracking-wide text-[#6B7280]">
                   <tr>
-                    {["Machine", "Type", "Release State", "Why", "Owner", "Next Action", "ETA", "Action"].map((heading) => {
+                    {["Machine", "Type", "Tomorrow State", "Why", "Owner", "Next Action", "ETA", "Action"].map((heading) => {
                       const isAction = heading === "Action";
                       return (
                         <th
@@ -1975,7 +2689,7 @@ function DetailDrawer({
         <div className="border-b border-[#E2E8F0] p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase text-[#64748B]">{mode === "why" ? "Why Blocked" : "Machine Passport"}</p>
+              <p className="text-xs font-bold uppercase text-[#64748B]">{mode === "why" ? "Why tomorrow stops" : "Machine Passport"}</p>
               <h2 className="mt-1 text-xl font-bold text-[#0D2F2D]">{machine.code}</h2>
               <p className="text-sm text-[#64748B]">{machine.name}</p>
             </div>
@@ -1994,7 +2708,7 @@ function DetailDrawer({
               onClick={() => onModeChange("why")}
               className={`min-h-9 rounded-md px-3 text-sm font-bold ${mode === "why" ? "bg-[#0D2F2D] text-white" : "bg-[#F8FAFC] text-[#64748B]"}`}
             >
-              Why Blocked
+              Why tomorrow stops
             </button>
             <button
               type="button"
@@ -2125,7 +2839,7 @@ function WhyBlocked({
       <StatusPill state={machine.state} />
       <div className="mt-5 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-4">
         <p className="text-sm font-bold text-[#B91C1C]">
-          This machine cannot be released to {machineWorksite(machine).name} tomorrow because:
+          This machine will stop {machineWorksite(machine).name} tomorrow because:
         </p>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[#1F2933]">
           {blockerCards.length ? blockerCards.map((card) => <li key={card.summary}>{card.summary}</li>) : <li>{machine.reason}.</li>}
@@ -2374,6 +3088,8 @@ function DrawerActionModal({
   const [note, setNote] = useState("");
   const [documentName, setDocumentName] = useState(certificateBlockers.find((blocker) => blocker.id === initialBlockerId)?.summary ?? "");
   const [expiryDate, setExpiryDate] = useState("30 June 2026");
+  const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [approver, setApprover] = useState("George");
   const [acceptedUntil, setAcceptedUntil] = useState("Today, 18:00");
   const [overrideReason, setOverrideReason] = useState("");
@@ -2394,7 +3110,7 @@ function DrawerActionModal({
   const selectableBlockers = action.type === "upload-document" && certificateBlockers.length ? certificateBlockers : blockers;
   const canSubmitAssign = owner.trim().length > 1 && Boolean(dueIso) && notifyChannels.length > 0;
   const canSubmitComplete = Boolean(blockerId);
-  const canSubmitUpload = Boolean(blockerId && documentName.trim());
+  const canSubmitUpload = Boolean(blockerId && documentName.trim()) && !isUploadingEvidence;
   const canSubmitOverride = overrideReason.trim().length >= 8 && approver.trim().length > 1 && acceptedUntil.trim().length > 1 && confirmation === "OVERRIDE";
   const uploadSource = action.type === "upload-document" ? action.source ?? "passport" : undefined;
   const uploadTitle =
@@ -2576,7 +3292,7 @@ function DrawerActionModal({
           {action.type === "upload-document" ? (
             <>
               <div className="rounded-md border border-[#CFFAFE] bg-[#ECFEFF] p-3">
-                <p className="text-sm font-bold text-[#0F766E]">One evidence upload updates Documents, Machine Passport, Action Queue, and Release History.</p>
+                <p className="text-sm font-bold text-[#0F766E]">One evidence upload updates Evidence, Machine Passport, Stop List, and Decision History.</p>
               </div>
               <label className="block">
                 <span className="text-xs font-bold uppercase text-[#64748B]">Evidence name</span>
@@ -2595,11 +3311,16 @@ function DrawerActionModal({
                   className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
                 />
               </label>
-              <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 text-sm font-bold text-[#0D2F2D]">
-                <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
-                Select evidence file
-                <input type="file" className="sr-only" />
-              </label>
+	              <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 text-sm font-bold text-[#0D2F2D]">
+	                <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
+	                {selectedEvidenceFile ? selectedEvidenceFile.name : "Select evidence file"}
+	                <input
+	                  type="file"
+	                  aria-label="Select evidence file"
+	                  className="sr-only"
+	                  onChange={(event) => setSelectedEvidenceFile(event.target.files?.[0] ?? null)}
+	                />
+	              </label>
             </>
           ) : null}
 
@@ -2671,14 +3392,30 @@ function DrawerActionModal({
             </button>
           ) : null}
           {action.type === "upload-document" ? (
-            <button
-              type="button"
-              disabled={!canSubmitUpload}
-              onClick={() => onUpload(blockerId, documentName.trim(), expiryDate.trim())}
-              className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
-            >
-              {uploadSubmitLabel}
-            </button>
+	            <button
+	              type="button"
+	              disabled={!canSubmitUpload}
+	              onClick={async () => {
+	                try {
+	                  setIsUploadingEvidence(true);
+	                  if (selectedEvidenceFile) {
+	                    await uploadConsoleFile(selectedEvidenceFile, "evidence", machine, {
+	                      documentCategory: selectedBlocker?.kind === "certificate" ? selectedBlocker.title.replace(" Problem", "") : "Safety document",
+	                      documentTitle: documentName.trim(),
+	                      expiresAt: dateInputFromLabel(expiryDate.trim()),
+	                    });
+	                  }
+	                  onUpload(blockerId, documentName.trim(), expiryDate.trim());
+	                } catch (error) {
+	                  emitConsoleToast(error instanceof Error ? error.message : "Upload failed.");
+	                } finally {
+	                  setIsUploadingEvidence(false);
+	                }
+	              }}
+	              className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+	            >
+	              {isUploadingEvidence ? "Uploading..." : uploadSubmitLabel}
+	            </button>
           ) : null}
           {action.type === "override" ? (
             <button
@@ -2724,9 +3461,9 @@ function ReleaseModal({
       <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-[#E2E8F0] p-5">
           <div>
-            <h2 className="text-xl font-bold text-[#0D2F2D]">Release machines for tomorrow&apos;s work?</h2>
+            <h2 className="text-xl font-bold text-[#0D2F2D]">Review release readiness?</h2>
             <p className="mt-2 text-sm leading-6 text-[#64748B]">
-              FleetLever will check certificates, inspections, documents, service blockers and open issues.
+              FleetLever confirms what can start tomorrow and records why anything stays behind.
             </p>
           </div>
           <button type="button" onClick={onClose} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E2E8F0]">
@@ -2736,9 +3473,9 @@ function ReleaseModal({
         <div className="p-5">
           <div className="rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4">
             <p className="font-bold text-[#92400e]">
-              {blocked} machines cannot be released. {attention} need attention. {ready} are ready for work.
+              {ready} machines can start. {attention} need review. {blocked} will stop tomorrow unless cleared.
             </p>
-            <p className="mt-2 text-sm text-[#92400e]">Blocked machines cannot be released without admin override and an audit reason.</p>
+            <p className="mt-2 text-sm text-[#92400e]">Any override requires an approver, expiry, reason, and evidence packet.</p>
           </div>
           <div className="mt-5 overflow-x-auto rounded-lg border border-[#E2E8F0]">
             <table className="min-w-[720px] w-full text-left text-sm">
@@ -2833,7 +3570,7 @@ function AddItemModal({
           <div>
             <h2 className="text-xl font-bold text-[#0D2F2D]">Add {type}</h2>
             <p className="mt-2 text-sm leading-6 text-[#64748B]">
-              This updates the local prototype immediately so the flow can be tested.
+              Add this item to the current workspace view.
             </p>
           </div>
           <button type="button" onClick={onClose} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E2E8F0]">
@@ -2889,15 +3626,15 @@ function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (works
     <div className="space-y-5">
       <ViewHeader
         title="Worksites"
-        description="Compare tomorrow's worksites, spot the release risk, and open the one that needs attention."
+        description="See which jobs can start tomorrow, which ones cannot, and what each site needs before release."
         showActions={false}
       />
       <Surface className="p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Worksite release queue</p>
-            <h2 className="mt-2 text-xl font-bold leading-tight text-[#0D2F2D]">Where should operations focus first?</h2>
-            <p className="mt-2 text-sm font-semibold text-[#64748B]">Sorted by blockers, then review items.</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Worksite readiness queue</p>
+            <h2 className="mt-2 text-xl font-bold leading-tight text-[#0D2F2D]">Which work will not start?</h2>
+            <p className="mt-2 text-sm font-semibold text-[#64748B]">Sorted by the jobs most likely to surprise the site tomorrow morning.</p>
           </div>
           <div className="grid min-w-full grid-cols-3 overflow-hidden rounded-lg border border-[#E5E7EB] text-sm font-bold xl:min-w-[360px]">
             <div className="bg-[#FEF2F2] px-3 py-2 text-[#B91C1C]">
@@ -2917,7 +3654,7 @@ function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (works
         <div className="mt-5 overflow-x-auto rounded-lg border border-[#E5E7EB]">
           <div className="grid min-w-[1180px] grid-cols-[minmax(220px,1.1fr)_150px_150px_minmax(260px,1.1fr)_minmax(240px,1.2fr)_150px] bg-[#F9FAFB] px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">
             <span>Worksite</span>
-            <span>Release State</span>
+            <span>Tomorrow State</span>
             <span>Ready</span>
             <span>Main Blocker</span>
             <span>Owner Action</span>
@@ -2957,7 +3694,7 @@ function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (works
                   {mainBlocker ? `${mainBlocker.owner} · ${mainBlocker.nextAction}` : "No action needed"}
                 </p>
                 <span className="inline-flex min-h-8 items-center justify-center rounded-md border border-[#E2E8F0] bg-white px-3 text-xs font-bold text-[#0D2F2D]">
-                  Review release
+                  Open worksite
                 </span>
               </button>
             );
@@ -3008,7 +3745,7 @@ function WorksiteReleaseReview({
         <div className="border-b border-[#E2E8F0] p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Worksite Release Review</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Worksite readiness review</p>
               <h2 className="mt-1 truncate text-xl font-bold text-[#0D2F2D]">{worksite.name}</h2>
               <p className="mt-1 text-sm font-semibold text-[#64748B]">
                 {worksite.date} · {worksite.location}
@@ -3018,7 +3755,7 @@ function WorksiteReleaseReview({
               type="button"
               onClick={onClose}
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0] text-[#64748B]"
-              aria-label="Close worksite release review"
+              aria-label="Close worksite readiness review"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -3027,12 +3764,12 @@ function WorksiteReleaseReview({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           <div className={`rounded-lg border p-4 ${canRelease ? "border-[#BBF7D0] bg-[#F0FDF4]" : "border-[#FECACA] bg-[#FEF2F2]"}`}>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Release Decision</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Tomorrow readiness check</p>
             <p className={`mt-2 text-lg font-bold ${canRelease ? "text-[#15803D]" : "text-[#B91C1C]"}`}>
-              {canRelease ? "Ready to release" : "Cannot release yet"}
+              {canRelease ? "Will start" : "Will not start"}
             </p>
             <p className="mt-1 text-sm font-semibold text-[#475569]">
-              {canRelease ? "No blocking machines found for this worksite." : `${counts.blocked} blocker${counts.blocked === 1 ? "" : "s"} must be cleared first.`}
+              {canRelease ? "No blocking machines found for this worksite." : `${counts.blocked} blocker${counts.blocked === 1 ? "" : "s"} must be cleared before crews arrive.`}
             </p>
           </div>
 
@@ -3136,7 +3873,7 @@ function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]
     };
   }, []);
 
-  function handlePhotoUpload(machine: Machine, file: File | undefined) {
+  async function handlePhotoUpload(machine: Machine, file: File | undefined) {
     if (!file) return;
     const nextUrl = URL.createObjectURL(file);
     setPhotoUploads((current) => {
@@ -3148,15 +3885,19 @@ function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]
       photoUploadUrls.current.push(nextUrl);
       return { ...current, [machine.id]: nextUrl };
     });
-    emitPrototypeToast(`${machine.code} photo updated.`);
+    try {
+      await uploadConsoleFile(file, "machine-photo", machine);
+      emitConsoleToast(`${machine.code} photo uploaded to storage.`);
+    } catch (error) {
+      emitConsoleToast(error instanceof Error ? error.message : `${machine.code} photo upload failed.`);
+    }
   }
 
   return (
     <div className="space-y-5">
       <ViewHeader
         title="Machines"
-        description="Asset inventory: find a machine, inspect its status, and open the passport or current release issue."
-        importLabel="Import Machines"
+        description="One-click clarity for every machine: can it work, why not, who owns the fix, and what happens next."
         exportLabel="Export Machine List"
       />
       <div className="grid gap-4 lg:grid-cols-3">
@@ -3202,7 +3943,7 @@ function MachineInventoryCard({
   photoUrl: string;
 }) {
   const uploadId = `machine-photo-${machine.id}`;
-  const action = machine.state === "blocked" ? "Open issue" : machine.state === "at_risk" ? "Review status" : "Open passport";
+  const action = machine.state === "blocked" ? "Open case" : machine.state === "at_risk" ? "Review case" : "Open passport";
   const tone = machineCardTone(machine.state);
 
   return (
@@ -3238,6 +3979,7 @@ function MachineInventoryCard({
           id={uploadId}
           type="file"
           accept="image/*"
+          aria-label={`Upload photo for ${machine.code}`}
           className="sr-only"
           onChange={(event) => onPhotoUpload(event.target.files?.[0])}
         />
@@ -3378,7 +4120,7 @@ function GlobalSearchViewer({
         </div>
       ) : (
         <div className="p-5 text-sm font-semibold text-[#64748B]">
-          No matching machines, worksites, documents, actions, workshop jobs, or release history.
+          No matching machines, worksites, evidence, stop-list actions, service jobs, or decisions.
         </div>
       )}
     </div>
@@ -3528,15 +4270,15 @@ function ActionQueueView({
     { key: "all", label: "All", tone: "neutral", value: rows.length },
     { key: "blocking", label: "Blocking", tone: "blocked", value: blockingActionCount },
     { key: "review", label: "Review", tone: "attention", value: reviewActionCount },
-    { key: "documents", label: "Documents", tone: "neutral", value: certificateActions },
-    { key: "workshop", label: "Workshop", tone: "neutral", value: serviceActions },
+    { key: "documents", label: "Evidence", tone: "neutral", value: certificateActions },
+    { key: "workshop", label: "Service", tone: "neutral", value: serviceActions },
   ];
 
   return (
     <div className="space-y-5">
       <ViewHeader
-        title="Action Queue"
-        description="Cross-machine commands: do the next release action here, then open the machine case only when detail is needed."
+        title="Stop List"
+        description="The cross-worksite list of owner actions that could stop tomorrow's work."
         showActions={false}
       />
       <KpiStrip
@@ -3544,16 +4286,16 @@ function ActionQueueView({
           ["Open Actions", rows.length, "neutral"],
           ["Blocking", blockingActionCount, "blocked"],
           ["Review", reviewActionCount, "attention"],
-          ["Documents", certificateActions, "blocked"],
-          ["Workshop", serviceActions, "neutral"],
+          ["Evidence", certificateActions, "blocked"],
+          ["Service", serviceActions, "neutral"],
         ]}
       />
       <Surface className="overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-[#E2E8F0] px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Release action queue</p>
-            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Actions that need owner command</h2>
-            <p className="mt-1 text-sm font-semibold text-[#64748B]">{rows.length} actions · {owners} owners · sorted by release impact and due time.</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Stop list</p>
+            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Fix what could stop tomorrow&apos;s work</h2>
+            <p className="mt-1 text-sm font-semibold text-[#64748B]">{rows.length} actions · {owners} owners · no guessing, no phone-chain chase.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {filterItems.map((item) => (
@@ -3589,7 +4331,7 @@ function ActionQueueView({
           )
         ) : (
           <div className="m-5 rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] p-4 text-sm font-bold text-[#15803D]">
-            No open blockers. Tomorrow&apos;s work can move to release review.
+            No open blockers. Tomorrow&apos;s work can move to final review.
           </div>
         )}
       </Surface>
@@ -3656,7 +4398,7 @@ function ActionQueueRowItem({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${row.priority === "blocking" ? statusClasses("blocked") : statusClasses("at_risk")}`}>
-            {row.blocker.kind === "certificate" ? "Document" : "Workshop"}
+            {row.blocker.kind === "certificate" ? "Evidence" : "Service"}
           </span>
           <span className="rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-[11px] font-bold uppercase text-[#64748B]">{row.blocker.status}</span>
         </div>
@@ -3731,10 +4473,9 @@ function DocumentsView({
   return (
     <div className="space-y-5">
       <ViewHeader
-        title="Documents"
-        description="Specialist document control: missing, expired, and near-expiry evidence across machines."
-        importLabel="Import Documents"
-        exportLabel="Export Document Report"
+        title="Evidence"
+        description="Documents, certificates, and inspections that could stop tomorrow's work."
+        exportLabel="Export Evidence Report"
       />
       <KpiStrip
         items={[
@@ -3742,15 +4483,15 @@ function DocumentsView({
           ["Missing", allCertificates.filter(({ certificate }) => certificate.status === "Missing").length, "blocked"],
           ["Critical Soon", allCertificates.filter(({ certificate }) => certificate.status === "Critical" || certificate.status === "Expiring soon").length, "attention"],
           ["Valid", allCertificates.filter(({ certificate }) => certificate.status === "Valid").length, "ready"],
-          ["Release Impact", machinesList.filter((machine) => machine.state === "blocked" && machine.certificates.some((certificate) => certificate.status !== "Valid")).length, "blocked"],
+          ["Could Stop Work", machinesList.filter((machine) => machine.state === "blocked" && machine.certificates.some((certificate) => certificate.status !== "Valid")).length, "blocked"],
         ]}
       />
       <Surface className="overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-[#E2E8F0] px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Document control queue</p>
-            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Files that need office action</h2>
-            <p className="mt-1 text-sm font-semibold text-[#64748B]">Upload evidence, assign renewal owners, or open the full machine file.</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Evidence queue</p>
+            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Proof that keeps machines available</h2>
+            <p className="mt-1 text-sm font-semibold text-[#64748B]">Upload proof, assign renewal owners, or open the full machine file before documents stop work.</p>
           </div>
           <div className="flex flex-col gap-2 lg:max-w-[560px]">
             <div className="flex flex-wrap gap-2">
@@ -3804,7 +4545,7 @@ function DocumentsView({
                     type="button"
                     onClick={() => {
                       if (certificate.status === "Valid") {
-                        emitPrototypeToast(`${machine.code}: ${certificate.name} file preview opened.`);
+                        emitConsoleToast(`${machine.code}: ${certificate.name} file preview opened.`);
                         return;
                       }
                       onActionStart(machine, primaryAction);
@@ -3874,149 +4615,782 @@ function DocumentFilterChip({
   );
 }
 
-function WorkshopView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine) => void }) {
-  const allService = machinesList.flatMap((machine) => machine.service);
-  const activeService = machinesList.flatMap((machine) => machine.service.map((service) => ({ machine, service }))).filter(({ service }) => service.status !== "Resolved");
+function workshopStatusClasses(status: ServiceBlocker["status"]) {
+  if (status === "Resolved") return "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]";
+  if (status === "In Progress") return "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]";
+  if (status === "Waiting") return "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]";
+  return "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]";
+}
+
+function workshopPartsLabel(service: ServiceBlocker) {
+  if (service.status === "Resolved") return "No parts needed";
+  if (service.status === "Waiting") return "Parts pending";
+  if (service.issue.toLowerCase().includes("leak")) return "Seal kit check";
+  return "No parts logged";
+}
+
+function workshopSortScore(service: ServiceBlocker) {
+  const statusScore = service.status === "Open" ? 0 : service.status === "In Progress" ? 1 : service.status === "Waiting" ? 2 : 4;
+  const releaseScore = service.blocksRelease ? -10 : 0;
+  const dueScore = service.due === "Today" ? -3 : service.due.includes("Tomorrow") ? -1 : 0;
+  return releaseScore + statusScore + dueScore;
+}
+
+function workshopJobId(machine: Machine, service: ServiceBlocker) {
+  return `${machine.id}::${service.issue}`;
+}
+
+function WorkshopJobCardContent({ machine, service }: { machine: Machine; service: ServiceBlocker }) {
+  return (
+    <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-3">
+      <div className="relative h-full min-h-[122px] overflow-hidden rounded-md border border-[#E2E8F0] bg-[#F1F5F9]">
+        <Image
+          src={machinePhotoPlaceholder(machine)}
+          alt={`${machine.code} ${machine.type}`}
+          fill
+          sizes="112px"
+          className="object-cover"
+          draggable={false}
+        />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-7">
+          <p className="text-sm font-bold text-white">{machine.code}</p>
+          <p className="truncate text-[10px] font-bold uppercase tracking-wide text-white/85">{machine.type}</p>
+        </div>
+      </div>
+      <div className="flex min-w-0 flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-2">
+            <GripVertical className="mt-1 h-4 w-4 shrink-0 text-[#94A3B8]" />
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold text-[#111827]">{machine.name}</p>
+              <p className="mt-0.5 text-xs font-bold uppercase tracking-wide text-[#64748B]">
+                {machine.code} · {machine.type}
+              </p>
+            </div>
+          </div>
+          <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${workshopStatusClasses(service.status)}`}>
+            {service.status}
+          </span>
+        </div>
+        <p className="mt-2 text-sm font-bold leading-snug text-[#111827]">{service.issue}</p>
+        <p className="mt-1 text-xs font-semibold leading-snug text-[#64748B]">
+          {machineWorksite(machine).name} · {service.owner} · {service.due}
+        </p>
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-xs font-bold">
+          {service.blocksRelease && service.status !== "Resolved" ? (
+            <span className="rounded-full border border-[#FECACA] bg-white px-2.5 py-1 uppercase text-[#B91C1C]">Blocks release</span>
+          ) : null}
+          <span className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1 text-[#475569]">{workshopPartsLabel(service)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorkshopView({
+  machinesList,
+  onJobCreate,
+  onMachineOpen,
+  onServiceStatusChange,
+}: {
+  machinesList: Machine[];
+  onJobCreate: (draft: WorkshopJobDraft) => void;
+  onMachineOpen: (machine: Machine) => void;
+  onServiceStatusChange: (machineId: string, issue: string, status: ServiceBlocker["status"]) => void;
+}) {
+  const [draggedJobId, setDraggedJobId] = useState<string | null>(null);
+  const [dropStatus, setDropStatus] = useState<ServiceBlocker["status"] | null>(null);
+  const [jobModalOpen, setJobModalOpen] = useState(false);
+  const [pointerDrag, setPointerDrag] = useState<WorkshopDragState | null>(null);
+  const suppressNextCardClickRef = useRef(false);
+
+  const serviceJobs = machinesList
+    .flatMap((machine) => machine.service.map((service) => ({ machine, service })))
+    .sort((left, right) => workshopSortScore(left.service) - workshopSortScore(right.service));
+  const laneItems: Array<{
+    statuses: ServiceBlocker["status"][];
+    dropStatus: ServiceBlocker["status"];
+    title: string;
+    subtitle: string;
+    headerClass: string;
+    dotClass: string;
+    countClass: string;
+    accentClass: string;
+  }> = [
+    {
+      statuses: ["Open"],
+      dropStatus: "Open",
+      title: "To do",
+      subtitle: "Not started",
+      headerClass: "bg-[#FFF7F7]",
+      dotClass: "bg-[#EF4444]",
+      countClass: "bg-[#FEF2F2] text-[#B91C1C]",
+      accentClass: "bg-[#EF4444]",
+    },
+    {
+      statuses: ["In Progress", "Waiting"],
+      dropStatus: "In Progress",
+      title: "Doing",
+      subtitle: "In the workshop",
+      headerClass: "bg-[#FFFBEB]",
+      dotClass: "bg-[#D97706]",
+      countClass: "bg-[#FFFBEB] text-[#B45309]",
+      accentClass: "bg-[#D97706]",
+    },
+    {
+      statuses: ["Resolved"],
+      dropStatus: "Resolved",
+      title: "Done",
+      subtitle: "Cleared for release",
+      headerClass: "bg-[#F0FDF4]",
+      dotClass: "bg-[#16A34A]",
+      countClass: "bg-[#F0FDF4] text-[#15803D]",
+      accentClass: "bg-[#16A34A]",
+    },
+  ];
+  const releaseBlockers = serviceJobs.filter(({ service }) => service.blocksRelease && service.status !== "Resolved").length;
+  const workingNow = serviceJobs.filter(({ service }) => service.status === "In Progress").length;
+  const cleared = serviceJobs.filter(({ service }) => service.status === "Resolved").length;
+
+  useEffect(() => {
+    if (!pointerDrag) return;
+
+    const previousUserSelect = document.body.style.userSelect;
+    const previousWebkitUserSelect = document.body.style.getPropertyValue("-webkit-user-select");
+    const previousCursor = document.body.style.cursor;
+
+    document.body.style.userSelect = "none";
+    document.body.style.setProperty("-webkit-user-select", "none");
+    document.body.style.cursor = "grabbing";
+    document.getSelection()?.removeAllRanges();
+
+    return () => {
+      document.body.style.userSelect = previousUserSelect;
+      if (previousWebkitUserSelect) {
+        document.body.style.setProperty("-webkit-user-select", previousWebkitUserSelect);
+      } else {
+        document.body.style.removeProperty("-webkit-user-select");
+      }
+      document.body.style.cursor = previousCursor;
+      document.getSelection()?.removeAllRanges();
+    };
+  }, [pointerDrag]);
+
+  function moveDraggedJob(jobId: string, status: ServiceBlocker["status"]) {
+    const job = serviceJobs.find(({ machine, service }) => workshopJobId(machine, service) === jobId);
+    if (!job || job.service.status === status) return;
+    onServiceStatusChange(job.machine.id, job.service.issue, status);
+  }
+
+  function laneStatusFromPoint(x: number, y: number) {
+    const target = document.elementFromPoint(x, y)?.closest("[data-workshop-drop-status]");
+    const status = target?.getAttribute("data-workshop-drop-status");
+    if (status === "Open" || status === "In Progress" || status === "Waiting" || status === "Resolved") return status;
+
+    const lanes = Array.from(document.querySelectorAll<HTMLElement>("[data-workshop-drop-status]"));
+    const boundedLane = lanes.find((lane) => {
+      const rect = lane.getBoundingClientRect();
+      return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    });
+    const boundedStatus = boundedLane?.getAttribute("data-workshop-drop-status");
+    return boundedStatus === "Open" || boundedStatus === "In Progress" || boundedStatus === "Waiting" || boundedStatus === "Resolved" ? boundedStatus : null;
+  }
+
+  function clearPointerDrag() {
+    setPointerDrag(null);
+    setDraggedJobId(null);
+    setDropStatus(null);
+  }
+
+  function beginPointerDrag(event: React.PointerEvent<HTMLDivElement>, machine: Machine, service: ServiceBlocker) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const jobId = workshopJobId(machine, service);
+    const bounds = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    document.getSelection()?.removeAllRanges();
+    suppressNextCardClickRef.current = false;
+    setDraggedJobId(jobId);
+    setPointerDrag({
+      jobId,
+      x: event.clientX,
+      y: event.clientY,
+      startX: event.clientX,
+      startY: event.clientY,
+      width: bounds.width,
+      height: bounds.height,
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top,
+    });
+    setDropStatus(laneStatusFromPoint(event.clientX, event.clientY));
+  }
+
+  function movePointerDrag(event: React.PointerEvent<HTMLDivElement>, jobId: string) {
+    if (!pointerDrag || pointerDrag.jobId !== jobId) return;
+    event.preventDefault();
+    document.getSelection()?.removeAllRanges();
+    const moved = Math.abs(event.clientX - pointerDrag.startX) > 6 || Math.abs(event.clientY - pointerDrag.startY) > 6;
+    if (moved) suppressNextCardClickRef.current = true;
+    setPointerDrag((current) => (current && current.jobId === jobId ? { ...current, x: event.clientX, y: event.clientY } : current));
+    setDropStatus(laneStatusFromPoint(event.clientX, event.clientY));
+  }
+
+  function endPointerDrag(event: React.PointerEvent<HTMLDivElement>, jobId: string) {
+    if (!pointerDrag || pointerDrag.jobId !== jobId) return;
+    event.preventDefault();
+    document.getSelection()?.removeAllRanges();
+    const targetStatus = laneStatusFromPoint(event.clientX, event.clientY);
+    const moved = Math.abs(event.clientX - pointerDrag.startX) > 6 || Math.abs(event.clientY - pointerDrag.startY) > 6;
+    if (targetStatus && moved) moveDraggedJob(jobId, targetStatus);
+    suppressNextCardClickRef.current = moved;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    clearPointerDrag();
+  }
+
+  const liftedJob = pointerDrag ? serviceJobs.find(({ machine, service }) => workshopJobId(machine, service) === pointerDrag.jobId) : undefined;
 
   return (
-    <div className="space-y-5">
-      <ViewHeader title="Workshop" description="Specialist maintenance queue: service work, workshop ownership, and release impact." showActions={false} />
-      <KpiStrip
-        items={[
-          ["Open Jobs", allService.filter((service) => service.status !== "Resolved").length, "blocked"],
-          ["Release Impact", allService.filter((service) => service.blocksRelease && service.status !== "Resolved").length, "blocked"],
-          ["In Progress", allService.filter((service) => service.status === "In Progress").length, "attention"],
-          ["Resolved", allService.filter((service) => service.status === "Resolved").length, "ready"],
-        ]}
-      />
+    <div className={`space-y-5 select-none ${pointerDrag ? "cursor-grabbing" : ""}`}>
+      <ViewHeader title="Service Jobs" description="Mechanical jobs that could stop tomorrow's work. Add a job, drag it across the board, and clear it before release." showActions={false} />
       <Surface className="overflow-hidden">
-        <div className="border-b border-[#E2E8F0] px-5 py-4">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Workshop job queue</p>
-          <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Service work owned by the workshop</h2>
-          <p className="mt-1 text-sm font-semibold text-[#64748B]">Use this page to manage mechanical work. Open the machine passport for full service history.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#E2E8F0] px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Service board</p>
+            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">Clear service jobs before they stop the site</h2>
+            <p className="mt-1 text-sm font-semibold text-[#64748B]">Move each vehicle from To do to Doing to Done. Done means it no longer blocks tomorrow&apos;s work.</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setJobModalOpen(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#092321]"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              New service job
+            </button>
+            <span className="rounded-full border border-[#FECACA] bg-[#FEF2F2] px-3 py-1.5 text-xs font-bold uppercase text-[#B91C1C]">{releaseBlockers} blocking</span>
+            <span className="rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-3 py-1.5 text-xs font-bold uppercase text-[#B45309]">{workingNow} doing</span>
+            <span className="rounded-full border border-[#BBF7D0] bg-[#F0FDF4] px-3 py-1.5 text-xs font-bold uppercase text-[#15803D]">{cleared} done</span>
+          </div>
         </div>
-        <div className="divide-y divide-[#E2E8F0]">
-          {activeService.map(({ machine, service }) => (
-            <div key={`${machine.id}-${service.issue}`} className={`grid gap-4 px-5 py-4 lg:grid-cols-[220px_minmax(0,1fr)_150px_140px_160px_170px] lg:items-center ${service.blocksRelease ? "bg-[#FEF2F2]/45" : "bg-white"}`}>
-              <div>
-                <p className="text-base font-bold text-[#0D2F2D]">{machine.code}</p>
-                <p className="mt-1 text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-bold text-[#111827]">{service.issue}</h3>
-                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${service.blocksRelease ? statusClasses("blocked") : statusClasses("at_risk")}`}>
-                    {service.blocksRelease ? "Release impact" : "Review"}
-                  </span>
+
+        <div className={`grid select-none gap-4 bg-[#F8FAFC] p-4 xl:grid-cols-3 ${pointerDrag ? "cursor-grabbing" : ""}`}>
+          {laneItems.map((lane) => {
+            const laneJobs = serviceJobs.filter(({ service }) => lane.statuses.includes(service.status));
+            const isDropTarget = dropStatus === lane.dropStatus;
+            return (
+              <div
+                key={lane.title}
+                data-workshop-drop-status={lane.dropStatus}
+                className={`relative flex min-h-[520px] flex-col overflow-hidden rounded-lg border bg-white transition ${
+                  isDropTarget ? "border-[#008C95] bg-[#E6FAFA] shadow-md ring-2 ring-[#008C95]/20" : "border-[#E2E8F0]"
+                }`}
+              >
+                <div className={`absolute inset-x-0 top-0 h-1 ${lane.accentClass}`} aria-hidden="true" />
+                <div className={`border-b border-[#E2E8F0] px-4 py-3 pt-4 ${lane.headerClass}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="inline-flex items-center gap-2 text-lg font-bold text-[#0D2F2D]">
+                      <span className={`h-2.5 w-2.5 rounded-full ${lane.dotClass}`} aria-hidden="true" />
+                      {lane.title}
+                    </h3>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${lane.countClass}`}>{laneJobs.length}</span>
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-[#64748B]">{lane.subtitle}</p>
                 </div>
-                <p className="mt-1 text-sm font-semibold text-[#64748B]">{service.severity} severity · {service.blocksRelease ? "blocks release" : "does not block release"}</p>
+                <div className="flex flex-1 flex-col gap-3 p-3">
+                  {laneJobs.length ? (
+                    laneJobs.map(({ machine, service }) => (
+                      <div
+                        key={`${machine.id}-${service.issue}`}
+                        role="button"
+                        tabIndex={0}
+                        onPointerDown={(event) => beginPointerDrag(event, machine, service)}
+                        onPointerMove={(event) => movePointerDrag(event, workshopJobId(machine, service))}
+                        onPointerUp={(event) => endPointerDrag(event, workshopJobId(machine, service))}
+                        onPointerCancel={(event) => {
+                          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                            event.currentTarget.releasePointerCapture(event.pointerId);
+                          }
+                          clearPointerDrag();
+                        }}
+                        onClick={() => {
+                          if (suppressNextCardClickRef.current) {
+                            suppressNextCardClickRef.current = false;
+                            return;
+                          }
+                          onMachineOpen(machine);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onMachineOpen(machine);
+                          }
+                        }}
+                        className={`touch-none select-none cursor-grab rounded-md border p-2.5 transition hover:shadow-md active:cursor-grabbing ${
+                          draggedJobId === workshopJobId(machine, service) ? "invisible shadow-none" : "shadow-sm"
+                        } ${
+                          service.blocksRelease && service.status !== "Resolved" ? "border-[#FECACA] bg-[#FEF2F2]/45" : "border-[#E2E8F0] bg-white"
+                        }`}
+                      >
+                        <WorkshopJobCardContent machine={machine} service={service} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">No jobs here.</div>
+                  )}
+                  {pointerDrag ? (
+                    <div
+                      className={`mt-auto rounded-md border border-dashed p-4 text-center text-xs font-bold uppercase tracking-wide transition ${
+                        isDropTarget ? "border-[#008C95] bg-white text-[#008C95]" : "border-[#CBD5E1] bg-[#F8FAFC] text-[#64748B]"
+                      }`}
+                    >
+                      Drop service job here
+                    </div>
+                  ) : null}
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase text-[#64748B]">Owner</p>
-                <p className="mt-1 font-bold text-[#0D2F2D]">{service.owner}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase text-[#64748B]">Due</p>
-                <p className="mt-1 font-semibold text-[#1F2933]">{service.due}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase text-[#64748B]">Status</p>
-                <p className="mt-1 font-semibold text-[#1F2933]">{service.status}</p>
-              </div>
-              <button type="button" onClick={() => onMachineOpen(machine)} className="min-h-10 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white">
-                Open service
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Surface>
+      {pointerDrag && liftedJob ? (
+        <div
+          data-workshop-lifted-card="true"
+          className={`pointer-events-none fixed z-[70] rotate-[-2deg] rounded-md border p-2.5 shadow-[0_28px_70px_rgba(15,23,42,0.32)] ${
+            liftedJob.service.blocksRelease && liftedJob.service.status !== "Resolved" ? "border-[#FCA5A5] bg-[#FEF2F2]" : "border-[#008C95] bg-white"
+          }`}
+          style={{
+            left: pointerDrag.x - pointerDrag.offsetX,
+            top: pointerDrag.y - pointerDrag.offsetY,
+            width: pointerDrag.width,
+            minHeight: pointerDrag.height,
+          }}
+          aria-hidden="true"
+        >
+          <WorkshopJobCardContent machine={liftedJob.machine} service={liftedJob.service} />
+        </div>
+      ) : null}
+      {jobModalOpen ? <WorkshopJobModal machinesList={machinesList} onClose={() => setJobModalOpen(false)} onCreate={onJobCreate} /> : null}
+    </div>
+  );
+}
+
+function WorkshopJobModal({
+  machinesList,
+  onClose,
+  onCreate,
+}: {
+  machinesList: Machine[];
+  onClose: () => void;
+  onCreate: (draft: WorkshopJobDraft) => void;
+}) {
+  const [machineId, setMachineId] = useState(machinesList[0]?.id ?? "");
+  const [issue, setIssue] = useState("");
+  const [owner, setOwner] = useState("Workshop");
+  const [due, setDue] = useState("Today");
+  const [blocksRelease, setBlocksRelease] = useState(true);
+  const selectedMachine = machinesList.find((machine) => machine.id === machineId) ?? machinesList[0];
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  function submitJob(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedMachine || !issue.trim()) return;
+    onCreate({ machineId: selectedMachine.id, issue, owner, due, blocksRelease });
+    onClose();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D2F2D]/45 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[#E2E8F0] p-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-[#008C95]">Service job</p>
+            <h2 className="mt-1 text-2xl font-bold text-[#0D2F2D]">New service job</h2>
+            <p className="mt-2 text-sm font-semibold text-[#64748B]">Pick the vehicle, name the work, then it appears in To do.</p>
+          </div>
+          <button type="button" onClick={onClose} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#E2E8F0] text-[#475569]">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+        <form className="grid gap-5 p-5 lg:grid-cols-[260px_minmax(0,1fr)]" onSubmit={submitJob}>
+          <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+            {selectedMachine ? (
+              <>
+                <div className="relative h-40 overflow-hidden rounded-md bg-[#E2E8F0]">
+                  <Image
+                    src={machinePhotoPlaceholder(selectedMachine)}
+                    alt={`${selectedMachine.code} ${selectedMachine.type}`}
+                    fill
+                    sizes="260px"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="mt-3">
+                  <p className="text-xl font-bold text-[#111827]">{selectedMachine.code}</p>
+                  <p className="mt-1 text-sm font-bold text-[#475569]">{selectedMachine.name}</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#64748B]">
+                    {selectedMachine.type} · {machineWorksite(selectedMachine).name}
+                  </p>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-machine">
+                Vehicle
+              </label>
+              <select
+                id="workshop-machine"
+                value={machineId}
+                onChange={(event) => setMachineId(event.target.value)}
+                className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-sm font-bold text-[#111827] outline-none focus:border-[#0D2F2D]"
+              >
+                {machinesList.map((machine) => (
+                  <option key={machine.id} value={machine.id}>
+                    {machine.code} · {machine.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-issue">
+                Job
+              </label>
+              <input
+                id="workshop-issue"
+                value={issue}
+                onChange={(event) => setIssue(event.target.value)}
+                placeholder="e.g. Brake inspection, oil leak repair, tyre replacement"
+                className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] px-3 text-sm font-semibold text-[#111827] outline-none focus:border-[#0D2F2D]"
+                autoFocus
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-owner">
+                  Owner
+                </label>
+                <select
+                  id="workshop-owner"
+                  value={owner}
+                  onChange={(event) => setOwner(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-sm font-bold text-[#111827] outline-none focus:border-[#0D2F2D]"
+                >
+                  {teamMembers.map((person) => (
+                    <option key={person.name} value={person.name}>
+                      {person.name} · {person.role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-due">
+                  Due
+                </label>
+                <select
+                  id="workshop-due"
+                  value={due}
+                  onChange={(event) => setDue(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-sm font-bold text-[#111827] outline-none focus:border-[#0D2F2D]"
+                >
+                  <option value="Today">Today</option>
+                  <option value="Tomorrow morning">Tomorrow morning</option>
+                  <option value="Tomorrow noon">Tomorrow noon</option>
+                  <option value="Waiting parts">Waiting parts</option>
+                </select>
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+              <input
+                type="checkbox"
+                checked={blocksRelease}
+                onChange={(event) => setBlocksRelease(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-[#CBD5E1] text-[#0D2F2D]"
+              />
+              <span>
+                <span className="block text-sm font-bold text-[#0D2F2D]">Blocks tomorrow&apos;s release</span>
+                <span className="mt-1 block text-xs font-semibold text-[#64748B]">Turn this off for routine workshop work that should not stop tomorrow&apos;s release.</span>
+              </span>
+            </label>
+
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <button type="button" onClick={onClose} className="min-h-11 rounded-md border border-[#E2E8F0] px-4 text-sm font-bold text-[#1F2933]">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!issue.trim() || !selectedMachine}
+              >
+                <Wrench className="h-4 w-4" aria-hidden="true" />
+                Add to board
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function isReleaseDecisionRecord(record: ReleaseRecord) {
+  return Boolean(record.machine && record.result);
+}
+
+function releaseDecisionState(record: ReleaseRecord): MachineState {
+  if (["Ready For Work", "Service Cleared"].includes(record.result)) return "ready";
+  if (["Cannot Be Released"].includes(record.result)) return "blocked";
+  return "at_risk";
+}
+
+function releaseAuditId(record: ReleaseRecord) {
+  return `FL-${record.date}-${record.worksite}-${record.machine}-${record.result}-${record.reason}-${record.action}`.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toUpperCase();
+}
+
+function releaseEvidencePacketText(record: ReleaseRecord) {
+  const machine = machines.find((item) => item.code === record.machine);
+  const worksite = worksites.find((item) => item.name === record.worksite) ?? (machine ? machineWorksite(machine) : undefined);
+  const requiredMachines = worksite ? machinesForWorksite(worksite) : machine ? [machine] : [];
+  const counts = countsForMachines(requiredMachines);
+  const blockerLines = machine && blockerCardsForMachine(machine).length
+    ? blockerCardsForMachine(machine).map((blocker) => `- ${blocker.title}: ${blocker.summary}`).join("\n")
+    : "- No active blocker snapshot for this decision.";
+  const documentLines = machine
+    ? machine.certificates.map((certificate) => `- ${certificate.name}: ${certificate.status} · ${certificate.expiry} · owner ${certificate.owner}`).join("\n")
+    : "- No machine document snapshot available.";
+  const serviceLines = machine
+    ? machine.service.map((service) => `- ${service.issue}: ${service.status} · ${service.due} · owner ${service.owner}`).join("\n")
+    : "- No machine service snapshot available.";
+
+  return [
+    `Evidence packet ${releaseAuditId(record)}`,
+    "",
+    "Decision event",
+    `Date: ${record.date}`,
+    `Worksite: ${record.worksite}`,
+    `Machine: ${record.machine}`,
+    `Decision: ${record.result}`,
+    `Reason: ${record.reason}`,
+    `Action: ${record.action}`,
+    `User: ${record.user}`,
+    `Override: ${record.override}`,
+    "",
+    "Work package snapshot",
+    `Required machines: ${counts.total}`,
+    `Ready: ${counts.ready}`,
+    `Needs review: ${counts.attention}`,
+    `Blocked: ${counts.blocked}`,
+    "",
+    "Machine blocker snapshot",
+    blockerLines,
+    "",
+    "Document snapshot",
+    documentLines,
+    "",
+    "Service snapshot",
+    serviceLines,
+  ].join("\n");
+}
+
+function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onClose: () => void }) {
+  const machine = machines.find((item) => item.code === record.machine);
+  const worksite = worksites.find((item) => item.name === record.worksite) ?? (machine ? machineWorksite(machine) : undefined);
+  const requiredMachines = worksite ? machinesForWorksite(worksite) : machine ? [machine] : [];
+  const counts = countsForMachines(requiredMachines);
+  const blockers = machine ? blockerCardsForMachine(machine) : [];
+  const auditId = releaseAuditId(record);
+  const state = releaseDecisionState(record);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-[#0D2F2D]/35"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <aside className="flex h-full w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[#E2E8F0] p-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-[#008C95]">Evidence packet</p>
+            <h2 className="mt-1 text-2xl font-bold text-[#0D2F2D]">{record.machine} decision event</h2>
+            <p className="mt-2 text-sm font-semibold text-[#64748B]">{auditId}</p>
+          </div>
+          <button type="button" onClick={onClose} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#E2E8F0] text-[#475569]">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+          <div className={`rounded-lg border p-4 ${statusClasses(state)}`}>
+            <p className="text-xs font-bold uppercase tracking-wide">Decision event</p>
+            <p className="mt-2 text-2xl font-bold">{record.result}</p>
+            <p className="mt-2 text-sm font-bold">{record.reason}</p>
+            <p className="mt-1 text-sm font-semibold opacity-85">{record.action} · {record.user} · Override: {record.override}</p>
+          </div>
+
+          <Surface className="p-4">
+            <h3 className="text-lg font-bold text-[#0D2F2D]">Work package snapshot</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[
+                ["Worksite", record.worksite],
+                ["Decision date", record.date],
+                ["Required machines", String(counts.total)],
+                ["Ready / Review / Blocked", `${counts.ready} / ${counts.attention} / ${counts.blocked}`],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">{label}</p>
+                  <p className="mt-1 text-sm font-bold text-[#111827]">{value}</p>
+                </div>
+              ))}
+            </div>
+          </Surface>
+
+          <Surface className="p-4">
+            <h3 className="text-lg font-bold text-[#0D2F2D]">Evidence included</h3>
+            <div className="mt-3 grid gap-2 text-sm font-semibold text-[#1F2933]">
+              {["Decision log", "Work package machine checklist", "Blocker snapshot", "Evidence snapshot", "Service snapshot", "Override declaration when used"].map((item) => (
+                <div key={item} className="flex items-center gap-2 rounded-md bg-[#F8FAFC] px-3 py-2">
+                  <FileText className="h-4 w-4 shrink-0 text-[#008C95]" aria-hidden="true" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </Surface>
+
+          <Surface className="p-4">
+            <h3 className="text-lg font-bold text-[#0D2F2D]">Current blocker snapshot</h3>
+            {blockers.length ? (
+              <div className="mt-3 space-y-2">
+                {blockers.map((blocker) => (
+                  <div key={blocker.id} className="rounded-md border border-[#FECACA] bg-[#FEF2F2] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-bold text-[#111827]">{blocker.title}</p>
+                      <span className="rounded-full border border-[#FECACA] bg-white px-2.5 py-1 text-[11px] font-bold uppercase text-[#B91C1C]">{blocker.status}</span>
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-[#B91C1C]">{blocker.summary}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 rounded-md border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm font-bold text-[#15803D]">No active blocker snapshot for this decision.</p>
+            )}
+          </Surface>
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2 border-t border-[#E2E8F0] p-4">
+          <button type="button" onClick={onClose} className="min-h-11 rounded-md border border-[#E2E8F0] px-4 text-sm font-bold text-[#1F2933]">
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={() => downloadTextFile(`${auditId}-evidence-packet.txt`, releaseEvidencePacketText(record))}
+            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Download packet
+          </button>
+        </div>
+      </aside>
     </div>
   );
 }
 
 function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
+  const [selectedRecord, setSelectedRecord] = useState<ReleaseRecord | null>(null);
   const normalized = normalizeSearch(searchTerm);
-  const visibleHistory = releaseHistory.filter((item) =>
+  const decisionHistory = releaseHistory.filter(isReleaseDecisionRecord);
+  const visibleHistory = decisionHistory.filter((item) =>
     !normalized || [item.date, item.worksite, item.machine, item.result, item.reason, item.action, item.user].some((value) => value.toLowerCase().includes(normalized)),
   );
 
   return (
     <div className="space-y-5">
       <ViewHeader
-        title="Release History"
-        description="A clean audit trail of every release decision."
+        title="Decision History"
+        description="The evidence trail for Know Before Tomorrow: who decided, why, when, and with what proof."
         showActions={false}
       />
       <KpiStrip
         items={[
-          ["Released", visibleHistory.filter((item) => item.result === "Ready For Work").length, "ready"],
+          ["Events", visibleHistory.length, "neutral"],
+          ["Released", visibleHistory.filter((item) => item.result === "Ready For Work" || item.result === "Released With Override").length, "ready"],
           ["Blocked", visibleHistory.filter((item) => item.result === "Cannot Be Released").length, "blocked"],
-          ["Needs Attention", visibleHistory.filter((item) => item.result === "Needs Attention").length, "attention"],
           ["Overrides", visibleHistory.filter((item) => item.override === "Yes").length, "neutral"],
         ]}
       />
       <Surface className="overflow-hidden">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#E2E8F0] px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Decision proof packets</p>
+            <h2 className="mt-2 text-xl font-bold text-[#0D2F2D]">What changed, who did it, and why it mattered</h2>
+            <p className="mt-1 text-sm font-semibold text-[#64748B]">Open a packet to review the decision event, machine checklist, blocker snapshot, and exportable evidence.</p>
+          </div>
+        </div>
         <div className="divide-y divide-[#E2E8F0]">
-          {visibleHistory.map((item) => {
-            const state: MachineState =
-              item.result === "Ready For Work"
-                ? "ready"
-                : item.result === "Needs Attention" || item.result === "Owner Assigned" || item.result === "Assignment Accepted"
-                  ? "at_risk"
-                  : "blocked";
-            return (
-              <div key={`${item.date}-${item.machine}-${item.reason}`} className="grid gap-4 p-4 md:grid-cols-[120px_180px_minmax(0,1fr)_180px]">
-                <div>
-                  <p className="text-xs font-bold uppercase text-[#64748B]">Date</p>
-                  <p className="font-bold text-[#0D2F2D]">{item.date}</p>
+          {visibleHistory.length ? (
+            visibleHistory.map((item) => {
+              const state = releaseDecisionState(item);
+              return (
+                <div key={releaseAuditId(item)} className="grid gap-4 p-4 lg:grid-cols-[130px_190px_minmax(0,1fr)_190px] lg:items-center">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Decision date</p>
+                    <p className="mt-1 font-bold text-[#0D2F2D]">{item.date}</p>
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-[#0D2F2D]">{item.machine}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#64748B]">{item.worksite}</p>
+                  </div>
+                  <div>
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${statusClasses(state)}`}>{item.result}</span>
+                    <p className="mt-2 text-sm font-bold text-[#1F2933]">{item.reason}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#64748B]">
+                      {item.action} · {item.user} · {releaseAuditId(item)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRecord(item)}
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[#E2E8F0] bg-white px-3 text-xs font-bold text-[#0D2F2D] hover:border-[#0D2F2D]"
+                  >
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    View packet
+                  </button>
                 </div>
-                <div>
-                  <p className="font-bold text-[#0D2F2D]">{item.machine}</p>
-                  <p className="text-xs font-semibold text-[#64748B]">{item.worksite}</p>
-                </div>
-                <div>
-                  <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusClasses(state)}`}>{item.result}</span>
-                  <p className="mt-2 text-sm font-semibold text-[#1F2933]">{item.reason}</p>
-                  <p className="text-xs text-[#64748B]">{item.action} · {item.user} · Override: {item.override}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => downloadTextFile(`${item.machine}-release-evidence.txt`, `${item.date}\n${item.worksite}\n${item.machine}\n${item.result}\n${item.reason}`)}
-                  className="h-10 rounded-md border border-[#E2E8F0] bg-white px-3 text-xs font-bold text-[#0D2F2D]"
-                >
-                  Download evidence
-                </button>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="p-6 text-sm font-bold text-[#64748B]">No release decisions match this search.</div>
+          )}
         </div>
       </Surface>
-    </div>
-  );
-}
-
-function SettingsView() {
-  return (
-    <div className="space-y-5">
-      <ViewHeader title="Settings" description="Rules that control release decisions, reports and team ownership." showActions={false} />
-      <div className="grid gap-4 lg:grid-cols-3">
-        {[
-          ["Release gate", "Blocked machines cannot be released without owner override and audit reason."],
-          ["Daily report", "06:30 in-app summary with ready, review and blocked machines."],
-          ["Document warning", "Certificate warnings at 60, 30, 14 and 7 days."],
-          ["Owners", "Dimitris operations · Maria office · Kostas workshop."],
-          ["Worksites", worksites.map((worksite) => worksite.name).join(" · ")],
-          ["Machine types", "Crane · Excavator · Loader · Truck · Generator · Other."],
-        ].map(([title, body]) => (
-          <Surface key={title} className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="text-lg font-bold text-[#0D2F2D]">{title}</h2>
-              <span className="rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-2.5 py-1 text-xs font-bold text-[#15803D]">Active</span>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-[#64748B]">{body}</p>
-          </Surface>
-        ))}
-      </div>
+      {selectedRecord ? <EvidencePacketDrawer record={selectedRecord} onClose={() => setSelectedRecord(null)} /> : null}
     </div>
   );
 }
@@ -4024,13 +5398,11 @@ function SettingsView() {
 function ViewHeader({
   description,
   exportLabel = "Export Report",
-  importLabel = "Import",
   showActions = true,
   title,
 }: {
   description: string;
   exportLabel?: string;
-  importLabel?: string;
   showActions?: boolean;
   title: string;
 }) {
@@ -4042,14 +5414,6 @@ function ViewHeader({
       </div>
       {showActions ? (
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => emitPrototypeToast(`${importLabel} queue opened.`)}
-            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#1F2933]"
-          >
-            <Upload className="h-4 w-4" aria-hidden="true" />
-            {importLabel}
-          </button>
           <button
             type="button"
             onClick={() => downloadTextFile(`${title.toLowerCase().replaceAll(" ", "-")}.txt`, `${title}\n${description}`)}

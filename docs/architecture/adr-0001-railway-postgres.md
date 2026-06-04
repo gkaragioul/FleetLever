@@ -14,6 +14,8 @@ The app is hosted around Railway, so the database should be simple to operate th
 
 Use Railway Postgres as the primary database and manage schema changes through versioned SQL migrations in `db/migrations`.
 
+Uploaded file bytes are stored outside Postgres in Railway Buckets. Postgres stores file metadata, storage keys, bucket names, ownership, version rows, and audit references. This keeps the relational database focused on operational facts while evidence PDFs, certificates, photos, and reports scale through object storage.
+
 The first migration creates the FleetLever core schema with:
 
 - Organization-scoped tables for all customer-owned records.
