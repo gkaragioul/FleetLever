@@ -516,33 +516,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="px-5 py-20 sm:px-6 lg:px-8" id="product">
-        <div className="mx-auto w-full max-w-7xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Αυριανή δουλειά</p>
-            <h2 className="mt-3 text-4xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
-              Η πρώτη οθόνη πριν το αυριανό πρόγραμμα.
-            </h2>
-          </div>
-          <div className="relative mx-auto mt-12 max-w-6xl">
-            <BrowserFrame src="/fleetlever/site/tomorrow-readiness-dashboard.png" alt={copy.productAlt} zoom={4} />
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {[
-                ["2", "έτοιμα", "text-[#15803d]"],
-                ["1", "θέλει έλεγχο", "text-[#b45309]"],
-                ["2", "μπλοκάρουν τη δουλειά", "text-[#b42318]"],
-              ].map(([number, label, color]) => (
-                <div key={label} className="rounded-lg bg-white p-5 text-center shadow-sm">
-                  <p className={`text-4xl font-semibold ${color}`}>{number}</p>
-                  <p className="mt-1 text-base font-bold text-[#334641]">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8">
+      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8" id="product">
         <div className="mx-auto w-full max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
             <p className="text-sm font-bold uppercase tracking-normal text-[#72dce5]">{copy.stopsEyebrow}</p>
