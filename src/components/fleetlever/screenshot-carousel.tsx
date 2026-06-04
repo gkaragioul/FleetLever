@@ -56,7 +56,7 @@ export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
                       width={slide.width}
                       height={slide.height}
                       imageClassName="h-full w-full object-contain"
-                      sizes="(min-width: 1024px) 52vw, 100vw"
+                      sizes="(min-width: 1280px) 72rem, 100vw"
                     />
                   ) : (
                     <Image
@@ -66,7 +66,7 @@ export function ScreenshotCarousel({ slides }: ScreenshotCarouselProps) {
                       height={slide.height}
                       draggable={false}
                       className="h-full w-full object-contain"
-                      sizes="(min-width: 1024px) 52vw, 100vw"
+                      sizes="(min-width: 1280px) 72rem, 100vw"
                     />
                   )}
                 </div>

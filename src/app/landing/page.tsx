@@ -543,21 +543,24 @@ export default function LandingPage() {
       </section>
 
       <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <ScreenshotCarousel slides={whyStopsCarouselSlides} />
-          <div>
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="mx-auto max-w-4xl text-center">
             <p className="text-sm font-bold uppercase tracking-normal text-[#72dce5]">{copy.stopsEyebrow}</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+            <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
               Όταν κάτι μπλοκάρει τη δουλειά, το FleetLever δείχνει ακριβώς γιατί.
             </h2>
-            <ul className="mt-7 grid gap-3 text-base font-semibold text-[#eef7f4] sm:grid-cols-2">
+          </div>
+
+          <div className="relative mx-auto mt-12 max-w-6xl">
+            <ScreenshotCarousel slides={whyStopsCarouselSlides} />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {["Τι συμβαίνει", "Ποιος είναι υπεύθυνος", "Τι πρέπει να γίνει", "Πότε πρέπει να γίνει"].map((item) => (
-                <li key={item} className="flex items-center gap-3">
+                <div key={item} className="flex min-h-20 items-center gap-3 rounded-lg border border-white/10 bg-white/8 p-5 text-base font-bold text-[#eef7f4] shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
                   <CheckCircle2 className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
                   {item}
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       </section>
