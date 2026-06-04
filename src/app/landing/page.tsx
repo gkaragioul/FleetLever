@@ -430,19 +430,49 @@ export default function LandingPage() {
               Ένας έλεγχος πριν δεσμευτεί η αυριανή δουλειά.
             </h2>
           </div>
-          <div className="mx-auto mt-14 max-w-3xl">
+          <div className="mx-auto mt-14 max-w-5xl">
             {[
-              ["🏗", "Επιλέγεις εργοτάξιο"],
-              ["🚜", "Βλέπεις τα απαιτούμενα μηχανήματα"],
-              ["⚠", "Το FleetLever βρίσκει blockers"],
-              ["✅", "Απελευθερώνεις μόνο ό,τι είναι έτοιμο"],
-            ].map(([icon, label], index) => (
-              <div key={label}>
-                <div className={`flex items-center gap-5 py-5 ${index === 2 ? "scale-[1.03] rounded-lg bg-[#fff6f4] px-5 shadow-[0_18px_50px_rgba(180,35,24,0.1)]" : ""}`}>
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#eef7f4] text-3xl">{icon}</span>
-                  <p className={`text-2xl font-semibold leading-8 ${index === 2 ? "text-[#b42318]" : "text-[#13211f]"}`}>{label}</p>
+              {
+                title: "Επιλέγεις εργοτάξιο",
+                body: "Ορίζεις ποια δουλειά πρέπει να ξεκινήσει αύριο.",
+              },
+              {
+                title: "Βλέπεις τα απαιτούμενα μηχανήματα",
+                body: "Όλος ο κρίσιμος εξοπλισμός μπαίνει στον ίδιο έλεγχο.",
+              },
+              {
+                title: "Το FleetLever βρίσκει τι μπλοκάρει",
+                body: "Ληγμένα έγγραφα, ανοιχτό service, διαθεσιμότητα ή παράδοση.",
+                featured: true,
+              },
+              {
+                title: "Απελευθερώνεις μόνο ό,τι είναι έτοιμο",
+                body: "Η αυριανή δουλειά δεσμεύεται με καθαρή απόφαση.",
+              },
+            ].map((step, index) => (
+              <div key={step.title} className="relative grid gap-5 pb-8 last:pb-0 sm:grid-cols-[5rem_1fr]">
+                {index < 3 ? (
+                  <div className="absolute bottom-0 left-10 top-20 hidden w-px bg-[#dbe2de] sm:block" aria-hidden="true" />
+                ) : null}
+                <div className={`relative z-10 flex h-20 w-20 items-center justify-center rounded-full border text-2xl font-semibold ${
+                  step.featured
+                    ? "border-[#f2b8b2] bg-[#fff6f4] text-[#b42318] shadow-[0_16px_44px_rgba(180,35,24,0.12)]"
+                    : "border-[#dbe2de] bg-white text-[#007C89]"
+                }`}>
+                  {String(index + 1).padStart(2, "0")}
                 </div>
-                {index < 3 ? <div className="ml-7 h-8 w-px bg-[#dbe2de]" aria-hidden="true" /> : null}
+                <div className={`rounded-lg border p-6 ${
+                  step.featured
+                    ? "border-[#f2b8b2] bg-[#fff6f4] shadow-[0_18px_50px_rgba(180,35,24,0.1)]"
+                    : "border-[#dbe2de] bg-white shadow-sm"
+                }`}>
+                  <p className={`text-2xl font-semibold leading-8 ${step.featured ? "text-[#b42318]" : "text-[#13211f]"}`}>
+                    {step.title}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-base font-semibold leading-7 text-[#667771]">
+                    {step.body}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
