@@ -3,6 +3,7 @@ import {
   BadgeCheck,
   CheckCircle2,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 import { ScreenshotCarousel } from "@/components/fleetlever/screenshot-carousel";
@@ -294,6 +295,49 @@ const whyStopsCarouselSlides = [
   },
 ] as const;
 
+const machinePassportCards = [
+  {
+    code: "CR-04",
+    title: "Mobile Crane",
+    photo: "/fleetlever/machines/cr04-crane.jpg",
+    appShot: "/fleetlever/site/machine-passport-drawer.png",
+    status: "Blocked",
+    owner: "Dimitris",
+    note: "Lifting certificate expired",
+    alt: "Mobile crane on a construction site",
+  },
+  {
+    code: "EX-12",
+    title: "Excavator",
+    photo: "/fleetlever/machines/ex12-excavator.jpg",
+    appShot: "/fleetlever/site/machine-drawer-from-inventory.png",
+    status: "Ready",
+    owner: "Workshop",
+    note: "No blocker found",
+    alt: "Excavator working on a construction site",
+  },
+  {
+    code: "LD-03",
+    title: "Loader",
+    photo: "/fleetlever/machines/ld03-loader.jpg",
+    appShot: "/fleetlever/site/stop-list.png",
+    status: "Needs review",
+    owner: "Kostas",
+    note: "Inspection due in 3 days",
+    alt: "Loader machine at a construction site",
+  },
+  {
+    code: "TR-08",
+    title: "Truck",
+    photo: "/fleetlever/machines/tr08-truck.jpg",
+    appShot: "/fleetlever/site/tomorrow-readiness-dashboard.png",
+    status: "Ready",
+    owner: "Maria",
+    note: "Work package confirmed",
+    alt: "Construction truck on site",
+  },
+] as const;
+
 function BrowserFrame({
   src,
   alt,
@@ -541,19 +585,106 @@ export default function LandingPage() {
       </section>
 
       <section className="px-5 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
-          <div>
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[0.76fr_1.24fr] lg:items-end">
             <SectionHeader
               eyebrow="Machine Passport"
               title="Όλα για το μηχάνημα σε ένα σημείο."
+              body="Το FleetLever συνδέει το πραγματικό μηχάνημα με το app record του: έγγραφα, service, inspection, owner και σημερινό readiness."
             />
-            <div className="mt-7 flex flex-wrap gap-3">
-              {["Πιστοποιητικά", "Service", "Επιθεωρήσεις", "Έγγραφα", "Ιστορικό"].map((item) => (
-                <span key={item} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#263b37] shadow-sm">{item}</span>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {["Πιστοποιητικά", "Service", "Επιθεωρήσεις", "Έγγραφα"].map((item) => (
+                <div key={item} className="rounded-lg border border-[#dce5e1] bg-white px-4 py-3 text-sm font-bold text-[#263b37] shadow-sm">
+                  {item}
+                </div>
               ))}
             </div>
           </div>
-          <BrowserFrame src="/fleetlever/site/machine-passport-drawer.png" alt={copy.passportAlt} />
+          <div className="mt-10 grid gap-5 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch">
+            <div className="relative min-h-full">
+              <BrowserFrame
+                src="/fleetlever/site/machine-passport-drawer.png"
+                alt={copy.passportAlt}
+                className="lg:h-full"
+              />
+              <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:absolute lg:-bottom-8 lg:left-8 lg:right-8 lg:mt-0">
+                {[
+                  ["CR-04", "Blocked", "Certificate expired"],
+                  ["LD-03", "Needs review", "Inspection due"],
+                  ["EX-12", "Ready", "No blocker"],
+                ].map(([code, status, detail]) => (
+                  <div key={code} className="rounded-lg border border-[#dce5e1] bg-white p-4 shadow-[0_18px_45px_rgba(19,33,31,0.12)]">
+                    <p className="text-xs font-bold uppercase text-[#007C89]">{code}</p>
+                    <p className="mt-1 text-lg font-semibold text-[#13211f]">{status}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#64748B]">{detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              {machinePassportCards.slice(0, 2).map((machine) => (
+                <article key={machine.code} className="overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-sm">
+                  <div className="grid min-h-full sm:grid-cols-[0.96fr_1.04fr] lg:grid-cols-[0.92fr_1.08fr]">
+                    <div className="relative min-h-44 overflow-hidden bg-[#dfe7e2]">
+                      <Image
+                        src={machine.photo}
+                        alt={machine.alt}
+                        fill
+                        className="object-cover"
+                        sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
+                      />
+                    </div>
+                    <div className="flex flex-col justify-between p-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase text-[#007C89]">{machine.code}</p>
+                        <h3 className="mt-1 text-xl font-semibold text-[#13211f]">{machine.title}</h3>
+                        <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
+                      </div>
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-[#edf6f3] px-3 py-1 text-xs font-bold text-[#007C89]">{machine.status}</span>
+                        <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{machine.owner}</span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {machinePassportCards.map((machine) => (
+              <article key={machine.code} className="group overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_70px_rgba(19,33,31,0.15)]">
+                <div className="relative aspect-[3/2] overflow-hidden bg-[#dfe7e2]">
+                  <Image
+                    src={machine.photo}
+                    alt={machine.alt}
+                    fill
+                    className="object-cover transition duration-500 group-hover:scale-[1.04]"
+                    sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
+                  />
+                </div>
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase text-[#007C89]">{machine.code}</p>
+                      <h3 className="mt-1 text-lg font-semibold text-[#13211f]">{machine.title}</h3>
+                    </div>
+                    <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{machine.status}</span>
+                  </div>
+                  <div className="mt-4 overflow-hidden rounded-md border border-[#e3e9e5] bg-[#f8faf7]">
+                    <Image
+                      src={machine.appShot}
+                      alt={`${machine.code} FleetLever app shot`}
+                      width={3840}
+                      height={2400}
+                      className="h-28 w-full object-cover object-left-top"
+                      sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
+                    />
+                  </div>
+                  <p className="mt-4 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
