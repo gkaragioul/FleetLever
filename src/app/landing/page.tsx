@@ -611,10 +611,10 @@ export default function LandingPage() {
                   <span className="ml-3 h-4 flex-1 rounded-full bg-[#e6eeea]" />
                 </div>
                 <ScreenshotMagnifier
-                  src="/fleetlever/site/machine-passport-drawer.png"
-                  alt={copy.passportAlt}
+                  src="/fleetlever/site/machine-drawer-from-inventory.png"
+                  alt="FleetLever machines inventory with real machine photos and an open Machine Passport drawer"
                   width={3840}
-                  height={2400}
+                  height={2442}
                   imageClassName="h-auto w-full"
                   sizes="(min-width: 1024px) 58rem, 100vw"
                 />
