@@ -586,13 +586,13 @@ export default function LandingPage() {
 
       <section className="px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.76fr_1.24fr] lg:items-end">
+          <div className="grid gap-8 lg:grid-cols-[0.86fr_1.14fr] lg:items-end">
             <SectionHeader
               eyebrow="Machine Passport"
               title="Όλα για το μηχάνημα σε ένα σημείο."
-              body="Το FleetLever συνδέει το πραγματικό μηχάνημα με το app record του: έγγραφα, service, inspection, owner και σημερινό readiness."
+              body="Ένα καθαρό record για κάθε μηχάνημα: certificates, service, inspections, έγγραφα, owner και readiness."
             />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-4">
               {["Πιστοποιητικά", "Service", "Επιθεωρήσεις", "Έγγραφα"].map((item) => (
                 <div key={item} className="rounded-lg border border-[#dce5e1] bg-white px-4 py-3 text-sm font-bold text-[#263b37] shadow-sm">
                   {item}
@@ -600,60 +600,49 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-          <div className="mt-10 grid gap-5 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch">
-            <div className="relative min-h-full">
-              <BrowserFrame
-                src="/fleetlever/site/machine-passport-drawer.png"
-                alt={copy.passportAlt}
-                className="lg:h-full"
-              />
-              <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:absolute lg:-bottom-8 lg:left-8 lg:right-8 lg:mt-0">
-                {[
-                  ["CR-04", "Blocked", "Certificate expired"],
-                  ["LD-03", "Needs review", "Inspection due"],
-                  ["EX-12", "Ready", "No blocker"],
-                ].map(([code, status, detail]) => (
-                  <div key={code} className="rounded-lg border border-[#dce5e1] bg-white p-4 shadow-[0_18px_45px_rgba(19,33,31,0.12)]">
-                    <p className="text-xs font-bold uppercase text-[#007C89]">{code}</p>
-                    <p className="mt-1 text-lg font-semibold text-[#13211f]">{status}</p>
-                    <p className="mt-1 text-xs font-semibold text-[#64748B]">{detail}</p>
-                  </div>
-                ))}
+
+          <div className="mt-10 overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_28px_90px_rgba(19,33,31,0.14)]">
+            <div className="grid gap-0 lg:grid-cols-[1fr_18rem]">
+              <div>
+                <div className="flex h-10 items-center gap-2 border-b border-[#e3e9e5] bg-[#f8faf7] px-4">
+                  <span className="h-3 w-3 rounded-full bg-[#ff6b5f]" />
+                  <span className="h-3 w-3 rounded-full bg-[#ffcc4d]" />
+                  <span className="h-3 w-3 rounded-full bg-[#34c27a]" />
+                  <span className="ml-3 h-4 flex-1 rounded-full bg-[#e6eeea]" />
+                </div>
+                <ScreenshotMagnifier
+                  src="/fleetlever/site/machine-passport-drawer.png"
+                  alt={copy.passportAlt}
+                  width={3840}
+                  height={2400}
+                  imageClassName="h-auto w-full"
+                  sizes="(min-width: 1024px) 58rem, 100vw"
+                />
+              </div>
+              <div className="border-t border-[#e3e9e5] bg-[#f8faf7] p-5 lg:border-l lg:border-t-0">
+                <p className="text-xs font-bold uppercase text-[#007C89]">Live machine state</p>
+                <div className="mt-4 space-y-3">
+                  {machinePassportCards.slice(0, 3).map((machine) => (
+                    <div key={machine.code} className="rounded-lg border border-[#dce5e1] bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold uppercase text-[#007C89]">{machine.code}</p>
+                          <p className="mt-1 text-base font-semibold text-[#13211f]">{machine.title}</p>
+                        </div>
+                        <span className="rounded-full bg-[#edf6f3] px-3 py-1 text-xs font-bold text-[#007C89]">{machine.status}</span>
+                      </div>
+                      <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              {machinePassportCards.slice(0, 2).map((machine) => (
-                <article key={machine.code} className="overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-sm">
-                  <div className="grid min-h-full sm:grid-cols-[0.96fr_1.04fr] lg:grid-cols-[0.92fr_1.08fr]">
-                    <div className="relative min-h-44 overflow-hidden bg-[#dfe7e2]">
-                      <Image
-                        src={machine.photo}
-                        alt={machine.alt}
-                        fill
-                        className="object-cover"
-                        sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
-                      />
-                    </div>
-                    <div className="flex flex-col justify-between p-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase text-[#007C89]">{machine.code}</p>
-                        <h3 className="mt-1 text-xl font-semibold text-[#13211f]">{machine.title}</h3>
-                        <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
-                      </div>
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-[#edf6f3] px-3 py-1 text-xs font-bold text-[#007C89]">{machine.status}</span>
-                        <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{machine.owner}</span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
           </div>
-          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {machinePassportCards.map((machine) => (
               <article key={machine.code} className="group overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_70px_rgba(19,33,31,0.15)]">
-                <div className="relative aspect-[3/2] overflow-hidden bg-[#dfe7e2]">
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#dfe7e2]">
                   <Image
                     src={machine.photo}
                     alt={machine.alt}
@@ -670,17 +659,7 @@ export default function LandingPage() {
                     </div>
                     <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{machine.status}</span>
                   </div>
-                  <div className="mt-4 overflow-hidden rounded-md border border-[#e3e9e5] bg-[#f8faf7]">
-                    <Image
-                      src={machine.appShot}
-                      alt={`${machine.code} FleetLever app shot`}
-                      width={3840}
-                      height={2400}
-                      className="h-28 w-full object-cover object-left-top"
-                      sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
-                    />
-                  </div>
-                  <p className="mt-4 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
                 </div>
               </article>
             ))}
