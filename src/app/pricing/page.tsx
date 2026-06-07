@@ -17,37 +17,11 @@ const mailtoPilot = "mailto:hello@fleetlever.com?subject=FleetLever paid pilot";
 const mailtoPricing = "mailto:hello@fleetlever.com?subject=FleetLever pricing call";
 
 const pilotScope = [
-  "1 εταιρικό workspace",
   "Έως 30 κρίσιμα μηχανήματα",
   "Έως 100 έγγραφα / ημερομηνίες",
   "1 βασική ροή ελέγχου",
-  "Έως 3 χρήστες",
-  "Βασικό onboarding included",
-  "1 kickoff call",
-  "1 review call",
-] as const;
-
-const onboardingAddOns = [
-  {
-    name: "Basic onboarding",
-    price: "Included in Pilot",
-    detail: "Setup για έως 30 μηχανήματα και 100 βασικά έγγραφα ή deadlines.",
-  },
-  {
-    name: "Direct plan onboarding",
-    price: "From €500 one-time",
-    detail: "Για πελάτες που ξεκινούν απευθείας με Single Team ή Operations.",
-  },
-  {
-    name: "Heavy data cleanup",
-    price: "From €1.000 one-time",
-    detail: "Για ακατάστατους φακέλους, μεγάλο όγκο εγγράφων ή incomplete spreadsheets.",
-  },
-  {
-    name: "Custom workflow/report",
-    price: "Quoted separately",
-    detail: "Για ειδικές αναφορές, approval flows, integrations ή non-standard setup.",
-  },
+  "Βασικό onboarding",
+  "Kickoff και review call",
 ] as const;
 
 const plans = [
@@ -222,12 +196,12 @@ export default function PricingPage() {
             </h2>
             </div>
             <p className="max-w-3xl text-lg font-semibold leading-8 text-[#53635f]">
-              Το Pilot περιλαμβάνει βασικό onboarding. Αν ξεκινήσετε απευθείας με μηνιαίο πλάνο, το onboarding χρεώνεται ξεχωριστά.
+              Το Pilot περιλαμβάνει βασικό onboarding. Αν ξεκινήσετε απευθείας με μηνιαίο πλάνο, συμφωνούμε το setup ξεχωριστά.
             </p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
-            <article className="flex min-h-[34rem] flex-col rounded-lg bg-[#102b27] p-6 text-white shadow-[0_28px_80px_rgba(16,43,39,0.22)] sm:p-7">
+            <article className="flex min-h-[30rem] flex-col rounded-lg bg-[#102b27] p-6 text-white shadow-[0_28px_80px_rgba(16,43,39,0.22)] sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold uppercase text-[#72dce5]">30-Day Pilot</p>
@@ -252,9 +226,6 @@ export default function PricingPage() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-5 border-t border-white/14 pt-4 text-xs font-semibold leading-5 text-[#c9d8d4]">
-                  Για πιο σύνθετα δεδομένα ή μεγάλο όγκο εγγράφων, το data cleanup χρεώνεται ξεχωριστά.
-                </p>
               </div>
               <div className="mt-auto pt-7">
                 <a
@@ -268,7 +239,7 @@ export default function PricingPage() {
             </article>
 
             {plans.map((plan) => (
-              <article key={plan.name} className="flex min-h-[34rem] flex-col rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
+              <article key={plan.name} className="flex min-h-[30rem] flex-col rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-bold uppercase text-[#007C89]">{plan.name}</p>
@@ -284,7 +255,7 @@ export default function PricingPage() {
                 <div className="mt-6 border-t border-[#e0e7e3] pt-6">
                   <p className="text-sm font-bold uppercase text-[#007C89]">Περιλαμβάνει</p>
                   <div className="mt-4 grid gap-2">
-                    {plan.bullets.slice(0, 5).map((item) => (
+                    {plan.bullets.slice(0, 4).map((item) => (
                       <div key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#334641]">
                         <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#007C89]" aria-hidden="true" />
                         <span>{item}</span>
@@ -305,48 +276,12 @@ export default function PricingPage() {
             ))}
           </div>
 
-          <div className="mt-5 rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
-            <div className="grid gap-5 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
-              <div>
-                <p className="text-sm font-bold uppercase text-[#007C89]">Onboarding note</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Τι ισχύει για το onboarding;</h3>
-                <p className="mt-3 text-sm font-bold leading-6 text-[#53635f]">
-                  Το onboarding δεν είναι απεριόριστη καταχώρηση δεδομένων. Το βασικό setup περιλαμβάνεται στο Pilot με συγκεκριμένο scope.
-                </p>
-              </div>
-              <div className="grid gap-3 text-sm font-semibold leading-6 text-[#334641]">
-                <p>
-                  Το Pilot περιλαμβάνει βασικό onboarding για περιορισμένο scope: έως 30 μηχανήματα, έως 100 έγγραφα/ημερομηνίες και 1 βασική ροή ελέγχου.
-                </p>
-                <div className="grid gap-2">
-                  {[
-                    "Σε μηνιαίο πλάνο χωρίς Pilot, το onboarding χρεώνεται ξεχωριστά.",
-                    "Σε ετήσιο πλάνο, το βασικό onboarding μπορεί να συμπεριληφθεί μέσα στο συμφωνημένο scope.",
-                    "Μεγάλο data cleanup ή custom ροές χρεώνονται ξεχωριστά.",
-                  ].map((item) => (
-                    <div key={item} className="flex gap-3">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#007C89]" aria-hidden="true" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
-            <div className="mb-5">
-              <p className="text-sm font-bold uppercase text-[#007C89]">Onboarding & Setup</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Setup επιλογές ανάλογα με το πώς ξεκινάτε.</h3>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {onboardingAddOns.map((item) => (
-                <article key={item.name} className="rounded-md border border-[#d5dfda] bg-[#f7f8f5] p-4">
-                  <p className="text-sm font-bold uppercase text-[#007C89]">{item.name}</p>
-                  <h4 className="mt-2 text-xl font-semibold text-[#13211f]">{item.price}</h4>
-                  <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{item.detail}</p>
-                </article>
-              ))}
+          <div className="mt-5 rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
+            <div className="grid gap-4 lg:grid-cols-[auto_1fr] lg:items-center">
+              <p className="text-sm font-bold uppercase text-[#007C89]">Setup</p>
+              <p className="text-sm font-semibold leading-6 text-[#53635f]">
+                Το βασικό onboarding περιλαμβάνεται στο Pilot. Αν ξεκινήσετε απευθείας με μηνιαίο πλάνο, το setup συμφωνείται ξεχωριστά. Μεγάλο data cleanup ή custom ροές χρεώνονται μόνο μετά από συμφωνία.
+              </p>
             </div>
           </div>
 
