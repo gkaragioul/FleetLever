@@ -667,17 +667,36 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#dbe2de] bg-white px-5 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
-          <BrowserFrame src="/fleetlever/site/decision-history-audit-trail.png" alt={copy.auditAlt} />
-          <div>
-            <SectionHeader
-              eyebrow={copy.auditEyebrow}
-              title="Ποιος έκανε τι. Και πότε."
-            />
-            <p className="mt-6 text-3xl font-semibold leading-tight text-[#13211f]">
+      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#72dce5]">{copy.auditEyebrow}</p>
+            <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
+              Ποιος έκανε τι. Και πότε.
+            </h2>
+            <p className="mt-5 text-2xl font-semibold leading-tight text-[#eef7f4] sm:text-3xl">
               Τέλος στα: “Δεν το ήξερα.”
             </p>
+          </div>
+
+          <div className="mx-auto mt-8 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {["Τι άλλαξε", "Ποιος το έκανε", "Πότε έγινε", "Με ποια απόδειξη"].map((item) => (
+              <div key={item} className="flex min-h-20 items-center gap-3 rounded-lg border border-white/10 bg-white/8 p-5 text-base font-bold text-[#eef7f4] shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-[#72dce5]" aria-hidden="true" />
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <div className="relative mx-auto mt-10 max-w-6xl">
+            <BrowserFrame
+              src="/fleetlever/site/decision-history-audit-trail.png"
+              alt={copy.auditAlt}
+              width={3840}
+              height={2644}
+              className="border-white/15 shadow-[0_34px_110px_rgba(0,0,0,0.32)]"
+              zoom={1.7}
+            />
           </div>
         </div>
       </section>
