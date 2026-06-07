@@ -759,19 +759,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8" id="pricing">
+      <section className="bg-white px-5 py-20 text-[#13211f] sm:px-6 lg:px-8" id="pricing">
         <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase text-[#72dce5]">Τιμολόγηση</p>
+            <p className="text-sm font-bold uppercase text-[#007C89]">Τιμολόγηση</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
               Ξεκινά απλά. Προχωρά μόνο όταν αποδειχθεί χρήσιμο.
             </h2>
-            <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
+            <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#53635f]">
               Ένα focused pilot, καθαρό onboarding και ανταγωνιστικό monthly plan. Χωρίς ERP πολυπλοκότητα, χωρίς κρυφή αλλαγή διαδικασίας από την πρώτη μέρα.
             </p>
             <Link
               href="/pricing"
-              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
+              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#102b27] px-5 text-sm font-bold text-white transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
             >
               Δείτε την τιμολόγηση
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -783,27 +783,30 @@ export default function LandingPage() {
               ["Simple monthly plan", "Σαφές κόστος για την καθημερινή readiness ροή της ομάδας."],
               ["Optional cleanup", "Extra onboarding μόνο όταν τα δεδομένα χρειάζονται περισσότερη δουλειά."],
             ].map(([title, body]) => (
-              <article key={title} className="rounded-lg border border-white/10 bg-white/8 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
-                <BadgeCheck className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
-                <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
-                <p className="mt-3 text-sm font-semibold leading-6 text-[#c9d8d4]">{body}</p>
+              <article key={title} className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-5 shadow-sm">
+                <BadgeCheck className="h-5 w-5 text-[#007C89]" aria-hidden="true" />
+                <h3 className="mt-4 text-lg font-semibold text-[#13211f]">{title}</h3>
+                <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{body}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-5 pb-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 rounded-lg border border-[#cdd8d3] bg-white p-7 shadow-[0_18px_55px_rgba(19,33,31,0.08)] lg:grid-cols-[1fr_auto] lg:items-center">
+      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase text-[#007C89]">Πριν δεσμεύσεις την αυριανή δουλειά</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
-              Έλεγξε το FleetLever.
+            <p className="text-sm font-bold uppercase text-[#72dce5]">Πριν δεσμεύσεις την αυριανή δουλειά</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight text-white sm:text-5xl">
+              Δοκίμασε το FleetLever.
             </h2>
+            <p className="mt-4 max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
+              Βάλτε τα πραγματικά σας μηχανήματα, έγγραφα και προβλήματα στο FleetLever και δείτε αν βρίσκει τι θα σταματήσει τη δουλειά.
+            </p>
           </div>
           <a
             href="mailto:hello@fleetlever.com?subject=FleetLever pilot"
-            className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#102b27] px-5 text-sm font-bold text-white transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+            className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
           >
             Ζήτησε Demo
           </a>
