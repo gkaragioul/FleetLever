@@ -205,9 +205,6 @@ export default function PricingPage() {
               Ξεκινάτε με Pilot. Μετά διαλέγετε πλάνο.
             </h2>
             </div>
-            <p className="mt-5 max-w-3xl text-lg font-semibold leading-8 text-[#53635f]">
-              Πρώτα βλέπετε το FleetLever με τα δικά σας μηχανήματα. Αν αποδείξει αξία, συνεχίζετε με απλή μηνιαία χρέωση.
-            </p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
@@ -238,11 +235,9 @@ export default function PricingPage() {
                 </div>
               </div>
               <div className="mt-auto pt-7">
-                <p className="text-lg font-semibold leading-7">30 ημέρες. Βλέπετε αξία ή δεν συνεχίζετε.</p>
-                <p className="mt-1 text-sm font-semibold text-[#c9d8d4]">Χωρίς ετήσια δέσμευση.</p>
                 <a
                   href={mailtoPilot}
-                  className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#72dce5] px-4 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#72dce5] px-4 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
                 >
                   Ξεκινήστε Pilot
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
