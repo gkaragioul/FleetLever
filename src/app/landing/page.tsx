@@ -1,7 +1,12 @@
 import {
   ArrowRight,
   BadgeCheck,
+  Building2,
   CheckCircle2,
+  Construction,
+  Landmark,
+  PackageCheck,
+  Shovel,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -335,6 +340,33 @@ const machinePassportCards = [
     owner: "Maria",
     note: "Work package confirmed",
     alt: "Construction truck on site",
+  },
+] as const;
+
+const useCasePanels = [
+  {
+    icon: Construction,
+    title: "Εταιρείες γερανών",
+    body: "Release μόνο όταν πιστοποιητικά, χειριστής, service και evidence είναι καθαρά.",
+    signal: "Lifting readiness",
+  },
+  {
+    icon: Shovel,
+    title: "Χωματουργικά έργα",
+    body: "Βλέπεις ποιο excavator, loader ή truck μπορεί να δουλέψει αύριο και ποιο μπλοκάρει.",
+    signal: "Site start check",
+  },
+  {
+    icon: PackageCheck,
+    title: "Ενοικιάσεις μηχανημάτων",
+    body: "Κρατάς παράδοση, ευθύνη, documents και readiness σε ένα κοινό operational record.",
+    signal: "Rental handoff",
+  },
+  {
+    icon: Landmark,
+    title: "Δημόσια έργα",
+    body: "Οι αποφάσεις μένουν τεκμηριωμένες όταν χρειάζεται audit, απόδειξη ή εξήγηση.",
+    signal: "Proof trail",
   },
 ] as const;
 
@@ -701,21 +733,47 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="px-5 py-20 sm:px-6 lg:px-8" id="use-cases">
+      <section className="border-y border-[#dbe2de] bg-[#f7f8f5] px-5 py-20 sm:px-6 lg:px-8" id="use-cases">
         <div className="mx-auto w-full max-w-7xl">
-          <SectionHeader title={copy.useCasesTitle} />
-          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              ["🏗", "Εταιρείες γερανών"],
-              ["🚜", "Χωματουργικά έργα"],
-              ["📦", "Ενοικιάσεις μηχανημάτων"],
-              ["🚧", "Δημόσια έργα"],
-            ].map(([icon, title]) => (
-              <article key={title} className="rounded-lg border border-[#dce5e1] bg-white p-5 shadow-sm">
-                <span className="text-3xl" aria-hidden="true">{icon}</span>
-                <h3 className="mt-5 text-xl font-semibold text-[#13211f]">{title}</h3>
-              </article>
-            ))}
+          <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Χρήσεις</p>
+              <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl lg:text-5xl">
+                Για ομάδες που χάνουν χρόνο όταν ένα μηχάνημα δεν είναι έτοιμο.
+              </h2>
+            </div>
+            <div className="rounded-lg border border-[#cdd8d3] bg-white p-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#102b27] text-[#72dce5]">
+                  <Building2 className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <p className="text-base font-semibold leading-7 text-[#53635f]">
+                  FleetLever ταιριάζει όπου η αυριανή δουλειά εξαρτάται από machines, certificates, service, delivery και καθαρή ευθύνη.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-9 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {useCasePanels.map((useCase) => {
+              const Icon = useCase.icon;
+
+              return (
+                <article key={useCase.title} className="group overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_70px_rgba(19,33,31,0.14)]">
+                  <div className="h-1.5 bg-[#007C89]" />
+                  <div className="p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#edf6f3] text-[#007C89]">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{useCase.signal}</span>
+                    </div>
+                    <h3 className="mt-5 text-xl font-semibold leading-7 text-[#13211f]">{useCase.title}</h3>
+                    <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{useCase.body}</p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
