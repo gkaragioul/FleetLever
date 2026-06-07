@@ -64,13 +64,6 @@ const plans = [
   },
 ] as const;
 
-const pilotSteps = [
-  "Βάζουμε τα δεδομένα",
-  "Ελέγχουμε την ετοιμότητα",
-  "Βρίσκουμε τα προβλήματα",
-  "Αποφασίζετε αν συνεχίζετε",
-] as const;
-
 const faqs = [
   [
     "Είναι το FleetLever GPS;",
@@ -305,50 +298,20 @@ export default function PricingPage() {
 
       <section className="border-y border-[#dbe2de] bg-white px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="max-w-4xl">
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Pilot στην πράξη</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-              Τι γίνεται στις 30 ημέρες και τι πρέπει να ξέρετε πριν ξεκινήσετε.
-            </h2>
-          </div>
-          <div className="mt-9 rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-6 shadow-sm sm:p-7">
-            <div className="grid gap-5 lg:grid-cols-[0.9fr_1fr] lg:items-end">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί</p>
-                <h3 className="mt-2 text-2xl font-semibold leading-tight text-[#13211f]">
-                  Σε 30 ημέρες φαίνεται αν το FleetLever βρίσκει τα σωστά προβλήματα.
-                </h3>
-              </div>
-              <p className="text-base font-semibold leading-7 text-[#53635f]">
-                Το Pilot δεν είναι παρουσίαση. Είναι setup με πραγματικά μηχανήματα, έγγραφα και μία καθαρή απόφαση στο τέλος.
+          <div className="grid gap-10 lg:grid-cols-[0.72fr_1fr] lg:items-start">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">FAQ</p>
+              <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
+                Τα βασικά για το Pilot και τα πλάνα.
+              </h2>
+              <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-[#53635f]">
+                Σύντομες απαντήσεις για το τι περιλαμβάνεται, τι δεν είναι το FleetLever και τι μπορεί να χρεωθεί ξεχωριστά.
               </p>
             </div>
 
-            <div className="mt-7 grid gap-3 md:grid-cols-4">
-              {pilotSteps.map((step, index) => (
-                <article
-                  key={step}
-                  className={`rounded-md border p-5 ${
-                    index === 3
-                      ? "border-[#102b27] bg-[#102b27] text-white"
-                      : "border-[#d5dfda] bg-white text-[#13211f]"
-                  }`}
-                >
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-bold ${
-                    index === 3
-                      ? "border-[#72dce5] text-[#72dce5]"
-                      : "border-[#cdd8d3] text-[#007C89]"
-                  }`}>
-                    {index + 1}
-                  </div>
-                  <h4 className="mt-5 min-h-12 text-lg font-semibold leading-tight">{step}</h4>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-7 grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-3">
               {faqs.map(([question, answer]) => (
-                <article key={question} className="rounded-md border border-[#d5dfda] bg-white p-5">
+                <article key={question} className="rounded-md border border-[#d5dfda] bg-[#f7f8f5] p-5">
                   <div className="flex gap-3">
                     <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
                     <div>
@@ -358,20 +321,21 @@ export default function PricingPage() {
                   </div>
                 </article>
               ))}
-              <article className="rounded-md border border-[#d5dfda] bg-white p-5 lg:col-span-2">
-                <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+              <article className="rounded-md border border-[#d5dfda] bg-[#f7f8f5] p-5">
+                <div className="flex gap-3">
+                  <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
                   <div>
                     <h3 className="text-lg font-semibold text-[#13211f]">Τι μπορεί να χρεωθεί ξεχωριστά;</h3>
                     <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">
                       Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
                     </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {["Επιπλέον καθάρισμα δεδομένων", "Μεγάλη οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Επιπλέον onboarding"].map((tag) => (
-                      <span key={tag} className="rounded-full border border-[#d5dfda] bg-[#f7f8f5] px-3 py-1 text-xs font-bold text-[#53635f]">
-                        {tag}
-                      </span>
-                    ))}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {["Καθάρισμα δεδομένων", "Οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Extra onboarding"].map((tag) => (
+                        <span key={tag} className="rounded-full border border-[#d5dfda] bg-white px-3 py-1 text-xs font-bold text-[#53635f]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </article>
