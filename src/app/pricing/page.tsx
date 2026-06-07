@@ -196,92 +196,90 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="px-5 py-20 sm:px-6 lg:px-8" id="plans">
+      <section className="bg-[#f7f8f5] px-5 py-24 sm:px-6 lg:px-8" id="plans">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="mb-9 grid gap-5 lg:grid-cols-[0.8fr_1fr] lg:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πλάνα</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-                Ξεκινάτε με Pilot. Συνεχίζετε μόνο αν αποδείχθηκε χρήσιμο.
-              </h2>
-            </div>
-            <p className="max-w-2xl text-lg font-semibold leading-8 text-[#53635f]">
-              Το Pilot είναι η πρώτη απόφαση. Αν αποδείξει αξία, επιλέγετε το μέγεθος λειτουργίας που ταιριάζει στην ομάδα σας.
+          <div className="mb-10 max-w-4xl">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πλάνα</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
+              Ξεκινάτε με Pilot. Μετά διαλέγετε πλάνο.
+            </h2>
+            <p className="mt-5 max-w-3xl text-lg font-semibold leading-8 text-[#53635f]">
+              Πρώτα βλέπετε το FleetLever με τα δικά σας μηχανήματα. Αν αποδείξει αξία, συνεχίζετε με απλή μηνιαία χρέωση.
             </p>
           </div>
-          <div className="overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-[0_22px_70px_rgba(19,33,31,0.08)]">
-            <article className="bg-[#102b27] p-6 text-white sm:p-8 lg:p-10">
-              <div className="grid gap-8 lg:grid-cols-[0.68fr_1fr_0.72fr] lg:items-center">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="h-6 w-6 text-[#72dce5]" aria-hidden="true" />
-                    <div>
-                      <p className="text-sm font-bold uppercase text-[#72dce5]">30-Day Pilot</p>
-                      <p className="mt-1 text-sm font-bold uppercase text-[#c9d8d4]">30 ημέρες πιλοτικός έλεγχος</p>
+
+          <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
+            <article className="rounded-lg bg-[#102b27] p-7 text-white shadow-[0_28px_80px_rgba(16,43,39,0.22)] sm:p-9 lg:p-10">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-6 w-6 text-[#72dce5]" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-bold uppercase text-[#72dce5]">30-Day Pilot</p>
+                  <p className="mt-1 text-sm font-bold uppercase text-[#c9d8d4]">30 ημέρες πιλοτικός έλεγχος</p>
+                </div>
+              </div>
+
+              <div className="mt-10 flex items-end gap-3">
+                <h3 className="text-6xl font-semibold leading-none">€1.000</h3>
+                <span className="pb-2 text-base font-bold text-[#c9d8d4]">fixed</span>
+              </div>
+
+              <p className="mt-7 max-w-xl text-2xl font-semibold leading-9 text-[#eef7f4]">
+                Βάζουμε τα πραγματικά σας μηχανήματα στο FleetLever. Σε 30 ημέρες βλέπετε αν βρίσκει προβλήματα πριν σταματήσουν τη δουλειά.
+              </p>
+
+              <div className="mt-8 rounded-lg border border-white/14 bg-white/7 p-5">
+                <p className="text-sm font-bold uppercase text-[#72dce5]">Τι περιλαμβάνει</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {pilotScope.slice(0, 6).map((item) => (
+                    <div key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#e6f2ef]">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#72dce5]" aria-hidden="true" />
+                      <span>{item}</span>
                     </div>
-                  </div>
-                  <div className="mt-7 flex items-end gap-2">
-                    <h2 className="text-5xl font-semibold leading-none">€1.000</h2>
-                    <span className="pb-1 text-sm font-bold text-[#c9d8d4]">fixed</span>
-                  </div>
+                  ))}
                 </div>
+              </div>
 
-                <div className="min-w-0">
-                  <p className="text-xl font-semibold leading-8 text-[#eef7f4]">
-                    Βάζουμε τα πραγματικά σας μηχανήματα στο FleetLever. Σε 30 ημέρες βλέπετε αν βρίσκει προβλήματα πριν σταματήσουν τη δουλειά.
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    {pilotScope.slice(1, 4).map((item) => (
-                      <span key={item} className="rounded-full border border-white/14 bg-white/7 px-3 py-1.5 text-xs font-bold text-[#dce9e5]">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-5 text-sm font-semibold text-[#c9d8d4]">Setup, βασικό import, kickoff και review περιλαμβάνονται.</p>
+              <div className="mt-8 grid gap-4 border-t border-white/14 pt-7 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div>
+                  <p className="text-3xl font-semibold leading-tight">30 ημέρες. Βλέπετε αξία.</p>
+                  <p className="mt-2 text-sm font-semibold text-[#c9d8d4]">Ή δεν συνεχίζετε. Χωρίς ετήσια δέσμευση.</p>
                 </div>
-
-                <div className="rounded-lg border border-white/14 bg-white/7 p-5">
-                  <p className="text-3xl font-semibold leading-tight">30 ημέρες.</p>
-                  <p className="mt-3 text-xl font-semibold leading-7 text-[#eef7f4]">Βλέπετε αξία ή δεν συνεχίζετε.</p>
-                  <p className="mt-4 text-sm font-semibold text-[#c9d8d4]">Χωρίς ετήσια δέσμευση.</p>
-                  <a
-                    href={mailtoPilot}
-                    className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
-                  >
-                    Ξεκινήστε Pilot
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </a>
-                </div>
+                <a
+                  href={mailtoPilot}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
+                >
+                  Ξεκινήστε Pilot
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </a>
               </div>
             </article>
 
-            <div className="bg-[#fbfcfa] px-6 py-5 sm:px-8 lg:px-10">
-              <p className="text-sm font-bold uppercase text-[#007C89]">Μετά το Pilot</p>
-              <p className="mt-2 text-lg font-semibold leading-7 text-[#53635f]">
-                Δύο καθαρές επιλογές συνέχειας. Δεν χρειάζεται να διαλέξετε πριν δείτε πραγματικό αποτέλεσμα.
-              </p>
-            </div>
+            <div className="grid gap-4">
+              <div className="rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
+                <p className="text-sm font-bold uppercase text-[#007C89]">Μετά το Pilot</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Συνεχίζετε μόνο αν αποδείχθηκε χρήσιμο.</h3>
+              </div>
 
-            <div className="grid gap-0 border-y border-[#dbe2de] lg:grid-cols-2">
               {plans.map((plan) => (
-                <article key={plan.name} className="border-[#dbe2de] bg-white p-6 first:border-b sm:p-8 lg:first:border-b-0 lg:first:border-r">
+                <article key={plan.name} className="rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-bold uppercase text-[#007C89]">{plan.name}</p>
                       <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">{plan.label}</h3>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-3xl font-semibold text-[#13211f]">{plan.price}</p>
-                      <p className="text-sm font-bold text-[#65766f]">{plan.cadence}</p>
+                      <p className="text-4xl font-semibold leading-none text-[#13211f]">{plan.price}</p>
+                      <p className="mt-1 text-sm font-bold text-[#65766f]">{plan.cadence}</p>
                     </div>
                   </div>
                   <p className="mt-5 text-base font-semibold leading-7 text-[#53635f]">{plan.intro}</p>
                   <p className="mt-3 text-sm font-bold leading-6 text-[#007C89]">{plan.detail}</p>
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    {plan.bullets.slice(0, 3).map((item) => (
-                      <span key={item} className="rounded-full border border-[#d5dfda] bg-[#f4f8f6] px-3 py-1.5 text-xs font-bold leading-5 text-[#53635f]">
-                        {item}
-                      </span>
+                  <div className="mt-5 grid gap-2">
+                    {plan.bullets.slice(0, 4).map((item) => (
+                      <div key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#334641]">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#007C89]" aria-hidden="true" />
+                        <span>{item}</span>
+                      </div>
                     ))}
                   </div>
                   <a
@@ -294,31 +292,25 @@ export default function PricingPage() {
                 </article>
               ))}
             </div>
-
-            <div className="bg-[#f7f8f5] px-6 py-6 sm:px-8 lg:px-10">
-              <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
-                <div>
-                  <p className="text-sm font-bold uppercase text-[#007C89]">Custom</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Χρειάζεστε κάτι πιο σύνθετο;</h3>
-                  <p className="mt-3 text-base font-semibold leading-7 text-[#53635f]">
-                    Για 100+ μηχανήματα, πολλαπλά τμήματα, ειδικές ροές, αναφορές ή integrations.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {["100+ μηχανήματα", "Ειδικές ροές", "Integrations"].map((tag) => (
-                      <span key={tag} className="rounded-full border border-[#d5dfda] bg-white px-3 py-1 text-xs font-bold text-[#53635f]">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <a href={mailtoPricing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cdd8d3] bg-white px-4 text-sm font-bold text-[#243834] transition hover:border-[#007C89] hover:text-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2">
-                  Μιλήστε μαζί μας
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </a>
-              </div>
-            </div>
-            <p className="px-6 py-4 text-sm font-semibold text-[#65766f] sm:px-8 lg:px-10">Όλες οι τιμές είναι χωρίς ΦΠΑ.</p>
           </div>
+
+          <div className="mt-6 rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
+            <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-sm font-bold uppercase text-[#007C89]">Custom</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Χρειάζεστε κάτι πιο σύνθετο;</h3>
+                <p className="mt-3 text-base font-semibold leading-7 text-[#53635f]">
+                  Για 100+ μηχανήματα, πολλαπλά τμήματα, ειδικές ροές, αναφορές ή integrations.
+                </p>
+              </div>
+              <a href={mailtoPricing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cdd8d3] bg-white px-4 text-sm font-bold text-[#243834] transition hover:border-[#007C89] hover:text-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2">
+                Μιλήστε μαζί μας
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+
+          <p className="mt-4 text-sm font-semibold text-[#65766f]">Όλες οι τιμές είναι χωρίς ΦΠΑ.</p>
         </div>
       </section>
 
