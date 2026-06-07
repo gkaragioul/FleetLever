@@ -53,7 +53,7 @@ const plans = [
     cadence: "/μήνα",
     label: "Μία ομάδα",
     intro: "Για μία ομάδα που χρειάζεται καθημερινό έλεγχο πριν δεσμεύσει δουλειά.",
-    bestFor: "Γερανούς, ενοικιάσεις, χωματουργικά ή μικρές ομάδες με έως 30 κρίσιμα μηχανήματα.",
+    bestFor: "Για εταιρείες γερανών, ενοικιάσεις, χωματουργικά ή μικρές ομάδες με έως 30 κρίσιμα μηχανήματα.",
     note: "Συνήθως μετά το Pilot.",
     cta: "Επιλέξτε Single Team",
     featured: false,
@@ -61,7 +61,7 @@ const plans = [
       "Έως 30 κρίσιμα μηχανήματα",
       "Πίνακας αυριανού προγράμματος",
       "Πιστοποιητικά και έγγραφα",
-      "Service blockers",
+      "Ανοιχτά service και προβλήματα",
       "Υπεύθυνοι και ενέργειες",
       "Ιστορικό αποφάσεων",
     ],
@@ -71,7 +71,7 @@ const plans = [
     price: "€999",
     cadence: "/μήνα",
     label: "Πολλά εργοτάξια",
-    intro: "Για ομάδες με περισσότερα εργοτάξια, περισσότερα μηχανήματα και μεγαλύτερη πίεση.",
+    intro: "Για ομάδες με περισσότερα εργοτάξια, περισσότερα μηχανήματα και μεγαλύτερη καθημερινή πίεση.",
     bestFor: "Όταν ένα μπλοκαρισμένο ξεκίνημα μπορεί να κοστίσει περισσότερο από το μηνιαίο πλάνο.",
     note: "Για πιο απαιτητική καθημερινή λειτουργία.",
     cta: "Επιλέξτε Operations",
@@ -80,19 +80,12 @@ const plans = [
       "Έως 100 κρίσιμα μηχανήματα",
       "Πολλά εργοτάξια",
       "Όλα στο Single Team",
-      "Προηγμένες ροές ελέγχου",
-      "Αναλυτικότερη παρακολούθηση blockers",
+      "Περισσότερες ροές ελέγχου",
+      "Αναλυτικότερη παρακολούθηση προβλημάτων",
       "Προτεραιότητα στο onboarding",
       "Μηνιαία ανασκόπηση ετοιμότητας",
     ],
   },
-] as const;
-
-const planSelector = [
-  ["Pilot", "Θέλετε να το δοκιμάσετε με πραγματικά δεδομένα."],
-  ["Single Team", "Έχετε μία βασική ομάδα και έως 30 μηχανήματα."],
-  ["Operations", "Έχετε πολλά εργοτάξια ή μεγαλύτερο εξοπλισμό."],
-  ["Custom", "Χρειάζεστε ειδική υλοποίηση."],
 ] as const;
 
 const onboardingItems = [
@@ -109,7 +102,7 @@ const onboardingItems = [
   {
     icon: ShieldCheck,
     title: "Έλεγχος ετοιμότητας",
-    body: "Το σύστημα εντοπίζει blockers, πιστοποιητικά και service issues.",
+    body: "Το σύστημα εντοπίζει ληγμένα πιστοποιητικά, ανοιχτά service και άλλα προβλήματα πριν γίνουν καθυστέρηση.",
   },
   {
     icon: Handshake,
@@ -129,23 +122,23 @@ const addOns = [
 const faqs = [
   [
     "Είναι το FleetLever GPS;",
-    "Όχι. Το FleetLever δεν είναι GPS. Εστιάζει στην ετοιμότητα, τα έγγραφα, τα πιστοποιητικά, τους ελέγχους, τα service blockers και τις αποφάσεις πριν δεσμευτεί η δουλειά.",
+    "Όχι. Το FleetLever δεν είναι GPS. Δεν δείχνει απλώς πού βρίσκεται ένα μηχάνημα. Δείχνει αν μπορεί να δουλέψει στο αυριανό πρόγραμμα ή αν υπάρχει κάτι που το μπλοκάρει.",
   ],
   [
     "Περιλαμβάνεται onboarding στο Pilot;",
-    "Ναι, μέσα σε καθαρό όριο: έως 30 μηχανήματα, έως 100 βασικά έγγραφα ή ημερομηνίες, μία ροή ελέγχου και δύο calls.",
+    "Ναι. Το Pilot περιλαμβάνει βασικό setup για έως 30 μηχανήματα, έως 100 βασικά έγγραφα ή ημερομηνίες, μία ροή ελέγχου και δύο calls.",
   ],
   [
     "Ποιος δίνει τα δεδομένα;",
-    "Ο πελάτης δίνει τα δεδομένα με FleetLever template. Το FleetLever στήνει το συμφωνημένο Pilot.",
+    "Ο πελάτης δίνει τα βασικά δεδομένα μέσω FleetLever template. Το FleetLever στήνει το συμφωνημένο Pilot.",
   ],
   [
     "Τι γίνεται αν τα δεδομένα μας είναι ακατάστατα;",
-    "Το Pilot περιλαμβάνει βασική υποστήριξη στο import. Μεγαλύτερο καθάρισμα δεδομένων, αδόμητοι φάκελοι ή μεγάλη οργάνωση εγγράφων συμφωνούνται ξεχωριστά.",
+    "Το Pilot περιλαμβάνει βασική υποστήριξη στο import. Μεγάλο καθάρισμα δεδομένων, αδόμητοι φάκελοι ή εκτεταμένη οργάνωση εγγράφων συμφωνούνται ξεχωριστά.",
   ],
   [
     "Χρειάζεται ετήσια σύμβαση;",
-    "Όχι. Η μηνιαία χρέωση είναι διαθέσιμη. Η ετήσια χρέωση δίνει 10% έκπτωση.",
+    "Όχι. Υπάρχει μηνιαία χρέωση. Η ετήσια χρέωση δίνει 10% έκπτωση.",
   ],
   [
     "Μπορούμε να πληρώσουμε με τιμολόγιο;",
@@ -211,20 +204,37 @@ function PricePlanCard({ plan }: { plan: (typeof plans)[number] }) {
       <p className={`mt-5 text-base font-semibold leading-7 ${plan.featured ? "text-[#dff3ef]" : "text-[#53635f]"}`}>{plan.intro}</p>
       <p className={`mt-4 text-sm font-bold leading-6 ${plan.featured ? "text-[#72dce5]" : "text-[#007C89]"}`}>{plan.bestFor}</p>
       {plan.featured ? (
-        <div className="mt-5 border-y border-white/12 py-5">
-          <p className="text-2xl font-semibold leading-tight text-white">Ή βλέπετε αξία.</p>
-          <p className="mt-2 text-2xl font-semibold leading-tight text-white">Ή δεν συνεχίζετε.</p>
+        <div className="mt-7 border-t border-white/18 pt-6">
+          <p className="text-3xl font-semibold leading-tight text-white sm:text-4xl">30 ημέρες.</p>
+          <p className="mt-4 text-2xl font-semibold leading-tight text-white sm:text-3xl">Βλέπετε αξία.</p>
+          <p className="mt-2 text-2xl font-semibold leading-tight text-white sm:text-3xl">Ή δεν συνεχίζετε.</p>
         </div>
       ) : null}
       <p className={`mt-3 text-sm font-semibold leading-6 ${plan.featured ? "text-[#c9d8d4]" : "text-[#65766f]"}`}>{plan.note}</p>
-      <ul className="mt-6 space-y-3">
-        {plan.includes.map((item) => (
-          <li key={item} className={`flex gap-3 text-sm font-semibold leading-6 ${plan.featured ? "text-[#eef7f4]" : "text-[#334641]"}`}>
-            <BadgeCheck className={`mt-0.5 h-5 w-5 shrink-0 ${plan.featured ? "text-[#72dce5]" : "text-[#007C89]"}`} aria-hidden="true" />
-            {item}
-          </li>
-        ))}
-      </ul>
+      {plan.featured ? (
+        <details className="group mt-6 rounded-md border border-white/14 bg-white/6 p-4">
+          <summary className="cursor-pointer list-none text-sm font-bold text-[#72dce5] marker:hidden">
+            Δείτε τι περιλαμβάνεται
+          </summary>
+          <ul className="mt-4 space-y-3">
+            {plan.includes.map((item) => (
+              <li key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#eef7f4]">
+                <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#72dce5]" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : (
+        <ul className="mt-6 space-y-3">
+          {plan.includes.map((item) => (
+            <li key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#334641]">
+              <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
       <a
         href={mailtoPilot}
         className={`mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
@@ -253,7 +263,7 @@ export default function PricingPage() {
               Πριν πληρώσετε συνδρομή, δοκιμάστε το με πραγματικά μηχανήματα.
             </h1>
             <p className="mt-6 max-w-2xl text-xl leading-8 text-[#53635f]">
-              Βάζουμε τα πραγματικά σας μηχανήματα, πιστοποιητικά, service blockers και έγγραφα στο FleetLever για 30 ημέρες. Στο τέλος ξέρετε αν αξίζει να συνεχίσετε.
+              Βάζουμε τα πραγματικά σας μηχανήματα, πιστοποιητικά, έγγραφα και προβλήματα που μπορούν να σταματήσουν τη δουλειά στο FleetLever για 30 ημέρες. Στο τέλος ξέρετε αν αξίζει να συνεχίσετε.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
@@ -322,32 +332,22 @@ export default function PricingPage() {
               Ξεκινάμε με 30 ημέρες πραγματικού ελέγχου.
             </h2>
             <p className="mt-4 text-lg leading-8 text-[#53635f]">
-              Βάζουμε τα πραγματικά μηχανήματα, έγγραφα και blockers σας στο FleetLever. Αν δείτε αξία, συνεχίζετε με μηνιαίο πλάνο.
+              Βάζουμε τα πραγματικά μηχανήματα, έγγραφα και προβλήματά σας στο FleetLever. Αν δείτε αξία, συνεχίζετε με μηνιαίο πλάνο.
             </p>
           </div>
-          <div className="mt-8 rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
-            <p className="text-sm font-bold uppercase text-[#007C89]">Ποιο πλάνο σας ταιριάζει;</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-center">
-              {planSelector.map(([title, body], index) => (
-                <div key={title} className="contents">
-                <div className="rounded-md bg-[#f4f8f6] p-4">
-                  <p className="text-base font-semibold text-[#13211f]">{title}</p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">{body}</p>
-                </div>
-                {index < planSelector.length - 1 ? (
-                  <p className="hidden text-center text-lg font-bold text-[#007C89] md:block">↓</p>
-                ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-9 grid gap-4 lg:grid-cols-[1.08fr_0.92fr] lg:items-stretch">
+          <div className="mt-9 max-w-2xl">
             <PricePlanCard plan={plans[0]} />
-            <div className="grid gap-4">
-              {plans.slice(1).map((plan) => (
-                <PricePlanCard key={plan.name} plan={plan} />
-              ))}
-            </div>
+          </div>
+          <div className="mt-14 max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Μηνιαία πλάνα</p>
+            <h3 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
+              Συνεχίζετε μόνο αν το Pilot δείξει αξία.
+            </h3>
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            {plans.slice(1).map((plan) => (
+              <PricePlanCard key={plan.name} plan={plan} />
+            ))}
           </div>
           <div className="mt-4 rounded-lg border border-[#cdd8d3] bg-white p-6 shadow-sm">
             <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -380,23 +380,25 @@ export default function PricingPage() {
 
       <section className="border-y border-[#dbe2de] bg-white px-5 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
-          <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί</p>
-          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-stretch">
+          <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί το Pilot</p>
+          <p className="mt-4 max-w-3xl text-lg font-semibold leading-8 text-[#53635f]">
+            Σε 30 ημέρες βλέπετε αν το FleetLever μπορεί να εντοπίζει προβλήματα πριν σταματήσουν την αυριανή δουλειά.
+          </p>
+          <div className="relative mt-8 grid gap-5 md:grid-cols-4 md:gap-4">
+            <div className="absolute left-8 right-8 top-7 hidden h-px bg-[#cdd8d3] md:block" aria-hidden="true" />
             {[
-              ["Εβδομάδα 1", "Import"],
-              ["Εβδομάδα 2", "Release Check"],
-              ["Εβδομάδα 3", "Blockers Found"],
-              ["Εβδομάδα 4", "Decision", "Συνεχίζουμε ή όχι;"],
-            ].map(([week, title, note], index, steps) => (
-              <div key={week} className="contents">
-                <div className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-5 shadow-sm">
-                  <p className="text-sm font-bold uppercase text-[#007C89]">{week}</p>
-                  <h3 className="mt-3 text-xl font-semibold text-[#13211f]">{title}</h3>
-                  {note ? <p className="mt-2 text-sm font-semibold text-[#53635f]">{note}</p> : null}
+              ["1", "Βάζουμε τα δεδομένα"],
+              ["2", "Ελέγχουμε την ετοιμότητα"],
+              ["3", "Βρίσκουμε τα προβλήματα"],
+              ["4", "Αποφασίζετε αν συνεχίζετε"],
+            ].map(([number, title], index) => (
+              <div key={number} className={`relative rounded-lg p-4 ${index === 3 ? "bg-[#102b27] text-white" : "bg-white"}`}>
+                <div className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full border text-lg font-bold ${
+                  index === 3 ? "border-[#72dce5] bg-[#102b27] text-[#72dce5]" : "border-[#cdd8d3] bg-[#f4f3ef] text-[#007C89]"
+                }`}>
+                  {number}
                 </div>
-                {index < steps.length - 1 ? (
-                  <p className="hidden self-center text-center text-lg font-bold text-[#007C89] md:block">↓</p>
-                ) : null}
+                <h3 className={`mt-4 text-xl font-semibold leading-tight ${index === 3 ? "text-white" : "text-[#13211f]"}`}>{title}</h3>
               </div>
             ))}
           </div>
@@ -457,10 +459,10 @@ export default function PricingPage() {
           <div>
             <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Scope</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-              Τι δεν περιλαμβάνεται στο βασικό scope.
+              Τι μπορεί να χρεωθεί ξεχωριστά;
             </h2>
             <p className="mt-4 text-lg leading-8 text-[#53635f]">
-              Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται ξεχωριστά πριν ξεκινήσουμε.
+              Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
             </p>
           </div>
           <div className="rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm">
@@ -483,7 +485,7 @@ export default function PricingPage() {
               Δοκιμάστε το με πραγματικά μηχανήματα.
             </h2>
             <p className="mt-4 max-w-2xl text-lg leading-8 text-[#53635f]">
-              Βάλτε τα πραγματικά σας μηχανήματα, έγγραφα και blockers στο FleetLever για 30 ημέρες.
+              Βάλτε τα πραγματικά σας μηχανήματα, έγγραφα και προβλήματα στο FleetLever για 30 ημέρες.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
