@@ -501,34 +501,61 @@ export default function LandingPage() {
       </section>
 
       <section className="relative overflow-hidden border-y border-[#dbe2de] bg-[#f7f8f5] px-5 py-20 sm:px-6 lg:px-8" id="problem">
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
-          <div className="relative min-w-0">
-            <BrowserFrame
-              src="/fleetlever/site/machine-drawer-why-tomorrow-stops-from-inventory.png"
-              alt="FleetLever machine inventory with the Why tomorrow stops drawer open"
-              width={3840}
-              height={2442}
-              zoom={4.25}
-            />
+        <div className="relative z-10 mx-auto w-full max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
+            <div className="relative min-w-0">
+              <BrowserFrame
+                src="/fleetlever/site/machine-drawer-why-tomorrow-stops-from-inventory.png"
+                alt="FleetLever machine inventory with the Why tomorrow stops drawer open"
+                width={3840}
+                height={2442}
+                zoom={4.25}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Το πρόβλημα</p>
+              <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
+                Το μηχάνημα ήταν στο πρόγραμμα.
+                <span className="block">Αλλά...</span>
+                <span className="block text-[#b42318]">Δεν ήταν έτοιμο.</span>
+              </h2>
+              <div className="mt-8 grid gap-4">
+                {[
+                  ["Ο γερανός είχε προγραμματιστεί.", "Το πιστοποιητικό είχε λήξει."],
+                  ["Το συνεργείο είχε δεσμευτεί.", "Το service δεν είχε ολοκληρωθεί."],
+                  ["Η ενοικίαση είχε επιβεβαιωθεί.", "Το μηχάνημα δεν παραδόθηκε ποτέ."],
+                ].map(([assumption, reality]) => (
+                  <div key={assumption} className="rounded-lg bg-white p-5 shadow-[0_14px_40px_rgba(19,33,31,0.07)]">
+                    <p className="text-lg font-semibold leading-7 text-[#13211f]">{assumption}</p>
+                    <p className="mt-2 text-xl font-semibold leading-7 text-[#b42318]">{reality}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Το πρόβλημα</p>
-            <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
-              Το μηχάνημα ήταν στο πρόγραμμα.
-              <span className="block">Αλλά...</span>
-              <span className="block text-[#b42318]">Δεν ήταν έτοιμο.</span>
-            </h2>
-            <div className="mt-8 grid gap-4">
-              {[
-                ["Ο γερανός είχε προγραμματιστεί.", "Το πιστοποιητικό είχε λήξει."],
-                ["Το συνεργείο είχε δεσμευτεί.", "Το service δεν είχε ολοκληρωθεί."],
-                ["Η ενοικίαση είχε επιβεβαιωθεί.", "Το μηχάνημα δεν παραδόθηκε ποτέ."],
-              ].map(([assumption, reality]) => (
-                <div key={assumption} className="rounded-lg bg-white p-5 shadow-[0_14px_40px_rgba(19,33,31,0.07)]">
-                  <p className="text-lg font-semibold leading-7 text-[#13211f]">{assumption}</p>
-                  <p className="mt-2 text-xl font-semibold leading-7 text-[#b42318]">{reality}</p>
-                </div>
-              ))}
+
+          <div id="use-cases" className="mt-12 scroll-mt-24 border-t border-[#dbe2de] pt-10">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Όπου συμβαίνει</p>
+            <h3 className="mt-3 max-w-3xl text-2xl font-semibold leading-tight text-[#13211f] sm:text-3xl">
+              Το ίδιο μπλοκάρισμα εμφανίζεται σε γερανούς, χωματουργικά, rentals και δημόσια έργα.
+            </h3>
+            <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {useCasePanels.map((useCase) => {
+                const Icon = useCase.icon;
+
+                return (
+                  <article key={useCase.title} className="rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#edf6f3] text-[#007C89]">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{useCase.signal}</span>
+                    </div>
+                    <h4 className="mt-5 text-lg font-semibold leading-7 text-[#13211f]">{useCase.title}</h4>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">{useCase.body}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -728,39 +755,6 @@ export default function LandingPage() {
               className="border-white/15 shadow-[0_34px_110px_rgba(0,0,0,0.32)]"
               zoom={1.7}
             />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[#dbe2de] bg-[#f7f8f5] px-5 py-20 sm:px-6 lg:px-8" id="use-cases">
-        <div className="mx-auto w-full max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Χρήσεις</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl lg:text-5xl">
-              Για ομάδες που χάνουν χρόνο όταν ένα μηχάνημα δεν είναι έτοιμο.
-            </h2>
-          </div>
-
-          <div className="mt-9 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {useCasePanels.map((useCase) => {
-              const Icon = useCase.icon;
-
-              return (
-                <article key={useCase.title} className="group overflow-hidden rounded-lg border border-[#d5dfda] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_70px_rgba(19,33,31,0.14)]">
-                  <div className="h-1.5 bg-[#007C89]" />
-                  <div className="p-5">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#edf6f3] text-[#007C89]">
-                        <Icon className="h-5 w-5" aria-hidden="true" />
-                      </div>
-                      <span className="rounded-full bg-[#f1f4f2] px-3 py-1 text-xs font-bold text-[#53635f]">{useCase.signal}</span>
-                    </div>
-                    <h3 className="mt-5 text-xl font-semibold leading-7 text-[#13211f]">{useCase.title}</h3>
-                    <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{useCase.body}</p>
-                  </div>
-                </article>
-              );
-            })}
           </div>
         </div>
       </section>
