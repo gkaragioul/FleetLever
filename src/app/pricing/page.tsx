@@ -27,12 +27,12 @@ const mailtoPilot = "mailto:hello@fleetlever.com?subject=FleetLever paid pilot";
 
 const plans = [
   {
-    name: "30-Day Readiness Pilot",
+    name: "30-Day Pilot",
     price: "€1.000",
     cadence: "fixed",
     label: "30 ημέρες πιλοτικός έλεγχος",
-    intro: "Δοκιμή με πραγματικά μηχανήματα, έγγραφα και blockers.",
-    bestFor: "Για εταιρείες που θέλουν να δουν αν το FleetLever βρίσκει προβλήματα πριν γίνουν αυριανή καθυστέρηση.",
+    intro: "Βάζουμε τα πραγματικά σας μηχανήματα στο FleetLever.",
+    bestFor: "Σε 30 ημέρες θα ξέρετε αν το σύστημα βρίσκει προβλήματα πριν σταματήσουν τη δουλειά.",
     note: "Χωρίς ετήσια δέσμευση.",
     cta: "Ξεκινήστε Pilot",
     featured: true,
@@ -59,13 +59,11 @@ const plans = [
     featured: false,
     includes: [
       "Έως 30 κρίσιμα μηχανήματα",
-      "Tomorrow Work Board",
-      "Machine Passports",
+      "Πίνακας αυριανού προγράμματος",
       "Πιστοποιητικά και έγγραφα",
       "Service blockers",
-      "Υπεύθυνος ανά blocker",
-      "Decision History",
-      "Basic exports",
+      "Υπεύθυνοι και ενέργειες",
+      "Ιστορικό αποφάσεων",
     ],
   },
   {
@@ -80,79 +78,78 @@ const plans = [
     featured: false,
     includes: [
       "Έως 100 κρίσιμα μηχανήματα",
-      "Πολλά εργοτάξια ή yards",
+      "Πολλά εργοτάξια",
       "Όλα στο Single Team",
-      "Advanced readiness workflows",
-      "Detailed blocker tracking",
-      "Advanced exports",
-      "Priority onboarding",
-      "Monthly readiness review",
+      "Προηγμένες ροές ελέγχου",
+      "Αναλυτικότερη παρακολούθηση blockers",
+      "Προτεραιότητα στο onboarding",
+      "Μηνιαία ανασκόπηση ετοιμότητας",
     ],
   },
 ] as const;
 
 const planSelector = [
-  ["Pilot", "Αν θέλετε να το δοκιμάσετε με πραγματικά δεδομένα."],
-  ["Single Team", "Αν έχετε μία βασική ομάδα, yard ή ροή ελέγχου."],
-  ["Operations", "Αν έχετε πολλά εργοτάξια ή περισσότερα μηχανήματα."],
-  ["Custom", "Αν χρειάζεστε ειδικό rollout."],
+  ["Pilot", "Θέλετε να το δοκιμάσετε με πραγματικά δεδομένα."],
+  ["Single Team", "Έχετε μία βασική ομάδα και έως 30 μηχανήματα."],
+  ["Operations", "Έχετε πολλά εργοτάξια ή μεγαλύτερο εξοπλισμό."],
+  ["Custom", "Χρειάζεστε ειδική υλοποίηση."],
 ] as const;
 
 const onboardingItems = [
   {
     icon: CalendarDays,
     title: "Καθαρό kickoff",
-    body: "Ορίζουμε ποια δουλειά, ποια μηχανήματα και ποια ροή ελέγχου θα αποδείξει αξία πρώτα.",
+    body: "Ορίζουμε ποια εργοτάξια, ποια μηχανήματα και ποια προβλήματα θέλουμε να ελέγξουμε.",
   },
   {
     icon: FileText,
-    title: "Import από template",
-    body: "Η ομάδα σας δίνει τα βασικά δεδομένα με FleetLever template και στήνουμε το συμφωνημένο Pilot scope.",
+    title: "Import δεδομένων",
+    body: "Βάζουμε τα βασικά δεδομένα στο FleetLever.",
   },
   {
     icon: ShieldCheck,
     title: "Έλεγχος ετοιμότητας",
-    body: "Πιστοποιητικά, reminders, service blockers, owners και Decision History μπαίνουν στη σωστή ροή.",
+    body: "Το σύστημα εντοπίζει blockers, πιστοποιητικά και service issues.",
   },
   {
     icon: Handshake,
-    title: "Πρόταση συνέχειας",
-    body: "Στο τέλος ξέρετε αν συνεχίζετε σε Single Team, Operations ή Custom, χωρίς ασαφή δέσμευση.",
+    title: "Απόφαση",
+    body: "Συνεχίζετε μόνο αν βλέπετε αξία.",
   },
 ] as const;
 
 const addOns = [
-  "Extra data cleanup",
-  "Large document sorting",
-  "Custom reports",
+  "Επιπλέον καθάρισμα δεδομένων",
+  "Μεγάλη οργάνωση εγγράφων",
+  "Ειδικές αναφορές",
   "Integrations",
-  "Extra onboarding",
+  "Επιπλέον onboarding",
 ] as const;
 
 const faqs = [
   [
-    "Είναι το FleetLever GPS tracking;",
-    "Όχι. Το FleetLever δεν είναι GPS tracking. Εστιάζει σε readiness, documents, certificates, inspections, service blockers και operational decisions πριν δεσμευτεί η δουλειά.",
+    "Είναι το FleetLever GPS;",
+    "Όχι. Το FleetLever δεν είναι GPS. Εστιάζει στην ετοιμότητα, τα έγγραφα, τα πιστοποιητικά, τους ελέγχους, τα service blockers και τις αποφάσεις πριν δεσμευτεί η δουλειά.",
   ],
   [
-    "Περιλαμβάνεται onboarding στο pilot;",
-    "Ναι, μέσα σε καθαρό scope: έως 30 assets, έως 100 key documents/deadlines, ένα readiness workflow και δύο calls.",
+    "Περιλαμβάνεται onboarding στο Pilot;",
+    "Ναι, μέσα σε καθαρό όριο: έως 30 μηχανήματα, έως 100 βασικά έγγραφα ή ημερομηνίες, μία ροή ελέγχου και δύο calls.",
   ],
   [
     "Ποιος δίνει τα δεδομένα;",
-    "Ο πελάτης δίνει τα δεδομένα με FleetLever import template. Το FleetLever configures/imports το agreed pilot scope.",
+    "Ο πελάτης δίνει τα δεδομένα με FleetLever template. Το FleetLever στήνει το συμφωνημένο Pilot.",
   ],
   [
-    "Τι γίνεται αν τα δεδομένα μας είναι messy;",
-    "Το pilot περιλαμβάνει basic import support. Μεγαλύτερο cleanup, unstructured folders ή heavy document organization χρεώνονται ξεχωριστά.",
+    "Τι γίνεται αν τα δεδομένα μας είναι ακατάστατα;",
+    "Το Pilot περιλαμβάνει βασική υποστήριξη στο import. Μεγαλύτερο καθάρισμα δεδομένων, αδόμητοι φάκελοι ή μεγάλη οργάνωση εγγράφων συμφωνούνται ξεχωριστά.",
   ],
   [
-    "Χρειάζεται annual contract;",
-    "Όχι. Monthly billing είναι διαθέσιμο. Annual billing δίνει 10% discount.",
+    "Χρειάζεται ετήσια σύμβαση;",
+    "Όχι. Η μηνιαία χρέωση είναι διαθέσιμη. Η ετήσια χρέωση δίνει 10% έκπτωση.",
   ],
   [
     "Μπορούμε να πληρώσουμε με τιμολόγιο;",
-    "Ναι. Manual invoice/payment υποστηρίζεται για Greek B2B customers. Όλες οι τιμές είναι excluding VAT.",
+    "Ναι. Υποστηρίζεται πληρωμή με τιμολόγιο για B2B πελάτες στην Ελλάδα. Όλες οι τιμές είναι χωρίς ΦΠΑ.",
   ],
 ] as const;
 
@@ -213,6 +210,12 @@ function PricePlanCard({ plan }: { plan: (typeof plans)[number] }) {
       </div>
       <p className={`mt-5 text-base font-semibold leading-7 ${plan.featured ? "text-[#dff3ef]" : "text-[#53635f]"}`}>{plan.intro}</p>
       <p className={`mt-4 text-sm font-bold leading-6 ${plan.featured ? "text-[#72dce5]" : "text-[#007C89]"}`}>{plan.bestFor}</p>
+      {plan.featured ? (
+        <div className="mt-5 border-y border-white/12 py-5">
+          <p className="text-2xl font-semibold leading-tight text-white">Ή βλέπετε αξία.</p>
+          <p className="mt-2 text-2xl font-semibold leading-tight text-white">Ή δεν συνεχίζετε.</p>
+        </div>
+      ) : null}
       <p className={`mt-3 text-sm font-semibold leading-6 ${plan.featured ? "text-[#c9d8d4]" : "text-[#65766f]"}`}>{plan.note}</p>
       <ul className="mt-6 space-y-3">
         {plan.includes.map((item) => (
@@ -247,10 +250,10 @@ export default function PricingPage() {
           <div>
             <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">FleetLever pricing</p>
             <h1 className="mt-4 text-4xl font-semibold leading-[1.04] text-[#13211f] sm:text-6xl">
-              Πρώτα το δοκιμάζετε με πραγματική δουλειά. Μετά αποφασίζετε.
+              Πριν πληρώσετε συνδρομή, δοκιμάστε το με πραγματικά μηχανήματα.
             </h1>
             <p className="mt-6 max-w-2xl text-xl leading-8 text-[#53635f]">
-              Ξεκινήστε με 30 ημέρες ελέγχου σε πραγματικά μηχανήματα, έγγραφα και blockers. Αν το FleetLever σας βοηθήσει, συνεχίζετε με μηνιαίο πλάνο.
+              Βάζουμε τα πραγματικά σας μηχανήματα, πιστοποιητικά, service blockers και έγγραφα στο FleetLever για 30 ημέρες. Στο τέλος ξέρετε αν αξίζει να συνεχίσετε.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
@@ -292,20 +295,21 @@ export default function PricingPage() {
               Ένα μπλοκαρισμένο ξεκίνημα μπορεί να κοστίσει περισσότερο από μήνες FleetLever.
             </h2>
             <p className="mt-5 text-lg font-semibold leading-8 text-[#c9d8d4]">
-              Ο στόχος δεν είναι να κρατάτε αρχεία. Ο στόχος είναι να βρίσκετε τι θα σταματήσει τη δουλειά πριν φτάσει το πρωί.
+              Ο στόχος δεν είναι η διαχείριση εγγράφων. Ο στόχος είναι να βρίσκετε τι θα σταματήσει τη δουλειά πριν φτάσει το πρωί.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              [Euro, "Μπλοκαρισμένος γερανός", "€1.000-€3.000+ πιθανή έκθεση"],
-              [Receipt, "FleetLever Single Team", "€499 / μήνα"],
-            ].map(([Icon, title, body]) => (
-              <div key={String(title)} className="rounded-lg border border-white/10 bg-white/8 p-5">
-                <Icon className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
-                <p className="mt-4 text-sm font-bold uppercase text-[#ffcf8a]">{title as string}</p>
-                <p className="mt-2 text-3xl font-semibold">{body as string}</p>
-              </div>
-            ))}
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+            <div className="rounded-lg border border-white/10 bg-white/8 p-5">
+              <Euro className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
+              <p className="mt-4 text-sm font-bold uppercase text-[#ffcf8a]">Μπλοκαρισμένος Γερανός</p>
+              <p className="mt-2 text-3xl font-semibold">€1.000 - €3.000+</p>
+            </div>
+            <p className="text-center text-sm font-bold uppercase text-[#72dce5]">vs</p>
+            <div className="rounded-lg border border-[#72dce5]/35 bg-white p-5 text-[#13211f]">
+              <Receipt className="h-5 w-5 text-[#007C89]" aria-hidden="true" />
+              <p className="mt-4 text-sm font-bold uppercase text-[#007C89]">FleetLever Single Team</p>
+              <p className="mt-2 text-3xl font-semibold">€499 / μήνα</p>
+            </div>
           </div>
         </div>
       </section>
@@ -322,12 +326,17 @@ export default function PricingPage() {
             </p>
           </div>
           <div className="mt-8 rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
-            <p className="text-sm font-bold uppercase text-[#007C89]">Δεν είστε σίγουροι;</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {planSelector.map(([title, body]) => (
-                <div key={title} className="rounded-md bg-[#f4f8f6] p-4">
+            <p className="text-sm font-bold uppercase text-[#007C89]">Ποιο πλάνο σας ταιριάζει;</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-center">
+              {planSelector.map(([title, body], index) => (
+                <div key={title} className="contents">
+                <div className="rounded-md bg-[#f4f8f6] p-4">
                   <p className="text-base font-semibold text-[#13211f]">{title}</p>
                   <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">{body}</p>
+                </div>
+                {index < planSelector.length - 1 ? (
+                  <p className="hidden text-center text-lg font-bold text-[#007C89] md:block">↓</p>
+                ) : null}
                 </div>
               ))}
             </div>
@@ -343,13 +352,13 @@ export default function PricingPage() {
           <div className="mt-4 rounded-lg border border-[#cdd8d3] bg-white p-6 shadow-sm">
             <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
               <div>
-                <p className="text-sm font-bold uppercase text-[#007C89]">Custom Rollout</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Χρειάζεστε μεγαλύτερο rollout;</h3>
+                <p className="text-sm font-bold uppercase text-[#007C89]">Custom</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Χρειάζεστε κάτι πιο σύνθετο;</h3>
                 <p className="mt-3 max-w-3xl text-base font-semibold leading-7 text-[#53635f]">
-                  Για 100+ μηχανήματα, πολλαπλά τμήματα, ειδικές ροές, reports ή integration planning.
+                  Για 100+ μηχανήματα, πολλαπλά τμήματα, ειδικές ροές, αναφορές ή integrations.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {["100+ machines", "Custom workflows", "Advanced permissions", "Reports", "Integration planning"].map((tag) => (
+                  {["100+ μηχανήματα", "Ειδικές ροές", "Προχωρημένα δικαιώματα", "Αναφορές", "Integrations"].map((tag) => (
                     <span key={tag} className="rounded-full border border-[#d5dfda] bg-[#f4f8f6] px-3 py-1 text-xs font-bold text-[#53635f]">
                       {tag}
                     </span>
@@ -365,7 +374,32 @@ export default function PricingPage() {
               </a>
             </div>
           </div>
-          <p className="mt-5 text-sm font-semibold text-[#65766f]">Όλες οι τιμές είναι excluding VAT.</p>
+          <p className="mt-5 text-sm font-semibold text-[#65766f]">Όλες οι τιμές είναι χωρίς ΦΠΑ.</p>
+        </div>
+      </section>
+
+      <section className="border-y border-[#dbe2de] bg-white px-5 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl">
+          <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-stretch">
+            {[
+              ["Εβδομάδα 1", "Import"],
+              ["Εβδομάδα 2", "Release Check"],
+              ["Εβδομάδα 3", "Blockers Found"],
+              ["Εβδομάδα 4", "Decision", "Συνεχίζουμε ή όχι;"],
+            ].map(([week, title, note], index, steps) => (
+              <div key={week} className="contents">
+                <div className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-5 shadow-sm">
+                  <p className="text-sm font-bold uppercase text-[#007C89]">{week}</p>
+                  <h3 className="mt-3 text-xl font-semibold text-[#13211f]">{title}</h3>
+                  {note ? <p className="mt-2 text-sm font-semibold text-[#53635f]">{note}</p> : null}
+                </div>
+                {index < steps.length - 1 ? (
+                  <p className="hidden self-center text-center text-lg font-bold text-[#007C89] md:block">↓</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -374,7 +408,7 @@ export default function PricingPage() {
           <div className="max-w-3xl">
             <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Τι περιλαμβάνει το Pilot</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl lg:text-5xl">
-              Γρήγορο setup, καθαρό scope, πραγματική απόδειξη αξίας.
+              Τι συμβαίνει στις 30 ημέρες;
             </h2>
           </div>
           <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -446,10 +480,10 @@ export default function PricingPage() {
           <div>
             <p className="text-sm font-bold uppercase text-[#007C89]">Πριν διαλέξετε πλάνο</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
-              Ξεκινήστε με έναν πραγματικό έλεγχο.
+              Δοκιμάστε το με πραγματικά μηχανήματα.
             </h2>
             <p className="mt-4 max-w-2xl text-lg leading-8 text-[#53635f]">
-              Βάλτε τα πραγματικά μηχανήματα, έγγραφα και blockers σας στο FleetLever για 30 ημέρες.
+              Βάλτε τα πραγματικά σας μηχανήματα, έγγραφα και blockers στο FleetLever για 30 ημέρες.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
@@ -474,7 +508,7 @@ export default function PricingPage() {
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <FleetLeverLogo />
-            <p className="mt-3 text-sm font-semibold text-[#65766f]">Software ελέγχου εργασιών κατασκευής</p>
+            <p className="mt-3 text-sm font-semibold text-[#65766f]">Λογισμικό ελέγχου μηχανημάτων πριν το αυριανό πρόγραμμα</p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm font-semibold text-[#53635f]">
             <Link href="/#product" className="hover:text-[#007C89]">Προϊόν</Link>
