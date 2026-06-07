@@ -199,6 +199,12 @@ export default function PricingPage() {
 
       <section className="px-5 py-20 sm:px-6 lg:px-8" id="plans">
         <div className="mx-auto w-full max-w-7xl">
+          <div className="mb-8 max-w-4xl">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πλάνα</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
+              Ξεκινάτε με Pilot. Συνεχίζετε μόνο αν αποδείχθηκε χρήσιμο.
+            </h2>
+          </div>
           <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
             <article className="rounded-lg border border-[#72dce5] bg-[#102b27] p-7 text-white shadow-[0_28px_90px_rgba(19,33,31,0.22)]">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -241,13 +247,7 @@ export default function PricingPage() {
             </article>
 
             <div>
-              <div>
-                <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Μετά το Pilot</p>
-                <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-                  Συνεχίζετε μόνο αν αποδείχθηκε χρήσιμο.
-                </h2>
-              </div>
-              <div className="mt-6 grid gap-4">
+              <div className="grid gap-4">
                 {plans.map((plan) => (
                   <article key={plan.name} className="rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm">
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -326,7 +326,7 @@ export default function PricingPage() {
       </section>
 
       <section className="px-5 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.82fr_1.18fr]">
           <div>
             <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">FAQ</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
