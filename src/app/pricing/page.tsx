@@ -171,27 +171,35 @@ export default function PricingPage() {
       </section>
 
       <section className="bg-[#102b27] px-5 py-14 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-7 lg:grid-cols-[1fr_1.08fr] lg:items-center">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
             <p className="text-sm font-bold uppercase text-[#72dce5]">Γιατί αξίζει</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
-              Ένα μπλοκαρισμένο ξεκίνημα μπορεί να κοστίσει περισσότερο από μήνες FleetLever.
+              Το κόστος φαίνεται όταν η δουλειά σταματάει.
             </h2>
-            <p className="mt-5 text-lg font-semibold leading-8 text-[#c9d8d4]">
+          </div>
+          <div>
+            <p className="max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
               Ο στόχος δεν είναι η διαχείριση εγγράφων. Ο στόχος είναι να βρίσκετε τι θα σταματήσει τη δουλειά πριν φτάσει το πρωί.
             </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-            <div className="rounded-lg border border-white/10 bg-white/8 p-5">
-              <Euro className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
-              <p className="mt-4 text-sm font-bold uppercase text-[#ffcf8a]">Μπλοκαρισμένος γερανός</p>
-              <p className="mt-2 text-3xl font-semibold">€1.000 - €3.000+</p>
-            </div>
-            <p className="text-center text-sm font-bold uppercase text-[#72dce5]">vs</p>
-            <div className="rounded-lg border border-[#72dce5]/35 bg-white p-5 text-[#13211f]">
-              <Receipt className="h-5 w-5 text-[#007C89]" aria-hidden="true" />
-              <p className="mt-4 text-sm font-bold uppercase text-[#007C89]">FleetLever Single Team</p>
-              <p className="mt-2 text-3xl font-semibold">€499 / μήνα</p>
+            <div className="mt-6 rounded-lg border border-white/12 bg-white/7 p-5">
+              <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
+                <div className="flex items-start gap-4">
+                  <Euro className="mt-1 h-5 w-5 shrink-0 text-[#72dce5]" aria-hidden="true" />
+                  <div>
+                    <p className="text-sm font-bold uppercase text-[#ffcf8a]">Μία χαμένη εκκίνηση</p>
+                    <p className="mt-2 text-3xl font-semibold">€1.000 - €3.000+</p>
+                  </div>
+                </div>
+                <div className="hidden h-14 w-px bg-white/18 md:block" aria-hidden="true" />
+                <div className="flex items-start gap-4">
+                  <Receipt className="mt-1 h-5 w-5 shrink-0 text-[#72dce5]" aria-hidden="true" />
+                  <div>
+                    <p className="text-sm font-bold uppercase text-[#72dce5]">Single Team</p>
+                    <p className="mt-2 text-3xl font-semibold">€499 / μήνα</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
