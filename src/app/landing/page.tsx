@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   BadgeCheck,
-  Building2,
   CheckCircle2,
   Construction,
   Landmark,
@@ -735,23 +734,11 @@ export default function LandingPage() {
 
       <section className="border-y border-[#dbe2de] bg-[#f7f8f5] px-5 py-20 sm:px-6 lg:px-8" id="use-cases">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Χρήσεις</p>
-              <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl lg:text-5xl">
-                Για ομάδες που χάνουν χρόνο όταν ένα μηχάνημα δεν είναι έτοιμο.
-              </h2>
-            </div>
-            <div className="rounded-lg border border-[#cdd8d3] bg-white p-5 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#102b27] text-[#72dce5]">
-                  <Building2 className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <p className="text-base font-semibold leading-7 text-[#53635f]">
-                  FleetLever ταιριάζει όπου η αυριανή δουλειά εξαρτάται από machines, certificates, service, delivery και καθαρή ευθύνη.
-                </p>
-              </div>
-            </div>
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Χρήσεις</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl lg:text-5xl">
+              Για ομάδες που χάνουν χρόνο όταν ένα μηχάνημα δεν είναι έτοιμο.
+            </h2>
           </div>
 
           <div className="mt-9 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
