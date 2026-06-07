@@ -316,34 +316,44 @@ export default function PricingPage() {
               Τι γίνεται στις 30 ημέρες και τι πρέπει να ξέρετε πριν ξεκινήσετε.
             </h2>
           </div>
-          <div className="mt-9 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-            <div className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-6">
-              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί</p>
-              <p className="mt-3 text-base font-semibold leading-7 text-[#53635f]">
-                Σε 30 ημέρες βλέπετε αν βρίσκει προβλήματα πριν σταματήσουν την αυριανή δουλειά.
-              </p>
-              <div className="mt-6 grid gap-4">
-                {pilotSteps.map((step, index) => (
-                  <div key={step} className="grid grid-cols-[3.25rem_1fr] gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm font-bold ${
-                        index === 3 ? "border-[#102b27] bg-[#102b27] text-[#72dce5]" : "border-[#cdd8d3] bg-white text-[#007C89]"
-                      }`}>
-                        {index + 1}
-                      </div>
-                      {index < pilotSteps.length - 1 ? <div className="mt-2 h-full min-h-5 w-px bg-[#cdd8d3]" aria-hidden="true" /> : null}
-                    </div>
-                    <div className={`rounded-md border p-4 ${index === 3 ? "border-[#102b27] bg-[#102b27] text-white" : "border-[#d5dfda] bg-white"}`}>
-                      <h3 className={`text-lg font-semibold leading-tight ${index === 3 ? "text-white" : "text-[#13211f]"}`}>{step}</h3>
-                    </div>
-                  </div>
-                ))}
+          <div className="mt-9 rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-6 shadow-sm sm:p-7">
+            <div className="grid gap-5 lg:grid-cols-[0.9fr_1fr] lg:items-end">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί</p>
+                <h3 className="mt-2 text-2xl font-semibold leading-tight text-[#13211f]">
+                  Σε 30 ημέρες φαίνεται αν το FleetLever βρίσκει τα σωστά προβλήματα.
+                </h3>
               </div>
+              <p className="text-base font-semibold leading-7 text-[#53635f]">
+                Το Pilot δεν είναι παρουσίαση. Είναι setup με πραγματικά μηχανήματα, έγγραφα και μία καθαρή απόφαση στο τέλος.
+              </p>
             </div>
 
-            <div className="grid gap-3">
+            <div className="mt-7 grid gap-3 md:grid-cols-4">
+              {pilotSteps.map((step, index) => (
+                <article
+                  key={step}
+                  className={`rounded-md border p-5 ${
+                    index === 3
+                      ? "border-[#102b27] bg-[#102b27] text-white"
+                      : "border-[#d5dfda] bg-white text-[#13211f]"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-bold ${
+                    index === 3
+                      ? "border-[#72dce5] text-[#72dce5]"
+                      : "border-[#cdd8d3] text-[#007C89]"
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <h4 className="mt-5 min-h-12 text-lg font-semibold leading-tight">{step}</h4>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-7 grid gap-4 lg:grid-cols-2">
               {faqs.map(([question, answer]) => (
-                <article key={question} className="rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
+                <article key={question} className="rounded-md border border-[#d5dfda] bg-white p-5">
                   <div className="flex gap-3">
                     <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
                     <div>
@@ -353,17 +363,21 @@ export default function PricingPage() {
                   </div>
                 </article>
               ))}
-              <article className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-5">
-                <h3 className="text-lg font-semibold text-[#13211f]">Τι μπορεί να χρεωθεί ξεχωριστά;</h3>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">
-                  Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {["Επιπλέον καθάρισμα δεδομένων", "Μεγάλη οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Επιπλέον onboarding"].map((tag) => (
-                    <span key={tag} className="rounded-full border border-[#d5dfda] bg-white px-3 py-1 text-xs font-bold text-[#53635f]">
-                      {tag}
-                    </span>
-                  ))}
+              <article className="rounded-md border border-[#d5dfda] bg-white p-5 lg:col-span-2">
+                <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#13211f]">Τι μπορεί να χρεωθεί ξεχωριστά;</h3>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">
+                      Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {["Επιπλέον καθάρισμα δεδομένων", "Μεγάλη οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Επιπλέον onboarding"].map((tag) => (
+                      <span key={tag} className="rounded-full border border-[#d5dfda] bg-[#f7f8f5] px-3 py-1 text-xs font-bold text-[#53635f]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </article>
             </div>
