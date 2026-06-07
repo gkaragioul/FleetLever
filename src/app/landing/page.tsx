@@ -19,7 +19,7 @@ const landingCopy = {
       ["How it works", "#how-it-works"],
       ["Product", "#product"],
       ["Use cases", "#use-cases"],
-      ["Pricing", "#pricing"],
+      ["Pricing", "/pricing"],
     ],
     login: "Login",
     demo: "Request demo",
@@ -134,7 +134,7 @@ const landingCopy = {
       ["Πώς λειτουργεί", "#how-it-works"],
       ["Προϊόν", "#product"],
       ["Χρήσεις", "#use-cases"],
-      ["Τιμές", "#pricing"],
+      ["Τιμές", "/pricing"],
     ],
     login: "Σύνδεση",
     demo: "Ζητήστε demo",
@@ -765,44 +765,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      <section className="bg-[#102b27] px-5 py-20 text-white sm:px-6 lg:px-8" id="pricing">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase text-[#72dce5]">{copy.valueEyebrow}</p>
+            <p className="text-sm font-bold uppercase text-[#72dce5]">Τιμολόγηση</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
-              Ένα μπλοκαρισμένο ξεκίνημα αρκεί.
+              Ξεκινά απλά. Προχωρά μόνο όταν αποδειχθεί χρήσιμο.
             </h2>
+            <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
+              Ένα focused pilot, καθαρό onboarding και ανταγωνιστικό monthly plan. Χωρίς ERP πολυπλοκότητα, χωρίς κρυφή αλλαγή διαδικασίας από την πρώτη μέρα.
+            </p>
+            <Link
+              href="/pricing"
+              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
+            >
+              Δείτε την τιμολόγηση
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-white/10 bg-white/8 p-6">
-              <p className="text-sm font-bold uppercase text-[#ffcf8a]">Χαμένη ημέρα γερανού</p>
-              <p className="mt-2 text-4xl font-semibold">{copy.blockedCrane.price}</p>
-            </div>
-            <div className="rounded-lg border border-[#72dce5]/30 bg-white p-6 text-[#13211f]">
-              <p className="text-sm font-bold uppercase text-[#007C89]">{copy.fleetleverValue.label}</p>
-              <p className="mt-2 text-4xl font-semibold">{copy.fleetleverValue.price}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-20 sm:px-6 lg:px-8" id="pricing">
-        <div className="mx-auto w-full max-w-7xl">
-          <SectionHeader title="Τιμές" />
-          <div className="mt-9 grid gap-4 lg:grid-cols-3">
-            {copy.pricing.map((plan) => (
-              <article key={plan.name} className="rounded-lg border border-[#dce5e1] bg-white p-6 shadow-sm">
-                <p className="text-sm font-bold uppercase text-[#007C89]">{plan.name}</p>
-                <h3 className="mt-3 text-3xl font-semibold text-[#13211f]">{plan.price}</h3>
-                <p className="mt-2 text-base font-semibold text-[#65766f]">{plan.detail}</p>
-                <ul className="mt-6 space-y-3">
-                  {plan.items.map((item) => (
-                    <li key={item} className="flex gap-3 text-base text-[#334641]">
-                      <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              ["Paid pilot", "Δοκιμή με πραγματικά μηχανήματα και έγγραφα πριν δεσμευτείτε."],
+              ["Simple monthly plan", "Σαφές κόστος για την καθημερινή readiness ροή της ομάδας."],
+              ["Optional cleanup", "Extra onboarding μόνο όταν τα δεδομένα χρειάζονται περισσότερη δουλειά."],
+            ].map(([title, body]) => (
+              <article key={title} className="rounded-lg border border-white/10 bg-white/8 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+                <BadgeCheck className="h-5 w-5 text-[#72dce5]" aria-hidden="true" />
+                <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
+                <p className="mt-3 text-sm font-semibold leading-6 text-[#c9d8d4]">{body}</p>
               </article>
             ))}
           </div>
@@ -834,7 +824,7 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-wrap gap-4 text-sm font-semibold text-[#53635f]">
             <a href="#product" className="hover:text-[#007C89]">{copy.footerLinks[0]}</a>
-            <a href="#pricing" className="hover:text-[#007C89]">{copy.footerLinks[1]}</a>
+            <Link href="/pricing" className="hover:text-[#007C89]">{copy.footerLinks[1]}</Link>
             <a href="mailto:hello@fleetlever.com?subject=FleetLever demo" className="hover:text-[#007C89]">{copy.footerLinks[2]}</a>
             <a href="mailto:hello@fleetlever.com" className="hover:text-[#007C89]">{copy.footerLinks[3]}</a>
           </div>
