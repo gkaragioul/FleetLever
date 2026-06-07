@@ -642,7 +642,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="px-5 py-20 sm:px-6 lg:px-8">
+      <section className="bg-white px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-[0.86fr_1.14fr] lg:items-end">
             <SectionHeader
