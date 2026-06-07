@@ -764,7 +764,7 @@ export default function LandingPage() {
           <div>
             <p className="text-sm font-bold uppercase text-[#007C89]">Τιμολόγηση</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
-              Ξεκινά απλά. Προχωρά μόνο όταν αποδειχθεί χρήσιμο.
+              Ξεκινά απλά. Προχώρα μόνο όταν αποδειχθεί χρήσιμο.
             </h2>
             <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#53635f]">
               Ένα focused pilot, καθαρό onboarding και ανταγωνιστικό monthly plan. Χωρίς ERP πολυπλοκότητα, χωρίς κρυφή αλλαγή διαδικασίας από την πρώτη μέρα.
