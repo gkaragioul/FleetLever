@@ -309,63 +309,65 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#dbe2de] bg-white px-5 py-16 sm:px-6 lg:px-8">
+      <section className="border-y border-[#dbe2de] bg-white px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί το Pilot</p>
+          <div className="max-w-4xl">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Pilot στην πράξη</p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-              Σε 30 ημέρες βλέπετε αν βρίσκει προβλήματα πριν σταματήσουν την αυριανή δουλειά.
+              Τι γίνεται στις 30 ημέρες και τι πρέπει να ξέρετε πριν ξεκινήσετε.
             </h2>
           </div>
-          <div className="relative mt-9 grid gap-5 md:grid-cols-4 md:gap-4">
-            <div className="absolute left-8 right-8 top-7 hidden h-px bg-[#cdd8d3] md:block" aria-hidden="true" />
-            {pilotSteps.map((step, index) => (
-              <div key={step} className={`relative rounded-lg p-4 ${index === 3 ? "bg-[#102b27] text-white" : "bg-white"}`}>
-                <div className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full border text-lg font-bold ${
-                  index === 3 ? "border-[#72dce5] bg-[#102b27] text-[#72dce5]" : "border-[#cdd8d3] bg-[#f4f3ef] text-[#007C89]"
-                }`}>
-                  {index + 1}
-                </div>
-                <h3 className={`mt-4 text-xl font-semibold leading-tight ${index === 3 ? "text-white" : "text-[#13211f]"}`}>{step}</h3>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.82fr_1.18fr]">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">FAQ</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-              Τα βασικά, χωρίς φλυαρία.
-            </h2>
-          </div>
-          <div className="grid gap-3">
-            {faqs.map(([question, answer]) => (
-              <article key={question} className="rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
-                <div className="flex gap-3">
-                  <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-[#13211f]">{question}</h3>
-                    <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">{answer}</p>
-                  </div>
-                </div>
-              </article>
-            ))}
-            <article className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-5">
-              <h3 className="text-lg font-semibold text-[#13211f]">Τι μπορεί να χρεωθεί ξεχωριστά;</h3>
-              <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">
-                Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
+          <div className="mt-9 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-6">
+              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πώς λειτουργεί</p>
+              <p className="mt-3 text-base font-semibold leading-7 text-[#53635f]">
+                Σε 30 ημέρες βλέπετε αν βρίσκει προβλήματα πριν σταματήσουν την αυριανή δουλειά.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["Επιπλέον καθάρισμα δεδομένων", "Μεγάλη οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Επιπλέον onboarding"].map((tag) => (
-                  <span key={tag} className="rounded-full border border-[#d5dfda] bg-white px-3 py-1 text-xs font-bold text-[#53635f]">
-                    {tag}
-                  </span>
+              <div className="mt-6 grid gap-4">
+                {pilotSteps.map((step, index) => (
+                  <div key={step} className="grid grid-cols-[3.25rem_1fr] gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm font-bold ${
+                        index === 3 ? "border-[#102b27] bg-[#102b27] text-[#72dce5]" : "border-[#cdd8d3] bg-white text-[#007C89]"
+                      }`}>
+                        {index + 1}
+                      </div>
+                      {index < pilotSteps.length - 1 ? <div className="mt-2 h-full min-h-5 w-px bg-[#cdd8d3]" aria-hidden="true" /> : null}
+                    </div>
+                    <div className={`rounded-md border p-4 ${index === 3 ? "border-[#102b27] bg-[#102b27] text-white" : "border-[#d5dfda] bg-white"}`}>
+                      <h3 className={`text-lg font-semibold leading-tight ${index === 3 ? "text-white" : "text-[#13211f]"}`}>{step}</h3>
+                    </div>
+                  </div>
                 ))}
               </div>
-            </article>
+            </div>
+
+            <div className="grid gap-3">
+              {faqs.map(([question, answer]) => (
+                <article key={question} className="rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
+                  <div className="flex gap-3">
+                    <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#13211f]">{question}</h3>
+                      <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">{answer}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              <article className="rounded-lg border border-[#d5dfda] bg-[#f7f8f5] p-5">
+                <h3 className="text-lg font-semibold text-[#13211f]">Τι μπορεί να χρεωθεί ξεχωριστά;</h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">
+                  Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {["Επιπλέον καθάρισμα δεδομένων", "Μεγάλη οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Επιπλέον onboarding"].map((tag) => (
+                    <span key={tag} className="rounded-full border border-[#d5dfda] bg-white px-3 py-1 text-xs font-bold text-[#53635f]">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            </div>
           </div>
         </div>
       </section>
