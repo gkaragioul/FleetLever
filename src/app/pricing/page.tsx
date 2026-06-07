@@ -372,28 +372,28 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="px-5 pb-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 rounded-lg border border-[#cdd8d3] bg-white p-7 shadow-[0_18px_55px_rgba(19,33,31,0.08)] lg:grid-cols-[1fr_auto] lg:items-center">
+      <section className="bg-[#102b27] px-5 py-16 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase text-[#007C89]">Πριν διαλέξετε πλάνο</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
+            <p className="text-sm font-bold uppercase text-[#72dce5]">Πριν διαλέξετε πλάνο</p>
+            <h2 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl">
               Δοκιμάστε το με πραγματικά μηχανήματα.
             </h2>
-            <p className="mt-4 max-w-2xl text-lg leading-8 text-[#53635f]">
+            <p className="mt-4 max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
               Βάλτε τα πραγματικά σας μηχανήματα, έγγραφα και προβλήματα στο FleetLever για 30 ημέρες.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+          <div className="flex flex-col gap-3 sm:flex-row lg:min-w-64 lg:flex-col">
             <a
               href={mailtoPilot}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#102b27] px-5 text-sm font-bold text-white transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
             >
               Ξεκινήστε Pilot
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </a>
             <a
               href={mailtoPricing}
-              className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#cdd8d3] bg-white px-5 text-sm font-bold text-[#243834] shadow-sm transition hover:border-[#007C89] hover:text-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+              className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/18 bg-white/8 px-5 text-sm font-bold text-white transition hover:border-[#72dce5] hover:text-[#72dce5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
             >
               Μιλήστε μαζί μας
             </a>
