@@ -33,7 +33,7 @@ const plans = [
     cadence: "fixed",
     label: "30 ημέρες",
     intro: "Απόδειξη αξίας με τα πραγματικά μηχανήματα, έγγραφα και blockers της ομάδας σας.",
-    bestFor: "Ομάδες που θέλουν να δοκιμάσουν FleetLever πριν περάσουν σε μηνιαίο πλάνο.",
+    bestFor: "Ομάδες που θέλουν να δοκιμάσουν το FleetLever πριν περάσουν σε μηνιαίο πλάνο.",
     cta: "Start Paid Pilot",
     featured: true,
     includes: [
