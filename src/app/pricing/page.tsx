@@ -297,9 +297,9 @@ export default function PricingPage() {
       </section>
 
       <section className="border-y border-[#dbe2de] bg-white px-5 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.72fr_1fr] lg:items-start">
-            <div>
+        <div className="mx-auto w-full max-w-4xl">
+          <div>
+            <div className="max-w-2xl">
               <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">FAQ</p>
               <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
                 Τα βασικά για το Pilot και τα πλάνα.
@@ -309,7 +309,7 @@ export default function PricingPage() {
               </p>
             </div>
 
-            <div className="grid gap-3">
+            <div className="mt-8 grid gap-3">
               {faqs.map(([question, answer]) => (
                 <article key={question} className="rounded-md border border-[#d5dfda] bg-[#f7f8f5] p-5">
                   <div className="flex gap-3">
