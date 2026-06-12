@@ -505,10 +505,10 @@ export default function LandingPage() {
           <div className="grid gap-12 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
             <div className="relative min-w-0">
               <BrowserFrame
-                src="/fleetlever/site/machine-drawer-why-tomorrow-stops-from-inventory.png"
-                alt="FleetLever machine inventory with the Why tomorrow stops drawer open"
+                src="/fleetlever/site/machine-why-tomorrow-stops-drawer.png"
+                alt="FleetLever tomorrow readiness dashboard with the Why tomorrow stops drawer open"
                 width={3840}
-                height={2442}
+                height={2400}
                 zoom={4.25}
               />
             </div>
@@ -660,41 +660,20 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-10 overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_28px_90px_rgba(19,33,31,0.14)]">
-            <div className="grid gap-0 lg:grid-cols-[1fr_18rem]">
-              <div>
-                <div className="flex h-10 items-center gap-2 border-b border-[#e3e9e5] bg-[#f8faf7] px-4">
-                  <span className="h-3 w-3 rounded-full bg-[#ff6b5f]" />
-                  <span className="h-3 w-3 rounded-full bg-[#ffcc4d]" />
-                  <span className="h-3 w-3 rounded-full bg-[#34c27a]" />
-                  <span className="ml-3 h-4 flex-1 rounded-full bg-[#e6eeea]" />
-                </div>
-                <ScreenshotMagnifier
-                  src="/fleetlever/site/machine-drawer-from-inventory.png"
-                  alt="FleetLever machines inventory with real machine photos and an open Machine Passport drawer"
-                  width={3840}
-                  height={2442}
-                  imageClassName="h-auto w-full"
-                  sizes="(min-width: 1024px) 58rem, 100vw"
-                />
-              </div>
-              <div className="border-t border-[#e3e9e5] bg-[#f8faf7] p-5 lg:border-l lg:border-t-0">
-                <p className="text-xs font-bold uppercase text-[#007C89]">Live machine state</p>
-                <div className="mt-4 space-y-3">
-                  {machinePassportCards.slice(0, 3).map((machine) => (
-                    <div key={machine.code} className="rounded-lg border border-[#dce5e1] bg-white p-4 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-bold uppercase text-[#007C89]">{machine.code}</p>
-                          <p className="mt-1 text-base font-semibold text-[#13211f]">{machine.title}</p>
-                        </div>
-                        <span className="rounded-full bg-[#edf6f3] px-3 py-1 text-xs font-bold text-[#007C89]">{machine.status}</span>
-                      </div>
-                      <p className="mt-3 text-sm font-semibold leading-6 text-[#53635f]">{machine.note}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="flex h-10 items-center gap-2 border-b border-[#e3e9e5] bg-[#f8faf7] px-4">
+              <span className="h-3 w-3 rounded-full bg-[#ff6b5f]" />
+              <span className="h-3 w-3 rounded-full bg-[#ffcc4d]" />
+              <span className="h-3 w-3 rounded-full bg-[#34c27a]" />
+              <span className="ml-3 h-4 flex-1 rounded-full bg-[#e6eeea]" />
             </div>
+            <ScreenshotMagnifier
+              src="/fleetlever/site/machine-drawer-from-inventory.png"
+              alt="FleetLever machines inventory with real machine photos and an open Machine Passport drawer"
+              width={3840}
+              height={2442}
+              imageClassName="h-auto w-full"
+              sizes="(min-width: 1024px) 72rem, 100vw"
+            />
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
