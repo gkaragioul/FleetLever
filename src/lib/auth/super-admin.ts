@@ -13,6 +13,10 @@ export type SuperAdminSession = {
   expiresAt: number;
 };
 
+function isLocalAuthBypassed() {
+  return process.env.NODE_ENV === "development" && process.env.FLEETLEVER_BYPASS_AUTH === "true";
+}
+
 function sessionSecret() {
   const secret = process.env.FLEETLEVER_SESSION_SECRET;
 
@@ -118,6 +122,14 @@ export async function createSuperAdminSession(username: string) {
 }
 
 export async function getSuperAdminSession() {
+  if (isLocalAuthBypassed()) {
+    return {
+      role: "super_admin",
+      username: "local-dev",
+      expiresAt: Date.now() + sessionMaxAgeSeconds * 1000,
+    } satisfies SuperAdminSession;
+  }
+
   const cookieStore = await cookies();
   const cookie = cookieStore.get(sessionCookieName)?.value;
   return cookie ? decodeSession(cookie) : null;
