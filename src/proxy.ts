@@ -7,7 +7,10 @@ function hasSessionCookie(request: NextRequest) {
 }
 
 function isLocalAuthBypassed() {
-  return process.env.NODE_ENV === "development" && process.env.FLEETLEVER_BYPASS_AUTH === "true";
+  return (
+    (process.env.NODE_ENV === "development" && process.env.FLEETLEVER_BYPASS_AUTH === "true") ||
+    process.env.FLEETLEVER_PUBLIC_DEMO === "true"
+  );
 }
 
 function isProtectedPage(pathname: string) {

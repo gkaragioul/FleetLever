@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 
 export const runtime = "edge";
-export const alt = "FleetLever - prevent expensive construction downtime";
+export const alt = "FleetLever - no machine leaves without proof";
 export const size = {
   width: 1200,
   height: 630,
@@ -41,18 +41,18 @@ export default function Image() {
           <FleetLeverLogo />
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             <div style={{ color: "#007C89", fontSize: 28, fontWeight: 700 }}>
-              Construction teams · machines · worksites
+              Machine readiness proof system
             </div>
             <div style={{ fontSize: 72, fontWeight: 800, letterSpacing: 0, lineHeight: 1.02 }}>
-              Prevent Expensive Construction Downtime
+              No Machine Leaves Without Proof
             </div>
           </div>
           <div style={{ color: "#3a4d49", display: "flex", fontSize: 28, gap: 22 }}>
-            <span>Release For Work</span>
+            <span>Release Board</span>
             <span>•</span>
-            <span>Machine Passport</span>
+            <span>Proof Photos</span>
             <span>•</span>
-            <span>Why Blocked</span>
+            <span>Supervisor Approval</span>
           </div>
         </div>
       </div>

@@ -14,24 +14,13 @@ const notoMono = Noto_Sans_Mono({
 
 const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.fleetlever.com");
 
-const metadataCopy = {
-  en: {
-    title: "FleetLever | Prevent Expensive Construction Downtime",
-    description:
-      "FleetLever is the operational gate construction companies use before releasing machines to tomorrow's work.",
-    ogDescription: "Prevent expensive construction downtime before tomorrow's work starts.",
-    twitterDescription: "Know exactly what will stop tomorrow's work before it happens.",
-  },
-  el: {
-    title: "FleetLever | Πρόληψη ακριβών καθυστερήσεων στα έργα",
-    description:
-      "Το FleetLever είναι ο έλεγχος readiness που χρησιμοποιούν οι κατασκευαστικές εταιρείες πριν στείλουν μηχανήματα στην αυριανή δουλειά.",
-    ogDescription: "Προλάβετε ακριβές καθυστερήσεις στα έργα πριν ξεκινήσει η αυριανή δουλειά.",
-    twitterDescription: "Μάθετε τι θα σταματήσει την αυριανή δουλειά πριν συμβεί.",
-  },
+const meta = {
+  title: "FleetLever | No Machine Leaves Without Proof",
+  description:
+    "FleetLever is a machine readiness proof system for construction and rental teams that need release-board control before machines move.",
+  ogDescription: "No machine leaves without proof. Know tonight what machines are allowed to work tomorrow.",
+  twitterDescription: "A release board for machine proof, defects, handovers, and supervisor approvals.",
 } as const;
-
-const meta = metadataCopy.el;
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -43,9 +32,11 @@ export const metadata: Metadata = {
   applicationName: "FleetLever",
   keywords: [
     "construction downtime",
-    "construction equipment management",
-    "machine passport",
-    "release for work",
+    "machine readiness proof",
+    "construction equipment release board",
+    "machine handover proof",
+    "machine proof photos",
+    "release control",
     "εργοτάξιο",
     "μηχανήματα έργου",
     "τεχνικές εταιρείες",
@@ -61,7 +52,7 @@ export const metadata: Metadata = {
     description: meta.ogDescription,
     url: "/",
     siteName: "FleetLever",
-    locale: "el_GR",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
@@ -101,7 +92,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="el"
+      lang="en"
       className={`${notoSans.variable} ${notoMono.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

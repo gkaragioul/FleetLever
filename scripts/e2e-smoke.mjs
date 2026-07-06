@@ -5,13 +5,11 @@ import { chromium } from "playwright";
 
 const APP_PATH = process.env.E2E_APP_PATH ?? "/console";
 const NAV_LABELS = [
-  "Tomorrow's Work",
-  "Worksites",
-  "Action Queue",
+  "Tomorrow",
+  "Capture",
+  "Review",
   "Machines",
-  "Documents",
-  "Workshop",
-  "Release History",
+  "Report",
   "Settings",
 ];
 
@@ -52,8 +50,8 @@ async function startServer() {
 
   const port = await getFreePort();
   const url = `http://127.0.0.1:${port}`;
-  const child = spawn("npm", ["run", "start", "--", "--hostname", "127.0.0.1", "--port", String(port)], {
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
+  const child = spawn(process.execPath, ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", String(port)], {
+    env: { ...process.env, FLEETLEVER_BYPASS_AUTH: "true", NEXT_TELEMETRY_DISABLED: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -101,13 +99,11 @@ async function assertVisibleHeading(page, name) {
 
 async function exerciseNavigation(page) {
   const expectedHeadings = {
-    "Tomorrow's Work": /Will tomorrow's work start|Know Before Tomorrow/i,
-    Worksites: "Worksites",
-    "Action Queue": "Action Queue",
+    Tomorrow: "Tomorrow",
+    Capture: "Capture",
+    Review: "Review",
     Machines: "Machines",
-    Documents: "Documents",
-    Workshop: "Workshop",
-    "Release History": "Release History",
+    Report: "Report",
     Settings: "Settings",
   };
 
@@ -117,51 +113,71 @@ async function exerciseNavigation(page) {
   }
 }
 
-async function exerciseGlobalSearch(page) {
-  const search = page.getByPlaceholder(/Search machine, worksite/i);
-  await search.fill("CR-");
-  await page.getByText(/Search FleetLever/i).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: /CR-04[\s\S]*Liebherr LTM 1040 Crane/ }).first().click();
-  await assertVisibleHeading(page, "Machines");
-  await page.getByRole("heading", { name: /CR-04/i }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByText(/This machine will stop/i).waitFor({ state: "visible", timeout: 5000 });
-
-  await openNav(page, "Worksites");
-  const searchValue = await search.inputValue();
-  if (searchValue) {
-    throw new Error(`Search was not cleared after navigation: ${searchValue}`);
+async function exerciseMachineSearch(page) {
+  for (const label of ["Tomorrow", "Capture", "Review", "Report"]) {
+    await openNav(page, label);
+    const searchCount = await page.getByPlaceholder(/Search machine, status, proof/i).count();
+    if (searchCount > 0) {
+      throw new Error(`Search was visible on ${label}`);
+    }
   }
-  await page.getByRole("heading", { name: "Worksites" }).waitFor({ state: "visible", timeout: 5000 });
+
+  await openNav(page, "Machines");
+  const search = page.getByPlaceholder(/Search machine, status, proof/i);
+  await search.fill("CAT");
+  await page.getByRole("button", { name: /EX-320[\s\S]*CAT 320 Excavator/ }).first().click();
+  await assertVisibleHeading(page, "Machines");
+  await page.getByRole("heading", { name: /CAT 320 Excavator/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/Machine details/i).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: /Close machine details/i }).click();
+
+  await search.fill("");
+  await openNav(page, "Tomorrow");
+  await page.getByRole("heading", { name: /^Tomorrow$/i }).first().waitFor({ state: "visible", timeout: 5000 });
 }
 
-async function exerciseWorkshop(page) {
-  await openNav(page, "Workshop");
-  await page.getByRole("button", { name: /New service job/ }).click();
-  await page.getByRole("heading", { name: "New service job" }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByLabel("Job").fill(`QA steering check ${Date.now()}`);
-  await page.getByRole("button", { name: /Add to board/ }).click();
-  await page.getByText(/QA steering check/).waitFor({ state: "visible", timeout: 5000 });
+async function exerciseTomorrowList(page) {
+  await openNav(page, "Tomorrow");
+  await page.getByText(/3 ready · 3 need action · 1 blocked/i).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("heading", { name: /^Needs action$/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/Missing attachment photo/i).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/Hydraulic leak reported/i).waitFor({ state: "visible", timeout: 5000 });
 
-  const card = page.getByRole("button", { name: /QA steering check/ }).first();
-  const doingLane = page.locator('[data-workshop-drop-status="In Progress"]').first();
-  const cardBox = await card.boundingBox();
-  const laneBox = await doingLane.boundingBox();
-  if (!cardBox || !laneBox) throw new Error("Workshop drag target was not measurable.");
+  const readyNames = page.getByText(/CAT 320 Excavator|Bobcat S650 Skid Steer|Komatsu D65 Dozer/i);
+  if ((await readyNames.count()) > 0) {
+    throw new Error("Ready machines were visible before expanding the collapsed section");
+  }
 
-  await page.mouse.move(cardBox.x + 20, cardBox.y + 20);
-  await page.mouse.down();
-  await page.mouse.move(laneBox.x + laneBox.width / 2, laneBox.y + laneBox.height / 2, { steps: 8 });
-  await page.mouse.up();
-  await page.waitForTimeout(250);
-
-  await doingLane.getByText(/QA steering check/).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: /^Ready machines 3\s+Show$/i }).click();
+  await page.getByText(/CAT 320 Excavator/i).waitFor({ state: "visible", timeout: 5000 });
 }
 
-async function exerciseReleaseHistory(page) {
-  await openNav(page, "Release History");
-  await page.getByRole("button", { name: /View packet/ }).first().click();
-  await page.getByRole("heading", { name: /CR-04 release decision/i }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: "Close" }).click();
+async function exerciseOperatorFlow(page) {
+  await openNav(page, "Capture");
+  await page.getByRole("button", { name: /Continue to photos/ }).click();
+  await page.getByRole("button", { name: /Continue to checks/ }).click();
+  await page.getByRole("button", { name: /Leak found/ }).click();
+  await page.getByRole("button", { name: /Review submission/ }).click();
+  await page.getByText(/This machine needs review/i).first().waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/Proof is complete, but one or more checks need supervisor review/i).first().waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: /Submit for review/ }).click();
+  await page.getByRole("heading", { name: /Submitted/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/needs review before it can work tomorrow|ready for tomorrow/i).first().waitFor({ state: "visible", timeout: 5000 });
+}
+
+async function exerciseSupervisorDecision(page) {
+  await openNav(page, "Review");
+  await page.getByRole("button", { name: /Review decision/ }).first().click();
+  await page.getByRole("heading", { name: /Review decision/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page
+    .getByRole("dialog", { name: /Review decision/i })
+    .getByRole("button", { name: /^Release with note$/i })
+    .click();
+  await page.getByRole("heading", { name: /Release with note/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByLabel(/Supervisor note/i).fill("Supervisor released with note for demo audit.");
+  await page.getByRole("button", { name: /Release with note/i }).last().click();
+  await page.getByRole("heading", { name: /^Tomorrow$/i }).first().waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/ready ·/i).first().waitFor({ state: "visible", timeout: 5000 });
 }
 
 async function main() {
@@ -175,9 +191,10 @@ async function main() {
 
     await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "networkidle" });
     await exerciseNavigation(page);
-    await exerciseGlobalSearch(page);
-    await exerciseWorkshop(page);
-    await exerciseReleaseHistory(page);
+    await exerciseTomorrowList(page);
+    await exerciseMachineSearch(page);
+    await exerciseOperatorFlow(page);
+    await exerciseSupervisorDecision(page);
 
     flushConsoleErrors();
     await page.close();
@@ -193,7 +210,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("E2E smoke passed: current console navigation, search, drawers, workshop drag, and evidence packets are wired.");
+  console.log("E2E smoke passed: simple console navigation, search, capture handover, and review decision are wired.");
 }
 
 main().catch((error) => {

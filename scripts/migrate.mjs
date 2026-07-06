@@ -12,6 +12,11 @@ const databaseUrls = [
 const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT);
 
 if (!databaseUrls.length) {
+  if (process.env.FLEETLEVER_PUBLIC_DEMO === "true") {
+    console.log("Skipping database migrations for public demo mode.");
+    process.exit(0);
+  }
+
   console.error("MIGRATION_DATABASE_URL, DATABASE_PUBLIC_URL, or DATABASE_URL is required.");
   process.exit(1);
 }

@@ -27,6 +27,7 @@ const DEMO_PROFILE_ID = process.env.FLEETLEVER_DEMO_PROFILE_ID ?? "00000000-0000
 const KNOWN_DEMO_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
 const KNOWN_DEMO_PROFILE_ID = "00000000-0000-4000-8000-000000000101";
 const isProductionDeployment = process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT);
+const isPublicDemo = process.env.FLEETLEVER_PUBLIC_DEMO === "true";
 
 function healthTenant() {
   const organizationId = process.env.FLEETLEVER_DEFAULT_ORGANIZATION_ID;
@@ -49,6 +50,23 @@ function healthTenant() {
 
 export async function GET() {
   const storage = objectStorageHealth();
+
+  if (isPublicDemo && !process.env.DATABASE_URL) {
+    return NextResponse.json({
+      ok: true,
+      service: "fleetlever",
+      mode: "public-demo",
+      storage,
+      database: {
+        configured: false,
+        reachable: false,
+      },
+      schema: {
+        tablesReady: false,
+        skipped: true,
+      },
+    });
+  }
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json(
