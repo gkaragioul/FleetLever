@@ -13,10 +13,30 @@ export type SuperAdminSession = {
   expiresAt: number;
 };
 
+function allowsLocalDevelopmentAccess() {
+  return process.env.NODE_ENV !== "production";
+}
+
+function localDevelopmentSession(): SuperAdminSession {
+  return {
+    role: "super_admin",
+    username: "localhost",
+    expiresAt: Date.now() + sessionMaxAgeSeconds * 1000,
+  };
+}
+
+function isHostedDeployment() {
+  return Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL || process.env.RENDER || process.env.FLY_APP_NAME);
+}
+
 function sessionSecret() {
   const secret = process.env.FLEETLEVER_SESSION_SECRET;
 
   if (!secret || secret.length < 32) {
+    if (!isHostedDeployment()) {
+      return "fleetlever-local-demo-session-secret-only-for-local-runs";
+    }
+
     throw new Error("FLEETLEVER_SESSION_SECRET must be set to a random value with at least 32 characters.");
   }
 
@@ -113,11 +133,15 @@ export async function createSuperAdminSession(username: string) {
     maxAge: sessionMaxAgeSeconds,
     path: "/",
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isHostedDeployment(),
   });
 }
 
 export async function getSuperAdminSession() {
+  if (allowsLocalDevelopmentAccess()) {
+    return localDevelopmentSession();
+  }
+
   const cookieStore = await cookies();
   const cookie = cookieStore.get(sessionCookieName)?.value;
   return cookie ? decodeSession(cookie) : null;

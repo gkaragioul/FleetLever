@@ -62,13 +62,6 @@ async function clickButton(name, options = {}) {
   await settle();
 }
 
-async function clickVisibleText(text) {
-  const locator = page.getByText(text, { exact: false }).first();
-  await locator.waitFor({ state: "visible" });
-  await locator.click();
-  await settle();
-}
-
 async function openNav(label) {
   await clickButton(label);
 }
@@ -197,14 +190,14 @@ await optionalStep("Global search overlay", async () => {
   await closeOverlays();
 });
 
-await optionalStep("Leavy assistant", async () => {
-  await page.getByLabel(/open leavy assistant/i).first().click({ force: true });
+await optionalStep("Lisa assistant", async () => {
+  await page.getByLabel(/open lisa assistant|άνοιγμα βοηθού lisa/i).first().click({ force: true });
   await settle();
-  await shot("Leavy assistant bubble chat", "Leavy scripted assistant opened as a customer chatbot bubble.");
-  const quick = page.getByRole("button", { name: /what stops tomorrow|show blockers|best next action/i }).first();
+  await shot("Lisa assistant bubble chat", "Lisa scripted assistant opened as a customer chatbot bubble.");
+  const quick = page.getByRole("button", { name: /what stops tomorrow|show blockers|best next action|τι σταματάει|δείξε τα blockers|καλύτερη επόμενη/i }).first();
   if (await quick.isVisible().catch(() => false)) {
     await quick.click();
-    await shot("Leavy assistant response", "Leavy showing a baked response using current app data.");
+    await shot("Lisa assistant response", "Lisa showing a baked response using current app data.");
   }
   await closeOverlays();
 });

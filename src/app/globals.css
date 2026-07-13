@@ -107,12 +107,78 @@ a {
   }
 }
 
+@keyframes fleet-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fleet-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fleet-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fleet-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fleet-overlay-backdrop {
+  animation: fleet-overlay-in 160ms ease-out both;
+}
+
+.fleet-dialog-enter {
+  animation: fleet-dialog-in 180ms ease-out both;
+}
+
+.fleet-drawer-enter {
+  animation: fleet-drawer-in 200ms ease-out both;
+}
+
+.fleet-popover-enter {
+  transform-origin: top right;
+  animation: fleet-popover-in 140ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .release-flow-fill::after {
     animation: none;
   }
 
   .hero-photo-float {
+    animation: none;
+  }
+
+  .fleet-overlay-backdrop,
+  .fleet-dialog-enter,
+  .fleet-drawer-enter,
+  .fleet-popover-enter {
     animation: none;
   }
 }

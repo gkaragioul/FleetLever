@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 
 type ConsoleSnapshot = {
   organizationName?: string;
-  schemaVersion: 1;
+  schemaVersion: number;
   machines: unknown[];
   notifications: unknown[];
   releaseHistory: unknown[];
@@ -41,7 +41,7 @@ function isConsoleSnapshot(value: unknown): value is ConsoleSnapshot {
   const snapshot = value as Partial<ConsoleSnapshot>;
 
   return (
-    snapshot.schemaVersion === 1 &&
+    typeof snapshot.schemaVersion === "number" &&
     typeof snapshot.updatedAt === "string" &&
     Array.isArray(snapshot.machines) &&
     Array.isArray(snapshot.notifications) &&

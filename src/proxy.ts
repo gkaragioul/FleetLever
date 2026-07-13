@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const sessionCookieName = "fleetlever_super_admin_session";
+const localhostNames = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function allowsLocalhostAccess(request: NextRequest) {
+  return process.env.NODE_ENV !== "production" && localhostNames.has(request.nextUrl.hostname);
+}
 
 function hasSessionCookie(request: NextRequest) {
   return Boolean(request.cookies.get(sessionCookieName)?.value);
@@ -16,6 +21,10 @@ function isProtectedApi(pathname: string) {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (allowsLocalhostAccess(request)) {
+    return NextResponse.next();
+  }
 
   if (pathname === "/login" && hasSessionCookie(request)) {
     return NextResponse.redirect(new URL("/console", request.url));
