@@ -4,6 +4,8 @@ import process from "node:process";
 
 const root = process.cwd();
 const editionPath = path.join(root, "src", "lib", "fleetlever", "edition.ts");
+const runnerPath = path.join(root, "scripts", "dev-edition.mjs");
+const nextConfigPath = path.join(root, "next.config.ts");
 
 const requiredTokens = [
   '"elliniko"',
@@ -37,3 +39,15 @@ if (missing.length > 0) {
 }
 
 console.log("PASS edition configuration: elliniko, console, site");
+
+const [runnerSource, nextConfigSource] = await Promise.all([
+  readFile(runnerPath, "utf8"),
+  readFile(nextConfigPath, "utf8"),
+]);
+
+if (!runnerSource.includes("FLEETLEVER_DIST_DIR") || !nextConfigSource.includes("FLEETLEVER_DIST_DIR")) {
+  console.error("FAIL local editions must use independent Next.js dist directories");
+  process.exit(1);
+}
+
+console.log("PASS independent Next.js dist directories");

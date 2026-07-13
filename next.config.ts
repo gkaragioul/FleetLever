@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   assetPrefix: process.env.FLEETLEVER_ASSET_PREFIX?.replace(/\/$/, ""),
+  distDir: process.env.FLEETLEVER_DIST_DIR ?? ".next",
   devIndicators: false,
   experimental: {
     serverActions: {

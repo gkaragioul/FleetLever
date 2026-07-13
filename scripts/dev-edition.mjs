@@ -14,6 +14,7 @@ const child = spawn(npx, ["next", "dev", "--hostname", "127.0.0.1", "--port", po
   env: {
     ...process.env,
     FLEETLEVER_EDITION: edition,
+    FLEETLEVER_DIST_DIR: `.next-${edition}`,
   },
   stdio: "inherit",
 });
