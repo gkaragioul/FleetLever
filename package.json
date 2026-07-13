@@ -7,6 +7,9 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:elliniko": "node scripts/dev-edition.mjs elliniko 3000",
+    "dev:console": "node scripts/dev-edition.mjs console 3001",
+    "dev:site": "node scripts/dev-edition.mjs site 3002",
     "build": "next build && node scripts/prepare-standalone.mjs",
     "start": "HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "start:next": "next start",
@@ -21,7 +24,8 @@
     "db:create-app-role": "node scripts/create-db-app-role.mjs",
     "db:seed": "SEED_DEMO=true node scripts/migrate.mjs",
     "db:reset-demo": "node scripts/reset-demo.mjs",
-    "db:health": "node scripts/db-health.mjs"
+    "db:health": "node scripts/db-health.mjs",
+    "test:edition-config": "node scripts/verify-edition-config.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1060.0",
