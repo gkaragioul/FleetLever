@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import process from "node:process";
 
 const editions = new Set(["elliniko", "console", "site"]);
@@ -9,15 +10,19 @@ if (!editions.has(edition) || !/^\d{2,5}$/.test(port ?? "")) {
   process.exit(1);
 }
 
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-const child = spawn(npx, ["next", "dev", "--hostname", "127.0.0.1", "--port", port], {
-  env: {
-    ...process.env,
-    FLEETLEVER_EDITION: edition,
-    FLEETLEVER_DIST_DIR: `.next-${edition}`,
+const nextCli = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
+const child = spawn(
+  process.execPath,
+  [nextCli, "dev", "--webpack", "--hostname", "127.0.0.1", "--port", port],
+  {
+    env: {
+      ...process.env,
+      FLEETLEVER_EDITION: edition,
+      FLEETLEVER_DIST_DIR: `.next-${edition}`,
+    },
+    stdio: "inherit",
   },
-  stdio: "inherit",
-});
+);
 
 child.on("error", (error) => {
   console.error(`Unable to start ${edition} edition:`, error);

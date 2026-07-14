@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   assetPrefix: process.env.FLEETLEVER_ASSET_PREFIX?.replace(/\/$/, ""),
   distDir: process.env.FLEETLEVER_DIST_DIR ?? ".next",
   devIndicators: false,
+  turbopack: {
+    root: path.resolve("."),
+  },
   experimental: {
     serverActions: {
       allowedOrigins: [

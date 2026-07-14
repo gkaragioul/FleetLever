@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDbPool, withTenant } from "@/lib/db/client";
 import { objectStorageHealth } from "@/lib/storage/object-storage";
+import { getFleetLeverEdition } from "@/lib/fleetlever/edition";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,18 @@ function healthTenant() {
 }
 
 export async function GET() {
+  const edition = getFleetLeverEdition();
+
+  if (edition === "site") {
+    return NextResponse.json({
+      ok: true,
+      service: "fleetlever-site",
+      edition,
+      database: { required: false, configured: false, reachable: false },
+      storage: { required: false, configured: false },
+    });
+  }
+
   const storage = objectStorageHealth();
 
   if (!process.env.DATABASE_URL) {
@@ -55,6 +68,7 @@ export async function GET() {
       {
         ok: false,
         service: "fleetlever",
+        edition,
         storage,
         database: {
           configured: false,
@@ -104,6 +118,7 @@ export async function GET() {
     return NextResponse.json({
       ok,
       service: "fleetlever",
+      edition,
       storage,
       database: {
         configured: true,
@@ -136,6 +151,7 @@ export async function GET() {
       {
         ok: false,
         service: "fleetlever",
+        edition,
         storage,
         database: {
           configured: true,

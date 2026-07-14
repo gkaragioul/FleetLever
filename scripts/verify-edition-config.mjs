@@ -51,3 +51,17 @@ if (!runnerSource.includes("FLEETLEVER_DIST_DIR") || !nextConfigSource.includes(
 }
 
 console.log("PASS independent Next.js dist directories");
+
+if (!runnerSource.includes('"--webpack"')) {
+  console.error("FAIL local edition servers must use Webpack for worktree-safe dependency resolution");
+  process.exit(1);
+}
+
+console.log("PASS worktree-safe local compiler");
+
+if (!nextConfigSource.includes("turbopack") || !nextConfigSource.includes("root: path.resolve")) {
+  console.error("FAIL Turbopack must be rooted explicitly at the active checkout");
+  process.exit(1);
+}
+
+console.log("PASS explicit Turbopack project root");

@@ -1,14 +1,19 @@
 import { ConstructionPrototype } from "@/components/fleetlever/construction-prototype";
 import { getSuperAdminSession } from "@/lib/auth/super-admin";
-import { redirect } from "next/navigation";
+import { getFleetLeverEdition } from "@/lib/fleetlever/edition";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function FleetManagementPage() {
+  const edition = getFleetLeverEdition();
+
+  if (edition === "site") notFound();
+
   const session = await getSuperAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/main-page?next=/fleet-management");
+    redirect(edition === "elliniko" ? "/main-page?next=/fleet-management" : "/login?next=/fleet-management");
   }
 
   return <ConstructionPrototype />;
