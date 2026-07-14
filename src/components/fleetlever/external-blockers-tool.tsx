@@ -463,6 +463,8 @@ export function ExternalBlockersTool() {
             </div>
 
             {selected.photoUrl ? (
+              // Issue photos may be short-lived presigned URLs from external storage.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={selected.photoUrl}
                 alt=""
