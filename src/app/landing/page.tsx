@@ -25,24 +25,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const workflow = [
-  {
-    number: "01",
-    title: "Δήλωσε την αυριανή δουλειά",
-    body: "Εργοτάξιο, βάρδια ή πακέτο εργασίας και τα μηχανήματα που απαιτεί.",
-  },
-  {
-    number: "02",
-    title: "Δες τι δεν είναι έτοιμο",
-    body: "Έγγραφα, service, επιθεωρήσεις, χειριστές και παραδόσεις ελέγχονται μαζί.",
-  },
-  {
-    number: "03",
-    title: "Κλείσε μόνο ό,τι αποδείχθηκε",
-    body: "Κάθε blocker αποκτά υπεύθυνο, επόμενη ενέργεια, προθεσμία και απόδειξη.",
-  },
-] as const;
-
 const useCases = [
   ["Γερανοί και ανυψώσεις", "Πιστοποιητικά, επιθεωρήσεις, χειριστής και service πριν την αποδέσμευση."],
   ["Χωματουργικά έργα", "Excavators, loaders και trucks δεμένα με την αυριανή εργασία."],
@@ -121,7 +103,7 @@ export default function LandingPage() {
 
       <ReadinessLanes />
 
-      <section className="bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="product">
+      <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="product">
         <div className="mx-auto w-full max-w-[86rem]">
           <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
             <div>
@@ -134,45 +116,15 @@ export default function LandingPage() {
               Τι είναι έτοιμο, τι χρειάζεται έλεγχο, τι μπλοκάρει και ποιος αναλαμβάνει την επόμενη κίνηση.
             </p>
           </div>
-          <div className="mt-10">
+          <div className="mx-auto mt-10 max-w-[76rem]">
             <ProductScreenshot
               src="/fleetlever/site/tomorrow-readiness-dashboard.png"
               alt="Πίνακας FleetLever με έτοιμα, υπό έλεγχο και μπλοκαρισμένα μηχανήματα"
               priority
             />
           </div>
-          <div className="mt-7 grid gap-px overflow-hidden rounded-lg border border-[#d9e1dd] bg-[#d9e1dd] sm:grid-cols-3">
-            {["Έτοιμο για αύριο", "Χρειάζεται έλεγχο", "Μπλοκάρει τη δουλειά"].map((label, index) => (
-              <div key={label} className="flex items-center gap-3 bg-[#f8faf7] px-5 py-4">
-                <span className={`h-2.5 w-2.5 ${index === 0 ? "bg-[#16834b]" : index === 1 ? "bg-[#c07808]" : "bg-[#be2f2a]"}`} aria-hidden="true" />
-                <span className="text-sm font-bold text-[#263b37]">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <PreMorningTimeline />
-
-      <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="how-it-works">
-        <div className="mx-auto w-full max-w-[86rem]">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase text-[#007c89]">Πώς λειτουργεί</p>
-            <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
-              Τρεις κινήσεις πριν κλείσει η ημέρα.
-            </h2>
-            <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-[#53635f]">
-              Δεν αντικαθιστά το ERP σας. Προσθέτει τον καθημερινό έλεγχο που λείπει ανάμεσα στο πρόγραμμα και στην πραγματική αναχώρηση του στόλου.
-            </p>
-          </div>
-          <div className="mt-12 grid gap-8 border-t border-[#cfd8d4] pt-8 md:grid-cols-3">
-            {workflow.map((step) => (
-              <article key={step.number} className="min-w-0">
-                <p className="font-mono text-sm font-bold text-[#007c89]">{step.number}</p>
-                <h3 className="mt-5 text-2xl font-semibold leading-tight">{step.title}</h3>
-                <p className="mt-3 text-base font-medium leading-7 text-[#5d6d68]">{step.body}</p>
-              </article>
-            ))}
+          <div className="scroll-mt-24" id="how-it-works">
+            <PreMorningTimeline />
           </div>
         </div>
       </section>

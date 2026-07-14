@@ -1,49 +1,121 @@
 .section {
-  border-top: 1px solid #d7dfdb;
-  border-bottom: 1px solid #d7dfdb;
-  background: #edf2ee;
+  margin-top: clamp(4rem, 7vw, 6.5rem);
+  border-top: 1px solid #cbd6d1;
   color: #13211f;
 }
 
 .inner {
-  display: grid;
   width: 100%;
-  max-width: 86rem;
-  margin-inline: auto;
-  padding: clamp(4rem, 7vw, 6rem) clamp(1.25rem, 3vw, 2.5rem);
-  gap: clamp(3rem, 6vw, 6.5rem);
-  align-items: start;
+  padding-top: clamp(3.5rem, 6vw, 5.5rem);
 }
 
-.copyColumn {
-  max-width: 36rem;
+.flowHeader {
+  display: grid;
+  max-width: 62rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.eyebrow {
+.eyebrow,
+.storyEyebrow {
   margin: 0;
   color: #007c89;
-  font-size: 0.875rem;
-  font-weight: 750;
+  font-size: 0.8rem;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0;
 }
 
 .heading {
-  max-width: 15ch;
-  margin: 0.8rem 0 0;
-  font-size: clamp(2.5rem, 4vw, 4rem);
+  max-width: 18ch;
+  margin: 0.75rem 0 0;
+  font-size: clamp(2.35rem, 4vw, 3.75rem);
   font-weight: 650;
-  line-height: 1.04;
+  line-height: 1.05;
   text-wrap: balance;
 }
 
 .intro {
-  max-width: 34rem;
-  margin: 1.4rem 0 0;
+  max-width: 42rem;
+  margin: 1.25rem 0 0;
   color: #53635f;
-  font-size: 1.08rem;
+  font-size: 1.05rem;
   font-weight: 520;
-  line-height: 1.7;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.steps {
+  display: grid;
+  margin: clamp(2.5rem, 4vw, 3.5rem) 0 0;
+  padding: 0;
+  border-top: 1px solid #cbd6d1;
+  border-bottom: 1px solid #cbd6d1;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.35rem minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 1.4rem 0;
+}
+
+.step + .step {
+  border-top: 1px solid #dbe2df;
+}
+
+.stepNumber {
+  padding-top: 0.15rem;
+  color: #007c89;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.step h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.step p {
+  margin: 0.35rem 0 0;
+  color: #60706b;
+  font-size: 0.9rem;
+  font-weight: 520;
+  line-height: 1.5;
+}
+
+.story {
+  display: grid;
+  margin-top: clamp(3.75rem, 6vw, 6rem);
+  gap: clamp(2.75rem, 6vw, 6rem);
+  align-items: start;
+}
+
+.copyColumn {
+  max-width: 34rem;
+}
+
+.storyHeading {
+  max-width: 15ch;
+  margin: 0.75rem 0 0;
+  font-size: clamp(2.15rem, 3.2vw, 3.15rem);
+  font-weight: 650;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.storyIntro {
+  max-width: 33rem;
+  margin: 1.2rem 0 0;
+  color: #53635f;
+  font-size: 1rem;
+  font-weight: 520;
+  line-height: 1.65;
   text-wrap: pretty;
 }
 
@@ -163,7 +235,7 @@
   color: #147b45;
 }
 
-.eventCopy h3 {
+.eventCopy h4 {
   max-width: 34rem;
   margin: 0.38rem 0 0;
   font-size: clamp(1.15rem, 1.5vw, 1.35rem);
@@ -206,28 +278,51 @@
   transform: scale(0.82);
 }
 
+@media (min-width: 760px) {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .step {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .step:first-child {
+    padding-left: 0;
+  }
+
+  .step + .step {
+    border-top: 0;
+    border-left: 1px solid #dbe2df;
+  }
+}
+
 @media (min-width: 1024px) {
-  .inner {
-    grid-template-columns: minmax(17rem, 0.78fr) minmax(0, 1.22fr);
+  .story {
+    grid-template-columns: minmax(17rem, 0.74fr) minmax(0, 1.26fr);
   }
 
   .copyColumn {
-    padding-top: 1.4rem;
+    padding-top: 1.25rem;
   }
 }
 
 @media (max-width: 640px) {
-  .inner {
-    padding-block: 3.75rem;
-    gap: 2.5rem;
+  .section {
+    margin-top: 3.75rem;
   }
 
-  .eyebrow {
+  .inner {
+    padding-top: 3.5rem;
+  }
+
+  .eyebrow,
+  .storyEyebrow {
     font-size: 0.72rem;
   }
 
   .heading {
-    max-width: 18ch;
+    max-width: 19ch;
     font-size: 2.15rem;
   }
 
@@ -235,6 +330,20 @@
     margin-top: 1rem;
     font-size: 1rem;
     line-height: 1.6;
+  }
+
+  .story {
+    margin-top: 3.75rem;
+    gap: 2.5rem;
+  }
+
+  .storyHeading {
+    max-width: 18ch;
+    font-size: 2rem;
+  }
+
+  .storyIntro {
+    margin-top: 1rem;
   }
 
   .timeline {
@@ -256,7 +365,7 @@
     font-size: 0.74rem;
   }
 
-  .eventCopy h3 {
+  .eventCopy h4 {
     font-size: 1.05rem;
   }
 

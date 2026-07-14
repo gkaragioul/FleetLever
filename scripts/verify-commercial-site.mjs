@@ -35,11 +35,12 @@ const requiredLandingTokens = [
   "/fleetlever/site/tomorrow-readiness-dashboard.png",
   "/fleetlever/site/stop-list.png",
   "/fleetlever/site/decision-history-audit-trail.png",
-  "Δεν αντικαθιστά το ERP σας.",
   "30 ημέρες με τον πραγματικό σας στόλο.",
   "ReadinessLanes",
   "MachinePassportAssembly",
   "PreMorningTimeline",
+  'id="product"',
+  'id="how-it-works"',
   "CommercialSiteHeader",
   "CommercialSiteFooter",
 ];
@@ -61,6 +62,9 @@ const requiredPassportAssemblyTokens = [
 ];
 
 const requiredPreMorningTimelineTokens = [
+  "Πώς λειτουργεί",
+  "Τρεις κινήσεις πριν ξεκινήσει η βάρδια.",
+  "Δεν αντικαθιστά το ERP σας.",
   "Η αυριανή βάρδια κρίνεται από σήμερα.",
   "Η βάρδια ανοίγει χωρίς εκπλήξεις.",
   "17:20",
@@ -139,6 +143,10 @@ for (const [name, source] of [["landing", landing], ["pricing", pricing], ["shel
 
 if (landing.includes("const landingCopy")) {
   failures.push("landing still carries the unused bilingual copy payload");
+}
+
+if (landing.includes("Τρεις κινήσεις πριν κλείσει η ημέρα.")) {
+  failures.push("landing still carries the duplicated standalone workflow section");
 }
 
 if (!sitemap.includes("getFleetLeverEdition") || !sitemap.includes('`${siteUrl}/pricing`') || sitemap.includes('`${siteUrl}/console`')) {

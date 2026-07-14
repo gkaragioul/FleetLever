@@ -37,15 +37,33 @@ const timelineEvents = [
   },
 ] as const;
 
+const workflowSteps = [
+  {
+    number: "01",
+    title: "Δήλωσε την αυριανή δουλειά",
+    body: "Βάρδια, έργο και απαιτούμενα μηχανήματα.",
+  },
+  {
+    number: "02",
+    title: "Δες τι λείπει",
+    body: "Έγγραφα, service, χειριστές και παραδόσεις μαζί.",
+  },
+  {
+    number: "03",
+    title: "Κλείσε με απόδειξη",
+    body: "Υπεύθυνος, επόμενη ενέργεια και τεκμήριο.",
+  },
+] as const;
+
 type TimelineStyle = CSSProperties & { "--event-index": number };
 
 export function PreMorningTimeline() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const storyRef = useRef<HTMLDivElement>(null);
   const [animationState, setAnimationState] = useState<"waiting" | "revealed">("waiting");
 
   useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
+    const story = storyRef.current;
+    if (!story) return;
 
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (motionPreference.matches) return;
@@ -59,68 +77,90 @@ export function PreMorningTimeline() {
       { threshold: 0.24 },
     );
 
-    observer.observe(section);
+    observer.observe(story);
     return () => observer.disconnect();
   }, []);
 
   return (
-    <section className={styles.section} ref={sectionRef} aria-labelledby="pre-morning-title">
+    <section className={styles.section} aria-labelledby="pre-morning-title">
       <div className={styles.inner}>
-        <div className={styles.copyColumn}>
-          <p className={styles.eyebrow}>Πριν ξεκινήσει η βάρδια</p>
+        <div className={styles.flowHeader}>
+          <p className={styles.eyebrow}>Πώς λειτουργεί</p>
           <h2 className={styles.heading} id="pre-morning-title">
-            Η αυριανή βάρδια κρίνεται από σήμερα.
+            Τρεις κινήσεις πριν ξεκινήσει η βάρδια.
           </h2>
           <p className={styles.intro}>
-            Το FleetLever βρίσκει ό,τι λείπει, ορίζει υπεύθυνο και κρατά εκτός μόνο ό,τι δεν έχει αποδειχθεί έτοιμο.
+            Δεν αντικαθιστά το ERP σας. Συνδέει το αυριανό πρόγραμμα με την πραγματική απόφαση αναχώρησης.
           </p>
         </div>
 
-        <div className={styles.timeline} data-animation={animationState}>
-          <div className={styles.track} aria-hidden="true">
-            <span />
+        <ol className={styles.steps} aria-label="Τα τρία βήματα του FleetLever">
+          {workflowSteps.map((step) => (
+            <li className={styles.step} key={step.number}>
+              <span className={styles.stepNumber}>{step.number}</span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className={styles.story} ref={storyRef}>
+          <div className={styles.copyColumn}>
+            <p className={styles.storyEyebrow}>Στην πράξη</p>
+            <h3 className={styles.storyHeading}>Η αυριανή βάρδια κρίνεται από σήμερα.</h3>
+            <p className={styles.storyIntro}>
+              Το FleetLever βρίσκει ό,τι λείπει, ορίζει υπεύθυνο και κρατά εκτός μόνο ό,τι δεν έχει αποδειχθεί έτοιμο.
+            </p>
           </div>
 
-          <div className={styles.events} role="list" aria-label="Χρονολόγιο προετοιμασίας της αυριανής βάρδιας">
-            {timelineEvents.map(({ time, signal, title, body, tone, Icon }, index) => (
+          <div className={styles.timeline} data-animation={animationState}>
+            <div className={styles.track} aria-hidden="true">
+              <span />
+            </div>
+
+            <div className={styles.events} role="list" aria-label="Χρονολόγιο προετοιμασίας της αυριανής βάρδιας">
+              {timelineEvents.map(({ time, signal, title, body, tone, Icon }, index) => (
+                <article
+                  className={styles.event}
+                  data-tone={tone}
+                  key={time}
+                  role="listitem"
+                  style={{ "--event-index": index } as TimelineStyle}
+                >
+                  <time className={styles.time} dateTime={time}>
+                    {time}
+                  </time>
+                  <span className={styles.node} aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <div className={styles.eventCopy}>
+                    <p className={styles.signal}>{signal}</p>
+                    <h4>{title}</h4>
+                    <p className={styles.eventBody}>{body}</p>
+                  </div>
+                </article>
+              ))}
+
               <article
-                className={styles.event}
-                data-tone={tone}
-                key={time}
+                className={`${styles.event} ${styles.outcome}`}
                 role="listitem"
-                style={{ "--event-index": index } as TimelineStyle}
+                style={{ "--event-index": timelineEvents.length } as TimelineStyle}
               >
-                <time className={styles.time} dateTime={time}>
-                  {time}
+                <time className={styles.time} dateTime="05:45">
+                  05:45
                 </time>
                 <span className={styles.node} aria-hidden="true">
-                  <Icon />
+                  <CheckCircle2 />
                 </span>
                 <div className={styles.eventCopy}>
-                  <p className={styles.signal}>{signal}</p>
-                  <h3>{title}</h3>
-                  <p className={styles.eventBody}>{body}</p>
+                  <p className={styles.signal}>Αποτέλεσμα</p>
+                  <h4>Η βάρδια ανοίγει χωρίς εκπλήξεις.</h4>
+                  <p className={styles.eventBody}>2 μηχανήματα έτοιμα · 2 μένουν εκτός με καταγεγραμμένο λόγο.</p>
                 </div>
               </article>
-            ))}
-
-            <article
-              className={`${styles.event} ${styles.outcome}`}
-              role="listitem"
-              style={{ "--event-index": timelineEvents.length } as TimelineStyle}
-            >
-              <time className={styles.time} dateTime="05:45">
-                05:45
-              </time>
-              <span className={styles.node} aria-hidden="true">
-                <CheckCircle2 />
-              </span>
-              <div className={styles.eventCopy}>
-                <p className={styles.signal}>Αποτέλεσμα</p>
-                <h3>Η βάρδια ανοίγει χωρίς εκπλήξεις.</h3>
-                <p className={styles.eventBody}>2 μηχανήματα έτοιμα · 2 μένουν εκτός με καταγεγραμμένο λόγο.</p>
-              </div>
-            </article>
+            </div>
           </div>
         </div>
       </div>

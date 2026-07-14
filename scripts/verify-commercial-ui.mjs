@@ -42,8 +42,13 @@ async function verifyPage({ name, pathname, viewport, required, screenshot }) {
         });
       });
     }
+    const animatedRegions = page.locator("[data-animation]");
+    for (let index = 0; index < await animatedRegions.count(); index += 1) {
+      await animatedRegions.nth(index).scrollIntoViewIfNeeded();
+      await page.waitForTimeout(150);
+    }
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(1000);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(100);
 
@@ -85,6 +90,7 @@ try {
       "Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.",
       "Κάθε μηχάνημα περνά τον ίδιο έλεγχο πριν φύγει.",
       "Η απόφαση φαίνεται σε μία οθόνη.",
+      "Τρεις κινήσεις πριν ξεκινήσει η βάρδια.",
     ],
     screenshot: "site-landing-desktop.png",
   });
@@ -92,7 +98,7 @@ try {
     name: "landing mobile",
     pathname: "/",
     viewport: { width: 390, height: 844 },
-    required: ["FleetLever", "Ζήτησε demo", "Η διαδρομή προς το αύριο", "Τρεις κινήσεις πριν κλείσει η ημέρα."],
+    required: ["FleetLever", "Ζήτησε demo", "Η διαδρομή προς το αύριο", "Τρεις κινήσεις πριν ξεκινήσει η βάρδια."],
     screenshot: "site-landing-mobile.png",
   });
   await verifyPage({
