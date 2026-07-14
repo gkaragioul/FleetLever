@@ -3,12 +3,24 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
-const [landing, pricing, shell, readinessLanes, readinessLanesStyles, sitemap, robots] = await Promise.all([
+const [
+  landing,
+  pricing,
+  shell,
+  readinessLanes,
+  readinessLanesStyles,
+  passportAssembly,
+  passportAssemblyStyles,
+  sitemap,
+  robots,
+] = await Promise.all([
   readFile(path.join(root, "src", "app", "landing", "page.tsx"), "utf8"),
   readFile(path.join(root, "src", "app", "pricing", "page.tsx"), "utf8"),
   readFile(path.join(root, "src", "components", "fleetlever", "commercial-site-shell.tsx"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.tsx"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.module.css"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "components", "fleetlever", "machine-passport-assembly.tsx"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "components", "fleetlever", "machine-passport-assembly.module.css"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "app", "sitemap.ts"), "utf8"),
   readFile(path.join(root, "src", "app", "robots.ts"), "utf8"),
 ]);
@@ -18,11 +30,11 @@ const requiredLandingTokens = [
   "Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.",
   "/fleetlever/site/tomorrow-readiness-dashboard.png",
   "/fleetlever/site/stop-list.png",
-  "/fleetlever/site/machine-passport-drawer.png",
   "/fleetlever/site/decision-history-audit-trail.png",
   "Δεν αντικαθιστά το ERP σας.",
   "30 ημέρες με τον πραγματικό σας στόλο.",
   "ReadinessLanes",
+  "MachinePassportAssembly",
   "CommercialSiteHeader",
   "CommercialSiteFooter",
 ];
@@ -30,6 +42,15 @@ const requiredLandingTokens = [
 const requiredReadinessTokens = [
   "Η διαδρομή προς το αύριο",
   "Το CR-04 σταματά εδώ, όχι στο εργοτάξιο.",
+  "IntersectionObserver",
+  "prefers-reduced-motion: reduce",
+];
+
+const requiredPassportAssemblyTokens = [
+  "Ο φάκελος συναρμολογείται μπροστά σου.",
+  "Χωρίς απόδειξη, δεν υπάρχει αποδέσμευση.",
+  "Έτοιμο για αποδέσμευση.",
+  "/fleetlever/site/machine-passport-drawer.png",
   "IntersectionObserver",
   "prefers-reduced-motion: reduce",
 ];
@@ -67,6 +88,12 @@ for (const token of requiredShellTokens) {
 for (const token of requiredReadinessTokens) {
   if (!readinessLanes.includes(token) && !readinessLanesStyles.includes(token)) {
     failures.push(`readiness lanes are missing: ${token}`);
+  }
+}
+
+for (const token of requiredPassportAssemblyTokens) {
+  if (!passportAssembly.includes(token) && !passportAssemblyStyles.includes(token)) {
+    failures.push(`machine passport assembly is missing: ${token}`);
   }
 }
 

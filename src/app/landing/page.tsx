@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgeCheck,
   CheckCircle2,
   ClipboardCheck,
   FileCheck2,
@@ -17,6 +16,7 @@ import {
   CommercialSiteHeader,
   demoHref,
 } from "@/components/fleetlever/commercial-site-shell";
+import { MachinePassportAssembly } from "@/components/fleetlever/machine-passport-assembly";
 import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
 
@@ -227,20 +227,7 @@ export default function LandingPage() {
             </div>
           </article>
 
-          <article className="grid gap-10 border-b border-[#cfd8d4] py-16 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:py-24">
-            <div>
-              <BadgeCheck className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Φάκελος μηχανήματος</p>
-              <h2 className="mt-3 text-4xl font-semibold leading-tight">Η απόφαση έχει τα στοιχεία που τη στηρίζουν.</h2>
-              <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
-                Πιστοποιητικά, επιθεωρήσεις, service, φωτογραφίες και προηγούμενες αποφάσεις μένουν μαζί με το μηχάνημα.
-              </p>
-            </div>
-            <ProductScreenshot
-              src="/fleetlever/site/machine-passport-drawer.png"
-              alt="Φάκελος μηχανήματος FleetLever με έγγραφα και ιστορικό service"
-            />
-          </article>
+          <MachinePassportAssembly />
 
           <article className="grid gap-10 pt-16 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pt-24">
             <ProductScreenshot
