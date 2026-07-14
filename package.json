@@ -28,7 +28,9 @@
     "test:edition-config": "node scripts/verify-edition-config.mjs",
     "test:console-edition": "node scripts/verify-console-edition.mjs",
     "test:console-ui": "node scripts/verify-console-ui.mjs",
-    "test:edition-routes": "node scripts/verify-edition-routes.mjs"
+    "test:edition-routes": "node scripts/verify-edition-routes.mjs",
+    "test:commercial-site": "node scripts/verify-commercial-site.mjs",
+    "test:commercial-ui": "node scripts/verify-commercial-ui.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1060.0",

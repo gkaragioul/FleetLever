@@ -1,401 +1,254 @@
 import type { Metadata } from "next";
-import { ArrowRight, CircleHelp, Euro, Receipt, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
+import { ArrowRight, Check, CircleHelp, FileSpreadsheet, Gauge, Users } from "lucide-react";
+import {
+  CommercialSiteFooter,
+  CommercialSiteHeader,
+  demoHref,
+} from "@/components/fleetlever/commercial-site-shell";
 
 export const metadata: Metadata = {
   title: "Τιμές",
   description:
-    "Τιμές FleetLever για 30ήμερο Pilot και μηνιαία πλάνα ελέγχου μηχανημάτων πριν δεσμευτεί η αυριανή δουλειά.",
-  alternates: {
-    canonical: "/pricing",
-  },
+    "Ξεκινήστε με 30ήμερο FleetLever pilot στον πραγματικό σας στόλο και συνεχίστε μόνο όταν αποδειχθεί χρήσιμο.",
+  alternates: { canonical: "/pricing" },
 };
-
-const mailtoPilot = "mailto:hello@fleetlever.com?subject=FleetLever paid pilot";
-const mailtoPricing = "mailto:hello@fleetlever.com?subject=FleetLever pricing call";
 
 const pilotScope = [
   "Έως 30 κρίσιμα μηχανήματα",
-  "Έως 100 έγγραφα / ημερομηνίες",
-  "1 βασική ροή ελέγχου",
-  "Βασικό onboarding",
-  "Kickoff και review call",
+  "Έως 100 βασικά έγγραφα ή ημερομηνίες",
+  "Μία πραγματική ροή αυριανής δουλειάς",
+  "Βασικό import και αρχική ρύθμιση",
+  "Kickoff και review αποτελεσμάτων",
 ] as const;
 
 const plans = [
   {
     name: "Single Team",
-    label: "Μία ομάδα",
     price: "€499",
-    cadence: "/ μήνα",
-    intro: "Για μία ομάδα που θέλει καθημερινό έλεγχο πριν δεσμεύσει το αυριανό πρόγραμμα.",
-    detail: "Για γερανούς, ενοικιάσεις, χωματουργικά ή μικρές ομάδες με έως 30 κρίσιμα μηχανήματα.",
-    bullets: [
+    description: "Για μία ομάδα που θέλει καθημερινό έλεγχο πριν φύγει ο κρίσιμος εξοπλισμός.",
+    features: [
       "Έως 30 κρίσιμα μηχανήματα",
-      "Πίνακας αυριανού προγράμματος",
-      "Πιστοποιητικά και έγγραφα",
-      "Ανοιχτά service και προβλήματα",
-      "Υπεύθυνοι και ενέργειες",
+      "Πίνακας αυριανής δουλειάς",
+      "Φάκελοι μηχανημάτων",
+      "Υπεύθυνοι και προθεσμίες",
       "Ιστορικό αποφάσεων",
     ],
-    cta: "Επιλέξτε Single Team",
   },
   {
-    name: "Multi-Site Operations",
-    label: "Πολλά εργοτάξια",
+    name: "Operations",
     price: "€999",
-    cadence: "/ μήνα",
-    intro: "Για ομάδες με περισσότερα εργοτάξια, περισσότερα μηχανήματα και μεγαλύτερη πίεση.",
-    detail: "Όταν ένα μπλοκαρισμένο ξεκίνημα μπορεί να κοστίσει περισσότερο από το μηνιαίο πλάνο.",
-    bullets: [
+    description: "Για περισσότερα έργα, περισσότερους υπευθύνους και μεγαλύτερο operational scope.",
+    features: [
       "Έως 100 κρίσιμα μηχανήματα",
-      "Πολλά εργοτάξια",
-      "Όλα στο Single Team",
-      "Περισσότερες ροές ελέγχου",
-      "Αναλυτικότερη παρακολούθηση προβλημάτων",
-      "Μηνιαία ανασκόπηση ετοιμότητας",
+      "Πολλαπλά πακέτα εργασίας",
+      "Περισσότεροι χρήστες και ρόλοι",
+      "Προτεραιότητα στο onboarding",
+      "Προηγμένες εξαγωγές",
     ],
-    cta: "Επιλέξτε Operations",
   },
 ] as const;
 
 const faqs = [
   [
-    "Είναι το FleetLever GPS;",
-    "Όχι. Δεν δείχνει απλώς πού βρίσκεται ένα μηχάνημα. Δείχνει αν μπορεί να δουλέψει στο αυριανό πρόγραμμα ή αν υπάρχει κάτι που το μπλοκάρει.",
+    "Είναι GPS ή telematics;",
+    "Όχι. Το FleetLever δεν παρακολουθεί τη θέση ή την τηλεμετρία. Ελέγχει αν ο στόλος είναι επιχειρησιακά έτοιμος για την επόμενη δουλειά.",
   ],
   [
-    "Περιλαμβάνεται onboarding στο Pilot;",
-    "Ναι. Το Pilot περιλαμβάνει βασικό onboarding για έως 30 μηχανήματα, έως 100 βασικά έγγραφα ή ημερομηνίες, μία ροή ελέγχου, kickoff call και review call.",
+    "Αντικαθιστά το ERP ή το CMMS;",
+    "Όχι. Συμπληρώνει τα υπάρχοντα συστήματα με μία καθημερινή απόφαση: τι βγαίνει αύριο, τι όχι και γιατί.",
   ],
   [
-    "Τι γίνεται αν τα δεδομένα μας είναι ακατάστατα;",
-    "Βασική υποστήριξη στο import περιλαμβάνεται στο Pilot. Μεγάλο data cleanup, ακατάστατοι φάκελοι ή εκτεταμένη οργάνωση εγγράφων συμφωνούνται ξεχωριστά πριν ξεκινήσουμε.",
+    "Περιλαμβάνεται onboarding;",
+    "Το βασικό onboarding περιλαμβάνεται στο pilot. Σε απευθείας μηνιαία έναρξη, το setup συμφωνείται ξεχωριστά.",
   ],
   [
-    "Χρειάζεται ετήσια σύμβαση;",
-    "Όχι. Υπάρχει μηνιαία χρέωση. Σε ετήσιο πλάνο, το βασικό onboarding μπορεί να συμπεριληφθεί μέσα στο συμφωνημένο scope.",
+    "Τι γίνεται αν τα δεδομένα είναι ακατάστατα;",
+    "Ελέγχουμε πρώτα το υλικό. Μεγάλο data cleanup ή εκτεταμένη οργάνωση αρχείων κοστολογείται μόνο μετά από σαφή συμφωνία.",
   ],
 ] as const;
 
-function Header() {
-  return (
-    <header className="sticky top-0 z-30 border-b border-[#dbe2de] bg-[#f4f3ef]/92 backdrop-blur">
-      <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-5 px-5 sm:px-6 lg:px-8">
-        <Link href="/" aria-label="Αρχική FleetLever" className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe]">
-          <FleetLeverLogo />
-        </Link>
-        <nav aria-label="Κύρια πλοήγηση" className="hidden items-center gap-6 lg:flex">
-          <Link href="/#how-it-works" className="text-sm font-semibold text-[#4d5f5a] transition hover:text-[#007C89]">Πώς λειτουργεί</Link>
-          <Link href="/#product" className="text-sm font-semibold text-[#4d5f5a] transition hover:text-[#007C89]">Προϊόν</Link>
-          <Link href="/#use-cases" className="text-sm font-semibold text-[#4d5f5a] transition hover:text-[#007C89]">Χρήσεις</Link>
-          <Link href="/pricing" className="text-sm font-semibold text-[#007C89]">Τιμές</Link>
-        </nav>
-        <a
-          href={mailtoPilot}
-          className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#102b27] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
-        >
-          Ξεκινήστε Pilot
-        </a>
-      </div>
-    </header>
-  );
-}
-
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-[#f4f3ef] text-[#13211f]">
-      <Header />
+    <main className="min-h-screen bg-[#f3f6f2] text-[#13211f]">
+      <CommercialSiteHeader />
 
-      <section className="bg-white px-5 py-14 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+      <section className="bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div>
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Τιμές FleetLever</p>
-            <h1 className="mt-4 text-4xl font-semibold leading-[1.04] text-[#13211f] sm:text-6xl">
-              Πριν πληρώσετε συνδρομή, δοκιμάστε το με πραγματικά μηχανήματα.
+            <p className="text-sm font-bold uppercase text-[#007c89]">Τιμές FleetLever</p>
+            <h1 className="mt-4 text-5xl font-semibold leading-tight sm:text-6xl">
+              30 ημέρες με τον πραγματικό σας στόλο.
             </h1>
-            <p className="mt-6 max-w-2xl text-xl leading-8 text-[#53635f]">
-              Βάζουμε τα πραγματικά σας μηχανήματα, έγγραφα και προβλήματα στο FleetLever για 30 ημέρες. Στο τέλος ξέρετε αν αξίζει να συνεχίσετε.
+            <p className="mt-6 max-w-xl text-lg font-medium leading-8 text-[#53635f]">
+              Πριν επιλέξετε συνδρομή, δείτε το FleetLever να δουλεύει με τα δικά σας μηχανήματα, έγγραφα και ανοιχτά θέματα.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href={mailtoPilot}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#00aebe] px-5 text-sm font-bold text-white shadow-[0_18px_45px_rgba(0,174,190,0.22)] transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
-              >
-                Ξεκινήστε Pilot
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
-              <a
-                href="#plans"
-                className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#cdd8d3] bg-white px-5 text-sm font-bold text-[#243834] shadow-sm transition hover:border-[#007C89] hover:text-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
-              >
-                Δείτε τα πλάνα
-              </a>
-            </div>
+            <a
+              href={demoHref}
+              className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] px-5 text-sm font-bold text-white transition duration-200 hover:bg-[#007c89] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
+            >
+              Ζήτησε demo
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_28px_90px_rgba(19,33,31,0.14)]">
-            <div className="relative aspect-[16/10]">
-              <Image
-                src="/fleetlever/site/machine-drawer-from-inventory.png"
-                alt="FleetLever machine passport view"
-                fill
-                priority
-                className="object-cover object-left-top"
-                sizes="(min-width: 1024px) 54vw, 100vw"
-              />
-            </div>
+          <div className="overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_24px_70px_rgba(16,61,55,0.14)]">
+            <Image
+              src="/fleetlever/site/machine-drawer-from-inventory.png"
+              alt="Στόλος FleetLever με ανοιχτό φάκελο μηχανήματος"
+              width={1920}
+              height={1200}
+              priority
+              sizes="(min-width: 1024px) 56vw, 100vw"
+              className="h-auto w-full"
+            />
           </div>
         </div>
       </section>
 
-      <section className="bg-[#102b27] px-5 py-14 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+      <section className="bg-[#103d37] px-5 py-16 text-white sm:px-7 lg:px-10 lg:py-20">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[0.68fr_1.32fr] lg:items-start">
           <div>
-            <p className="text-sm font-bold uppercase text-[#72dce5]">Γιατί αξίζει</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
-              Το κόστος φαίνεται όταν η δουλειά σταματάει.
-            </h2>
-          </div>
-          <div>
-            <p className="max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
-              Ο στόχος δεν είναι η διαχείριση εγγράφων. Ο στόχος είναι να βρίσκετε τι θα σταματήσει τη δουλειά πριν φτάσει το πρωί.
+            <p className="text-sm font-bold uppercase text-[#73dce3]">30ήμερο pilot</p>
+            <p className="mt-5 font-mono text-5xl font-semibold">€1.000</p>
+            <p className="mt-2 text-sm font-medium text-[#c7d7d2]">σταθερό κόστος · χωρίς ΦΠΑ</p>
+            <p className="mt-6 max-w-md text-lg font-medium leading-8 text-[#d8e5e1]">
+              Μικρό, σαφές scope. Πραγματικά δεδομένα. Απόφαση συνέχειας με βάση όσα βρήκε το προϊόν.
             </p>
-            <div className="mt-6 rounded-lg border border-white/12 bg-white/7 p-5">
-              <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
-                <div className="flex items-start gap-4">
-                  <Euro className="mt-1 h-5 w-5 shrink-0 text-[#72dce5]" aria-hidden="true" />
-                  <div>
-                    <p className="text-sm font-bold uppercase text-[#ffcf8a]">Μία χαμένη εκκίνηση</p>
-                    <p className="mt-2 text-3xl font-semibold">€1.000 - €3.000+</p>
-                  </div>
-                </div>
-                <div className="hidden h-14 w-px bg-white/18 md:block" aria-hidden="true" />
-                <div className="flex items-start gap-4">
-                  <Receipt className="mt-1 h-5 w-5 shrink-0 text-[#72dce5]" aria-hidden="true" />
-                  <div>
-                    <p className="text-sm font-bold uppercase text-[#72dce5]">Single Team</p>
-                    <p className="mt-2 text-3xl font-semibold">€499 / μήνα</p>
-                  </div>
-                </div>
+          </div>
+          <div className="border-t border-white/20">
+            {pilotScope.map((item) => (
+              <div key={item} className="flex items-center gap-3 border-b border-white/20 py-4 text-base font-semibold text-[#eef6f3]">
+                <Check className="h-5 w-5 shrink-0 text-[#73dce3]" aria-hidden="true" />
+                {item}
               </div>
-            </div>
+            ))}
+            <a
+              href={demoHref}
+              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              Ζήτησε demo
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>
 
-      <section className="bg-[#f7f8f5] px-5 py-20 sm:px-6 lg:px-8" id="plans">
-        <div className="mx-auto w-full max-w-7xl">
-          <div className="mb-10 grid gap-5 lg:grid-cols-[0.82fr_1fr] lg:items-end">
+      <section className="bg-[#f3f6f2] px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="plans">
+        <div className="mx-auto w-full max-w-[86rem]">
+          <div className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
             <div>
-            <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">Πλάνα</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-5xl">
-              Ξεκινήστε με Pilot ή απευθείας με πλάνο.
-            </h2>
+              <p className="text-sm font-bold uppercase text-[#007c89]">Μετά το pilot</p>
+              <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">Δύο καθαρές επιλογές.</h2>
             </div>
-            <p className="max-w-3xl text-lg font-semibold leading-8 text-[#53635f]">
-              Το Pilot περιλαμβάνει βασικό onboarding. Αν ξεκινήσετε απευθείας με μηνιαίο πλάνο, συμφωνούμε το setup ξεχωριστά.
+            <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
+              Συνεχίζετε μόνο αν το FleetLever αποδείξει ότι προλαβαίνει προβλήματα στη δική σας λειτουργία.
             </p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-3">
-            <article className="flex min-h-[30rem] flex-col rounded-lg bg-[#102b27] p-6 text-white shadow-[0_28px_80px_rgba(16,43,39,0.22)] sm:p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase text-[#72dce5]">30-Day Pilot</p>
-                  <h3 className="mt-2 text-2xl font-semibold">30 ημέρες πιλοτικός έλεγχος</h3>
-                </div>
-                <ShieldCheck className="h-6 w-6 shrink-0 text-[#72dce5]" aria-hidden="true" />
-              </div>
-              <div className="mt-7 flex items-end gap-2">
-                <p className="text-5xl font-semibold leading-none">€1.000</p>
-                <p className="pb-1 text-sm font-bold text-[#c9d8d4]">fixed</p>
-              </div>
-              <p className="mt-6 text-base font-semibold leading-7 text-[#eef7f4]">
-                Βάζουμε τα πραγματικά σας μηχανήματα στο FleetLever. Σε 30 ημέρες βλέπετε αν βρίσκει προβλήματα πριν σταματήσουν τη δουλειά.
-              </p>
-              <div className="mt-6 border-t border-white/14 pt-6">
-                <p className="text-sm font-bold uppercase text-[#72dce5]">Τι περιλαμβάνει</p>
-                <div className="mt-4 grid gap-2">
-                  {pilotScope.map((item) => (
-                    <div key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#e6f2ef]">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#72dce5]" aria-hidden="true" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-auto pt-7">
-                <a
-                  href={mailtoPilot}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#72dce5] px-4 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
-                >
-                  Ξεκινήστε Pilot
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </a>
-              </div>
-            </article>
-
+          <div className="mt-10 overflow-hidden rounded-lg border border-[#cfd8d4] bg-white">
+            <div className="hidden grid-cols-[0.62fr_0.76fr_1fr_1fr] border-b border-[#d7dfdb] bg-[#edf2ee] text-xs font-bold uppercase text-[#5d6d68] md:grid">
+              <div className="px-6 py-4">Πλάνο</div>
+              <div className="px-6 py-4">Τιμή</div>
+              <div className="px-6 py-4">Περιγραφή</div>
+              <div className="px-6 py-4">Περιλαμβάνει</div>
+            </div>
             {plans.map((plan) => (
-              <article key={plan.name} className="flex min-h-[30rem] flex-col rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold uppercase text-[#007C89]">{plan.name}</p>
-                    <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">{plan.label}</h3>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-4xl font-semibold leading-none text-[#13211f]">{plan.price}</p>
-                    <p className="mt-1 text-sm font-bold text-[#65766f]">{plan.cadence}</p>
-                  </div>
+              <article key={plan.name} className="grid gap-6 border-b border-[#d7dfdb] p-6 last:border-b-0 md:grid-cols-[0.62fr_0.76fr_1fr_1fr] md:gap-0 md:p-0">
+                <div className="md:px-6 md:py-7">
+                  <h3 className="text-xl font-semibold">{plan.name}</h3>
                 </div>
-                <p className="mt-6 text-base font-semibold leading-7 text-[#53635f]">{plan.intro}</p>
-                <p className="mt-3 text-sm font-bold leading-6 text-[#007C89]">{plan.detail}</p>
-                <div className="mt-6 border-t border-[#e0e7e3] pt-6">
-                  <p className="text-sm font-bold uppercase text-[#007C89]">Περιλαμβάνει</p>
-                  <div className="mt-4 grid gap-2">
-                    {plan.bullets.slice(0, 4).map((item) => (
-                      <div key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#334641]">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#007C89]" aria-hidden="true" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="md:px-6 md:py-7">
+                  <p className="font-mono text-3xl font-semibold">{plan.price}</p>
+                  <p className="mt-1 text-sm font-medium text-[#65766f]">ανά μήνα · χωρίς ΦΠΑ</p>
                 </div>
-                <div className="mt-auto pt-7">
-                  <a
-                    href={mailtoPricing}
-                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#102b27] px-4 text-sm font-bold text-white transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2"
-                  >
-                    {plan.cta}
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </a>
+                <p className="text-base font-medium leading-7 text-[#53635f] md:px-6 md:py-7">{plan.description}</p>
+                <div className="grid gap-2 md:px-6 md:py-7">
+                  {plan.features.map((feature) => (
+                    <p key={feature} className="flex gap-2 text-sm font-semibold leading-6 text-[#334641]">
+                      <Check className="mt-1 h-4 w-4 shrink-0 text-[#007c89]" aria-hidden="true" />
+                      {feature}
+                    </p>
+                  ))}
                 </div>
               </article>
             ))}
           </div>
 
-          <div className="mt-5 rounded-lg border border-[#d5dfda] bg-white p-5 shadow-sm">
-            <div className="grid gap-4 lg:grid-cols-[auto_1fr] lg:items-center">
-              <p className="text-sm font-bold uppercase text-[#007C89]">Setup</p>
-              <p className="text-sm font-semibold leading-6 text-[#53635f]">
-                Το βασικό onboarding περιλαμβάνεται στο Pilot. Αν ξεκινήσετε απευθείας με μηνιαίο πλάνο, το setup συμφωνείται ξεχωριστά. Μεγάλο data cleanup ή custom ροές χρεώνονται μόνο μετά από συμφωνία.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-lg border border-[#d5dfda] bg-white p-6 shadow-sm sm:p-7">
-            <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
-                <p className="text-sm font-bold uppercase text-[#007C89]">Custom</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#13211f]">Χρειάζεστε κάτι πιο σύνθετο;</h3>
-                <p className="mt-3 text-base font-semibold leading-7 text-[#53635f]">
-                  Για 100+ μηχανήματα, πολλαπλά τμήματα, ειδικές ροές, αναφορές ή integrations.
-                </p>
-              </div>
-              <a href={mailtoPricing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cdd8d3] bg-white px-4 text-sm font-bold text-[#243834] transition hover:border-[#007C89] hover:text-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2">
-                Μιλήστε μαζί μας
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
-            </div>
-          </div>
-
-          <p className="mt-4 text-sm font-semibold text-[#65766f]">Όλες οι τιμές είναι χωρίς ΦΠΑ.</p>
-        </div>
-      </section>
-
-      <section className="border-y border-[#dbe2de] bg-white px-5 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-4xl">
-          <div>
-            <div className="max-w-2xl">
-              <p className="text-sm font-bold uppercase tracking-normal text-[#007C89]">FAQ</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#13211f] sm:text-4xl">
-                Τα βασικά για το Pilot και τα πλάνα.
-              </h2>
-              <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-[#53635f]">
-                Σύντομες απαντήσεις για το τι περιλαμβάνεται, τι δεν είναι το FleetLever και τι μπορεί να χρεωθεί ξεχωριστά.
-              </p>
-            </div>
-
-            <div className="mt-8 grid gap-3">
-              {faqs.map(([question, answer]) => (
-                <article key={question} className="rounded-md border border-[#d5dfda] bg-[#f7f8f5] p-5">
-                  <div className="flex gap-3">
-                    <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-[#13211f]">{question}</h3>
-                      <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">{answer}</p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-              <article className="rounded-md border border-[#d5dfda] bg-[#f7f8f5] p-5">
-                <div className="flex gap-3">
-                  <CircleHelp className="mt-1 h-5 w-5 shrink-0 text-[#007C89]" aria-hidden="true" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-[#13211f]">Τι μπορεί να χρεωθεί ξεχωριστά;</h3>
-                    <p className="mt-2 text-sm font-semibold leading-6 text-[#53635f]">
-                      Αν τα δεδομένα είναι πολύ ακατάστατα ή χρειάζεται επιπλέον οργάνωση αρχείων, το κόστος συμφωνείται πριν ξεκινήσουμε.
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {["Καθάρισμα δεδομένων", "Οργάνωση εγγράφων", "Ειδικές αναφορές", "Integrations", "Extra onboarding"].map((tag) => (
-                        <span key={tag} className="rounded-full border border-[#d5dfda] bg-white px-3 py-1 text-xs font-bold text-[#53635f]">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+          <div className="mt-6 grid gap-4 border-y border-[#cfd8d4] py-6 md:grid-cols-3">
+            {[
+              [Gauge, "Χωρίς μακρύ rollout", "Ξεκινάμε από μία κρίσιμη καθημερινή ροή."],
+              [Users, "Με υπεύθυνο από την πρώτη μέρα", "Κάθε blocker έχει ιδιοκτήτη και επόμενη κίνηση."],
+              [FileSpreadsheet, "Με καθαρό scope δεδομένων", "Οτιδήποτε επιπλέον συμφωνείται πριν γίνει."],
+            ].map(([Icon, title, body]) => (
+              <div key={String(title)} className="flex gap-4 md:px-4 first:md:pl-0 last:md:pr-0">
+                <Icon className="mt-1 h-5 w-5 shrink-0 text-[#007c89]" aria-hidden="true" />
+                <div>
+                  <h3 className="text-base font-semibold">{String(title)}</h3>
+                  <p className="mt-1 text-sm font-medium leading-6 text-[#5d6d68]">{String(body)}</p>
                 </div>
-              </article>
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-[#102b27] px-5 py-16 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+      <section className="border-y border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[0.62fr_1.38fr]">
           <div>
-            <p className="text-sm font-bold uppercase text-[#72dce5]">Πριν διαλέξετε πλάνο</p>
-            <h2 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-5xl">
-              Δοκιμάστε το με πραγματικά μηχανήματα.
-            </h2>
-            <p className="mt-4 max-w-2xl text-lg font-semibold leading-8 text-[#c9d8d4]">
-              Βάλτε τα πραγματικά σας μηχανήματα, έγγραφα και προβλήματα στο FleetLever για 30 ημέρες.
+            <CircleHelp className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
+            <h2 className="mt-6 text-4xl font-semibold leading-tight">Πριν αποφασίσετε.</h2>
+            <p className="mt-4 max-w-md text-base font-medium leading-7 text-[#53635f]">
+              Οι βασικές απαντήσεις για το προϊόν, το pilot και το setup.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:min-w-64 lg:flex-col">
-            <a
-              href={mailtoPilot}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#72dce5] px-5 text-sm font-bold text-[#102b27] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
-            >
-              Ξεκινήστε Pilot
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-            <a
-              href={mailtoPricing}
-              className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/18 bg-white/8 px-5 text-sm font-bold text-white transition hover:border-[#72dce5] hover:text-[#72dce5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#72dce5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102b27]"
-            >
-              Μιλήστε μαζί μας
-            </a>
+          <div className="border-t border-[#cfd8d4]">
+            {faqs.map(([question, answer]) => (
+              <article key={question} className="grid gap-3 border-b border-[#cfd8d4] py-6 sm:grid-cols-[0.72fr_1.28fr] sm:gap-8">
+                <h3 className="text-base font-semibold">{question}</h3>
+                <p className="text-sm font-medium leading-6 text-[#53635f]">{answer}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-[#dbe2de] px-5 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+      <section className="relative isolate overflow-hidden px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-24">
+        <Image
+          src="/fleetlever/site/hero-photos/crane-workers.jpg"
+          alt="Τεχνικό συνεργείο δίπλα σε βαρύ ανυψωτικό μηχάνημα"
+          fill
+          sizes="100vw"
+          className="-z-20 object-cover object-center"
+        />
+        <div className="absolute inset-0 -z-10 bg-[#071b18]/82" aria-hidden="true" />
+        <div className="mx-auto flex w-full max-w-[86rem] flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <FleetLeverLogo />
-            <p className="mt-3 text-sm font-semibold text-[#65766f]">Ξέρεις τι θα σταματήσει τη δουλειά αύριο πριν συμβεί.</p>
+            <p className="text-sm font-bold uppercase text-[#73dce3]">Πριν επιλέξετε πλάνο</p>
+            <h2 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
+              Δοκιμάστε το με τη δική σας αυριανή δουλειά.
+            </h2>
           </div>
-          <div className="flex flex-wrap gap-4 text-sm font-semibold text-[#53635f]">
-            <Link href="/#product" className="hover:text-[#007C89]">Προϊόν</Link>
-            <Link href="/pricing" className="hover:text-[#007C89]">Τιμές</Link>
-            <a href="mailto:hello@fleetlever.com?subject=FleetLever demo" className="hover:text-[#007C89]">Demo</a>
-            <a href="mailto:hello@fleetlever.com" className="hover:text-[#007C89]">Επικοινωνία</a>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <a
+              href={demoHref}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              Ζήτησε demo
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+            <Link
+              href="/landing#product"
+              className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/35 bg-[#071b18]/40 px-5 text-sm font-bold text-white transition duration-200 hover:border-white hover:bg-[#071b18]/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              Δες το προϊόν
+            </Link>
           </div>
         </div>
-      </footer>
+      </section>
+
+      <CommercialSiteFooter />
     </main>
   );
 }
