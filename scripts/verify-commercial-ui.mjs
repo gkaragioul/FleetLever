@@ -67,6 +67,7 @@ async function verifyPage({ name, pathname, viewport, required, screenshot }) {
       path: path.join(outputDir, screenshot),
       fullPage: true,
       animations: "disabled",
+      caret: "initial",
     });
   } finally {
     await page.close();

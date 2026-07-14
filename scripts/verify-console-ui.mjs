@@ -41,7 +41,7 @@ try {
   if (overlay > 0) failures.push("Next.js error overlay is visible");
   if (consoleErrors.length > 0) failures.push(`browser console errors: ${consoleErrors.join(" | ")}`);
 
-  await page.screenshot({ path: screenshotPath, fullPage: true, animations: "disabled" });
+  await page.screenshot({ path: screenshotPath, fullPage: true, animations: "disabled", caret: "initial" });
 
   if (failures.length > 0) {
     console.error(`FAIL standalone console UI\n- ${failures.join("\n- ")}`);
