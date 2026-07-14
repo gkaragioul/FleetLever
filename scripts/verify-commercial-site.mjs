@@ -3,10 +3,12 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
-const [landing, pricing, shell] = await Promise.all([
+const [landing, pricing, shell, sitemap, robots] = await Promise.all([
   readFile(path.join(root, "src", "app", "landing", "page.tsx"), "utf8"),
   readFile(path.join(root, "src", "app", "pricing", "page.tsx"), "utf8"),
   readFile(path.join(root, "src", "components", "fleetlever", "commercial-site-shell.tsx"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "app", "sitemap.ts"), "utf8"),
+  readFile(path.join(root, "src", "app", "robots.ts"), "utf8"),
 ]);
 
 const requiredLandingTokens = [
@@ -60,6 +62,14 @@ for (const [name, source] of [["landing", landing], ["pricing", pricing], ["shel
 
 if (landing.includes("const landingCopy")) {
   failures.push("landing still carries the unused bilingual copy payload");
+}
+
+if (!sitemap.includes("getFleetLeverEdition") || !sitemap.includes('`${siteUrl}/pricing`') || sitemap.includes('`${siteUrl}/console`')) {
+  failures.push("sitemap is not isolated to public commercial routes");
+}
+
+if (!robots.includes("getFleetLeverEdition") || !robots.includes('disallow: "/"')) {
+  failures.push("application editions are not excluded from search indexing");
 }
 
 if (failures.length > 0) {
