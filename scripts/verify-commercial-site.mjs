@@ -79,6 +79,18 @@ const requiredPricingTokens = [
   "CommercialSiteFooter",
 ];
 
+requiredPricingTokens.push(
+  "Founding Pilot",
+  "€6.000 / έτος",
+  "€12.000 / έτος",
+  "Από €24.000 / έτος",
+  "€1.500 εφάπαξ",
+  "€3.000 εφάπαξ",
+  "Επιπλέον επιχειρησιακή μονάδα",
+  "12μηνη συμφωνία",
+  "15 ημερών",
+);
+
 const requiredShellTokens = [
   "NEXT_PUBLIC_FLEETLEVER_CONSOLE_URL",
   "http://127.0.0.1:3001/login",

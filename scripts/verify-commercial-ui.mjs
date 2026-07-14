@@ -99,14 +99,21 @@ try {
     name: "pricing desktop",
     pathname: "/pricing",
     viewport: { width: 1440, height: 1000 },
-    required: ["30 ημέρες με τον πραγματικό σας στόλο.", "Single Team", "Operations"],
+    required: [
+      "Ετήσια συμφωνία για τον επιχειρησιακό έλεγχο του στόλου.",
+      "Founding Pilot",
+      "€6.000 / έτος",
+      "€12.000 / έτος",
+      "Από €24.000 / έτος",
+      "Η έναρξη τιμολογείται μία φορά",
+    ],
     screenshot: "site-pricing-desktop.png",
   });
   await verifyPage({
     name: "pricing mobile",
     pathname: "/pricing",
     viewport: { width: 390, height: 844 },
-    required: ["Τιμές FleetLever", "€1.000", "Μετά το pilot"],
+    required: ["Τιμές FleetLever", "€1.000", "Μετά το pilot", "Επιπλέον επιχειρησιακή μονάδα", "12μηνη συμφωνία"],
     screenshot: "site-pricing-mobile.png",
   });
 } finally {
