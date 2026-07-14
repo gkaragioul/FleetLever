@@ -17,6 +17,7 @@ import {
   CommercialSiteHeader,
   demoHref,
 } from "@/components/fleetlever/commercial-site-shell";
+import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
 
 export const metadata: Metadata = {
@@ -126,13 +127,15 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <ReadinessLanes />
+
       <section className="bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="product">
         <div className="mx-auto w-full max-w-[86rem]">
           <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
             <div>
               <p className="text-sm font-bold uppercase text-[#007c89]">Η αυριανή δουλειά</p>
               <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
-                Μία οθόνη. Μία καθαρή απόφαση.
+                Η απόφαση φαίνεται σε μία οθόνη.
               </h2>
             </div>
             <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">

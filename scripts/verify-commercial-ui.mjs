@@ -26,7 +26,7 @@ async function verifyPage({ name, pathname, viewport, required, screenshot }) {
   });
 
   try {
-    await page.goto(`${origin}${pathname}`, { waitUntil: "networkidle", timeout: 60_000 });
+    await page.goto(`${origin}${pathname}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.addStyleTag({ content: "html { scroll-behavior: auto !important; }" });
     const images = page.locator("img");
     for (let index = 0; index < await images.count(); index += 1) {
@@ -42,7 +42,8 @@ async function verifyPage({ name, pathname, viewport, required, screenshot }) {
         });
       });
     }
-    await page.waitForLoadState("networkidle");
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(100);
 
@@ -79,14 +80,19 @@ try {
     name: "landing desktop",
     pathname: "/",
     viewport: { width: 1440, height: 1000 },
-    required: ["FleetLever", "Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.", "Μία οθόνη. Μία καθαρή απόφαση."],
+    required: [
+      "FleetLever",
+      "Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.",
+      "Κάθε μηχάνημα περνά τον ίδιο έλεγχο πριν φύγει.",
+      "Η απόφαση φαίνεται σε μία οθόνη.",
+    ],
     screenshot: "site-landing-desktop.png",
   });
   await verifyPage({
     name: "landing mobile",
     pathname: "/",
     viewport: { width: 390, height: 844 },
-    required: ["FleetLever", "Ζήτησε demo", "Τρεις κινήσεις πριν κλείσει η ημέρα."],
+    required: ["FleetLever", "Ζήτησε demo", "Η διαδρομή προς το αύριο", "Τρεις κινήσεις πριν κλείσει η ημέρα."],
     screenshot: "site-landing-mobile.png",
   });
   await verifyPage({

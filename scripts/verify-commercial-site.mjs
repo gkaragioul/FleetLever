@@ -3,10 +3,12 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
-const [landing, pricing, shell, sitemap, robots] = await Promise.all([
+const [landing, pricing, shell, readinessLanes, readinessLanesStyles, sitemap, robots] = await Promise.all([
   readFile(path.join(root, "src", "app", "landing", "page.tsx"), "utf8"),
   readFile(path.join(root, "src", "app", "pricing", "page.tsx"), "utf8"),
   readFile(path.join(root, "src", "components", "fleetlever", "commercial-site-shell.tsx"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.tsx"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.module.css"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "app", "sitemap.ts"), "utf8"),
   readFile(path.join(root, "src", "app", "robots.ts"), "utf8"),
 ]);
@@ -20,8 +22,16 @@ const requiredLandingTokens = [
   "/fleetlever/site/decision-history-audit-trail.png",
   "Δεν αντικαθιστά το ERP σας.",
   "30 ημέρες με τον πραγματικό σας στόλο.",
+  "ReadinessLanes",
   "CommercialSiteHeader",
   "CommercialSiteFooter",
+];
+
+const requiredReadinessTokens = [
+  "Η διαδρομή προς το αύριο",
+  "Το CR-04 σταματά εδώ, όχι στο εργοτάξιο.",
+  "IntersectionObserver",
+  "prefers-reduced-motion: reduce",
 ];
 
 const requiredPricingTokens = [
@@ -52,6 +62,12 @@ for (const token of requiredPricingTokens) {
 
 for (const token of requiredShellTokens) {
   if (!shell.includes(token)) failures.push(`commercial shell is missing: ${token}`);
+}
+
+for (const token of requiredReadinessTokens) {
+  if (!readinessLanes.includes(token) && !readinessLanesStyles.includes(token)) {
+    failures.push(`readiness lanes are missing: ${token}`);
+  }
 }
 
 for (const [name, source] of [["landing", landing], ["pricing", pricing], ["shell", shell]]) {
