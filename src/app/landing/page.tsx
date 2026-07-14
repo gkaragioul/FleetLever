@@ -138,7 +138,11 @@ export default function LandingPage() {
 
       <ReadinessLanes />
 
-      <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="product">
+      <section
+        className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
+        id="product"
+        data-section-tone="white"
+      >
         <div className="mx-auto w-full max-w-[86rem]">
           <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
             <div>
@@ -179,7 +183,10 @@ export default function LandingPage() {
         <PreMorningTimeline />
       </div>
 
-      <section className="border-y border-[#d7dfdb] bg-[#f3f6f2] px-5 py-16 sm:px-7 lg:px-10 lg:py-24">
+      <section
+        className="border-y border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
+        data-section-tone="white"
+      >
         <div className="mx-auto w-full max-w-[86rem]">
           <article className="grid gap-10 border-b border-[#cfd8d4] pb-16 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pb-24">
             <ProductScreenshot
@@ -219,12 +226,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="for-whom">
+      <section
+        className="scroll-mt-24 bg-[#edf2ee] px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
+        id="for-whom"
+        data-section-tone="mist"
+      >
         <div className="mx-auto w-full max-w-[86rem]">
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <HardHat className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Who it is for</p>
+              <HardHat className="h-7 w-7 text-[#006d78]" aria-hidden="true" />
+              <p className="mt-6 text-sm font-bold uppercase text-[#006d78]">Who it is for</p>
               <h2 className="mt-3 max-w-lg text-4xl font-semibold leading-tight sm:text-5xl">
                 For operations that cannot discover the problem in the morning.
               </h2>

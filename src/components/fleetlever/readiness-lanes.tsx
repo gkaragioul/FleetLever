@@ -139,7 +139,13 @@ export function ReadinessLanes() {
   const current = stages[stage];
 
   return (
-    <section className={styles.section} ref={sectionRef} aria-labelledby="readiness-lanes-title" data-animation="readiness-lanes">
+    <section
+      className={styles.section}
+      ref={sectionRef}
+      aria-labelledby="readiness-lanes-title"
+      data-animation="readiness-lanes"
+      data-section-tone="mist"
+    >
       <div className={styles.stickyFrame}>
         <div className={styles.layout}>
           <div className={styles.copyColumn}>

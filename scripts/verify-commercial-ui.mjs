@@ -66,6 +66,26 @@ async function verifyHowItWorksInset(page, name, minimumInset) {
   }
 }
 
+async function verifyAlternatingSectionBackgrounds(page, name) {
+  const sections = await page.locator("[data-section-tone]").evaluateAll((elements) =>
+    elements.map((element) => ({
+      tone: element.getAttribute("data-section-tone"),
+      background: getComputedStyle(element).backgroundColor,
+    })),
+  );
+  const expected = [
+    { tone: "mist", background: "rgb(237, 242, 238)" },
+    { tone: "white", background: "rgb(255, 255, 255)" },
+    { tone: "mist", background: "rgb(237, 242, 238)" },
+    { tone: "white", background: "rgb(255, 255, 255)" },
+    { tone: "mist", background: "rgb(237, 242, 238)" },
+  ];
+
+  if (JSON.stringify(sections) !== JSON.stringify(expected)) {
+    failures.push(`${name}: section backgrounds do not alternate mist/white (${JSON.stringify(sections)})`);
+  }
+}
+
 async function verifyPage({ name, pathname, viewport, required, screenshot, maxHeight, interact }) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
   const page = await context.newPage();
@@ -151,6 +171,7 @@ try {
     screenshot: "site-landing-desktop.png",
     interact: async (page) => {
       await verifyHowItWorksInset(page, "landing desktop", 32);
+      await verifyAlternatingSectionBackgrounds(page, "landing desktop");
       await page.getByRole("button", { name: /Open larger image: FleetLever tomorrow-readiness board/ }).click();
       if (!(await page.getByRole("dialog").isVisible())) failures.push("landing desktop: image dialog did not open");
       await page.keyboard.press("Escape");
@@ -167,6 +188,7 @@ try {
     screenshot: "site-landing-mobile.png",
     interact: async (page) => {
       await verifyHowItWorksInset(page, "landing mobile", 20);
+      await verifyAlternatingSectionBackgrounds(page, "landing mobile");
       await page.getByRole("button", { name: "Open menu" }).click();
       if (!(await page.getByRole("navigation", { name: "Mobile navigation" }).isVisible())) {
         failures.push("landing mobile: mobile navigation did not open");

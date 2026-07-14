@@ -1,7 +1,7 @@
 .section {
   position: relative;
   min-height: 178svh;
-  background: #f3f6f2;
+  background: transparent;
   color: #13211f;
 }
 

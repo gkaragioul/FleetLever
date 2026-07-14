@@ -82,7 +82,7 @@ export function PreMorningTimeline() {
   }, []);
 
   return (
-    <section className={styles.section} aria-labelledby="pre-morning-title">
+    <section className={styles.section} aria-labelledby="pre-morning-title" data-section-tone="mist">
       <div className={styles.inner}>
         <div className={styles.flowHeader}>
           <p className={styles.eyebrow}>How it works</p>
