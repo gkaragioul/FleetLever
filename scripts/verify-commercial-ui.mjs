@@ -122,20 +122,19 @@ try {
     name: "landing desktop",
     pathname: "/",
     viewport: { width: 1440, height: 1000 },
-    maxHeight: 7600,
+    maxHeight: 10500,
     required: [
       "Know what can go out next. And what cannot.",
       "Every asset passes the same release check before it leaves.",
-      "One decision, three views",
-      "What the pilot measures",
+      "One screen. One release decision.",
+      "Three moves before the shift starts.",
+      "Every blocker becomes an owned action.",
+      "The decision has the evidence behind it.",
       "Equipment rental",
     ],
     screenshot: "site-landing-desktop.png",
     interact: async (page) => {
-      const tab = page.getByRole("tab", { name: "Asset passport" });
-      await tab.click();
-      if ((await tab.getAttribute("aria-selected")) !== "true") failures.push("landing desktop: product tab did not activate");
-      await page.getByRole("button", { name: /Open larger image: FleetLever asset passport/ }).click();
+      await page.getByRole("button", { name: /Open larger image: FleetLever tomorrow-readiness board/ }).click();
       if (!(await page.getByRole("dialog").isVisible())) failures.push("landing desktop: image dialog did not open");
       await page.keyboard.press("Escape");
       if (await page.getByRole("dialog").count()) failures.push("landing desktop: image dialog did not close with Escape");
@@ -146,7 +145,7 @@ try {
     name: "landing mobile",
     pathname: "/",
     viewport: { width: 390, height: 844 },
-    maxHeight: 9000,
+    maxHeight: 11500,
     required: ["FleetLever", "See it with your fleet", "Request a demo", "Pricing"],
     screenshot: "site-landing-mobile.png",
     interact: async (page) => {

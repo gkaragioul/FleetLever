@@ -264,7 +264,14 @@ export default function PricingPage() {
       </section>
 
       <section className="relative isolate overflow-hidden bg-[#071b18] px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-24">
-        <Image src="/fleetlever/site/hero-photos/crane-workers.jpg" alt="Technical crew beside heavy lifting equipment" fill sizes="100vw" className="-z-20 object-cover object-center" />
+        <Image
+          src="/fleetlever/site/hero-photos/crane-workers.jpg"
+          alt="Technical crew beside heavy lifting equipment"
+          fill
+          priority
+          sizes="100vw"
+          className="-z-20 object-cover object-center"
+        />
         <div className="absolute inset-0 -z-10 bg-[#071b18]/85" aria-hidden="true" />
         <div className="mx-auto flex w-full max-w-[86rem] flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <div>

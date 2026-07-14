@@ -18,7 +18,7 @@
 .eyebrow,
 .storyEyebrow {
   margin: 0;
-  color: #007c89;
+  color: #006d78;
   font-size: 0.8rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -67,7 +67,7 @@
 
 .stepNumber {
   padding-top: 0.15rem;
-  color: #007c89;
+  color: #006d78;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.75rem;
   font-weight: 800;
@@ -143,7 +143,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: #007c89;
+  background: #006d78;
   transform: scaleY(1);
   transform-origin: top;
   transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -187,7 +187,7 @@
   border: 1px solid #9fb3ac;
   border-radius: 4px;
   background: #f8faf8;
-  color: #007c89;
+  color: #006d78;
   transition:
     border-color 420ms ease,
     background-color 420ms ease,
@@ -211,7 +211,7 @@
 .outcome .node {
   border-color: #82caa3;
   background: #eff9f2;
-  color: #147b45;
+  color: #0f6f3d;
 }
 
 .eventCopy {
@@ -220,7 +220,7 @@
 
 .signal {
   margin: 0;
-  color: #007c89;
+  color: #006d78;
   font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -232,7 +232,7 @@
 
 .event[data-tone="resolved"] .signal,
 .outcome .signal {
-  color: #147b45;
+  color: #0f6f3d;
 }
 
 .eventCopy h4 {
@@ -247,7 +247,7 @@
 .eventBody {
   max-width: 36rem;
   margin: 0.45rem 0 0;
-  color: #5b6d68;
+  color: #50615d;
   font-size: 0.92rem;
   font-weight: 520;
   line-height: 1.55;
@@ -270,7 +270,7 @@
 }
 
 .timeline[data-animation="waiting"] .event {
-  opacity: 0;
+  opacity: 1;
   transform: translateY(0.75rem);
 }
 

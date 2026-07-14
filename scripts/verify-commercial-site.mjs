@@ -14,7 +14,8 @@ const files = {
   shell: await source("src/components/fleetlever/commercial-site-shell.tsx"),
   lanes: await source("src/components/fleetlever/readiness-lanes.tsx"),
   lanesStyles: await source("src/components/fleetlever/readiness-lanes.module.css"),
-  walkthrough: await source("src/components/fleetlever/product-walkthrough.tsx"),
+  preMorning: await source("src/components/fleetlever/pre-morning-timeline.tsx"),
+  passport: await source("src/components/fleetlever/machine-passport-assembly.tsx"),
   demoPage: await source("src/app/request-demo/page.tsx"),
   demoForm: await source("src/components/fleetlever/demo-request-form.tsx"),
   demoApi: await source("src/app/api/commercial/demo-request/route.ts"),
@@ -44,17 +45,24 @@ function requireTokens(fileName, tokens) {
 requireTokens("landing", [
   "Know what can go out next. And what cannot.",
   "Fleet and equipment readiness",
-  "ProductWalkthrough",
+  "ProductScreenshot",
   "ReadinessLanes",
-  "What the pilot measures",
+  "PreMorningTimeline",
+  "MachinePassportAssembly",
+  "One screen. One release decision.",
+  "Every blocker becomes an owned action.",
+  "Decision history",
   "Construction and heavy equipment",
   "Equipment rental",
   "Municipal and public works",
   "Specialist and service fleets",
-  "Broader assets. One narrow decision.",
   'id="product"',
+  'id="how-it-works"',
   'id="for-whom"',
   "/fleetlever/site/hero-photos/site-crew-crane.jpg",
+  "/fleetlever/site/tomorrow-readiness-dashboard.png",
+  "/fleetlever/site/stop-list.png",
+  "/fleetlever/site/decision-history-audit-trail.png",
 ]);
 
 requireTokens("pricing", [
@@ -94,11 +102,17 @@ requireTokens("lanes", [
 
 requireTokens("lanesStyles", ["prefers-reduced-motion: reduce"]);
 
-requireTokens("walkthrough", [
-  "Action queue",
+requireTokens("preMorning", [
+  "Three moves before the shift starts.",
+  "Tomorrow&apos;s shift is decided today.",
+  "The shift starts without surprises.",
+]);
+
+requireTokens("passport", [
   "Asset passport",
-  "Decision history",
-  "aria-selected",
+  "No evidence, no release.",
+  "Ready for release",
+  "Full decision history",
 ]);
 
 requireTokens("demoPage", ["Request a FleetLever demo", "CommercialSiteHeader"]);
@@ -132,7 +146,8 @@ const englishCommercialFiles = [
   "pricing",
   "shell",
   "lanes",
-  "walkthrough",
+  "preMorning",
+  "passport",
   "demoPage",
   "demoForm",
   "privacy",

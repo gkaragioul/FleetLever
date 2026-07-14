@@ -13,25 +13,25 @@ import styles from "./pre-morning-timeline.module.css";
 const timelineEvents = [
   {
     time: "17:20",
-    signal: "Εντοπίστηκε",
-    title: "Το πιστοποιητικό του CR-04 έχει λήξει.",
-    body: "Το μηχάνημα μένει εκτός μέχρι να ανέβει η απόδειξη.",
+    signal: "Detected",
+    title: "CR-04 has an expired lifting certificate.",
+    body: "The asset stays out until current evidence is attached to its record.",
     tone: "risk",
     Icon: FileWarning,
   },
   {
     time: "17:32",
-    signal: "Ανατέθηκε",
-    title: "Η ανανέωση πέρασε στη Μαρία.",
-    body: "Υπεύθυνος, επόμενη ενέργεια και προθεσμία σήμερα.",
+    signal: "Assigned",
+    title: "The renewal action is assigned to Maria.",
+    body: "One owner, one next step and a deadline before the final release review.",
     tone: "action",
     Icon: UserRoundCheck,
   },
   {
     time: "18:05",
-    signal: "Προσαρμόστηκε",
-    title: "Δεσμεύτηκε εφεδρικό μηχάνημα.",
-    body: "Η αυριανή δουλειά συνεχίζει χωρίς κυνήγι στο τηλέφωνο.",
+    signal: "Replanned",
+    title: "A replacement asset is reserved.",
+    body: "Tomorrow's job continues without a morning phone chase.",
     tone: "resolved",
     Icon: RefreshCcw,
   },
@@ -40,18 +40,18 @@ const timelineEvents = [
 const workflowSteps = [
   {
     number: "01",
-    title: "Δήλωσε την αυριανή δουλειά",
-    body: "Βάρδια, έργο και απαιτούμενα μηχανήματα.",
+    title: "Declare the next operation",
+    body: "Shift, job or rental and the assets it requires.",
   },
   {
     number: "02",
-    title: "Δες τι λείπει",
-    body: "Έγγραφα, service, χειριστές και παραδόσεις μαζί.",
+    title: "See what is missing",
+    body: "Documents, maintenance, people and handovers checked together.",
   },
   {
     number: "03",
-    title: "Κλείσε με απόδειξη",
-    body: "Υπεύθυνος, επόμενη ενέργεια και τεκμήριο.",
+    title: "Close with evidence",
+    body: "Owner, next action, deadline and proof in one record.",
   },
 ] as const;
 
@@ -85,16 +85,17 @@ export function PreMorningTimeline() {
     <section className={styles.section} aria-labelledby="pre-morning-title">
       <div className={styles.inner}>
         <div className={styles.flowHeader}>
-          <p className={styles.eyebrow}>Πώς λειτουργεί</p>
+          <p className={styles.eyebrow}>How it works</p>
           <h2 className={styles.heading} id="pre-morning-title">
-            Τρεις κινήσεις πριν ξεκινήσει η βάρδια.
+            Three moves before the shift starts.
           </h2>
           <p className={styles.intro}>
-            Δεν αντικαθιστά το ERP σας. Συνδέει το αυριανό πρόγραμμα με την πραγματική απόφαση αναχώρησης.
+            FleetLever does not replace your ERP, CMMS or rental system. It connects the plan ahead with the final,
+            evidence-backed release decision.
           </p>
         </div>
 
-        <ol className={styles.steps} aria-label="Τα τρία βήματα του FleetLever">
+        <ol className={styles.steps} aria-label="The three FleetLever workflow steps">
           {workflowSteps.map((step) => (
             <li className={styles.step} key={step.number}>
               <span className={styles.stepNumber}>{step.number}</span>
@@ -108,10 +109,11 @@ export function PreMorningTimeline() {
 
         <div className={styles.story} ref={storyRef}>
           <div className={styles.copyColumn}>
-            <p className={styles.storyEyebrow}>Στην πράξη</p>
-            <h3 className={styles.storyHeading}>Η αυριανή βάρδια κρίνεται από σήμερα.</h3>
+            <p className={styles.storyEyebrow}>In practice</p>
+            <h3 className={styles.storyHeading}>Tomorrow&apos;s shift is decided today.</h3>
             <p className={styles.storyIntro}>
-              Το FleetLever βρίσκει ό,τι λείπει, ορίζει υπεύθυνο και κρατά εκτός μόνο ό,τι δεν έχει αποδειχθεί έτοιμο.
+              FleetLever finds what is missing, assigns the right person and keeps an asset out until its readiness is
+              proven or a replacement is secured.
             </p>
           </div>
 
@@ -120,7 +122,7 @@ export function PreMorningTimeline() {
               <span />
             </div>
 
-            <div className={styles.events} role="list" aria-label="Χρονολόγιο προετοιμασίας της αυριανής βάρδιας">
+            <div className={styles.events} role="list" aria-label="Timeline for preparing tomorrow's operation">
               {timelineEvents.map(({ time, signal, title, body, tone, Icon }, index) => (
                 <article
                   className={styles.event}
@@ -155,9 +157,9 @@ export function PreMorningTimeline() {
                   <CheckCircle2 />
                 </span>
                 <div className={styles.eventCopy}>
-                  <p className={styles.signal}>Αποτέλεσμα</p>
-                  <h4>Η βάρδια ανοίγει χωρίς εκπλήξεις.</h4>
-                  <p className={styles.eventBody}>2 μηχανήματα έτοιμα · 2 μένουν εκτός με καταγεγραμμένο λόγο.</p>
+                  <p className={styles.signal}>Outcome</p>
+                  <h4>The shift starts without surprises.</h4>
+                  <p className={styles.eventBody}>2 assets ready. 2 held back with a recorded reason and owner.</p>
                 </div>
               </article>
             </div>

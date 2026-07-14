@@ -17,35 +17,35 @@ import styles from "./machine-passport-assembly.module.css";
 
 const stages = [
   {
-    signal: "CR-04 · 5 απαιτήσεις",
-    title: "Τα στοιχεία είναι ακόμη διάσπαρτα.",
-    body: "Πιστοποιητικό, έλεγχος, service, χειριστής και φωτογραφία πρέπει να συνδεθούν με το ίδιο μηχάνημα.",
-    status: "Συλλογή στοιχείων",
+    signal: "CR-04 | 5 release requirements",
+    title: "The evidence is still scattered.",
+    body: "Certificate, inspection, maintenance, operator and photo evidence must all connect to the same asset and next assignment.",
+    status: "Collecting evidence",
   },
   {
-    signal: "1 απαίτηση λείπει",
-    title: "Χωρίς απόδειξη, δεν υπάρχει αποδέσμευση.",
-    body: "Το πιστοποιητικό ανύψωσης λείπει. Ο φάκελος δείχνει ακριβώς τι σταματά την απόφαση.",
-    status: "Θέλει ενέργεια",
+    signal: "1 requirement is missing",
+    title: "No evidence, no release.",
+    body: "The lifting certificate is missing. The asset record shows exactly what is stopping the decision.",
+    status: "Action required",
   },
   {
-    signal: "Η απόδειξη καταχωρήθηκε",
-    title: "Το κενό κλείνει εκεί που πρέπει.",
-    body: "Η νέα απόδειξη συνδέεται στο CR-04, στον υπεύθυνο και στην αυριανή δουλειά.",
-    status: "Πλήρης φάκελος",
+    signal: "The evidence is recorded",
+    title: "The missing proof lands in the right record.",
+    body: "The new certificate is linked to CR-04, the responsible person and tomorrow's job.",
+    status: "Complete asset record",
   },
   {
-    signal: "5 από 5 απαιτήσεις",
-    title: "Έτοιμο για αποδέσμευση.",
-    body: "Η απόφαση πατά σε έναν πλήρη, ελέγξιμο φάκελο που ακολουθεί το μηχάνημα.",
-    status: "Έτοιμο",
+    signal: "5 of 5 requirements passed",
+    title: "Ready for release.",
+    body: "The decision now rests on one complete, reviewable asset record that follows the equipment.",
+    status: "Ready",
   },
 ] as const;
 
 const evidence = [
   {
-    label: "Έλεγχος ασφαλείας",
-    meta: "Επιθεώρηση · 14/07",
+    label: "Safety inspection",
+    meta: "Inspected | 14 Jul",
     Icon: ShieldCheck,
     className: styles.safetyEvidence,
     position: {
@@ -58,7 +58,7 @@ const evidence = [
   },
   {
     label: "Service CR-04",
-    meta: "Ολοκληρώθηκε · 16:20",
+    meta: "Completed | 16:20",
     Icon: Wrench,
     className: styles.serviceEvidence,
     position: {
@@ -70,8 +70,8 @@ const evidence = [
     },
   },
   {
-    label: "Χειριστής",
-    meta: "Δημήτρης · Έτοιμος",
+    label: "Assigned operator",
+    meta: "Dimitris | Ready",
     Icon: UserRoundCheck,
     className: styles.operatorEvidence,
     position: {
@@ -83,8 +83,8 @@ const evidence = [
     },
   },
   {
-    label: "Φωτογραφία ελέγχου",
-    meta: "Ανέβηκε · 16:42",
+    label: "Inspection photo",
+    meta: "Uploaded | 16:42",
     Icon: Camera,
     className: styles.photoEvidence,
     position: {
@@ -96,8 +96,8 @@ const evidence = [
     },
   },
   {
-    label: "Πιστοποιητικό ανύψωσης",
-    meta: "Λείπει από τον φάκελο",
+    label: "Lifting certificate",
+    meta: "Missing from asset record",
     Icon: FileCheck2,
     className: `${styles.certificateEvidence} ${styles.missingEvidence}`,
     position: {
@@ -183,12 +183,12 @@ export function MachinePassportAssembly() {
         <div className={styles.layout}>
           <div className={styles.copyColumn}>
             <BadgeCheck className={styles.sectionIcon} aria-hidden="true" />
-            <p className={styles.eyebrow}>Φάκελος μηχανήματος</p>
+            <p className={styles.eyebrow}>Asset passport</p>
             <h2 className={styles.heading} id="passport-assembly-title">
-              Η απόφαση έχει τα στοιχεία που τη στηρίζουν.
+              The decision has the evidence behind it.
             </h2>
             <p className={styles.intro}>
-              Ο φάκελος συναρμολογείται μπροστά σου. Κάθε απαίτηση συνδέεται με το μηχάνημα πριν δοθεί η αποδέσμευση.
+              Watch the asset record assemble as each release requirement connects to the equipment before approval.
             </p>
 
             <div className={styles.stageCopy} data-stage={stage} aria-live="polite">
@@ -205,14 +205,14 @@ export function MachinePassportAssembly() {
             className={styles.visualColumn}
             data-stage={stage}
             role="img"
-            aria-label="Ο φάκελος του μηχανήματος CR-04 συγκεντρώνει τα απαιτούμενα στοιχεία και γίνεται έτοιμος για αποδέσμευση"
+            aria-label="The CR-04 asset passport collects all required evidence and becomes ready for release"
           >
             <div className={styles.workspace}>
               <div className={styles.passportSurface}>
                 <div className={styles.passportHeader}>
                   <span>
                     <ClipboardCheck aria-hidden="true" />
-                    CR-04 · Φάκελος μηχανήματος
+                    CR-04 | Asset passport
                   </span>
                   <strong>{current.status}</strong>
                 </div>
@@ -225,15 +225,15 @@ export function MachinePassportAssembly() {
                   className={styles.passportImage}
                 />
                 <div className={styles.passportFooter}>
-                  <span>Απαιτήσεις αποδέσμευσης</span>
+                  <span>Release requirements</span>
                   <strong>{stage < 2 ? "4 / 5" : "5 / 5"}</strong>
                 </div>
               </div>
 
               <div className={styles.missingSlot} aria-hidden="true">
                 <FileCheck2 />
-                <span>Πιστοποιητικό ανύψωσης</span>
-                <strong>{stage < 2 ? "Λείπει" : "Καταχωρήθηκε"}</strong>
+                <span>Lifting certificate</span>
+                <strong>{stage < 2 ? "Missing" : "Recorded"}</strong>
               </div>
 
               {evidence.map(({ label, meta, Icon, className, position }) => (
@@ -257,14 +257,14 @@ export function MachinePassportAssembly() {
                 <CheckCircle2 />
                 <span>
                   <small>CR-04</small>
-                  <strong>Έτοιμο για αποδέσμευση</strong>
+                  <strong>Ready for release</strong>
                 </span>
               </div>
 
               <div className={styles.auditNote} aria-hidden="true">
-                <span>5 αποδείξεις</span>
-                <span>1 υπεύθυνος</span>
-                <span>Πλήρες ιστορικό</span>
+                <span>5 evidence items</span>
+                <span>1 accountable owner</span>
+                <span>Full decision history</span>
               </div>
             </div>
           </div>
