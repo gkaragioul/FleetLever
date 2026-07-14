@@ -28,6 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { MunicipalBrandLockup, PortalReturnLink } from "@/components/fleetlever/municipal-brand";
+import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 
 type MachineState = "ready" | "at_risk" | "blocked";
 type ViewKey =
@@ -111,7 +112,7 @@ type ReleaseRecord = {
   override: "Ναι" | "Όχι";
 };
 
-type AddItemType = "Όχημα" | "Υπηρεσία πόλης" | "Έλεγχος / έγγραφο" | "Θέμα συνεργείου" | "Αρχείο";
+type AddItemType = "Όχημα" | "Υπηρεσία πόλης" | "Πακέτο εργασίας" | "Έλεγχος / έγγραφο" | "Θέμα συνεργείου" | "Αρχείο";
 
 type Toast = {
   id: number;
@@ -204,10 +205,11 @@ type DrawerAction =
   | { type: "override" }
   | null;
 
-const defaultClientName = "FleetLever Δήμος Demo";
+const isMunicipalConsole = process.env.NEXT_PUBLIC_FLEETLEVER_EDITION === "elliniko";
+const defaultClientName = isMunicipalConsole ? "FleetLever Δήμος Demo" : "FleetLever Demo";
 const allowDemoConsoleData = process.env.NEXT_PUBLIC_FLEETLEVER_ALLOW_DEMO_CONSOLE !== "false";
 
-const teamMembers: TeamMember[] = [
+const municipalTeamMembers: TeamMember[] = [
   { name: "Δημήτρης", role: "Γραφείο Κίνησης" },
   { name: "Μαρία", role: "Έγγραφα και έλεγχοι" },
   { name: "Κώστας", role: "Συνεργείο δήμου" },
@@ -215,7 +217,17 @@ const teamMembers: TeamMember[] = [
   { name: "Γιώργος", role: "Υπεύθυνος Καθαριότητας" },
 ];
 
-const staffMembers: StaffMember[] = [
+const standaloneTeamMembers: TeamMember[] = [
+  { name: "Δημήτρης", role: "Υπεύθυνος στόλου" },
+  { name: "Μαρία", role: "Συμμόρφωση & έγγραφα" },
+  { name: "Κώστας", role: "Υπεύθυνος συνεργείου" },
+  { name: "Εξωτερικό συνεργείο", role: "Τεχνική υποστήριξη" },
+  { name: "Γιώργος", role: "Διευθυντής λειτουργίας" },
+];
+
+const teamMembers = isMunicipalConsole ? municipalTeamMembers : standaloneTeamMembers;
+
+const municipalStaffMembers: StaffMember[] = [
   {
     id: "staff-dimitris",
     name: "Δημήτρης",
@@ -305,7 +317,64 @@ const staffMembers: StaffMember[] = [
   },
 ];
 
-const seedWorksites: Worksite[] = [
+const standaloneStaffMembers: StaffMember[] = [
+  {
+    ...municipalStaffMembers[0],
+    role: "Υπεύθυνος στόλου",
+    team: "Συντονισμός λειτουργίας",
+    assignedTo: "Επέκταση γραμμής Μετρό",
+    note: "Κλειδώνει χειριστές, οχήματα και επόμενες ενέργειες πριν από την πρωινή εκκίνηση.",
+  },
+  {
+    ...municipalStaffMembers[1],
+    role: "Υπεύθυνος συνεργείου",
+    team: "Τεχνική υποστήριξη",
+    assignedTo: "LD-03 · έλεγχος υδραυλικών",
+    note: "Ενημερώνει την ομάδα λειτουργίας μόλις ολοκληρωθεί ο τεχνικός έλεγχος.",
+  },
+  {
+    ...municipalStaffMembers[2],
+    role: "Συμμόρφωση & έγγραφα",
+    team: "Διοικητικός έλεγχος",
+    assignedTo: "Πιστοποιητικά στόλου",
+    note: "Παρακολουθεί λήξεις, ανανεώσεις και αποδεικτικά ανά όχημα.",
+  },
+  {
+    ...municipalStaffMembers[3],
+    role: "Διευθυντής λειτουργίας",
+    team: "Λειτουργία έργων",
+    assignedTo: "Πρωινή αναφορά",
+    note: "Εγκρίνει αλλαγές χειριστών και εξαιρέσεις πριν κλειδώσει η βάρδια.",
+  },
+  {
+    ...municipalStaffMembers[4],
+    role: "Χειριστής γερανού",
+    team: "Ανυψώσεις",
+    assignedTo: "CR-04",
+    note: "Δεν έχει επιβεβαιώσει διαθεσιμότητα για την πρωινή εκκίνηση.",
+    replacement: "Ο Δημήτρης να βρει διαθέσιμο χειριστή έως τις 17:00",
+  },
+  {
+    ...municipalStaffMembers[5],
+    role: "Οδηγός φορτηγού",
+    team: "Μεταφορές",
+    assignedTo: "TR-08",
+    note: "Η άδεια έχει καταχωρηθεί. Χρειάζεται κάλυψη μόνο αν ανοίξει δεύτερη διαδρομή.",
+    replacement: "Κάλυψη από διαθέσιμο οδηγό μεταφορών",
+  },
+  {
+    ...municipalStaffMembers[6],
+    role: "Χειριστής φορτωτή",
+    team: "Χωματουργικά",
+    assignedTo: "LD-03",
+    note: "Αναρρωτική άδεια για αύριο. Το έργο χρειάζεται δεύτερο πιστοποιημένο χειριστή.",
+    replacement: "Ο Γιώργος να εγκρίνει αλλαγή χειριστή",
+  },
+];
+
+const staffMembers = isMunicipalConsole ? municipalStaffMembers : standaloneStaffMembers;
+
+const municipalSeedWorksites: Worksite[] = [
   {
     id: "morning-waste",
     name: "Πρωινή αποκομιδή απορριμμάτων",
@@ -329,7 +398,7 @@ const seedWorksites: Worksite[] = [
   },
 ];
 
-const seedMachines: Machine[] = [
+const municipalSeedMachines: Machine[] = [
   {
     id: "af14",
     code: "ΑΠ-01",
@@ -689,7 +758,7 @@ const seedMachines: Machine[] = [
   },
 ];
 
-const seedReleaseHistory: ReleaseRecord[] = [
+const municipalSeedReleaseHistory: ReleaseRecord[] = [
   {
     id: "release-seed-ap-01-2024-06-01",
     date: "1 Ιουνίου",
@@ -736,7 +805,7 @@ const seedReleaseHistory: ReleaseRecord[] = [
   },
 ];
 
-const initialNotifications: OperationalNotification[] = [
+const municipalInitialNotifications: OperationalNotification[] = [
   {
     id: 1,
     title: "Το ΑΠ-01 δεν βγαίνει αύριο χωρίς πλήρωμα",
@@ -760,10 +829,361 @@ const initialNotifications: OperationalNotification[] = [
   },
 ];
 
+const standaloneSeedWorksites: Worksite[] = [
+  {
+    id: "metro-extension",
+    name: "Επέκταση γραμμής Μετρό",
+    location: "Φρέαρ Βεΐκου · Ζώνη ανύψωσης",
+    date: "Αύριο, 07:00",
+    requiredMachineIds: ["cr04", "ex12", "tr08", "ld03", "gn02"],
+  },
+  {
+    id: "port-expansion",
+    name: "Επέκταση λιμενικής εγκατάστασης",
+    location: "Προβλήτα Γ · Ζώνη φόρτωσης",
+    date: "Αύριο, 06:30",
+    requiredMachineIds: ["cr04", "ld03", "gn02"],
+  },
+  {
+    id: "road-project",
+    name: "Οδικό έργο Α12",
+    location: "Κόμβος 12 · Ανατολικό μέτωπο",
+    date: "Αύριο, 08:00",
+    requiredMachineIds: ["ex12", "tr08", "gn02"],
+  },
+];
+
+const standaloneSeedMachines: Machine[] = [
+  {
+    id: "cr04",
+    code: "CR-04",
+    name: "Liebherr LTM 1040",
+    type: "Αυτοκινούμενος γερανός",
+    manufacturer: "Liebherr",
+    model: "LTM 1040",
+    serial: "LTM-1040-123",
+    ownership: "Ιδιόκτητο",
+    worksiteId: "metro-extension",
+    state: "blocked",
+    reason: "Έχει λήξει το πιστοποιητικό ανύψωσης",
+    owner: "Δημήτρης",
+    nextAction: "Κλείσιμο επιθεώρησης και ανέβασμα νέου πιστοποιητικού",
+    eta: "Σήμερα, 17:00",
+    lastUpdated: "Σήμερα, 07:05",
+    activeBlockers: "2",
+    documents: "18 αρχεία",
+    certificates: [
+      {
+        name: "Πιστοποιητικό ανύψωσης",
+        status: "Έληξε",
+        expiry: "28 Μαΐου 2026",
+        daysLeft: "-4",
+        owner: "Δημήτρης",
+        action: "Ανέβασμα ανανεωμένου πιστοποιητικού",
+      },
+      {
+        name: "Περιοδικός έλεγχος",
+        status: "Λείπει",
+        expiry: "Απαιτείται πριν από τη βάρδια",
+        daysLeft: "-",
+        owner: "Μαρία",
+        action: "Κλείσιμο τεχνικού ελέγχου",
+      },
+      {
+        name: "Ασφάλιση",
+        status: "Σε ισχύ",
+        expiry: "12 Σεπτεμβρίου 2026",
+        daysLeft: "103",
+        owner: "Μαρία",
+        action: "Καμία ενέργεια",
+      },
+    ],
+    service: [
+      {
+        issue: "Εκκρεμεί έλεγχος υδραυλικού κυκλώματος",
+        severity: "Υψηλή",
+        blocksRelease: true,
+        owner: "Κώστας",
+        due: "Σήμερα",
+        status: "Ανοιχτό",
+        partsStatus: "Δεν χρειάζεται",
+      },
+      {
+        issue: "Λίπανση σημείων μπούμας",
+        severity: "Μεσαία",
+        blocksRelease: false,
+        owner: "Κώστας",
+        due: "Αύριο πρωί",
+        status: "Ανοιχτό",
+        partsStatus: "Δεν χρειάζεται",
+      },
+    ],
+    issues: [
+      { title: "Λείπει περιοδικός έλεγχος", severity: "Κρίσιμο", owner: "Μαρία", status: "Ανοιχτό" },
+      { title: "Εκκρεμεί υδραυλικός έλεγχος", severity: "Υψηλό", owner: "Κώστας", status: "Ανοιχτό" },
+    ],
+    photos: [{ title: "Κατάσταση μπούμας", category: "Έλεγχος", date: "30 Μαΐου" }],
+  },
+  {
+    id: "ex12",
+    code: "EX-12",
+    name: "CAT 330",
+    type: "Ερπυστριοφόρος εκσκαφέας",
+    manufacturer: "CAT",
+    model: "330",
+    serial: "CAT-330-77",
+    ownership: "Ιδιόκτητο",
+    worksiteId: "metro-extension",
+    state: "ready",
+    reason: "Έχει χειριστή, έγγραφα και ολοκληρωμένο service",
+    owner: "Κώστας",
+    nextAction: "-",
+    eta: "-",
+    lastUpdated: "Σήμερα, 06:50",
+    activeBlockers: "0",
+    documents: "14 αρχεία",
+    certificates: [
+      {
+        name: "Πιστοποιητικό επιθεώρησης",
+        status: "Σε ισχύ",
+        expiry: "21 Αυγούστου 2026",
+        daysLeft: "81",
+        owner: "Μαρία",
+        action: "Καμία ενέργεια",
+      },
+    ],
+    service: [
+      {
+        issue: "Το προγραμματισμένο service ολοκληρώθηκε",
+        severity: "Χαμηλή",
+        blocksRelease: false,
+        owner: "Κώστας",
+        due: "Ολοκληρώθηκε",
+        status: "Λύθηκε",
+        partsStatus: "Παραλήφθηκε",
+      },
+      {
+        issue: "Έλεγχος φθοράς δοντιών κάδου",
+        severity: "Μεσαία",
+        blocksRelease: false,
+        owner: "Κώστας",
+        due: "Αύριο μεσημέρι",
+        status: "Ανοιχτό",
+        partsStatus: "Δεν χρειάζεται",
+      },
+    ],
+    issues: [],
+    photos: [{ title: "Ολοκλήρωση service", category: "Service", date: "1 Ιουνίου" }],
+  },
+  {
+    id: "tr08",
+    code: "TR-08",
+    name: "Mercedes Arocs",
+    type: "Ανατρεπόμενο φορτηγό",
+    manufacturer: "Mercedes-Benz",
+    model: "Arocs 3345",
+    serial: "TRK-9081",
+    ownership: "Ενοικιαζόμενο",
+    worksiteId: "metro-extension",
+    state: "at_risk",
+    reason: "Ο τεχνικός έλεγχος λήγει σε 3 ημέρες",
+    owner: "Μαρία",
+    nextAction: "Ανανέωση τεχνικού ελέγχου",
+    eta: "Σε 3 ημέρες",
+    lastUpdated: "Σήμερα, 06:35",
+    activeBlockers: "0",
+    documents: "11 αρχεία",
+    certificates: [
+      {
+        name: "Τεχνικός έλεγχος οχήματος",
+        status: "Κρίσιμο",
+        expiry: "4 Ιουνίου 2026",
+        daysLeft: "3",
+        owner: "Μαρία",
+        action: "Ανανέωση τεχνικού ελέγχου",
+      },
+    ],
+    service: [
+      {
+        issue: "Δοκιμή πίεσης φρένων",
+        severity: "Μεσαία",
+        blocksRelease: false,
+        owner: "Κώστας",
+        due: "Σήμερα",
+        status: "Ανοιχτό",
+        partsStatus: "Δεν χρειάζεται",
+      },
+    ],
+    issues: [{ title: "Ο τεχνικός έλεγχος λήγει σύντομα", severity: "Μεσαίο", owner: "Μαρία", status: "Ανοιχτό" }],
+    photos: [{ title: "Παράδοση μίσθωσης", category: "Παράδοση", date: "27 Μαΐου" }],
+  },
+  {
+    id: "ld03",
+    code: "LD-03",
+    name: "Volvo L90",
+    type: "Τροχοφόρος φορτωτής",
+    manufacturer: "Volvo",
+    model: "L90",
+    serial: "V-L90-445",
+    ownership: "Ιδιόκτητο",
+    worksiteId: "metro-extension",
+    state: "blocked",
+    reason: "Ο έλεγχος υδραυλικής διαρροής δεν έχει ολοκληρωθεί",
+    owner: "Κώστας",
+    nextAction: "Ολοκλήρωση υδραυλικού ελέγχου",
+    eta: "Αύριο μεσημέρι",
+    lastUpdated: "Σήμερα, 06:20",
+    activeBlockers: "1",
+    documents: "10 αρχεία",
+    certificates: [
+      {
+        name: "Πιστοποιητικό ασφαλούς λειτουργίας",
+        status: "Σε ισχύ",
+        expiry: "18 Οκτωβρίου 2026",
+        daysLeft: "139",
+        owner: "Μαρία",
+        action: "Καμία ενέργεια",
+      },
+    ],
+    service: [
+      {
+        issue: "Έλεγχος υδραυλικής διαρροής",
+        severity: "Υψηλή",
+        blocksRelease: true,
+        owner: "Κώστας",
+        due: "Σήμερα",
+        status: "Σε εξέλιξη",
+        parts: "Υδραυλικός σωλήνας υψηλής πίεσης",
+        partsStatus: "Σε αναμονή",
+      },
+      {
+        issue: "Έλεγχος πλευρικού τοιχώματος ελαστικών",
+        severity: "Μεσαία",
+        blocksRelease: false,
+        owner: "Κώστας",
+        due: "Αύριο πρωί",
+        status: "Ανοιχτό",
+        partsStatus: "Δεν χρειάζεται",
+      },
+    ],
+    issues: [{ title: "Αναφέρθηκε υδραυλική διαρροή", severity: "Υψηλό", owner: "Κώστας", status: "Ανοιχτό" }],
+    photos: [{ title: "Υδραυλικός σωλήνας", category: "Κατάσταση", date: "1 Ιουνίου" }],
+  },
+  {
+    id: "gn02",
+    code: "GN-02",
+    name: "Atlas Copco QAS",
+    type: "Ηλεκτροπαραγωγό ζεύγος",
+    manufacturer: "Atlas Copco",
+    model: "QAS 150",
+    serial: "GEN-221",
+    ownership: "Ιδιόκτητο",
+    worksiteId: "metro-extension",
+    state: "ready",
+    reason: "Έτοιμο, με καύσιμο και ενεργό πιστοποιητικό ασφαλείας",
+    owner: "Κώστας",
+    nextAction: "-",
+    eta: "-",
+    lastUpdated: "Σήμερα, 06:10",
+    activeBlockers: "0",
+    documents: "9 αρχεία",
+    certificates: [
+      {
+        name: "Πιστοποιητικό ηλεκτρικής ασφάλειας",
+        status: "Σε ισχύ",
+        expiry: "3 Δεκεμβρίου 2026",
+        daysLeft: "185",
+        owner: "Μαρία",
+        action: "Καμία ενέργεια",
+      },
+    ],
+    service: [
+      {
+        issue: "Έλεγχος πόλων μπαταρίας",
+        severity: "Χαμηλή",
+        blocksRelease: false,
+        owner: "Κώστας",
+        due: "Σήμερα",
+        status: "Ανοιχτό",
+        partsStatus: "Δεν χρειάζεται",
+      },
+    ],
+    issues: [],
+    photos: [{ title: "Πρωινός έλεγχος", category: "Έλεγχος", date: "31 Μαΐου" }],
+  },
+];
+
+const standaloneSeedReleaseHistory: ReleaseRecord[] = [
+  {
+    id: "release-cr04-2026-06-01",
+    date: "1 Ιουνίου",
+    worksite: "Επέκταση γραμμής Μετρό",
+    machine: "CR-04",
+    result: "Δεν βγαίνει στη βάρδια",
+    reason: "Έληξε το πιστοποιητικό ανύψωσης",
+    action: "Ανατέθηκε τεχνική επιθεώρηση",
+    user: "Γιώργος",
+    override: "Όχι",
+  },
+  {
+    id: "release-ex12-2026-06-01",
+    date: "1 Ιουνίου",
+    worksite: "Επέκταση γραμμής Μετρό",
+    machine: "EX-12",
+    result: "Έτοιμο για βάρδια",
+    reason: "Δεν βρέθηκε blocker",
+    action: "Κλειδώθηκε για το έργο",
+    user: "Δημήτρης",
+    override: "Όχι",
+  },
+  {
+    id: "release-tr08-2026-06-01",
+    date: "1 Ιουνίου",
+    worksite: "Οδικό έργο Α12",
+    machine: "TR-08",
+    result: "Θέλει προσοχή",
+    reason: "Ο τεχνικός έλεγχος λήγει σύντομα",
+    action: "Ανατέθηκε ανανέωση",
+    user: "Μαρία",
+    override: "Όχι",
+  },
+];
+
+const standaloneInitialNotifications: OperationalNotification[] = [
+  {
+    id: 1,
+    title: "Το CR-04 χρειάζεται νέο πιστοποιητικό ανύψωσης",
+    detail: "Ο Δημήτρης έχει την ανανέωση και την τεχνική επιθεώρηση.",
+    createdAt: "Σήμερα, 07:05",
+    read: false,
+  },
+  {
+    id: 2,
+    title: "Το LD-03 περιμένει υδραυλικό έλεγχο",
+    detail: "Το συνεργείο πρέπει να κλείσει τη διαρροή πριν από την εκκίνηση.",
+    createdAt: "Σήμερα, 07:10",
+    read: false,
+  },
+  {
+    id: 3,
+    title: "Ο πρωινός έλεγχος είναι έτοιμος",
+    detail: "2 έτοιμα, 1 για έλεγχο και 2 μπλοκαρισμένα στο κύριο έργο.",
+    createdAt: "Σήμερα, 07:30",
+    read: false,
+  },
+];
+
+const seedWorksites = isMunicipalConsole ? municipalSeedWorksites : standaloneSeedWorksites;
+const seedMachines = isMunicipalConsole ? municipalSeedMachines : standaloneSeedMachines;
+const seedReleaseHistory = isMunicipalConsole ? municipalSeedReleaseHistory : standaloneSeedReleaseHistory;
+const initialNotifications = isMunicipalConsole ? municipalInitialNotifications : standaloneInitialNotifications;
+
 const emptyWorksite: Worksite = {
   id: "no-worksite",
-  name: "Δεν έχει επιλεγεί υπηρεσία πόλης",
-  location: "Προσθέστε οχήματα και αυριανές βάρδιες για να ξεκινήσει ο έλεγχος",
+  name: isMunicipalConsole ? "Δεν έχει επιλεγεί υπηρεσία πόλης" : "Δεν έχει επιλεγεί πακέτο εργασίας",
+  location: isMunicipalConsole
+    ? "Προσθέστε οχήματα και αυριανές βάρδιες για να ξεκινήσει ο έλεγχος"
+    : "Προσθέστε οχήματα και εργασίες για να ξεκινήσει ο έλεγχος ετοιμότητας",
   date: "Δεν έχει προγραμματιστεί",
   requiredMachineIds: [],
 };
@@ -772,7 +1192,7 @@ const emptyMachine: Machine = {
   id: "no-machine",
   code: "-",
   name: "Δεν έχει επιλεγεί όχημα",
-  type: "Όχημα δήμου",
+  type: isMunicipalConsole ? "Όχημα δήμου" : "Όχημα στόλου",
   manufacturer: "FleetLever",
   model: "Δεν έχει οριστεί",
   serial: "Δεν έχει οριστεί",
@@ -796,7 +1216,7 @@ const worksites: Worksite[] = allowDemoConsoleData ? cloneConsoleData(seedWorksi
 const machines: Machine[] = allowDemoConsoleData ? cloneConsoleData(seedMachines) : [];
 const releaseHistory: ReleaseRecord[] = allowDemoConsoleData ? cloneConsoleData(seedReleaseHistory) : [];
 
-const consoleSnapshotKey = "fleetlever-console-state-v4";
+const consoleSnapshotKey = isMunicipalConsole ? "fleetlever-elliniko-console-state-v5" : "fleetlever-console-state-v5";
 const consoleSnapshotEndpoint = "/api/fleetlever/console-state";
 
 function cloneConsoleData<T>(value: T): T {
@@ -945,7 +1365,7 @@ function todayDecisionDate() {
 
 const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: "tomorrow", label: "Αυριανή βάρδια", icon: CalendarDays },
-  { key: "worksites", label: "Υπηρεσίες πόλης", icon: Building2 },
+  { key: "worksites", label: isMunicipalConsole ? "Υπηρεσίες πόλης" : "Πακέτα εργασίας", icon: Building2 },
   { key: "blockers", label: "Τι λείπει", icon: ShieldAlert },
   { key: "machines", label: "Οχήματα", icon: Building2 },
   { key: "certificates", label: "Έγγραφα & έλεγχοι", icon: BadgeCheck },
@@ -2323,7 +2743,7 @@ export function ConstructionPrototype() {
     void recordConsoleAction({
       action: "console.notification",
       detail,
-      metadata: { source: "municipal-console" },
+      metadata: { source: isMunicipalConsole ? "municipal-console" : "fleet-console" },
       title,
     }).catch(() => {});
   }
@@ -2559,9 +2979,15 @@ export function ConstructionPrototype() {
   function addConsoleItem(type: AddItemType, name: string) {
     const cleanName = name.trim();
     if (!cleanName) return;
-    if (type === "Υπηρεσία πόλης") {
+    if (type === "Υπηρεσία πόλης" || type === "Πακέτο εργασίας") {
       const id = `worksite-${Date.now()}`;
-      worksites.push({ id, name: cleanName, location: "Νέα υπηρεσία πόλης", date: "Αύριο, 07:00", requiredMachineIds: [] });
+      worksites.push({
+        id,
+        name: cleanName,
+        location: isMunicipalConsole ? "Νέα υπηρεσία πόλης" : "Νέο πακέτο εργασίας",
+        date: "Αύριο, 07:00",
+        requiredMachineIds: [],
+      });
       setWorksiteId(id);
       setActiveView("tomorrow");
       addOperationalNotification(`Προστέθηκε ${cleanName}`, "Η νέα υπηρεσία είναι έτοιμη για ανάθεση οχημάτων.");
@@ -2663,7 +3089,7 @@ export function ConstructionPrototype() {
             })),
         },
         {
-          title: "Υπηρεσίες πόλης",
+          title: isMunicipalConsole ? "Υπηρεσίες πόλης" : "Πακέτα εργασίας",
           results: worksites
             .filter((worksite) => {
               const siteMachines = machinesForWorksite(worksite);
@@ -2808,7 +3234,14 @@ export function ConstructionPrototype() {
         >
           <div className="flex min-h-32 items-center border-b border-white/10 px-5 py-5">
             <div className="min-w-0">
-              <MunicipalBrandLockup compact inverse />
+              {isMunicipalConsole ? (
+                <MunicipalBrandLockup compact inverse />
+              ) : (
+                <div>
+                  <FleetLeverLogo inverse />
+                  <p className="mt-2 text-[11px] font-bold uppercase text-white/60">Κέντρο ετοιμότητας στόλου</p>
+                </div>
+              )}
             </div>
           </div>
           <nav aria-label="App navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -2898,7 +3331,7 @@ export function ConstructionPrototype() {
                   />
                 ) : null}
               </div>
-              <PortalReturnLink className="hidden shrink-0 md:inline-flex" />
+              {isMunicipalConsole ? <PortalReturnLink className="hidden shrink-0 md:inline-flex" /> : null}
               <div data-toolbar-menu className="relative">
                 <button
                   type="button"
@@ -2921,7 +3354,11 @@ export function ConstructionPrototype() {
                   >
                     {([
                       ["Όχημα", Truck, "Νέα καταχώριση στόλου"],
-                      ["Υπηρεσία πόλης", Building2, "Νέα δημοτική διαδρομή"],
+                      [
+                        isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας",
+                        Building2,
+                        isMunicipalConsole ? "Νέα δημοτική διαδρομή" : "Νέα εργασία ή έργο",
+                      ],
                       ["Έλεγχος / έγγραφο", FileText, "Νέα απαίτηση ή απόδειξη"],
                       ["Θέμα συνεργείου", Wrench, "Νέα εργασία συντήρησης"],
                       ["Αρχείο", Archive, "Νέα εγγραφή αρχείου"],
@@ -3014,7 +3451,9 @@ export function ConstructionPrototype() {
                   <ToolbarPopover className="w-60">
                     <div className="border-b border-[#DCE5E1] px-3 py-2.5">
                       <p className="text-sm font-bold text-[#0D2F2D]">Γιώργος</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-[#64748B]">Διαχειριστής δημοτικού στόλου</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-[#64748B]">
+                        {isMunicipalConsole ? "Διαχειριστής δημοτικού στόλου" : "Διαχειριστής στόλου"}
+                      </p>
                     </div>
                     <div className="pt-1">
                       <ToolbarMenuItem
@@ -3264,7 +3703,7 @@ function TomorrowPlanner({
                 value={worksiteId}
                 onChange={(event) => onWorksiteChange(event.target.value)}
                 className="h-9 min-w-64 rounded-md border border-[#DDE7E3] bg-white px-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A]"
-                aria-label="Υπηρεσία πόλης"
+                aria-label={isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας"}
               >
                 {worksites.map((worksite) => (
                   <option key={worksite.id} value={worksite.id}>
@@ -4422,8 +4861,10 @@ function AddItemModal({
   const placeholder =
     type === "Όχημα"
       ? "π.χ. ΑΦ-30 νέο απορριμματοφόρο"
-      : type === "Υπηρεσία πόλης"
-        ? "π.χ. Αποκομιδή λαϊκής αγοράς"
+      : type === "Υπηρεσία πόλης" || type === "Πακέτο εργασίας"
+        ? isMunicipalConsole
+          ? "π.χ. Αποκομιδή λαϊκής αγοράς"
+          : "π.χ. Επέκταση λιμενικής εγκατάστασης"
         : type === "Έλεγχος / έγγραφο"
           ? "π.χ. ΚΤΕΟ ή ανάθεση οδηγού"
           : type === "Θέμα συνεργείου"
@@ -4508,8 +4949,12 @@ function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (works
   return (
     <ConsolePage>
       <ViewHeader
-        title="Υπηρεσίες πόλης"
-        description="Ποιες υπηρεσίες ξεκινούν αύριο και ποιες χρειάζονται ενέργεια σήμερα."
+        title={isMunicipalConsole ? "Υπηρεσίες πόλης" : "Πακέτα εργασίας"}
+        description={
+          isMunicipalConsole
+            ? "Ποιες υπηρεσίες ξεκινούν αύριο και ποιες χρειάζονται ενέργεια σήμερα."
+            : "Ποιες εργασίες ξεκινούν αύριο και τι χρειάζεται ενέργεια σήμερα."
+        }
         showActions={false}
       />
       <Surface className="overflow-hidden p-0">
@@ -4714,6 +5159,11 @@ function WorksiteReleaseReview({
 
 function machinePhotoPlaceholder(machine: Machine) {
   const photoMap: Record<string, string> = {
+    cr04: "/fleetlever/machines/cr04-crane.jpg",
+    ex12: "/fleetlever/machines/ex12-excavator.jpg",
+    tr08: "/fleetlever/machines/tr08-truck.jpg",
+    ld03: "/fleetlever/machines/ld03-loader.jpg",
+    gn02: "/fleetlever/machines/gn02-generator.jpg",
     af14: "/fleetlever/municipal-real/aporrimmatofora-2.jpg",
     af22: "/fleetlever/municipal-real/aporrimmatofora-1.jpg",
     ar03: "/fleetlever/municipal-real/koutia-2.jpg",
@@ -4723,7 +5173,7 @@ function machinePhotoPlaceholder(machine: Machine) {
     bus02: "/fleetlever/municipal-real/bus-post-3-browser.jpg",
   };
 
-  return photoMap[machine.id] ?? photoMap.af14;
+  return photoMap[machine.id] ?? (isMunicipalConsole ? photoMap.af14 : photoMap.cr04);
 }
 
 function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine, mode?: DrawerMode) => void }) {
@@ -6305,7 +6755,7 @@ function releaseEvidencePacketText(record: ReleaseRecord) {
     "",
     "Συμβάν απόφασης",
     `Ημερομηνία: ${record.date}`,
-    `Υπηρεσία πόλης: ${record.worksite}`,
+    `${isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας"}: ${record.worksite}`,
     `Όχημα: ${record.machine}`,
     `Απόφαση: ${record.result}`,
     `Αιτία: ${record.reason}`,
@@ -6380,7 +6830,7 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
             <h3 className="text-lg font-bold text-[#0D2F2D]">Στιγμιότυπο πακέτου εργασίας</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                ["Υπηρεσία πόλης", record.worksite],
+                [isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας", record.worksite],
                 ["Ημερομηνία απόφασης", record.date],
                 ["Απαιτούμενα οχήματα", String(counts.total)],
                 ["Έτοιμα / Έλεγχος / Μπλοκαρισμένα", `${counts.ready} / ${counts.attention} / ${counts.blocked}`],

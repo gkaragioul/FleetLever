@@ -26,6 +26,8 @@
     "db:reset-demo": "node scripts/reset-demo.mjs",
     "db:health": "node scripts/db-health.mjs",
     "test:edition-config": "node scripts/verify-edition-config.mjs",
+    "test:console-edition": "node scripts/verify-console-edition.mjs",
+    "test:console-ui": "node scripts/verify-console-ui.mjs",
     "test:edition-routes": "node scripts/verify-edition-routes.mjs"
   },
   "dependencies": {

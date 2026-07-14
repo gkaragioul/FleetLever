@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   assetPrefix: process.env.FLEETLEVER_ASSET_PREFIX?.replace(/\/$/, ""),
   distDir: process.env.FLEETLEVER_DIST_DIR ?? ".next",
   devIndicators: false,
+  env: {
+    NEXT_PUBLIC_FLEETLEVER_EDITION: process.env.FLEETLEVER_EDITION ?? "console",
+  },
   turbopack: {
     root: path.resolve("."),
   },
