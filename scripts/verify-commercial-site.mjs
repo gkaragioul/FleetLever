@@ -11,6 +11,8 @@ const [
   readinessLanesStyles,
   passportAssembly,
   passportAssemblyStyles,
+  preMorningTimeline,
+  preMorningTimelineStyles,
   sitemap,
   robots,
 ] = await Promise.all([
@@ -21,6 +23,8 @@ const [
   readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.module.css"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "components", "fleetlever", "machine-passport-assembly.tsx"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "components", "fleetlever", "machine-passport-assembly.module.css"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "components", "fleetlever", "pre-morning-timeline.tsx"), "utf8").catch(() => ""),
+  readFile(path.join(root, "src", "components", "fleetlever", "pre-morning-timeline.module.css"), "utf8").catch(() => ""),
   readFile(path.join(root, "src", "app", "sitemap.ts"), "utf8"),
   readFile(path.join(root, "src", "app", "robots.ts"), "utf8"),
 ]);
@@ -35,6 +39,7 @@ const requiredLandingTokens = [
   "30 ημέρες με τον πραγματικό σας στόλο.",
   "ReadinessLanes",
   "MachinePassportAssembly",
+  "PreMorningTimeline",
   "CommercialSiteHeader",
   "CommercialSiteFooter",
 ];
@@ -51,6 +56,17 @@ const requiredPassportAssemblyTokens = [
   "Χωρίς απόδειξη, δεν υπάρχει αποδέσμευση.",
   "Έτοιμο για αποδέσμευση.",
   "/fleetlever/site/machine-passport-drawer.png",
+  "IntersectionObserver",
+  "prefers-reduced-motion: reduce",
+];
+
+const requiredPreMorningTimelineTokens = [
+  "Η αυριανή βάρδια κρίνεται από σήμερα.",
+  "Η βάρδια ανοίγει χωρίς εκπλήξεις.",
+  "17:20",
+  "17:32",
+  "18:05",
+  "05:45",
   "IntersectionObserver",
   "prefers-reduced-motion: reduce",
 ];
@@ -94,6 +110,12 @@ for (const token of requiredReadinessTokens) {
 for (const token of requiredPassportAssemblyTokens) {
   if (!passportAssembly.includes(token) && !passportAssemblyStyles.includes(token)) {
     failures.push(`machine passport assembly is missing: ${token}`);
+  }
+}
+
+for (const token of requiredPreMorningTimelineTokens) {
+  if (!preMorningTimeline.includes(token) && !preMorningTimelineStyles.includes(token)) {
+    failures.push(`pre-morning timeline is missing: ${token}`);
   }
 }
 

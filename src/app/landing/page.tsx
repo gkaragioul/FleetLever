@@ -5,11 +5,8 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardCheck,
-  FileCheck2,
   HardHat,
   History,
-  Truck,
-  Wrench,
 } from "lucide-react";
 import {
   CommercialSiteFooter,
@@ -17,6 +14,7 @@ import {
   demoHref,
 } from "@/components/fleetlever/commercial-site-shell";
 import { MachinePassportAssembly } from "@/components/fleetlever/machine-passport-assembly";
+import { PreMorningTimeline } from "@/components/fleetlever/pre-morning-timeline";
 import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
 
@@ -43,12 +41,6 @@ const workflow = [
     title: "Κλείσε μόνο ό,τι αποδείχθηκε",
     body: "Κάθε blocker αποκτά υπεύθυνο, επόμενη ενέργεια, προθεσμία και απόδειξη.",
   },
-] as const;
-
-const blockers = [
-  [FileCheck2, "Ληγμένο πιστοποιητικό", "Το μηχάνημα δεν αποδεσμεύεται."],
-  [Wrench, "Ανοιχτή εργασία service", "Ο υπεύθυνος ξέρει τι πρέπει να κλείσει."],
-  [Truck, "Μη επιβεβαιωμένη παράδοση", "Η αυριανή δουλειά προσαρμόζεται από σήμερα."],
 ] as const;
 
 const useCases = [
@@ -160,32 +152,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#d7dfdb] bg-[#edf2ee] px-5 py-16 sm:px-7 lg:px-10 lg:py-24">
-        <div className="mx-auto grid w-full max-w-[86rem] gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
-          <div className="lg:sticky lg:top-28">
-            <p className="text-sm font-bold uppercase text-[#007c89]">Πριν φτάσει το πρωί</p>
-            <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
-              Τα προβλήματα δεν ξεκινούν το πρωί. Απλώς τότε φαίνονται.
-            </h2>
-            <p className="mt-5 max-w-xl text-lg font-medium leading-8 text-[#53635f]">
-              Το FleetLever τα εμφανίζει από την προηγούμενη ημέρα και τα μετατρέπει σε συγκεκριμένες ενέργειες.
-            </p>
-          </div>
-          <div className="border-t border-[#cbd6d1]">
-            {blockers.map(([Icon, title, body]) => (
-              <article key={title} className="grid gap-4 border-b border-[#cbd6d1] py-7 sm:grid-cols-[3.5rem_1fr]">
-                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-white text-[#007c89] shadow-sm">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold">{title}</h3>
-                  <p className="mt-2 text-base font-medium leading-7 text-[#53635f]">{body}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PreMorningTimeline />
 
       <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="how-it-works">
         <div className="mx-auto w-full max-w-[86rem]">
