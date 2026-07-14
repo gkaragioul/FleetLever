@@ -50,6 +50,22 @@ function summarizeAccessibility(name, violations) {
     .join("\n- ");
 }
 
+async function verifyHowItWorksInset(page, name, minimumInset) {
+  const layout = await page.locator("#how-it-works section > div").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: window.innerWidth - rect.right,
+    };
+  });
+
+  if (layout.left < minimumInset || layout.right < minimumInset) {
+    failures.push(
+      `${name}: How it works content touches the viewport edges (${layout.left}px left, ${layout.right}px right)`,
+    );
+  }
+}
+
 async function verifyPage({ name, pathname, viewport, required, screenshot, maxHeight, interact }) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
   const page = await context.newPage();
@@ -134,6 +150,7 @@ try {
     ],
     screenshot: "site-landing-desktop.png",
     interact: async (page) => {
+      await verifyHowItWorksInset(page, "landing desktop", 32);
       await page.getByRole("button", { name: /Open larger image: FleetLever tomorrow-readiness board/ }).click();
       if (!(await page.getByRole("dialog").isVisible())) failures.push("landing desktop: image dialog did not open");
       await page.keyboard.press("Escape");
@@ -149,6 +166,7 @@ try {
     required: ["FleetLever", "See it with your fleet", "Request a demo", "Pricing"],
     screenshot: "site-landing-mobile.png",
     interact: async (page) => {
+      await verifyHowItWorksInset(page, "landing mobile", 20);
       await page.getByRole("button", { name: "Open menu" }).click();
       if (!(await page.getByRole("navigation", { name: "Mobile navigation" }).isVisible())) {
         failures.push("landing mobile: mobile navigation did not open");

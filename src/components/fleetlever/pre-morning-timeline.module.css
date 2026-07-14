@@ -1,11 +1,14 @@
 .section {
   margin-top: clamp(4rem, 7vw, 6.5rem);
+  padding-inline: 1.25rem;
   border-top: 1px solid #cbd6d1;
   color: #13211f;
 }
 
 .inner {
   width: 100%;
+  max-width: 86rem;
+  margin-inline: auto;
   padding-top: clamp(3.5rem, 6vw, 5.5rem);
 }
 
@@ -279,6 +282,10 @@
 }
 
 @media (min-width: 760px) {
+  .section {
+    padding-inline: 1.75rem;
+  }
+
   .steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -298,6 +305,10 @@
 }
 
 @media (min-width: 1024px) {
+  .section {
+    padding-inline: 2.5rem;
+  }
+
   .story {
     grid-template-columns: minmax(17rem, 0.74fr) minmax(0, 1.26fr);
   }
