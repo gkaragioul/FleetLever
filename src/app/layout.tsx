@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Mono } from "next/font/google";
+import { CommercialAnalytics } from "@/components/fleetlever/commercial-analytics";
+import { getFleetLeverEdition } from "@/lib/fleetlever/edition";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -12,15 +14,16 @@ const notoMono = Noto_Sans_Mono({
   subsets: ["greek", "latin"],
 });
 
-const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.fleetlever.com");
+const edition = getFleetLeverEdition();
+const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever-site-production.up.railway.app");
 
 const metadataCopy = {
   en: {
-    title: "FleetLever | Prevent Expensive Construction Downtime",
+    title: "FleetLever | Prevent expensive fleet downtime",
     description:
-      "FleetLever is the operational gate construction companies use before releasing machines to tomorrow's work.",
-    ogDescription: "Prevent expensive construction downtime before tomorrow's work starts.",
-    twitterDescription: "Know exactly what will stop tomorrow's work before it happens.",
+      "FleetLever controls whether vehicles and equipment are ready for their next job, rental or assignment before release.",
+    ogDescription: "Know what can go out next. And what cannot.",
+    twitterDescription: "Find fleet and equipment blockers before dispatch.",
   },
   el: {
     title: "FleetLever | Πρόληψη ακριβών καθυστερήσεων στα έργα",
@@ -31,7 +34,8 @@ const metadataCopy = {
   },
 } as const;
 
-const meta = metadataCopy.el;
+const meta = edition === "site" ? metadataCopy.en : metadataCopy.el;
+const siteOpenGraph = { locale: "en_GB" } as const;
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -42,13 +46,11 @@ export const metadata: Metadata = {
   description: meta.description,
   applicationName: "FleetLever",
   keywords: [
+    "fleet readiness",
     "construction downtime",
-    "construction equipment management",
-    "machine passport",
+    "heavy equipment management",
+    "asset passport",
     "release for work",
-    "εργοτάξιο",
-    "μηχανήματα έργου",
-    "τεχνικές εταιρείες",
   ],
   authors: [{ name: "FleetLever" }],
   creator: "FleetLever",
@@ -61,7 +63,7 @@ export const metadata: Metadata = {
     description: meta.ogDescription,
     url: "/",
     siteName: "FleetLever",
-    locale: "el_GR",
+    locale: edition === "site" ? siteOpenGraph.locale : "el_GR",
     type: "website",
   },
   twitter: {
@@ -101,10 +103,13 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="el"
+      lang={edition === "site" ? "en" : "el"}
       className={`${notoSans.variable} ${notoMono.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {edition === "site" ? <CommercialAnalytics /> : null}
+      </body>
     </html>
   );
 }

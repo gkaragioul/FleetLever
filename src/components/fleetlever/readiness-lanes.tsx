@@ -14,19 +14,19 @@ import styles from "./readiness-lanes.module.css";
 
 const stages = [
   {
-    signal: "3 μηχανήματα δηλώθηκαν",
-    title: "Η αυριανή δουλειά μπαίνει στη σειρά.",
-    body: "Κάθε όχημα συνδέεται με το έργο, το πλήρωμα και όσα πρέπει να είναι έτοιμα πριν φύγει.",
+    signal: "3 assets scheduled",
+    title: "The next assignments enter one release flow.",
+    body: "Each asset is linked to the job, rental or assignment and everything it needs before it can leave.",
   },
   {
-    signal: "1 θέμα θέλει ενέργεια",
-    title: "Το CR-04 σταματά εδώ, όχι στο εργοτάξιο.",
-    body: "Λείπει πιστοποιητικό ανύψωσης. Ο Δημήτρης αναλαμβάνει την ενέργεια με προθεσμία σήμερα στις 17:00.",
+    signal: "1 release blocker found",
+    title: "CR-04 stops here, not on site.",
+    body: "Its lifting certificate is missing. Alex owns the action, due today at 17:00.",
   },
   {
-    signal: "3 έτοιμα για αύριο",
-    title: "Μόνο τα έτοιμα περνούν.",
-    body: "Η βάρδια κλείνει γνωρίζοντας τι φεύγει, τι μένει πίσω και ποιος έχει αναλάβει κάθε εκκρεμότητα.",
+    signal: "3 ready to go",
+    title: "Only ready assets move forward.",
+    body: "The shift closes knowing what leaves, what stays back and who owns every open action.",
   },
 ] as const;
 
@@ -139,16 +139,16 @@ export function ReadinessLanes() {
   const current = stages[stage];
 
   return (
-    <section className={styles.section} ref={sectionRef} aria-labelledby="readiness-lanes-title">
+    <section className={styles.section} ref={sectionRef} aria-labelledby="readiness-lanes-title" data-animation="readiness-lanes">
       <div className={styles.stickyFrame}>
         <div className={styles.layout}>
           <div className={styles.copyColumn}>
-            <p className={styles.eyebrow}>Η διαδρομή προς το αύριο</p>
+            <p className={styles.eyebrow}>One route to the next assignment</p>
             <h2 className={styles.heading} id="readiness-lanes-title">
-              Κάθε μηχάνημα περνά τον ίδιο έλεγχο πριν φύγει.
+              Every asset passes the same release check before it leaves.
             </h2>
             <p className={styles.intro}>
-              Έγγραφα, service, χειριστής και απόδειξη. Αν κάτι λείπει, σταματά στη σωστή θέση και αποκτά υπεύθυνο.
+              Documents, maintenance, operator and evidence. If something is missing, it stops early and gets an owner.
             </p>
 
             <div className={styles.stageCopy} data-stage={stage}>
@@ -168,28 +168,28 @@ export function ReadinessLanes() {
               role="img"
               aria-labelledby="readiness-map-title readiness-map-description"
             >
-              <title id="readiness-map-title">Τρία μηχανήματα περνούν τον έλεγχο ετοιμότητας FleetLever</title>
+              <title id="readiness-map-title">Three fleet assets pass through the FleetLever readiness check</title>
               <desc id="readiness-map-description">
-                Ένας γερανός σταματά προσωρινά επειδή λείπει πιστοποιητικό. Μετά την ανάθεση της ενέργειας, και τα τρία
-                μηχανήματα φτάνουν έτοιμα στην αυριανή βάρδια.
+                A crane stops because a certificate is missing. After the action is assigned, all three assets reach
+                their next assignments ready.
               </desc>
 
               <g className={styles.checkpoints} aria-hidden="true">
                 <g transform="translate(248 36)">
                   <FileCheck2 x="-12" y="-12" width="24" height="24" strokeWidth="1.7" />
-                  <text x="0" y="34">ΕΓΓΡΑΦΑ</text>
+                  <text x="0" y="34">Documents</text>
                 </g>
                 <g transform="translate(430 36)">
                   <Wrench x="-12" y="-12" width="24" height="24" strokeWidth="1.7" />
-                  <text x="0" y="34">SERVICE</text>
+                  <text x="0" y="34">Maintenance</text>
                 </g>
                 <g transform="translate(610 36)">
                   <UserRoundCheck x="-12" y="-12" width="24" height="24" strokeWidth="1.7" />
-                  <text x="0" y="34">ΧΕΙΡΙΣΤΗΣ</text>
+                  <text x="0" y="34">Operator</text>
                 </g>
                 <g transform="translate(780 36)">
                   <BadgeCheck x="-12" y="-12" width="24" height="24" strokeWidth="1.7" />
-                  <text x="0" y="34">ΑΠΟΔΕΙΞΗ</text>
+                  <text x="0" y="34">Evidence</text>
                 </g>
                 {[248, 430, 610, 780].map((x) => (
                   <line key={x} x1={x} y1="78" x2={x} y2="490" />
@@ -197,9 +197,9 @@ export function ReadinessLanes() {
               </g>
 
               <g className={styles.laneLabels} aria-hidden="true">
-                <text x="48" y="112">CR-04 · ΓΕΡΑΝΟΣ</text>
-                <text x="48" y="287">EX-12 · ΕΚΣΚΑΦΕΑΣ</text>
-                <text x="48" y="462">TR-08 · ΦΟΡΤΗΓΟ</text>
+                <text x="48" y="112">CR-04 · CRANE</text>
+                <text x="48" y="287">EX-12 · EXCAVATOR</text>
+                <text x="48" y="462">TR-08 · TRUCK</text>
               </g>
 
               <path
@@ -236,13 +236,13 @@ export function ReadinessLanes() {
 
               <g className={styles.blockerGate} aria-hidden="true">
                 <line x1="390" y1="201" x2="390" y2="256" />
-                <text x="405" y="195">ΛΕΙΠΕΙ ΠΙΣΤΟΠΟΙΗΤΙΚΟ</text>
-                <text x="405" y="214">Ανάθεση στον Δημήτρη · 17:00</text>
+                <text x="405" y="195">CERTIFICATE MISSING</text>
+                <text x="405" y="214">Assigned to Alex · 17:00</text>
               </g>
 
               <g className={styles.readyGate} aria-hidden="true">
                 <line x1="842" y1="184" x2="842" y2="414" />
-                <text x="824" y="160">ΕΤΟΙΜΑ ΓΙΑ ΑΥΡΙΟ</text>
+                <text x="824" y="160">READY TO GO</text>
               </g>
 
               <g
@@ -275,9 +275,9 @@ export function ReadinessLanes() {
             </svg>
 
             <div className={styles.legend} aria-hidden="true">
-              <span><i className={styles.planned} />Δηλωμένο</span>
-              <span><i className={styles.blocked} />Θέλει ενέργεια</span>
-              <span><i className={styles.ready} />Έτοιμο</span>
+              <span><i className={styles.planned} />Scheduled</span>
+              <span><i className={styles.blocked} />Needs action</span>
+              <span><i className={styles.ready} />Ready</span>
             </div>
           </div>
         </div>

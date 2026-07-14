@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -5,14 +6,53 @@ import { chromium } from "playwright";
 
 const origin = process.env.FLEETLEVER_SITE_URL ?? "http://127.0.0.1:3002";
 const outputDir = path.join(process.cwd(), "artifacts", "verification");
-
 await mkdir(outputDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
 const failures = [];
 
-async function verifyPage({ name, pathname, viewport, required, screenshot }) {
-  const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
+async function settleImages(page) {
+  await page.evaluate(async () => {
+    const step = Math.max(360, Math.floor(window.innerHeight * 0.7));
+    const max = document.documentElement.scrollHeight;
+    for (let top = 0; top <= max; top += step) {
+      window.scrollTo(0, top);
+      await new Promise((resolve) => window.setTimeout(resolve, 35));
+    }
+    window.scrollTo(0, 0);
+  });
+
+  await page
+    .waitForFunction(
+      () =>
+        Array.from(document.images).every(
+          (image) => image.complete || image.loading === "lazy" || image.getAttribute("src")?.startsWith("data:"),
+        ),
+      null,
+      { timeout: 10_000 },
+    )
+    .catch(() => undefined);
+}
+
+function summarizeAccessibility(name, violations) {
+  return violations
+    .map((violation) => {
+      const nodes = violation.nodes
+        .slice(0, 6)
+        .map((node) => {
+          const target = node.target.join(" ");
+          const summary = (node.failureSummary ?? "").replace(/\s+/g, " ").trim();
+          return `${target}${summary ? `: ${summary}` : ""}`;
+        })
+        .join(" || ");
+      return `${name}: ${violation.id} (${violation.nodes.length}) ${nodes}`;
+    })
+    .join("\n- ");
+}
+
+async function verifyPage({ name, pathname, viewport, required, screenshot, maxHeight, interact }) {
+  const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+  const page = await context.newPage();
   const consoleErrors = [];
   const failedAssets = [];
 
@@ -20,54 +60,51 @@ async function verifyPage({ name, pathname, viewport, required, screenshot }) {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("response", (response) => {
-    if (response.status() >= 400 && ["image", "stylesheet", "script"].includes(response.request().resourceType())) {
+    const type = response.request().resourceType();
+    if (response.status() >= 400 && ["image", "stylesheet", "script"].includes(type)) {
       failedAssets.push(`${response.status()} ${response.url()}`);
     }
   });
 
   try {
-    await page.goto(`${origin}${pathname}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.goto(`${origin}${pathname}`, { waitUntil: "networkidle", timeout: 60_000 });
     await page.addStyleTag({ content: "html { scroll-behavior: auto !important; }" });
-    const images = page.locator("img");
-    for (let index = 0; index < await images.count(); index += 1) {
-      const image = images.nth(index);
-      await image.scrollIntoViewIfNeeded();
-      await image.evaluate((element) => {
-        if (element.complete && element.naturalWidth > 0) return;
-        return new Promise((resolve) => {
-          const finish = () => resolve(undefined);
-          element.addEventListener("load", finish, { once: true });
-          element.addEventListener("error", finish, { once: true });
-          window.setTimeout(finish, 15_000);
-        });
-      });
-    }
-    const animatedRegions = page.locator("[data-animation]");
-    for (let index = 0; index < await animatedRegions.count(); index += 1) {
-      await animatedRegions.nth(index).scrollIntoViewIfNeeded();
-      await page.waitForTimeout(150);
-    }
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(1000);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(100);
+
+    if (interact) await interact(page);
+    await settleImages(page);
 
     const text = (await page.locator("body").textContent()) ?? "";
-    const normalizedText = text.toLocaleLowerCase("el-GR");
-    const overlay = await page.locator("[data-nextjs-dialog], #nextjs__container_errors_desc").count();
+    const normalized = text.toLocaleLowerCase("en-GB");
+    const lang = await page.locator("html").getAttribute("lang");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    const overlay = await page.locator("[data-nextjs-dialog], #nextjs__container_errors_desc").count();
     const brokenImages = await page.locator("img").evaluateAll((images) =>
-      images.filter((image) => !image.complete || image.naturalWidth === 0).map((image) => image.getAttribute("src")),
+      images
+        .filter((image) => image.complete && image.naturalWidth === 0)
+        .map((image) => image.currentSrc || image.getAttribute("src")),
     );
 
     for (const token of required) {
-      if (!normalizedText.includes(token.toLocaleLowerCase("el-GR"))) failures.push(`${name}: missing visible token ${token}`);
+      if (!normalized.includes(token.toLocaleLowerCase("en-GB"))) failures.push(`${name}: missing visible token ${token}`);
     }
+    if (lang !== "en") failures.push(`${name}: html lang is ${lang ?? "missing"}, expected en`);
+    if (/[Ͱ-Ͽἀ-῿]/u.test(text)) failures.push(`${name}: visible Greek copy remains`);
     if (overlay > 0) failures.push(`${name}: Next.js error overlay is visible`);
     if (overflow > 1) failures.push(`${name}: horizontal overflow of ${overflow}px`);
+    if (maxHeight && height > maxHeight) failures.push(`${name}: page height ${height}px exceeds ${maxHeight}px`);
     if (consoleErrors.length > 0) failures.push(`${name}: console errors: ${consoleErrors.join(" | ")}`);
     if (failedAssets.length > 0) failures.push(`${name}: failed assets: ${failedAssets.join(" | ")}`);
     if (brokenImages.length > 0) failures.push(`${name}: broken images: ${brokenImages.join(" | ")}`);
+
+    const accessibility = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    const serious = accessibility.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""));
+    if (serious.length > 0) {
+      failures.push(summarizeAccessibility(name, serious));
+    }
 
     await page.screenshot({
       path: path.join(outputDir, screenshot),
@@ -76,7 +113,7 @@ async function verifyPage({ name, pathname, viewport, required, screenshot }) {
       caret: "initial",
     });
   } finally {
-    await page.close();
+    await context.close();
   }
 }
 
@@ -85,43 +122,88 @@ try {
     name: "landing desktop",
     pathname: "/",
     viewport: { width: 1440, height: 1000 },
+    maxHeight: 7600,
     required: [
-      "FleetLever",
-      "Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.",
-      "Κάθε μηχάνημα περνά τον ίδιο έλεγχο πριν φύγει.",
-      "Η απόφαση φαίνεται σε μία οθόνη.",
-      "Τρεις κινήσεις πριν ξεκινήσει η βάρδια.",
+      "Know what can go out next. And what cannot.",
+      "Every asset passes the same release check before it leaves.",
+      "One decision, three views",
+      "What the pilot measures",
+      "Equipment rental",
     ],
     screenshot: "site-landing-desktop.png",
+    interact: async (page) => {
+      const tab = page.getByRole("tab", { name: "Asset passport" });
+      await tab.click();
+      if ((await tab.getAttribute("aria-selected")) !== "true") failures.push("landing desktop: product tab did not activate");
+      await page.getByRole("button", { name: /Open larger image: FleetLever asset passport/ }).click();
+      if (!(await page.getByRole("dialog").isVisible())) failures.push("landing desktop: image dialog did not open");
+      await page.keyboard.press("Escape");
+      if (await page.getByRole("dialog").count()) failures.push("landing desktop: image dialog did not close with Escape");
+    },
   });
+
   await verifyPage({
     name: "landing mobile",
     pathname: "/",
     viewport: { width: 390, height: 844 },
-    required: ["FleetLever", "Ζήτησε demo", "Η διαδρομή προς το αύριο", "Τρεις κινήσεις πριν ξεκινήσει η βάρδια."],
+    maxHeight: 9000,
+    required: ["FleetLever", "See it with your fleet", "Request a demo", "Pricing"],
     screenshot: "site-landing-mobile.png",
+    interact: async (page) => {
+      await page.getByRole("button", { name: "Open menu" }).click();
+      if (!(await page.getByRole("navigation", { name: "Mobile navigation" }).isVisible())) {
+        failures.push("landing mobile: mobile navigation did not open");
+      }
+    },
   });
+
   await verifyPage({
     name: "pricing desktop",
     pathname: "/pricing",
     viewport: { width: 1440, height: 1000 },
-    required: [
-      "Ετήσια συμφωνία για τον επιχειρησιακό έλεγχο του στόλου.",
-      "Founding Pilot",
-      "€6.000 / έτος",
-      "€12.000 / έτος",
-      "Από €24.000 / έτος",
-      "Η έναρξη τιμολογείται μία φορά",
-    ],
+    maxHeight: 6800,
+    required: ["Start with 30 days, not an annual leap of faith.", "Single Team", "Operations", "Enterprise", "Commercial terms"],
     screenshot: "site-pricing-desktop.png",
   });
+
   await verifyPage({
     name: "pricing mobile",
     pathname: "/pricing",
     viewport: { width: 390, height: 844 },
-    required: ["Τιμές FleetLever", "€1.000", "Μετά το pilot", "Επιπλέον επιχειρησιακή μονάδα", "12μηνη συμφωνία"],
+    maxHeight: 10000,
+    required: ["EUR 1,000", "Single Team", "Operations", "Enterprise"],
     screenshot: "site-pricing-mobile.png",
   });
+
+  await verifyPage({
+    name: "request demo desktop",
+    pathname: "/request-demo",
+    viewport: { width: 1280, height: 900 },
+    maxHeight: 2200,
+    required: ["Request a FleetLever demo", "Work email", "Fleet size", "Request demo"],
+    screenshot: "site-request-demo-desktop.png",
+    interact: async (page) => {
+      await page.getByRole("button", { name: "Request demo" }).click();
+      await page.getByText("Enter your name.").waitFor();
+      if (!(await page.getByText("Enter a valid work email.").isVisible())) failures.push("request demo: validation errors are missing");
+    },
+  });
+
+  for (const [pathname, title] of [["/privacy", "Privacy"], ["/terms", "Terms of use"], ["/security", "Security"]]) {
+    await verifyPage({
+      name: `${title} page`,
+      pathname,
+      viewport: { width: 1280, height: 900 },
+      maxHeight: 3200,
+      required: [title, "FleetLever"],
+      screenshot: `site-${pathname.slice(1)}-desktop.png`,
+    });
+  }
+
+  const redirectPage = await browser.newPage();
+  await redirectPage.goto(`${origin}/landing`, { waitUntil: "domcontentloaded" });
+  if (new URL(redirectPage.url()).pathname !== "/") failures.push("/landing does not redirect to /");
+  await redirectPage.close();
 } finally {
   await browser.close();
 }

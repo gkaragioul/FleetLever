@@ -3,180 +3,177 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
+  BarChart3,
+  Building2,
   CheckCircle2,
   ClipboardCheck,
   HardHat,
-  History,
+  PackageCheck,
+  Wrench,
 } from "lucide-react";
 import {
   CommercialSiteFooter,
   CommercialSiteHeader,
   demoHref,
 } from "@/components/fleetlever/commercial-site-shell";
-import { MachinePassportAssembly } from "@/components/fleetlever/machine-passport-assembly";
-import { PreMorningTimeline } from "@/components/fleetlever/pre-morning-timeline";
+import { ProductWalkthrough } from "@/components/fleetlever/product-walkthrough";
 import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
-import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
 
 export const metadata: Metadata = {
-  title: "FleetLever | Έλεγχος ετοιμότητας στόλου",
+  title: "Fleet and equipment readiness before release",
   description:
-    "Δείτε ποια μηχανήματα μπορούν να βγουν αύριο, τι τα μπλοκάρει και ποιος αναλαμβάνει την επόμενη ενέργεια.",
+    "Know which vehicles and equipment can go to their next job, rental or assignment, what blocks them and who owns the next action.",
   alternates: { canonical: "/" },
+  openGraph: { url: "/" },
 };
 
-const useCases = [
-  ["Γερανοί και ανυψώσεις", "Πιστοποιητικά, επιθεωρήσεις, χειριστής και service πριν την αποδέσμευση."],
-  ["Χωματουργικά έργα", "Excavators, loaders και trucks δεμένα με την αυριανή εργασία."],
-  ["Ενοικιάσεις μηχανημάτων", "Παράδοση, κατάσταση, έγγραφα και ευθύνη σε ένα κοινό record."],
-  ["Τεχνικά και δημόσια έργα", "Απόφαση με ιστορικό όταν χρειάζεται έλεγχος ή τεκμηρίωση."],
+const audiences = [
+  [HardHat, "Construction and heavy equipment", "Verify machines, operators, attachments and job requirements before release to site."],
+  [PackageCheck, "Equipment rental", "Control return, inspection, damage, cleaning, accessories and checkout before the next customer."],
+  [Building2, "Municipal and public works", "Confirm vehicles, crews, routes and compliance before the next public-service assignment."],
+  [Wrench, "Specialist and service fleets", "Check vans, tools, technicians and job-specific requirements before dispatch."],
 ] as const;
 
-function ProductScreenshot({
-  src,
-  alt,
-  priority = false,
-}: {
-  src: string;
-  alt: string;
-  priority?: boolean;
-}) {
-  return (
-    <div className="overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_24px_70px_rgba(16,61,55,0.14)]">
-      <ScreenshotMagnifier
-        src={src}
-        alt={alt}
-        width={1920}
-        height={1200}
-        priority={priority}
-        sizes="(min-width: 1024px) 72vw, 100vw"
-        imageClassName="h-auto w-full"
-      />
-    </div>
-  );
-}
+const measurements = [
+  ["Early detection", "Release blockers found before the shift starts"],
+  ["Time to ownership", "How quickly every blocker gets an accountable person"],
+  ["Evidence coverage", "Release decisions supported by the required proof"],
+  ["Carry-over risk", "Open issues that still reach the next shift"],
+] as const;
+
+const productJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "FleetLever",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "A readiness and release-control layer for vehicles, equipment, people, evidence and upcoming operations.",
+  offers: {
+    "@type": "Offer",
+    price: "1000",
+    priceCurrency: "EUR",
+    description: "30-day founding pilot",
+  },
+};
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[#f3f6f2] text-[#13211f]">
+    <main id="main-content" className="min-h-screen bg-[#f3f6f2] text-[#13211f]">
       <CommercialSiteHeader />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
 
-      <section className="relative isolate flex min-h-[560px] max-h-[760px] items-end overflow-hidden sm:min-h-[620px] lg:min-h-[680px]">
+      <section className="relative isolate flex min-h-[620px] max-h-[780px] items-end overflow-hidden bg-[#071b18] sm:min-h-[680px] lg:min-h-[720px]">
         <Image
           src="/fleetlever/site/hero-photos/site-crew-crane.jpg"
-          alt="Εργοτάξιο με ερπυστριοφόρο γερανό και τεχνικό συνεργείο"
+          alt="Construction crew working beside a crawler crane"
           fill
           priority
           sizes="100vw"
           className="-z-20 object-cover object-[62%_58%]"
         />
-        <div className="absolute inset-0 -z-10 bg-[#071b18]/72" aria-hidden="true" />
+        <div className="absolute inset-0 -z-10 bg-[#071b18]/74" aria-hidden="true" />
 
         <div className="mx-auto w-full max-w-[86rem] px-5 pb-14 sm:px-7 sm:pb-16 lg:px-10 lg:pb-20">
-          <div className="max-w-[47rem] text-white">
-            <p className="text-sm font-bold uppercase text-[#73dce3]">Έλεγχος ετοιμότητας στόλου</p>
+          <div className="max-w-[49rem] text-white">
+            <p className="text-sm font-bold uppercase text-[#9af6f7]">Fleet and equipment readiness</p>
             <h1 className="mt-4 text-6xl font-semibold leading-none sm:text-7xl lg:text-8xl">FleetLever</h1>
-            <p className="mt-6 max-w-[42rem] text-3xl font-semibold leading-tight sm:text-4xl">
-              Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.
+            <p className="mt-6 max-w-[44rem] text-3xl font-semibold leading-tight text-balance sm:text-4xl">
+              Know what can go out next. And what cannot.
             </p>
-            <p className="mt-5 max-w-[40rem] text-base font-medium leading-7 text-[#d8e5e1] sm:text-lg">
-              Μηχανήματα, έγγραφα, service και υπεύθυνοι σε έναν καθημερινό έλεγχο πριν δεσμευτούν συνεργεία και έργα.
+            <p className="mt-5 max-w-[42rem] text-base font-medium leading-7 text-white sm:text-lg">
+              FleetLever checks vehicles, equipment, documents, maintenance, people and job requirements before assets are released to their next job, rental or assignment.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
+              <Link
                 href={demoHref}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#74e1e8] px-5 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#071b18]"
+                data-analytics="hero_demo"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                Ζήτησε demo
+                See it with your fleet
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
+              </Link>
               <a
                 href="#how-it-works"
-                className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/40 bg-[#071b18]/35 px-5 text-sm font-bold text-white transition duration-200 hover:border-white hover:bg-[#071b18]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/55 bg-[#071b18]/45 px-5 text-sm font-bold text-white transition hover:border-white hover:bg-[#071b18]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                Δες τη ροή
+                See how it works
               </a>
             </div>
           </div>
         </div>
       </section>
 
-      <ReadinessLanes />
+      <section className="border-b border-[#cad6d1] bg-white px-5 py-5 sm:px-7 lg:px-10">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-4 text-sm font-semibold text-[#435650] sm:grid-cols-3 sm:gap-0">
+          {["One daily release decision", "No replacement for your ERP", "30-day measurable pilot"].map((item, index) => (
+            <p key={item} className={`flex items-center gap-2 sm:px-6 ${index > 0 ? "sm:border-l sm:border-[#cad6d1]" : "sm:pl-0"}`}>
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16834b]" aria-hidden="true" />
+              {item}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      <div id="how-it-works" className="scroll-mt-24">
+        <ReadinessLanes />
+      </div>
 
       <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="product">
         <div className="mx-auto w-full max-w-[86rem]">
           <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
             <div>
-              <p className="text-sm font-bold uppercase text-[#007c89]">Η αυριανή δουλειά</p>
+              <p className="text-sm font-bold uppercase text-[#006c74]">One decision, three views</p>
               <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
-                Η απόφαση φαίνεται σε μία οθόνη.
+                The answer is visible without opening five systems.
               </h2>
             </div>
             <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
-              Τι είναι έτοιμο, τι χρειάζεται έλεγχο, τι μπλοκάρει και ποιος αναλαμβάνει την επόμενη κίνηση.
+              Start with the action queue, inspect the asset record, then retain the decision and evidence. The flow stays simple because each view answers one operational question.
             </p>
           </div>
-          <div className="mx-auto mt-10 max-w-[76rem]">
-            <ProductScreenshot
-              src="/fleetlever/site/tomorrow-readiness-dashboard.png"
-              alt="Πίνακας FleetLever με έτοιμα, υπό έλεγχο και μπλοκαρισμένα μηχανήματα"
-              priority
-            />
+          <ProductWalkthrough />
+        </div>
+      </section>
+
+      <section className="border-y border-[#28534d] bg-[#103d37] px-5 py-16 text-white sm:px-7 lg:px-10 lg:py-20">
+        <div className="mx-auto w-full max-w-[86rem]">
+          <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">
+            <div>
+              <BarChart3 className="h-7 w-7 text-[#9af6f7]" aria-hidden="true" />
+              <p className="mt-6 text-sm font-bold uppercase text-[#9af6f7]">What the pilot measures</p>
+              <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">Evidence before a longer commitment.</h2>
+            </div>
+            <p className="max-w-2xl text-lg font-medium leading-8 text-[#d8e5e1] lg:justify-self-end">
+              We agree the baseline and success measures before day one. The final review shows what changed, what did not and whether FleetLever earns a permanent place in the workflow.
+            </p>
           </div>
-          <div className="scroll-mt-24" id="how-it-works">
-            <PreMorningTimeline />
+          <div className="mt-10 grid border-t border-white/25 sm:grid-cols-2 lg:grid-cols-4">
+            {measurements.map(([title, body], index) => (
+              <article key={title} className={`border-b border-white/25 py-6 sm:px-6 lg:border-b-0 ${index % 2 ? "sm:border-l" : ""} ${index > 1 ? "lg:border-l" : ""} lg:first:pl-0`}>
+                <p className="font-mono text-sm font-semibold text-[#9af6f7]">0{index + 1}</p>
+                <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm font-medium leading-6 text-[#bfd0ca]">{body}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="border-y border-[#d7dfdb] bg-[#f3f6f2] px-5 py-16 sm:px-7 lg:px-10 lg:py-24">
+      <section className="scroll-mt-24 bg-[#f3f6f2] px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="for-whom">
         <div className="mx-auto w-full max-w-[86rem]">
-          <article className="grid gap-10 border-b border-[#cfd8d4] pb-16 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pb-24">
-            <ProductScreenshot
-              src="/fleetlever/site/stop-list.png"
-              alt="Λίστα FleetLever με blockers, υπευθύνους και επόμενες ενέργειες"
-            />
+          <div className="grid gap-8 lg:grid-cols-[0.74fr_1.26fr]">
             <div>
-              <ClipboardCheck className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Λίστα ενεργειών</p>
-              <h2 className="mt-3 text-4xl font-semibold leading-tight">Το blocker δεν μένει απλή ειδοποίηση.</h2>
-              <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
-                Έχει αιτία, επίπτωση, υπεύθυνο, επόμενη ενέργεια και προθεσμία. Η ομάδα ξέρει τι πρέπει να κλείσει σήμερα.
-              </p>
-            </div>
-          </article>
-
-          <MachinePassportAssembly />
-
-          <article className="grid gap-10 pt-16 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pt-24">
-            <ProductScreenshot
-              src="/fleetlever/site/decision-history-audit-trail.png"
-              alt="Ιστορικό αποφάσεων FleetLever με ενέργειες και αποδείξεις"
-            />
-            <div>
-              <History className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Ιστορικό αποφάσεων</p>
-              <h2 className="mt-3 text-4xl font-semibold leading-tight">Ξέρεις ποιος αποφάσισε, πότε και με ποια απόδειξη.</h2>
-              <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
-                Ό,τι αποδεσμεύτηκε, μπλοκαρίστηκε ή άλλαξε παραμένει καθαρό και ελέγξιμο.
-              </p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="for-whom">
-        <div className="mx-auto w-full max-w-[86rem]">
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <HardHat className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <h2 className="mt-6 max-w-lg text-4xl font-semibold leading-tight sm:text-5xl">
-                Για ομάδες που δεν αντέχουν ένα «το είδαμε το πρωί».
+              <ClipboardCheck className="h-7 w-7 text-[#006c74]" aria-hidden="true" />
+              <p className="mt-6 text-sm font-bold uppercase text-[#006c74]">Broader assets. One narrow decision.</p>
+              <h2 className="mt-3 max-w-lg text-4xl font-semibold leading-tight sm:text-5xl">
+                The same release-control engine, adapted to the operation.
               </h2>
             </div>
-            <div className="border-t border-[#cfd8d4]">
-              {useCases.map(([title, body]) => (
-                <article key={title} className="grid gap-3 border-b border-[#cfd8d4] py-6 sm:grid-cols-[0.72fr_1.28fr] sm:gap-8">
+            <div className="border-t border-[#bdcbc5]">
+              {audiences.map(([Icon, title, body]) => (
+                <article key={title} className="grid gap-4 border-b border-[#bdcbc5] py-6 sm:grid-cols-[auto_0.7fr_1.3fr] sm:items-start sm:gap-6">
+                  <Icon className="h-5 w-5 text-[#006c74]" aria-hidden="true" />
                   <h3 className="text-lg font-semibold">{title}</h3>
                   <p className="text-base font-medium leading-7 text-[#53635f]">{body}</p>
                 </article>
@@ -186,45 +183,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="relative isolate overflow-hidden px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-28">
+      <section className="relative isolate overflow-hidden bg-[#071b18] px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-24">
         <Image
           src="/fleetlever/site/hero-photos/heavy-lift-steel.jpg"
-          alt="Βαρύ ανυψωτικό μηχάνημα σε εργασία μεταλλικής κατασκευής"
+          alt="Heavy lifting machine working beside a steel structure"
           fill
           sizes="100vw"
           className="-z-20 object-cover object-center"
         />
-        <div className="absolute inset-0 -z-10 bg-[#071b18]/80" aria-hidden="true" />
-        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="absolute inset-0 -z-10 bg-[#071b18]/84" aria-hidden="true" />
+        <div className="mx-auto grid w-full max-w-[86rem] gap-9 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <p className="text-sm font-bold uppercase text-[#73dce3]">30ήμερο pilot</p>
+            <p className="text-sm font-bold uppercase text-[#9af6f7]">30-day founding pilot</p>
             <h2 className="mt-3 max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl">
-              30 ημέρες με τον πραγματικό σας στόλο.
+              Use one real fleet workflow. Decide with evidence.
             </h2>
             <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-[#d8e5e1]">
-              Έως 30 κρίσιμα μηχανήματα, μία πραγματική ροή αυριανής δουλειάς και βασικό onboarding. Στο τέλος έχετε απόδειξη, όχι υπόσχεση.
+              Up to 30 critical assets, one readiness workflow, guided setup and a measured final review.
             </p>
-            <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold text-[#d8e5e1]">
-              {["Σταθερό scope", "Πραγματικά δεδομένα", "Review αποτελεσμάτων"].map((item) => (
-                <span key={item} className="inline-flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-[#73dce3]" aria-hidden="true" />
-                  {item}
-                </span>
-              ))}
-            </div>
           </div>
           <div className="lg:text-right">
-            <p className="font-mono text-4xl font-semibold">€1.000</p>
-            <p className="mt-1 text-sm font-medium text-[#c7d7d2]">σταθερό κόστος · χωρίς ΦΠΑ</p>
-            <a
+            <p className="font-mono text-4xl font-semibold">EUR 1,000</p>
+            <p className="mt-1 text-sm font-medium text-[#c7d7d2]">fixed pilot fee · excluding VAT</p>
+            <Link
               href={demoHref}
-              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-6 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              data-analytics="pilot_demo"
+              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-6 text-sm font-bold text-[#0b302c] transition hover:bg-white"
             >
-              Ζήτησε demo
+              Request a demo
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-            <Link href="/pricing" className="mt-4 block text-sm font-semibold text-[#d8e5e1] underline decoration-white/40 underline-offset-4 hover:text-white">
-              Δες τιμές και πλάνα
+            </Link>
+            <Link href="/pricing" className="mt-4 block text-sm font-semibold text-[#d8e5e1] underline decoration-white/45 underline-offset-4 hover:text-white">
+              View pricing and pilot terms
             </Link>
           </div>
         </div>

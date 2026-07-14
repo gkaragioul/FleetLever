@@ -35,7 +35,7 @@ function isProductRoute(pathname: string) {
 }
 
 function isMarketingRoute(pathname: string) {
-  return ["/landing", "/pricing"].some((route) => startsWithRoute(pathname, route));
+  return ["/landing", "/pricing", "/request-demo", "/privacy", "/terms", "/security", "/api/commercial"].some((route) => startsWithRoute(pathname, route));
 }
 
 function notFoundResponse() {
@@ -48,6 +48,10 @@ function notFoundResponse() {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const edition = getFleetLeverEdition();
+
+  if (edition === "site" && pathname === "/landing") {
+    return NextResponse.redirect(new URL("/", request.url), 308);
+  }
 
   if (edition === "site" && (isMunicipalRoute(pathname) || isProductRoute(pathname))) {
     return notFoundResponse();
@@ -96,5 +100,10 @@ export const config = {
     "/fleet-management/:path*",
     "/landing/:path*",
     "/pricing/:path*",
+    "/request-demo/:path*",
+    "/privacy/:path*",
+    "/terms/:path*",
+    "/security/:path*",
+    "/api/commercial/:path*",
   ],
 };

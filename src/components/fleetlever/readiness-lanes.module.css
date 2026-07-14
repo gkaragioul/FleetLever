@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  min-height: 185svh;
+  min-height: 148svh;
   border-block: 1px solid #d3deda;
   background: #edf2ee;
   color: #13211f;
@@ -34,7 +34,7 @@
 
 .eyebrow {
   margin: 0;
-  color: #007c89;
+  color: #006c74;
   font-size: 0.875rem;
   font-weight: 750;
   text-transform: uppercase;
@@ -79,7 +79,7 @@
 .signalSquare {
   width: 0.65rem;
   height: 0.65rem;
-  background: #007c89;
+  background: #006c74;
   transition: background-color 280ms ease;
 }
 
@@ -133,7 +133,7 @@
 
 .trace {
   fill: none;
-  stroke: #007c89;
+  stroke: #006c74;
   stroke-width: 2.25;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
@@ -148,7 +148,7 @@
 }
 
 .checkpoints {
-  color: #667a73;
+  color: #4d5f59;
 }
 
 .checkpoints line {
@@ -167,7 +167,7 @@
 }
 
 .checkpoints text {
-  fill: #61736d;
+  fill: #4d5f59;
   font-size: 10px;
   font-weight: 750;
   text-anchor: middle;
@@ -279,7 +279,7 @@
 }
 
 .planned {
-  background: #007c89;
+  background: #006c74;
 }
 
 .blocked {
@@ -292,7 +292,7 @@
 
 @media (max-width: 900px) {
   .section {
-    min-height: 165svh;
+    min-height: 145svh;
   }
 
   .stickyFrame {
@@ -340,7 +340,7 @@
 
 @media (max-width: 560px) {
   .section {
-    min-height: 175svh;
+    min-height: 150svh;
   }
 
   .stickyFrame {

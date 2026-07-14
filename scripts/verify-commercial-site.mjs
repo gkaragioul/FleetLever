@@ -3,157 +3,165 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
-const [
-  landing,
-  pricing,
-  shell,
-  readinessLanes,
-  readinessLanesStyles,
-  passportAssembly,
-  passportAssemblyStyles,
-  preMorningTimeline,
-  preMorningTimelineStyles,
-  sitemap,
-  robots,
-] = await Promise.all([
-  readFile(path.join(root, "src", "app", "landing", "page.tsx"), "utf8"),
-  readFile(path.join(root, "src", "app", "pricing", "page.tsx"), "utf8"),
-  readFile(path.join(root, "src", "components", "fleetlever", "commercial-site-shell.tsx"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.tsx"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "components", "fleetlever", "readiness-lanes.module.css"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "components", "fleetlever", "machine-passport-assembly.tsx"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "components", "fleetlever", "machine-passport-assembly.module.css"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "components", "fleetlever", "pre-morning-timeline.tsx"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "components", "fleetlever", "pre-morning-timeline.module.css"), "utf8").catch(() => ""),
-  readFile(path.join(root, "src", "app", "sitemap.ts"), "utf8"),
-  readFile(path.join(root, "src", "app", "robots.ts"), "utf8"),
-]);
 
-const requiredLandingTokens = [
-  "/fleetlever/site/hero-photos/site-crew-crane.jpg",
-  "Ξέρεις τι μπορεί να βγει αύριο. Και τι όχι.",
-  "/fleetlever/site/tomorrow-readiness-dashboard.png",
-  "/fleetlever/site/stop-list.png",
-  "/fleetlever/site/decision-history-audit-trail.png",
-  "30 ημέρες με τον πραγματικό σας στόλο.",
-  "ReadinessLanes",
-  "MachinePassportAssembly",
-  "PreMorningTimeline",
-  'id="product"',
-  'id="how-it-works"',
-  "CommercialSiteHeader",
-  "CommercialSiteFooter",
-];
+async function source(relativePath) {
+  return readFile(path.join(root, relativePath), "utf8").catch(() => "");
+}
 
-const requiredReadinessTokens = [
-  "Η διαδρομή προς το αύριο",
-  "Το CR-04 σταματά εδώ, όχι στο εργοτάξιο.",
-  "IntersectionObserver",
-  "prefers-reduced-motion: reduce",
-];
-
-const requiredPassportAssemblyTokens = [
-  "Ο φάκελος συναρμολογείται μπροστά σου.",
-  "Χωρίς απόδειξη, δεν υπάρχει αποδέσμευση.",
-  "Έτοιμο για αποδέσμευση.",
-  "/fleetlever/site/machine-passport-drawer.png",
-  "IntersectionObserver",
-  "prefers-reduced-motion: reduce",
-];
-
-const requiredPreMorningTimelineTokens = [
-  "Πώς λειτουργεί",
-  "Τρεις κινήσεις πριν ξεκινήσει η βάρδια.",
-  "Δεν αντικαθιστά το ERP σας.",
-  "Η αυριανή βάρδια κρίνεται από σήμερα.",
-  "Η βάρδια ανοίγει χωρίς εκπλήξεις.",
-  "17:20",
-  "17:32",
-  "18:05",
-  "05:45",
-  "IntersectionObserver",
-  "prefers-reduced-motion: reduce",
-];
-
-const requiredPricingTokens = [
-  "30 ημέρες με τον πραγματικό σας στόλο.",
-  "Έως 30 κρίσιμα μηχανήματα",
-  "Μετά το pilot",
-  "CommercialSiteHeader",
-  "CommercialSiteFooter",
-];
-
-requiredPricingTokens.push(
-  "Founding Pilot",
-  "€6.000 / έτος",
-  "€12.000 / έτος",
-  "Από €24.000 / έτος",
-  "€1.500 εφάπαξ",
-  "€3.000 εφάπαξ",
-  "Επιπλέον επιχειρησιακή μονάδα",
-  "12μηνη συμφωνία",
-  "15 ημερών",
-);
-
-const requiredShellTokens = [
-  "NEXT_PUBLIC_FLEETLEVER_CONSOLE_URL",
-  "http://127.0.0.1:3001/login",
-  "Ζήτησε demo",
-  "Πώς λειτουργεί",
-  "Τιμές",
-];
+const files = {
+  landing: await source("src/app/landing/page.tsx"),
+  pricing: await source("src/app/pricing/page.tsx"),
+  shell: await source("src/components/fleetlever/commercial-site-shell.tsx"),
+  lanes: await source("src/components/fleetlever/readiness-lanes.tsx"),
+  lanesStyles: await source("src/components/fleetlever/readiness-lanes.module.css"),
+  walkthrough: await source("src/components/fleetlever/product-walkthrough.tsx"),
+  demoPage: await source("src/app/request-demo/page.tsx"),
+  demoForm: await source("src/components/fleetlever/demo-request-form.tsx"),
+  demoApi: await source("src/app/api/commercial/demo-request/route.ts"),
+  demoValidation: await source("src/lib/commercial/demo-request-validation.ts"),
+  analytics: await source("src/components/fleetlever/commercial-analytics.tsx"),
+  analyticsApi: await source("src/app/api/commercial/events/route.ts"),
+  privacy: await source("src/app/privacy/page.tsx"),
+  terms: await source("src/app/terms/page.tsx"),
+  security: await source("src/app/security/page.tsx"),
+  layout: await source("src/app/layout.tsx"),
+  sitemap: await source("src/app/sitemap.ts"),
+  robots: await source("src/app/robots.ts"),
+  proxy: await source("src/proxy.ts"),
+  openGraph: await source("src/app/opengraph-image.tsx"),
+  notFound: await source("src/app/not-found.tsx"),
+};
 
 const failures = [];
 
-for (const token of requiredLandingTokens) {
-  if (!landing.includes(token)) failures.push(`landing is missing: ${token}`);
-}
-
-for (const token of requiredPricingTokens) {
-  if (!pricing.includes(token)) failures.push(`pricing is missing: ${token}`);
-}
-
-for (const token of requiredShellTokens) {
-  if (!shell.includes(token)) failures.push(`commercial shell is missing: ${token}`);
-}
-
-for (const token of requiredReadinessTokens) {
-  if (!readinessLanes.includes(token) && !readinessLanesStyles.includes(token)) {
-    failures.push(`readiness lanes are missing: ${token}`);
+function requireTokens(fileName, tokens) {
+  const content = files[fileName];
+  for (const token of tokens) {
+    if (!content.includes(token)) failures.push(`${fileName} is missing: ${token}`);
   }
 }
 
-for (const token of requiredPassportAssemblyTokens) {
-  if (!passportAssembly.includes(token) && !passportAssemblyStyles.includes(token)) {
-    failures.push(`machine passport assembly is missing: ${token}`);
+requireTokens("landing", [
+  "Know what can go out next. And what cannot.",
+  "Fleet and equipment readiness",
+  "ProductWalkthrough",
+  "ReadinessLanes",
+  "What the pilot measures",
+  "Construction and heavy equipment",
+  "Equipment rental",
+  "Municipal and public works",
+  "Specialist and service fleets",
+  "Broader assets. One narrow decision.",
+  'id="product"',
+  'id="for-whom"',
+  "/fleetlever/site/hero-photos/site-crew-crane.jpg",
+]);
+
+requireTokens("pricing", [
+  "Start with 30 days, not an annual leap of faith.",
+  "Single Team",
+  "Operations",
+  "Enterprise",
+  "Up to 30 active assets",
+  "Up to 100 active assets",
+  "Additional block of 25 assets",
+  "credited against the first annual agreement",
+  "Implementation and expansion",
+  "Commercial terms",
+]);
+
+requireTokens("shell", [
+  'demoHref = "/request-demo"',
+  "How it works",
+  "Product",
+  "Who it is for",
+  "Pricing",
+  "Request a demo",
+  "Menu",
+  "/privacy",
+  "/terms",
+  "/security",
+]);
+
+requireTokens("lanes", [
+  "One route to the next assignment",
+  "CR-04 stops here, not on site.",
+  "Documents",
+  "Maintenance",
+  "Operator",
+  "Evidence",
+]);
+
+requireTokens("lanesStyles", ["prefers-reduced-motion: reduce"]);
+
+requireTokens("walkthrough", [
+  "Action queue",
+  "Asset passport",
+  "Decision history",
+  "aria-selected",
+]);
+
+requireTokens("demoPage", ["Request a FleetLever demo", "CommercialSiteHeader"]);
+requireTokens("demoForm", [
+  "Work email",
+  "Fleet or equipment size",
+  "What should FleetLever help you prevent?",
+  "/api/commercial/demo-request",
+  "Request demo",
+]);
+requireTokens("demoApi", ["validateDemoRequest", "commercial_demo_requests", "honeypot"]);
+requireTokens("demoValidation", ["export function validateDemoRequest", "Enter a valid work email.", "Select a fleet size."]);
+requireTokens("analytics", ["fleetlever:track", "/api/commercial/events", "data-analytics"]);
+requireTokens("analyticsApi", ["commercial_events", "console.info"]);
+requireTokens("privacy", ["Privacy", "cookie-free", "demo request"]);
+requireTokens("terms", ["Terms of use", "FleetLever"]);
+requireTokens("security", ["Security", "access control", "evidence"]);
+
+requireTokens("layout", [
+  'lang={edition === "site" ? "en" : "el"}',
+  "Prevent expensive fleet downtime",
+  'locale: "en_GB"',
+]);
+requireTokens("sitemap", ["/pricing", "/request-demo", "/privacy", "/terms", "/security"]);
+requireTokens("proxy", ["/request-demo", "/privacy", "/terms", "/security", "pathname === \"/landing\""]);
+requireTokens("openGraph", ["Know what can go out next. And what cannot."]);
+requireTokens("notFound", ["Page not found", 'edition === "site"']);
+
+const englishCommercialFiles = [
+  "landing",
+  "pricing",
+  "shell",
+  "lanes",
+  "walkthrough",
+  "demoPage",
+  "demoForm",
+  "privacy",
+  "terms",
+  "security",
+  "openGraph",
+];
+
+for (const fileName of englishCommercialFiles) {
+  if (/[Ͱ-Ͽἀ-῿]/u.test(files[fileName])) {
+    failures.push(`${fileName} still contains Greek copy`);
   }
 }
 
-for (const token of requiredPreMorningTimelineTokens) {
-  if (!preMorningTimeline.includes(token) && !preMorningTimelineStyles.includes(token)) {
-    failures.push(`pre-morning timeline is missing: ${token}`);
+for (const fileName of ["landing", "pricing", "shell"]) {
+  if (files[fileName].includes("mailto:") && !files[fileName].includes("mailto:hello@fleetlever.com")) {
+    failures.push(`${fileName} contains a mailto conversion CTA`);
   }
 }
 
-for (const [name, source] of [["landing", landing], ["pricing", pricing], ["shell", shell]]) {
-  if (source.includes("Ζήτησε Demo") || source.includes("Ζητήστε demo") || source.includes("Ξεκινήστε Pilot")) {
-    failures.push(`${name} contains an inconsistent primary CTA`);
-  }
+if (!files.landing.includes('type="application/ld+json"')) {
+  failures.push("landing is missing structured product data");
 }
 
-if (landing.includes("const landingCopy")) {
-  failures.push("landing still carries the unused bilingual copy payload");
+if (!files.proxy.includes("NextResponse.redirect")) {
+  failures.push("/landing is not canonicalized with a redirect");
 }
 
-if (landing.includes("Τρεις κινήσεις πριν κλείσει η ημέρα.")) {
-  failures.push("landing still carries the duplicated standalone workflow section");
-}
-
-if (!sitemap.includes("getFleetLeverEdition") || !sitemap.includes('`${siteUrl}/pricing`') || sitemap.includes('`${siteUrl}/console`')) {
-  failures.push("sitemap is not isolated to public commercial routes");
-}
-
-if (!robots.includes("getFleetLeverEdition") || !robots.includes('disallow: "/"')) {
+if (!files.robots.includes("getFleetLeverEdition") || !files.robots.includes('disallow: "/"')) {
   failures.push("application editions are not excluded from search indexing");
 }
 
