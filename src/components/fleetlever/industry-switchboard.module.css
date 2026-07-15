@@ -2,7 +2,7 @@
   padding: var(--landing-section-y, clamp(4rem, 7vw, 6.5rem))
     var(--landing-gutter, clamp(1.25rem, 3.5vw, 2.5rem));
   border-top: 1px solid var(--landing-line, #cbd6d1);
-  background: var(--landing-tone-mist, #edf2ee);
+  background: var(--landing-tone-paper, #ffffff);
   color: var(--landing-ink, #13211f);
 }
 

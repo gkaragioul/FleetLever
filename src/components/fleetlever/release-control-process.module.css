@@ -1,0 +1,656 @@
+.section {
+  --process-progress: 0;
+  min-height: 180svh;
+  padding-inline: var(--landing-gutter, clamp(1.25rem, 3.5vw, 2.5rem));
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  background: var(--landing-tone-mist, #edf2ee);
+  color: var(--landing-ink, #13211f);
+}
+
+.inner {
+  position: sticky;
+  top: 4.75rem;
+  display: flex;
+  width: 100%;
+  max-width: var(--landing-container, 86rem);
+  min-height: calc(100svh - 4.75rem);
+  margin-inline: auto;
+  align-items: center;
+  padding-block: clamp(3rem, 5vh, 4.5rem);
+}
+
+.layout {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(19rem, 0.72fr) minmax(0, 1.28fr);
+  align-items: center;
+  gap: clamp(3rem, 7vw, 7rem);
+}
+
+.narrative,
+.visual {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--landing-accent, #007681);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.heading {
+  max-width: 12ch;
+  margin: 0.75rem 0 0;
+  font-size: clamp(2.65rem, 4.3vw, 4.5rem);
+  font-weight: 650;
+  line-height: 1.01;
+  text-wrap: balance;
+}
+
+.intro {
+  max-width: 32rem;
+  margin: 1.25rem 0 0;
+  color: var(--landing-muted, #53635f);
+  font-size: 1rem;
+  font-weight: 520;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.stageRail {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: clamp(2rem, 4vh, 3rem) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  list-style: none;
+}
+
+.stageRail::after {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #007c89;
+  content: "";
+  transform: scaleX(var(--process-progress));
+  transform-origin: left;
+  transition: transform 180ms linear;
+}
+
+.stageRail button {
+  display: grid;
+  width: 100%;
+  min-height: 3.7rem;
+  gap: 0.2rem;
+  padding: 0.75rem 0.4rem 0.65rem 0;
+  border: 0;
+  background: transparent;
+  color: #7a8985;
+  cursor: pointer;
+  text-align: left;
+  transition: color 240ms ease;
+}
+
+.stageRail button:hover,
+.stageRail button:focus-visible,
+.stageRail li[data-active="true"] button,
+.stageRail li[data-complete="true"] button {
+  color: #17342f;
+}
+
+.stageRail button:focus-visible {
+  outline: 2px solid #007c89;
+  outline-offset: 3px;
+}
+
+.stageRail button span {
+  color: #007681;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.61rem;
+  font-weight: 800;
+}
+
+.stageRail button strong {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.stageCopy {
+  min-height: 9rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  animation: stage-copy-in 420ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+.stageCopy > span {
+  color: #007681;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.stageCopy h3 {
+  max-width: 21ch;
+  margin: 0.55rem 0 0;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 680;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.stageCopy p {
+  max-width: 30rem;
+  margin: 0.65rem 0 0;
+  color: var(--landing-muted, #53635f);
+  font-size: 0.9rem;
+  font-weight: 520;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.passportPanel {
+  overflow: hidden;
+  border: 1px solid #bdcbc5;
+  border-radius: var(--landing-panel-radius, 8px);
+  background: #ffffff;
+  box-shadow: 0 28px 70px rgb(25 61 55 / 13%);
+}
+
+.assetHeader {
+  display: grid;
+  min-height: 5.7rem;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.72fr) minmax(8.75rem, auto);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #d8e1dd;
+}
+
+.assetIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.assetImage {
+  width: 4.5rem;
+  height: 3.5rem;
+  flex: 0 0 auto;
+  border: 1px solid #d4ddd9;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.assetIdentity span,
+.assignment,
+.requirementCopy,
+.requirementStatus,
+.activityCard span {
+  min-width: 0;
+}
+
+.assetIdentity small,
+.assetIdentity strong,
+.assetIdentity em,
+.assignment small,
+.assignment strong,
+.assignment span,
+.requirementCopy strong,
+.requirementCopy small,
+.requirementStatus strong,
+.requirementStatus small,
+.activityCard small,
+.activityCard strong,
+.activityCard em {
+  display: block;
+}
+
+.assetIdentity small,
+.assignment small {
+  color: #007681;
+  font-size: 0.61rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.assetIdentity strong {
+  margin-top: 0.18rem;
+  color: #17342f;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.assetIdentity em,
+.assignment span {
+  margin-top: 0.12rem;
+  overflow: hidden;
+  color: #60716b;
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assignment {
+  padding-left: 1rem;
+  border-left: 1px solid #d8e1dd;
+}
+
+.assignment strong {
+  margin-top: 0.2rem;
+  color: #17342f;
+  font-size: 0.75rem;
+}
+
+.statusBadge {
+  display: inline-flex;
+  min-height: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #efb6b2;
+  border-radius: 4px;
+  background: #fff2f1;
+  color: #b52622;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-align: center;
+  transition: 260ms ease;
+  transition-property: border-color, background-color, color;
+}
+
+.statusBadge svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.statusBadge[data-tone="review"] {
+  border-color: #b9d7d4;
+  background: #edf7f6;
+  color: #006d78;
+}
+
+.statusBadge[data-tone="ready"],
+.statusBadge[data-tone="recorded"] {
+  border-color: #a9d8bc;
+  background: #edf9f1;
+  color: #0a6d3c;
+}
+
+.panelProgress {
+  height: 3px;
+  overflow: hidden;
+  background: #e1e8e5;
+}
+
+.panelProgress span {
+  display: block;
+  height: 100%;
+  background: #007c89;
+  transition: width 380ms cubic-bezier(0.2, 0.82, 0.22, 1);
+}
+
+.requirementsHeader {
+  display: flex;
+  min-height: 3.15rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 1rem;
+  background: #f7f9f8;
+  color: #65756f;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.requirementsHeader strong {
+  color: #17342f;
+}
+
+.requirementsList {
+  border-top: 1px solid #d8e1dd;
+}
+
+.requirementRow {
+  position: relative;
+  display: grid;
+  min-height: 5rem;
+  grid-template-columns: 2.4rem minmax(0, 1fr) minmax(9rem, 0.7fr);
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  background: #ffffff;
+  transition: 260ms ease;
+  transition-property: background-color, box-shadow;
+}
+
+.requirementRow + .requirementRow {
+  border-top: 1px solid #e0e7e4;
+}
+
+.requirementRow::before {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 3px;
+  background: #16834b;
+  content: "";
+  transition: background-color 260ms ease;
+}
+
+.requirementRow[data-state="risk"] {
+  background: #fff6f5;
+}
+
+.requirementRow[data-state="risk"]::before {
+  background: #d73a34;
+}
+
+.requirementRow[data-state="review"] {
+  background: #f2f9f8;
+}
+
+.requirementRow[data-state="review"]::before {
+  background: #007c89;
+}
+
+.requirementIcon {
+  display: flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #edf5f3;
+  color: #007681;
+}
+
+.requirementIcon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.requirementCopy strong {
+  color: #17342f;
+  font-size: 0.76rem;
+}
+
+.requirementCopy small,
+.requirementStatus small {
+  margin-top: 0.2rem;
+  overflow: hidden;
+  color: #65756f;
+  font-size: 0.63rem;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.requirementStatus {
+  color: #0a6d3c;
+}
+
+.requirementStatus > svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-right: 0.35rem;
+  vertical-align: -0.15rem;
+}
+
+.requirementStatus strong {
+  color: currentColor;
+  font-size: 0.69rem;
+}
+
+.requirementRow[data-state="risk"] .requirementStatus {
+  color: #b52622;
+}
+
+.requirementRow[data-state="review"] .requirementStatus {
+  color: #006d78;
+}
+
+.activityCard {
+  display: flex;
+  min-height: 5.5rem;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid #d8e1dd;
+  background: #fff8f7;
+  color: #b52622;
+  transition: 260ms ease;
+  transition-property: background-color, color;
+}
+
+.activityCard > svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+}
+
+.activityCard small {
+  color: currentColor;
+  font-size: 0.59rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.activityCard strong {
+  margin-top: 0.2rem;
+  color: #17342f;
+  font-size: 0.82rem;
+}
+
+.activityCard em {
+  margin-top: 0.18rem;
+  color: #61716c;
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 620;
+}
+
+.activityCard[data-tone="review"] {
+  background: #f2f9f8;
+  color: #007681;
+}
+
+.activityCard[data-tone="ready"],
+.activityCard[data-tone="recorded"] {
+  background: #eff9f2;
+  color: #0a6d3c;
+}
+
+@keyframes stage-copy-in {
+  from {
+    transform: translateY(0.35rem);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(18rem, 0.68fr) minmax(0, 1.32fr);
+    gap: 3rem;
+  }
+
+  .heading {
+    font-size: 3.25rem;
+  }
+
+  .assetHeader {
+    grid-template-columns: minmax(0, 1fr) minmax(8.75rem, auto);
+  }
+
+  .assignment {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .section {
+    min-height: auto;
+  }
+
+  .inner {
+    position: static;
+    top: auto;
+    min-height: auto;
+    padding-block: var(--landing-section-y, 4rem);
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
+  }
+
+  .heading {
+    max-width: 15ch;
+  }
+
+  .intro {
+    max-width: 40rem;
+  }
+
+  .stageCopy {
+    min-height: 7.5rem;
+  }
+
+  .visual {
+    max-width: 50rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .heading {
+    font-size: 2.55rem;
+  }
+
+  .intro {
+    font-size: 0.92rem;
+  }
+
+  .stageRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stageRail::after {
+    display: none;
+  }
+
+  .stageRail li:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--landing-line, #cbd6d1);
+  }
+
+  .stageRail button {
+    min-height: 3.25rem;
+    padding-block: 0.6rem;
+  }
+
+  .stageCopy h3 {
+    font-size: 1.3rem;
+  }
+
+  .stageCopy p {
+    font-size: 0.84rem;
+  }
+
+  .assetHeader {
+    grid-template-columns: minmax(0, 1fr) minmax(7rem, auto);
+    gap: 0.65rem;
+    padding: 0.7rem;
+  }
+
+  .assignment {
+    display: none;
+  }
+
+  .assetImage {
+    width: 3.6rem;
+    height: 3rem;
+  }
+
+  .assetIdentity em {
+    max-width: 8rem;
+  }
+
+  .statusBadge {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  .requirementsHeader {
+    min-height: 2.7rem;
+    padding-inline: 0.7rem;
+    font-size: 0.57rem;
+  }
+
+  .requirementRow {
+    min-height: 4.2rem;
+    grid-template-columns: 2rem minmax(0, 1fr) minmax(5.7rem, auto);
+    gap: 0.55rem;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .requirementIcon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .requirementCopy strong,
+  .requirementStatus strong {
+    font-size: 0.63rem;
+  }
+
+  .requirementCopy small,
+  .requirementStatus small {
+    font-size: 0.54rem;
+  }
+
+  .requirementStatus small {
+    display: none;
+  }
+
+  .activityCard {
+    min-height: 4.7rem;
+    padding: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section {
+    min-height: auto;
+  }
+
+  .inner {
+    position: static;
+    top: auto;
+    min-height: auto;
+  }
+
+  .stageRail::after,
+  .stageCopy,
+  .statusBadge,
+  .panelProgress span,
+  .requirementRow,
+  .requirementRow::before,
+  .activityCard {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ClipboardCheck,
-  History,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   CommercialSiteFooter,
   CommercialSiteHeader,
   demoHref,
 } from "@/components/fleetlever/commercial-site-shell";
 import { IndustrySwitchboard } from "@/components/fleetlever/industry-switchboard";
-import { MachinePassportAssembly } from "@/components/fleetlever/machine-passport-assembly";
 import { MultiIndustryHero } from "@/components/fleetlever/multi-industry-hero";
-import { PreMorningTimeline } from "@/components/fleetlever/pre-morning-timeline";
 import { PublicDemoLauncher } from "@/components/fleetlever/public-demo-launcher";
 import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
+import { ReleaseControlProcess } from "@/components/fleetlever/release-control-process";
 import { FleetInventoryStrip } from "@/components/fleetlever/fleet-inventory-strip";
 import { ServiceKanbanStrip } from "@/components/fleetlever/service-kanban-strip";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
@@ -171,67 +165,8 @@ export default function LandingPage() {
       <ServiceKanbanStrip />
 
       <div className="scroll-mt-24" id="how-it-works">
-        <PreMorningTimeline />
+        <ReleaseControlProcess />
       </div>
-
-      <section
-        className={`${landingStyles.regularStrip} ${landingStyles.paperStrip}`}
-        data-home-strip="regular"
-        data-section-tone="white"
-      >
-        <div className={landingStyles.shell} data-home-shell>
-          <header className={`${landingStyles.splitLead} ${landingStyles.proofHeader}`}>
-            <div>
-              <p className={landingStyles.eyebrow}>Release with proof</p>
-              <h2 className={landingStyles.sectionTitle}>
-                From blocker to auditable release.
-              </h2>
-            </div>
-            <p className={landingStyles.sectionIntro}>
-              A red status is only the beginning. FleetLever keeps the action, evidence and final decision connected
-              to the same asset and next assignment.
-            </p>
-          </header>
-
-          <article className={landingStyles.proofArticle}>
-            <ProductScreenshot
-              src="/fleetlever/site/stop-list.png"
-              alt="FleetLever action queue with blockers, owners and next actions"
-              mobileFocus
-            />
-            <div className={landingStyles.proofCopy}>
-              <ClipboardCheck className={landingStyles.proofIcon} aria-hidden="true" />
-              <p className={`${landingStyles.eyebrow} mt-6`}>Own the blocker</p>
-              <h3 className={landingStyles.proofTitle}>Every blocker gets an owner.</h3>
-              <p className={landingStyles.proofBody}>
-                Cause, operational impact, next step, deadline and required proof stay together. The right person
-                knows exactly what must close before cutoff.
-              </p>
-            </div>
-          </article>
-
-          <div className={landingStyles.passportChapter}>
-            <MachinePassportAssembly />
-          </div>
-
-          <article className={landingStyles.proofArticle}>
-            <ProductScreenshot
-              src="/fleetlever/site/decision-history-audit-trail.png"
-              alt="FleetLever decision history with actions, release decisions and evidence"
-              mobileFocus
-            />
-            <div className={landingStyles.proofCopy}>
-              <History className={landingStyles.proofIcon} aria-hidden="true" />
-              <p className={`${landingStyles.eyebrow} mt-6`}>Keep the record</p>
-              <h3 className={landingStyles.proofTitle}>Every release remains traceable.</h3>
-              <p className={landingStyles.proofBody}>
-                Every release, hold, replacement and authorized override remains traceable: who decided, when it
-                happened and what proof supported it.
-              </p>
-            </div>
-          </article>
-        </div>
-      </section>
 
       <IndustrySwitchboard />
 

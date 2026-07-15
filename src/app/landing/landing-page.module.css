@@ -99,57 +99,6 @@
   flex: 0 0 auto;
 }
 
-.proofHeader {
-  padding-bottom: clamp(2.5rem, 4vw, 3.5rem);
-  border-bottom: 1px solid var(--landing-line);
-}
-
-.proofArticle {
-  display: grid;
-  gap: clamp(2.25rem, 4vw, 4rem);
-  align-items: center;
-  padding-block: clamp(3.5rem, 6vw, 5rem);
-  border-bottom: 1px solid var(--landing-line);
-}
-
-.proofArticle:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.passportChapter {
-  border-bottom: 1px solid var(--landing-line);
-}
-
-.proofCopy {
-  max-width: 34rem;
-}
-
-.proofIcon {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: var(--landing-accent);
-}
-
-.proofTitle {
-  max-width: 19ch;
-  margin: 0.8rem 0 0;
-  font-size: clamp(2.25rem, 3.25vw, 3.25rem);
-  font-weight: 650;
-  line-height: 1.04;
-  text-wrap: balance;
-}
-
-.proofBody {
-  max-width: 34rem;
-  margin: 1.2rem 0 0;
-  color: var(--landing-muted);
-  font-size: 1.05rem;
-  font-weight: 520;
-  line-height: 1.7;
-  text-wrap: pretty;
-}
-
 @media (min-width: 640px) {
   .statusRail {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -167,9 +116,6 @@
     padding-bottom: 0.4rem;
   }
 
-  .proofArticle {
-    grid-template-columns: minmax(0, 1.08fr) minmax(22rem, 0.92fr);
-  }
 }
 
 @media (max-width: 639px) {
@@ -177,13 +123,8 @@
     font-size: 2.45rem;
   }
 
-  .sectionIntro,
-  .proofBody {
+  .sectionIntro {
     font-size: 1rem;
     line-height: 1.65;
-  }
-
-  .proofTitle {
-    font-size: 2.25rem;
   }
 }

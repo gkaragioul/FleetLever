@@ -20,10 +20,8 @@ const files = {
   demoRoute: await source("src/app/try/[sessionId]/page.tsx"),
   lanes: await source("src/components/fleetlever/readiness-lanes.tsx"),
   lanesStyles: await source("src/components/fleetlever/readiness-lanes.module.css"),
-  preMorning: await source("src/components/fleetlever/pre-morning-timeline.tsx"),
-  preMorningStyles: await source("src/components/fleetlever/pre-morning-timeline.module.css"),
-  passport: await source("src/components/fleetlever/machine-passport-assembly.tsx"),
-  passportStyles: await source("src/components/fleetlever/machine-passport-assembly.module.css"),
+  releaseProcess: await source("src/components/fleetlever/release-control-process.tsx"),
+  releaseProcessStyles: await source("src/components/fleetlever/release-control-process.module.css"),
   inventoryStrip: await source("src/components/fleetlever/fleet-inventory-strip.tsx"),
   inventoryStripStyles: await source("src/components/fleetlever/fleet-inventory-strip.module.css"),
   serviceStrip: await source("src/components/fleetlever/service-kanban-strip.tsx"),
@@ -63,23 +61,17 @@ requireTokens("landing", [
   "Fleet and equipment readiness",
   "ProductScreenshot",
   "ReadinessLanes",
-  "PreMorningTimeline",
-  "MachinePassportAssembly",
+  "ReleaseControlProcess",
   "FleetInventoryStrip",
   "ServiceKanbanStrip",
   "IndustrySwitchboard",
   "MultiIndustryHero",
   "One board shows what can go out next.",
-  "From blocker to auditable release.",
-  "Every blocker gets an owner.",
-  "Every release remains traceable.",
   "Readiness at cutoff",
   "Failed releases prevented",
   'id="product"',
   'id="how-it-works"',
   "/fleetlever/site/tomorrow-readiness-dashboard.png",
-  "/fleetlever/site/stop-list.png",
-  "/fleetlever/site/decision-history-audit-trail.png",
 ]);
 
 requireTokens("multiIndustryHero", [
@@ -167,44 +159,28 @@ requireTokens("lanes", [
 
 requireTokens("lanesStyles", ["min-height: 160svh", "prefers-reduced-motion: reduce"]);
 
-requireTokens("preMorning", [
-  "Act before the cutoff",
-  "A blocker becomes a decision before morning.",
-  "One asset. One evening.",
-  "The shift starts without surprises.",
-  "TIMELINE_STAGE_BREAKPOINTS = [0, 0.28, 0.52, 0.76]",
-  "requestAnimationFrame",
-  "getBoundingClientRect",
-  "data-scroll-stage",
+requireTokens("releaseProcess", [
+  "One asset. One controlled release.",
+  "From blocker to release. One record.",
+  "Detect",
+  "Prove",
+  "Release",
+  "Record",
+  "RELEASE_STAGE_BREAKPOINTS = [0.24, 0.54, 0.82]",
+  'data-animation="unified-release"',
+  "data-release-stage",
+  "data-release-panel",
+  "data-release-requirement",
+  "useWheelMotionStep",
+  "scrollSectionToProgress",
 ]);
 
-requireTokens("preMorningStyles", [
-  "min-height: 190svh",
+requireTokens("releaseProcessStyles", [
+  "min-height: 180svh",
   "position: sticky",
-  "--timeline-progress",
-  "data-scroll-stage",
-  "--event-offset",
+  "--process-progress",
   "prefers-reduced-motion: reduce",
 ]);
-
-requireTokens("passport", [
-  "Asset passport",
-  "Every requirement stays with the asset.",
-  "Every check is visible in one place.",
-  "The missing certificate has one owner.",
-  "One complete record. One release answer.",
-  "data-passport-panel",
-  "data-passport-requirement",
-  "PASSPORT_STAGE_BREAKPOINTS = [0.34, 0.72]",
-  "requestAnimationFrame",
-  "getBoundingClientRect",
-]);
-
-requireTokens("passportStyles", ["min-height: 220svh", "position: sticky", "prefers-reduced-motion: reduce"]);
-
-if (files.passport.includes("setTimeout")) {
-  failures.push("passport animation is still timer-driven instead of scroll-driven");
-}
 
 requireTokens("inventoryStrip", [
   'data-animation="fleet-inventory"',

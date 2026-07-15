@@ -157,7 +157,7 @@ export function IndustrySwitchboard() {
       data-home-strip="regular"
       data-industry-active={activeIndustry.id}
       data-paused={paused}
-      data-section-tone="mist"
+      data-section-tone="white"
       id="for-whom"
       onFocusCapture={(event) => {
         if (event.target instanceof HTMLElement && event.target.matches(":focus-visible")) setFocusPaused(true);

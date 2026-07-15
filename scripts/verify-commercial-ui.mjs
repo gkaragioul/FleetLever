@@ -11,6 +11,17 @@ await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const failures = [];
 
+async function waitForReactHydration(page, selector) {
+  await page.waitForFunction(
+    (target) => {
+      const element = document.querySelector(target);
+      return element && Object.keys(element).some((key) => key.startsWith("__reactFiber$"));
+    },
+    selector,
+    { timeout: 10_000 },
+  );
+}
+
 async function settleImages(page) {
   await page.evaluate(async () => {
     const step = Math.max(360, Math.floor(window.innerHeight * 0.7));
@@ -80,7 +91,6 @@ async function verifyAlternatingSectionBackgrounds(page, name) {
     { tone: "white", background: "rgb(255, 255, 255)" },
     { tone: "mist", background: "rgb(237, 242, 238)" },
     { tone: "white", background: "rgb(255, 255, 255)" },
-    { tone: "mist", background: "rgb(237, 242, 238)" },
   ];
 
   if (JSON.stringify(sections) !== JSON.stringify(expected)) {
@@ -109,8 +119,8 @@ async function verifyHomepageRhythm(page, name, expectedInset) {
     }),
   );
 
-  if (strips.length !== 7) {
-    failures.push(`${name}: expected 7 coordinated homepage strips, found ${strips.length}`);
+  if (strips.length !== 6) {
+    failures.push(`${name}: expected 6 coordinated homepage strips, found ${strips.length}`);
     return;
   }
 
@@ -148,8 +158,7 @@ async function verifyHomepageStory(page, name) {
     "One board shows what can go out next.",
     "Every machine, sorted by what needs attention.",
     "Manage service as a flow, not a list.",
-    "A blocker becomes a decision before morning.",
-    "From blocker to auditable release.",
+    "From blocker to release. One record.",
     "Built for the moment before any fleet goes out.",
     "Use your fleet. Measure what changes before morning.",
   ];
@@ -172,26 +181,26 @@ async function verifyHomepageStory(page, name) {
   if (duplicates.length > 0) failures.push(`${name}: duplicate headings ${[...new Set(duplicates)].join(" | ")}`);
 }
 
-async function verifyPassportClarity(page, name) {
-  const section = page.locator('[data-animation="passport-assembly"]');
+async function verifyUnifiedReleaseProcess(page, name) {
+  const section = page.locator('[data-animation="unified-release"]');
   await section.scrollIntoViewIfNeeded();
   await section.waitFor({ state: "visible", timeout: 5_000 });
+  await waitForReactHydration(page, '[data-animation="unified-release"]');
 
-  const passport = section.locator('[data-passport-panel]');
-  const rows = passport.locator('[data-passport-requirement]');
-  const flowSteps = passport.locator('[aria-label="Release workflow progress"] li');
+  const panel = section.locator('[data-release-panel]');
+  const rows = panel.locator('[data-release-requirement]');
+  const stages = section.locator('[aria-label="Release-control stages"] button');
 
-  if ((await passport.count()) !== 1) failures.push(`${name}: asset passport should use one fixed panel`);
-  if ((await rows.count()) !== 5) failures.push(`${name}: asset passport should keep five requirements visible`);
-  if ((await flowSteps.count()) !== 3) failures.push(`${name}: asset passport should explain three clear release steps`);
+  if ((await panel.count()) !== 1) failures.push(`${name}: release process should use one stable asset panel`);
+  if ((await rows.count()) !== 3) failures.push(`${name}: release process should keep three requirement groups visible`);
+  if ((await stages.count()) !== 4) failures.push(`${name}: release process should expose four clear stages`);
 
-  const layout = await passport.evaluate((panel) => {
-    const panelRect = panel.getBoundingClientRect();
-    const requirements = [...panel.querySelectorAll('[data-passport-requirement]')];
-    const labels = requirements.map((row) => row.getAttribute("data-passport-requirement"));
+  const layout = await panel.evaluate((element) => {
+    const panelRect = element.getBoundingClientRect();
+    const requirements = [...element.querySelectorAll('[data-release-requirement]')];
+    const labels = requirements.map((row) => row.getAttribute("data-release-requirement"));
 
     return {
-      fixed: panel.getAttribute("data-passport-ui") === "fixed",
       uniqueLabels: new Set(labels).size === labels.length,
       rowsContained: requirements.every((row) => {
         const rect = row.getBoundingClientRect();
@@ -206,10 +215,53 @@ async function verifyPassportClarity(page, name) {
     };
   });
 
-  if (!layout.fixed) failures.push(`${name}: asset passport is not marked as a fixed, stable interface`);
-  if (!layout.uniqueLabels) failures.push(`${name}: asset passport repeats a requirement`);
-  if (!layout.rowsContained) failures.push(`${name}: asset passport requirements escape the main panel`);
-  if (!layout.rowsStayStill) failures.push(`${name}: asset passport rows still move spatially between states`);
+  if (!layout.uniqueLabels) failures.push(`${name}: unified release process repeats a requirement group`);
+  if (!layout.rowsContained) failures.push(`${name}: release requirements escape the stable asset panel`);
+  if (!layout.rowsStayStill) failures.push(`${name}: release requirements move spatially between states`);
+
+  const isMobile = (page.viewportSize()?.width ?? 0) < 900;
+  if (isMobile) {
+    for (let index = 0; index < 4; index += 1) {
+      await stages.nth(index).click();
+      if ((await section.getAttribute("data-release-stage")) !== String(index)) {
+        failures.push(`${name}: release stage ${index + 1} did not respond to direct selection`);
+      }
+    }
+  } else {
+    const metrics = await section.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        top: window.scrollY + rect.top,
+        travel: Math.max(1, rect.height - window.innerHeight),
+      };
+    });
+
+    await page.evaluate(
+      ({ top }) => window.scrollTo({ top: Math.max(0, top - 4), behavior: "instant" }),
+      metrics,
+    );
+    await page.waitForTimeout(420);
+    if ((await section.getAttribute("data-release-stage")) !== "0") {
+      failures.push(`${name}: release process should enter on Detect`);
+    }
+
+    await page.evaluate(
+      ({ top, travel }) => window.scrollTo({ top: top + travel * 0.98, behavior: "instant" }),
+      metrics,
+    );
+    await page.waitForTimeout(420);
+    if ((await section.getAttribute("data-release-stage")) !== "3") {
+      failures.push(`${name}: release process did not reach its recorded outcome`);
+    }
+
+    await page.evaluate(
+      ({ top, travel }) => window.scrollTo({ top: top + travel * 0.15, behavior: "instant" }),
+      metrics,
+    );
+    await page.waitForTimeout(420);
+    const reverseStage = Number(await section.getAttribute("data-release-stage"));
+    if (reverseStage >= 3) failures.push(`${name}: release process did not reverse while scrolling up`);
+  }
 }
 
 async function verifyServiceKanbanMotion(page, name) {
@@ -330,15 +382,9 @@ async function verifyWheelSteppedMotion(page, name) {
       loop: true,
     },
     {
-      selector: '[data-animation="cutoff-timeline"]',
-      attribute: "data-scroll-stage",
-      order: ["1", "2", "3", "4"],
-      start: "1",
-    },
-    {
-      selector: '[data-animation="passport-assembly"]',
-      attribute: "data-motion-stage",
-      order: ["0", "1", "2"],
+      selector: '[data-animation="unified-release"]',
+      attribute: "data-release-stage",
+      order: ["0", "1", "2", "3"],
       start: "0",
     },
     {
@@ -357,6 +403,7 @@ async function verifyWheelSteppedMotion(page, name) {
       const section = motionPage.locator(motionCase.selector);
       await section.scrollIntoViewIfNeeded();
       await section.waitFor({ state: "visible", timeout: 5_000 });
+      await waitForReactHydration(motionPage, motionCase.selector);
 
       if (motionCase.start) {
         await motionPage.evaluate(
@@ -438,61 +485,6 @@ async function verifyIndustrySwitchboardMotion(page, name) {
     { selector: '[data-animation="industry-switchboard"]', active: industryAfterPause },
     { timeout: 7_000 },
   ).catch(() => failures.push(`${name}: industry switchboard did not resume after interaction ended`));
-}
-
-async function verifyCutoffTimelineScroll(page, name) {
-  const section = page.locator('[data-animation="cutoff-timeline"]');
-  await section.scrollIntoViewIfNeeded();
-  await section.waitFor({ state: "visible", timeout: 5_000 });
-
-  const metrics = await section.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      top: window.scrollY + rect.top,
-      travel: Math.max(1, rect.height - window.innerHeight),
-    };
-  });
-
-  await page.evaluate(({ top }) => window.scrollTo(0, Math.max(0, top - 48)), metrics);
-  await page.waitForTimeout(200);
-  const startStage = Number(await section.getAttribute("data-scroll-stage"));
-  const firstEventOnArrival = await section.locator("[data-timeline-event]").first().evaluate((event) => ({
-    offset: event.style.getPropertyValue("--event-offset"),
-    visibility: event.style.getPropertyValue("--event-visibility"),
-  }));
-  if (startStage !== 1) failures.push(`${name}: cutoff timeline should enter on the first decision, received ${startStage}`);
-  if (firstEventOnArrival.visibility !== "visible" || !["0px", "0.00px"].includes(firstEventOnArrival.offset)) {
-    failures.push(`${name}: cutoff timeline enters with an empty control log`);
-  }
-
-  await page.evaluate(({ top, travel }) => window.scrollTo(0, top + travel * 0.96), metrics);
-  await page.waitForTimeout(250);
-  const endStage = Number(await section.getAttribute("data-scroll-stage"));
-  if (endStage < 4) failures.push(`${name}: cutoff timeline did not reveal all stages (${startStage} -> ${endStage})`);
-
-  const fullyRevealedEvents = await section.locator("[data-timeline-event]").evaluateAll((events) =>
-    events.every(
-      (event) =>
-        event.style.getPropertyValue("--event-visibility") === "visible" &&
-        event.style.getPropertyValue("--event-offset") === "0.00px",
-    ),
-  );
-  if (!fullyRevealedEvents) failures.push(`${name}: cutoff timeline bullets did not finish their scroll reveal`);
-
-  await page.evaluate(({ top, travel }) => window.scrollTo(0, top + travel * 0.18), metrics);
-  await page.waitForTimeout(250);
-  const reverseStage = Number(await section.getAttribute("data-scroll-stage"));
-  if (reverseStage >= endStage) {
-    failures.push(`${name}: cutoff timeline did not reverse while scrolling up (${endStage} -> ${reverseStage})`);
-  }
-
-  const reversedLastEvent = await section.locator("[data-timeline-event]").last().evaluate((event) => ({
-    offset: event.style.getPropertyValue("--event-offset"),
-    visibility: event.style.getPropertyValue("--event-visibility"),
-  }));
-  if (reversedLastEvent.offset === "0.00px" || reversedLastEvent.visibility !== "hidden") {
-    failures.push(`${name}: cutoff timeline bullet motion did not scrub backward`);
-  }
 }
 
 async function verifyReducedMotionKanban() {
@@ -706,10 +698,7 @@ try {
       "One board shows what can go out next.",
       "Every machine, sorted by what needs attention.",
       "Manage service as a flow, not a list.",
-      "A blocker becomes a decision before morning.",
-      "From blocker to auditable release.",
-      "Every blocker gets an owner.",
-      "Every release remains traceable.",
+      "From blocker to release. One record.",
       "Equipment rental",
     ],
     screenshot: "site-landing-desktop.png",
@@ -718,10 +707,9 @@ try {
       await verifyAlternatingSectionBackgrounds(page, "landing desktop");
       await verifyHomepageRhythm(page, "landing desktop", 40);
       await verifyHomepageStory(page, "landing desktop");
-      await verifyPassportClarity(page, "landing desktop");
+      await verifyUnifiedReleaseProcess(page, "landing desktop");
       await verifyWheelSteppedMotion(page, "landing desktop");
       await verifyServiceKanbanMotion(page, "landing desktop");
-      await verifyCutoffTimelineScroll(page, "landing desktop");
       await verifyIndustrySwitchboardMotion(page, "landing desktop");
       await page.getByRole("button", { name: /Open larger image: FleetLever tomorrow-readiness board/ }).click();
       await page.getByRole("dialog").waitFor({ state: "visible", timeout: 5_000 }).catch(() => {
@@ -746,7 +734,7 @@ try {
       await verifyAlternatingSectionBackgrounds(page, "landing mobile");
       await verifyHomepageRhythm(page, "landing mobile", 20);
       await verifyHomepageStory(page, "landing mobile");
-      await verifyPassportClarity(page, "landing mobile");
+      await verifyUnifiedReleaseProcess(page, "landing mobile");
       await verifyMobileProductFocus(page, "landing mobile");
       const industrySwitchboard = page.locator('[data-animation="industry-switchboard"]');
       await industrySwitchboard.scrollIntoViewIfNeeded();
@@ -789,6 +777,12 @@ try {
     required: ["Request a FleetLever demo", "Work email", "Fleet size", "Request demo"],
     screenshot: "site-request-demo-desktop.png",
     interact: async (page) => {
+      await page.waitForFunction(() => {
+        const button = [...document.querySelectorAll("button")].find(
+          (element) => element.textContent?.trim() === "Request demo",
+        );
+        return button && Object.keys(button).some((key) => key.startsWith("__reactProps$"));
+      });
       await page.getByRole("button", { name: "Request demo" }).click();
       await page.getByText("Enter your name.").waitFor();
       if (!(await page.getByText("Enter a valid work email.").isVisible())) failures.push("request demo: validation errors are missing");
