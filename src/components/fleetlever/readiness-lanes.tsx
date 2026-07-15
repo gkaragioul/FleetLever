@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import styles from "./readiness-lanes.module.css";
+import { scrollSectionToProgress, useWheelMotionStep } from "./use-wheel-motion-step";
 
 const stages = [
   {
@@ -67,6 +68,17 @@ export function ReadinessLanes() {
   const truckMarkerRef = useRef<SVGGElement>(null);
   const stageRef = useRef(0);
   const [stage, setStage] = useState(0);
+
+  useWheelMotionStep(sectionRef, (direction) => {
+    const section = sectionRef.current;
+    if (!section) return false;
+
+    const nextStage = Math.min(stages.length - 1, Math.max(0, stageRef.current + direction));
+    if (nextStage === stageRef.current) return false;
+
+    scrollSectionToProgress(section, nextStage / (stages.length - 1));
+    return true;
+  });
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -145,6 +157,7 @@ export function ReadinessLanes() {
       aria-labelledby="readiness-lanes-title"
       data-animation="readiness-lanes"
       data-home-strip="scroll"
+      data-motion-stage={stage}
       data-section-tone="mist"
     >
       <div className={styles.stickyFrame}>

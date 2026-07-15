@@ -9,6 +9,7 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import styles from "./pre-morning-timeline.module.css";
+import { scrollSectionToProgress, useWheelMotionStep } from "./use-wheel-motion-step";
 
 const TIMELINE_STAGE_BREAKPOINTS = [0.12, 0.35, 0.58, 0.81] as const;
 const EVENT_REVEAL_STARTS = [0.04, 0.27, 0.5, 0.73] as const;
@@ -99,6 +100,18 @@ export function PreMorningTimeline() {
     serverReducedMotionSnapshot,
   );
   const visibleStage: TimelineStage = reducedMotion ? 4 : (Math.max(stage, 1) as TimelineStage);
+
+  useWheelMotionStep(sectionRef, (direction) => {
+    const section = sectionRef.current;
+    if (!section) return false;
+
+    const currentStage = Math.max(1, stageRef.current);
+    const nextStage = clamp(currentStage + direction, 1, 4) as TimelineStage;
+    if (nextStage === currentStage) return false;
+
+    scrollSectionToProgress(section, nextStage / 4, { headerOffset: 0 });
+    return true;
+  });
 
   useEffect(() => {
     const section = sectionRef.current;

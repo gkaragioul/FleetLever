@@ -4,8 +4,9 @@ import Image from "next/image";
 import { Check, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import styles from "./industry-switchboard.module.css";
+import { useWheelMotionStep } from "./use-wheel-motion-step";
 
-const INDUSTRY_ROTATION_MS = 5800;
+const INDUSTRY_ROTATION_MS = 3800;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const industries = [
@@ -86,6 +87,11 @@ export function IndustrySwitchboard() {
   );
   const paused = pointerPaused || focusPaused || documentHidden;
   const activeIndustry = industries[activeIndex];
+
+  useWheelMotionStep(sectionRef, (direction) => {
+    setActiveIndex((current) => (current + direction + industries.length) % industries.length);
+    return false;
+  });
 
   useEffect(() => {
     const section = sectionRef.current;

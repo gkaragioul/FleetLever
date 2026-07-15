@@ -249,6 +249,114 @@ async function verifyServiceKanbanMotion(page, name) {
   }
 }
 
+async function verifyWheelSteppedMotion(page, name) {
+  const motionPage = await page.context().newPage();
+  const cases = [
+    {
+      selector: '[data-animation="readiness-lanes"]',
+      attribute: "data-motion-stage",
+      order: ["0", "1", "2"],
+      start: "0",
+    },
+    {
+      selector: '[data-animation="fleet-inventory"]',
+      attribute: "data-inventory-focus",
+      order: ["blocked", "review", "ready"],
+      loop: true,
+    },
+    {
+      selector: '[data-animation="service-kanban"]',
+      attribute: "data-service-stage",
+      order: ["queued", "in-service", "cleared"],
+      loop: true,
+    },
+    {
+      selector: '[data-animation="cutoff-timeline"]',
+      attribute: "data-scroll-stage",
+      order: ["1", "2", "3", "4"],
+      start: "1",
+    },
+    {
+      selector: '[data-animation="passport-assembly"]',
+      attribute: "data-motion-stage",
+      order: ["0", "1", "2"],
+      start: "0",
+    },
+    {
+      selector: '[data-animation="industry-switchboard"]',
+      attribute: "data-industry-active",
+      order: ["construction", "rental", "municipal", "service"],
+      loop: true,
+    },
+  ];
+
+  try {
+    await motionPage.goto(`${origin}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await motionPage.addStyleTag({ content: "html { scroll-behavior: auto !important; }" });
+
+    for (const motionCase of cases) {
+      const section = motionPage.locator(motionCase.selector);
+      await section.scrollIntoViewIfNeeded();
+      await section.waitFor({ state: "visible", timeout: 5_000 });
+
+      if (motionCase.start) {
+        await motionPage.evaluate(
+          ({ selector, headerOffset }) => {
+            const element = document.querySelector(selector);
+            if (!element) return;
+            const top = window.scrollY + element.getBoundingClientRect().top;
+            window.scrollTo(0, Math.max(0, top - headerOffset));
+          },
+          { selector: motionCase.selector, headerOffset: 76 },
+        );
+        await motionPage.waitForTimeout(180);
+      }
+
+      const box = await section.boundingBox();
+      if (!box) {
+        failures.push(`${name}: ${motionCase.selector} has no wheel target`);
+        continue;
+      }
+      await motionPage.mouse.move(box.x + box.width / 2, Math.min(box.y + box.height / 2, 700));
+
+      const before = await section.getAttribute(motionCase.attribute);
+      const beforeIndex = motionCase.order.indexOf(before ?? "");
+      if (beforeIndex < 0) {
+        failures.push(`${name}: ${motionCase.selector} has no readable motion state`);
+        continue;
+      }
+
+      await motionPage.mouse.wheel(0, 128);
+      await motionPage.waitForTimeout(520);
+      const afterDown = await section.getAttribute(motionCase.attribute);
+      const expectedDown = motionCase.loop
+        ? motionCase.order[(beforeIndex + 1) % motionCase.order.length]
+        : motionCase.order[Math.min(beforeIndex + 1, motionCase.order.length - 1)];
+      if (afterDown !== expectedDown) {
+        failures.push(
+          `${name}: ${motionCase.selector} did not advance one wheel step (${before} -> ${afterDown}, expected ${expectedDown})`,
+        );
+        continue;
+      }
+
+      await motionPage.waitForTimeout(220);
+      await motionPage.mouse.wheel(0, -128);
+      await motionPage.waitForTimeout(520);
+      const afterUp = await section.getAttribute(motionCase.attribute);
+      if (afterUp !== before) {
+        failures.push(`${name}: ${motionCase.selector} did not reverse one wheel step (${afterDown} -> ${afterUp})`);
+      }
+    }
+
+    const trainCards = motionPage.locator('[data-animation="service-kanban"] [data-service-train-card]');
+    if ((await trainCards.count()) < 2) {
+      failures.push(`${name}: service Kanban does not show a following machine behind the active card`);
+    }
+  } finally {
+    await motionPage.close();
+  }
+}
+
 async function verifyIndustrySwitchboardMotion(page, name) {
   const switchboard = page.locator('[data-animation="industry-switchboard"]');
   await switchboard.scrollIntoViewIfNeeded();
@@ -543,6 +651,7 @@ try {
       await verifyAlternatingSectionBackgrounds(page, "landing desktop");
       await verifyHomepageRhythm(page, "landing desktop", 40);
       await verifyHomepageStory(page, "landing desktop");
+      await verifyWheelSteppedMotion(page, "landing desktop");
       await verifyServiceKanbanMotion(page, "landing desktop");
       await verifyCutoffTimelineScroll(page, "landing desktop");
       await verifyIndustrySwitchboardMotion(page, "landing desktop");

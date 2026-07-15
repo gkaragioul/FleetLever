@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AlertTriangle, CheckCircle2, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./fleet-inventory-strip.module.css";
+import { useWheelMotionStep } from "./use-wheel-motion-step";
 
 type InventoryState = "blocked" | "review" | "ready";
 
@@ -81,7 +82,8 @@ const inventoryLanes: Array<{
   },
 ];
 
-const INVENTORY_FOCUS_DURATION = 4200;
+const INVENTORY_FOCUS_DURATION = 2800;
+const INVENTORY_STATES: InventoryState[] = ["blocked", "review", "ready"];
 
 export function FleetInventoryStrip() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -89,6 +91,15 @@ export function FleetInventoryStrip() {
   const [inView, setInView] = useState(false);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+
+  useWheelMotionStep(sectionRef, (direction) => {
+    setFocus((current) => {
+      const currentIndex = INVENTORY_STATES.indexOf(current);
+      const nextIndex = (currentIndex + direction + INVENTORY_STATES.length) % INVENTORY_STATES.length;
+      return INVENTORY_STATES[nextIndex];
+    });
+    return false;
+  });
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -114,7 +125,10 @@ export function FleetInventoryStrip() {
     if (!inView || paused) return;
 
     const timeout = window.setTimeout(() => {
-      setFocus((current) => (current === "blocked" ? "review" : current === "review" ? "ready" : "blocked"));
+      setFocus((current) => {
+        const currentIndex = INVENTORY_STATES.indexOf(current);
+        return INVENTORY_STATES[(currentIndex + 1) % INVENTORY_STATES.length];
+      });
     }, INVENTORY_FOCUS_DURATION);
 
     return () => window.clearTimeout(timeout);

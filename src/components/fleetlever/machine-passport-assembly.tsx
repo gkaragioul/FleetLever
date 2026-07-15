@@ -14,6 +14,7 @@ import {
   Wrench,
 } from "lucide-react";
 import styles from "./machine-passport-assembly.module.css";
+import { scrollSectionToProgress, useWheelMotionStep } from "./use-wheel-motion-step";
 
 const stages = [
   {
@@ -121,6 +122,17 @@ export function MachinePassportAssembly() {
   const stageRef = useRef(0);
   const [stage, setStage] = useState(0);
 
+  useWheelMotionStep(sectionRef, (direction) => {
+    const section = sectionRef.current;
+    if (!section) return false;
+
+    const nextStage = Math.min(stages.length - 1, Math.max(0, stageRef.current + direction));
+    if (nextStage === stageRef.current) return false;
+
+    scrollSectionToProgress(section, nextStage / (stages.length - 1));
+    return true;
+  });
+
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -184,6 +196,7 @@ export function MachinePassportAssembly() {
       ref={sectionRef}
       aria-labelledby="passport-assembly-title"
       data-animation="passport-assembly"
+      data-motion-stage={stage}
     >
       <div className={styles.stickyFrame}>
         <div className={styles.layout}>

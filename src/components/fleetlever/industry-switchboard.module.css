@@ -317,7 +317,7 @@
 
 .drawer[data-active="true"] .rotationProgress {
   opacity: 1;
-  animation: drawerTimer 5800ms linear forwards;
+  animation: drawerTimer 3800ms linear forwards;
 }
 
 .section[data-paused="true"] .rotationProgress {
