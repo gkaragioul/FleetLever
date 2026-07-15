@@ -437,6 +437,14 @@ async function verifyCutoffTimelineScroll(page, name) {
   await page.evaluate(({ top }) => window.scrollTo(0, Math.max(0, top - 48)), metrics);
   await page.waitForTimeout(200);
   const startStage = Number(await section.getAttribute("data-scroll-stage"));
+  const firstEventOnArrival = await section.locator("[data-timeline-event]").first().evaluate((event) => ({
+    offset: event.style.getPropertyValue("--event-offset"),
+    visibility: event.style.getPropertyValue("--event-visibility"),
+  }));
+  if (startStage !== 1) failures.push(`${name}: cutoff timeline should enter on the first decision, received ${startStage}`);
+  if (firstEventOnArrival.visibility !== "visible" || !["0px", "0.00px"].includes(firstEventOnArrival.offset)) {
+    failures.push(`${name}: cutoff timeline enters with an empty control log`);
+  }
 
   await page.evaluate(({ top, travel }) => window.scrollTo(0, top + travel * 0.96), metrics);
   await page.waitForTimeout(250);

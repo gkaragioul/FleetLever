@@ -11,9 +11,9 @@ import {
 import styles from "./pre-morning-timeline.module.css";
 import { scrollSectionToProgress, useWheelMotionStep } from "./use-wheel-motion-step";
 
-const TIMELINE_STAGE_BREAKPOINTS = [0.12, 0.35, 0.58, 0.81] as const;
-const EVENT_REVEAL_STARTS = [0.04, 0.27, 0.5, 0.73] as const;
-const EVENT_REVEAL_DISTANCE = 0.16;
+const TIMELINE_STAGE_BREAKPOINTS = [0, 0.28, 0.52, 0.76] as const;
+const EVENT_REVEAL_STARTS = TIMELINE_STAGE_BREAKPOINTS;
+const EVENT_REVEAL_DISTANCE = 0.12;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const timelineEvents = [
@@ -53,7 +53,7 @@ const timelineEvents = [
 
 const controlPhases = ["Detect", "Assign", "Replan", "Release"] as const;
 
-type TimelineStage = 0 | 1 | 2 | 3 | 4;
+type TimelineStage = 1 | 2 | 3 | 4;
 type TimelineStyle = CSSProperties & {
   "--event-index": number;
   "--event-offset": string;
@@ -67,7 +67,6 @@ function clamp(value: number, minimum: number, maximum: number) {
 }
 
 function stageForProgress(progress: number): TimelineStage {
-  if (progress < TIMELINE_STAGE_BREAKPOINTS[0]) return 0;
   if (progress < TIMELINE_STAGE_BREAKPOINTS[1]) return 1;
   if (progress < TIMELINE_STAGE_BREAKPOINTS[2]) return 2;
   if (progress < TIMELINE_STAGE_BREAKPOINTS[3]) return 3;
@@ -92,20 +91,20 @@ export function PreMorningTimeline() {
   const sectionRef = useRef<HTMLElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef(0);
-  const stageRef = useRef<TimelineStage>(0);
-  const [stage, setStage] = useState<TimelineStage>(0);
+  const stageRef = useRef<TimelineStage>(1);
+  const [stage, setStage] = useState<TimelineStage>(1);
   const reducedMotion = useSyncExternalStore(
     subscribeToReducedMotion,
     reducedMotionSnapshot,
     serverReducedMotionSnapshot,
   );
-  const visibleStage: TimelineStage = reducedMotion ? 4 : (Math.max(stage, 1) as TimelineStage);
+  const visibleStage: TimelineStage = reducedMotion ? 4 : stage;
 
   useWheelMotionStep(sectionRef, (direction) => {
     const section = sectionRef.current;
     if (!section) return false;
 
-    const currentStage = Math.max(1, stageRef.current);
+    const currentStage = stageRef.current;
     const nextStage = clamp(currentStage + direction, 1, 4) as TimelineStage;
     if (nextStage === currentStage) return false;
 
@@ -261,10 +260,10 @@ export function PreMorningTimeline() {
                       style={
                         {
                           "--event-index": index,
-                          "--event-offset": reducedMotion ? "0px" : "42px",
-                          "--event-node-offset": reducedMotion ? "0px" : "12px",
-                          "--event-scale": reducedMotion ? 1 : 0.985,
-                          "--event-visibility": reducedMotion ? "visible" : "hidden",
+                          "--event-offset": reducedMotion || index === 0 ? "0px" : "42px",
+                          "--event-node-offset": reducedMotion || index === 0 ? "0px" : "12px",
+                          "--event-scale": reducedMotion || index === 0 ? 1 : 0.985,
+                          "--event-visibility": reducedMotion || index === 0 ? "visible" : "hidden",
                         } as TimelineStyle
                       }
                     >

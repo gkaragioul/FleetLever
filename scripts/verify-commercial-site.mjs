@@ -172,7 +172,7 @@ requireTokens("preMorning", [
   "A blocker becomes a decision before morning.",
   "One asset. One evening.",
   "The shift starts without surprises.",
-  "TIMELINE_STAGE_BREAKPOINTS = [0.12, 0.35, 0.58, 0.81]",
+  "TIMELINE_STAGE_BREAKPOINTS = [0, 0.28, 0.52, 0.76]",
   "requestAnimationFrame",
   "getBoundingClientRect",
   "data-scroll-stage",
