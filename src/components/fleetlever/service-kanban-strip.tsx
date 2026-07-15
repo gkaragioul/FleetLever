@@ -8,12 +8,18 @@ import styles from "./service-kanban-strip.module.css";
 import { useWheelMotionStep } from "./use-wheel-motion-step";
 
 type ServiceStage = "queued" | "in-service" | "cleared";
+type CursorAnchor = ServiceStage | "entry" | "exit";
+type CursorPhase = "parked" | "approach" | "grab" | "drag" | "release" | "retreat";
 
 const stages: ServiceStage[] = ["queued", "in-service", "cleared"];
-const KANBAN_STAGE_DURATION = 1100;
-const KANBAN_QUEUE_DURATION = 850;
+const KANBAN_STAGE_DURATION = 650;
+const KANBAN_QUEUE_DURATION = 500;
 const KANBAN_MOVE_DURATION = 520;
 const MANUAL_STEP_HOLD_DURATION = 1000;
+const CURSOR_APPROACH_DURATION = 220;
+const CURSOR_GRAB_DURATION = 80;
+const CURSOR_RELEASE_DURATION = 150;
+const CURSOR_RETREAT_DURATION = 220;
 
 const stageMeta: Record<ServiceStage, { label: string; note: string }> = {
   queued: { label: "Queued", note: "Waiting for workshop" },
@@ -101,28 +107,87 @@ function trainLeftForSlot(slot: number) {
   return "calc(var(--cleared-card-left) + var(--column-width) + var(--lane-gap))";
 }
 
+function stageForStep(step: number) {
+  return stages[((step % stages.length) + stages.length) % stages.length];
+}
+
+function cursorTargetForMove(currentStep: number, nextStep: number, direction: -1 | 1): CursorAnchor {
+  const currentStage = stageForStep(currentStep);
+  const nextStage = stageForStep(nextStep);
+
+  if (direction === 1 && currentStage === "cleared" && nextStage === "queued") return "exit";
+  if (direction === -1 && currentStage === "queued" && nextStage === "cleared") return "entry";
+  return nextStage;
+}
+
 export function ServiceKanbanStrip() {
   const sectionRef = useRef<HTMLElement>(null);
   const pipelineStepRef = useRef(0);
   const manualStepAtRef = useRef(0);
-  const movementTimeoutRef = useRef(0);
+  const choreographyBusyRef = useRef(false);
+  const choreographyTimersRef = useRef<number[]>([]);
   const [pipelineStep, setPipelineStep] = useState(0);
   const [moving, setMoving] = useState(false);
+  const [dragEntry, setDragEntry] = useState<number | null>(null);
+  const [cursorFrom, setCursorFrom] = useState<CursorAnchor>("queued");
+  const [cursorTo, setCursorTo] = useState<CursorAnchor>("in-service");
+  const [cursorPhase, setCursorPhase] = useState<CursorPhase>("parked");
   const [inView, setInView] = useState(false);
   const [paused, setPaused] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  const movePipeline = useCallback((direction: -1 | 1) => {
-    const nextStep = Math.max(0, pipelineStepRef.current + direction);
-    if (nextStep === pipelineStepRef.current) return;
-
-    pipelineStepRef.current = nextStep;
-    setPipelineStep(nextStep);
-    setMoving(true);
-    window.clearTimeout(movementTimeoutRef.current);
-    movementTimeoutRef.current = window.setTimeout(() => setMoving(false), KANBAN_MOVE_DURATION);
+  const clearChoreographyTimers = useCallback(() => {
+    choreographyTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    choreographyTimersRef.current = [];
   }, []);
+
+  const scheduleChoreography = useCallback((callback: () => void, delay: number) => {
+    const timer = window.setTimeout(callback, delay);
+    choreographyTimersRef.current.push(timer);
+  }, []);
+
+  const movePipeline = useCallback((direction: -1 | 1) => {
+    if (choreographyBusyRef.current) return;
+
+    const currentStep = pipelineStepRef.current;
+    const nextStep = Math.max(0, currentStep + direction);
+    if (nextStep === currentStep) return;
+
+    const sourceEntry = Math.floor(currentStep / stages.length) * stages.length;
+    choreographyBusyRef.current = true;
+    clearChoreographyTimers();
+    setDragEntry(sourceEntry);
+    setCursorFrom(stageForStep(currentStep));
+    setCursorTo(cursorTargetForMove(currentStep, nextStep, direction));
+    setCursorPhase("approach");
+
+    scheduleChoreography(() => {
+      setCursorPhase("grab");
+
+      scheduleChoreography(() => {
+        pipelineStepRef.current = nextStep;
+        setPipelineStep(nextStep);
+        setMoving(true);
+        setCursorPhase("drag");
+
+        scheduleChoreography(() => {
+          setMoving(false);
+          setCursorPhase("release");
+
+          scheduleChoreography(() => {
+            setCursorPhase("retreat");
+
+            scheduleChoreography(() => {
+              setDragEntry(null);
+              setCursorPhase("parked");
+              choreographyBusyRef.current = false;
+            }, CURSOR_RETREAT_DURATION);
+          }, CURSOR_RELEASE_DURATION);
+        }, KANBAN_MOVE_DURATION);
+      }, CURSOR_GRAB_DURATION);
+    }, CURSOR_APPROACH_DURATION);
+  }, [clearChoreographyTimers, scheduleChoreography]);
 
   useWheelMotionStep(sectionRef, (direction) => {
     manualStepAtRef.current = performance.now();
@@ -156,11 +221,17 @@ export function ServiceKanbanStrip() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  useEffect(() => () => window.clearTimeout(movementTimeoutRef.current), []);
+  useEffect(
+    () => () => {
+      clearChoreographyTimers();
+      choreographyBusyRef.current = false;
+    },
+    [clearChoreographyTimers],
+  );
 
   useEffect(() => {
     if (reducedMotion) return;
-    if (!inView || paused || !documentVisible) return;
+    if (!inView || paused || !documentVisible || cursorPhase !== "parked") return;
 
     const stage = stages[pipelineStep % stages.length];
     const duration = stage === "queued" ? KANBAN_QUEUE_DURATION : KANBAN_STAGE_DURATION;
@@ -170,11 +241,11 @@ export function ServiceKanbanStrip() {
     );
     const timeout = window.setTimeout(() => movePipeline(1), Math.max(duration, manualHoldRemaining));
     return () => window.clearTimeout(timeout);
-  }, [documentVisible, inView, movePipeline, paused, pipelineStep, reducedMotion]);
+  }, [cursorPhase, documentVisible, inView, movePipeline, paused, pipelineStep, reducedMotion]);
 
   const displayStep = reducedMotion ? 2 : pipelineStep;
-  const visibleStage: ServiceStage = stages[displayStep % stages.length];
-  const activeEntry = Math.floor(displayStep / stages.length) * stages.length;
+  const visibleStage = stageForStep(displayStep);
+  const activeEntry = dragEntry ?? Math.floor(displayStep / stages.length) * stages.length;
   const visibleTrainJobs = Array.from({ length: 8 }, (_, index) => {
     const entry = displayStep - 4 + index;
     const catalogIndex =
@@ -190,6 +261,7 @@ export function ServiceKanbanStrip() {
       data-home-strip="regular"
       data-animation="service-kanban"
       data-service-stage={visibleStage}
+      data-service-cursor-phase={reducedMotion ? "reduced" : cursorPhase}
       data-animation-state={reducedMotion ? "reduced" : paused ? "paused" : inView ? "running" : "waiting"}
       aria-labelledby="service-kanban-title"
     >
@@ -299,16 +371,23 @@ export function ServiceKanbanStrip() {
                           </div>
                           <div className={styles.parts}><PackageCheck /><span>{job.footer}</span></div>
                         </div>
-                        {active ? (
-                          <div className={styles.trainCursor} data-service-cursor>
-                            <span />
-                            <MousePointer2 />
-                          </div>
-                        ) : null}
                       </div>
                   </div>
                 );
               })}
+
+              {!reducedMotion ? (
+                <div
+                  className={styles.trainCursor}
+                  data-cursor-from={cursorFrom}
+                  data-cursor-phase={cursorPhase}
+                  data-cursor-to={cursorTo}
+                  data-service-cursor
+                >
+                  <span />
+                  <MousePointer2 />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

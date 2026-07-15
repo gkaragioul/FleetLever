@@ -272,23 +272,63 @@ async function verifyServiceKanbanMotion(page, name) {
     await board.scrollIntoViewIfNeeded();
     await board.waitFor({ state: "visible", timeout: 5_000 });
 
+    const cursorArchitecture = await board.evaluate((section) => {
+      const card = section.querySelector("[data-service-drag-card]");
+      const cursor = section.querySelector("[data-service-cursor]");
+      return {
+        cursorNestedInCard: Boolean(card && cursor && card.contains(cursor)),
+        cursorPhase: section.getAttribute("data-service-cursor-phase"),
+      };
+    });
+    if (cursorArchitecture.cursorNestedInCard) {
+      failures.push(`${name}: service cursor is coupled to the moving card instead of following its own path`);
+    }
+    if (!cursorArchitecture.cursorPhase) {
+      failures.push(`${name}: service cursor does not expose an autonomous motion phase`);
+    }
+
     await motionPage.mouse.move(4, 4);
     const initialStage = await board.getAttribute("data-service-stage");
     await motionPage.waitForFunction(
-      ({ selector, stage }) => document.querySelector(selector)?.getAttribute("data-service-stage") !== stage,
-      { selector: '[data-animation="service-kanban"]', stage: initialStage },
+      (selector) => document.querySelector(selector)?.getAttribute("data-service-cursor-phase") === "approach",
+      '[data-animation="service-kanban"]',
       { timeout: 1_400 },
-    ).catch(() => failures.push(`${name}: service Kanban starts too late after entering the viewport`));
+    ).catch(() => failures.push(`${name}: autonomous service cursor starts too late after entering the viewport`));
 
-    if ((await board.getAttribute("data-service-stage")) === initialStage) {
-      await motionPage.waitForFunction(
-        ({ selector, stage }) => document.querySelector(selector)?.getAttribute("data-service-stage") !== stage,
-        { selector: '[data-animation="service-kanban"]', stage: initialStage },
-        { timeout: 2_000 },
-      );
+    const approachStart = await board.evaluate((section) => {
+      const card = section.querySelector("[data-service-drag-card]")?.getBoundingClientRect();
+      const cursor = section.querySelector("[data-service-cursor] svg")?.getBoundingClientRect();
+      return {
+        cardLeft: card?.left ?? 0,
+        cursorLeft: cursor?.left ?? 0,
+        cursorTop: cursor?.top ?? 0,
+      };
+    });
+    await motionPage.waitForTimeout(110);
+    const approachEnd = await board.evaluate((section) => {
+      const card = section.querySelector("[data-service-drag-card]")?.getBoundingClientRect();
+      const cursor = section.querySelector("[data-service-cursor] svg")?.getBoundingClientRect();
+      return {
+        cardLeft: card?.left ?? 0,
+        cursorLeft: cursor?.left ?? 0,
+        cursorTop: cursor?.top ?? 0,
+      };
+    });
+    const approachCursorTravel = Math.hypot(
+      approachEnd.cursorLeft - approachStart.cursorLeft,
+      approachEnd.cursorTop - approachStart.cursorTop,
+    );
+    if (approachCursorTravel < 6) failures.push(`${name}: service cursor does not approach the card independently`);
+    if (Math.abs(approachEnd.cardLeft - approachStart.cardLeft) > 2) {
+      failures.push(`${name}: service card starts moving before the cursor grabs it`);
     }
 
-    await motionPage.waitForTimeout(300);
+    await motionPage.waitForFunction(
+      (selector) => document.querySelector(selector)?.getAttribute("data-service-cursor-phase") === "drag",
+      '[data-animation="service-kanban"]',
+      { timeout: 1_000 },
+    );
+    await motionPage.waitForTimeout(220);
     const movingState = await board.evaluate((section) => {
       const boardWindow = section.querySelector("[data-stage]");
       const card = section.querySelector("[data-service-drag-card]");
@@ -302,6 +342,7 @@ async function verifyServiceKanbanMotion(page, name) {
       const pointerRect = pointer?.getBoundingClientRect();
       const laneRect = lane?.getBoundingClientRect();
       return {
+        cursorPhase: section.getAttribute("data-service-cursor-phase"),
         cardWidth: cardRect?.width ?? 0,
         laneWidth: laneRect?.width ?? 0,
         cursorOpacity: cursor ? Number.parseFloat(getComputedStyle(cursor).opacity) : 0,
@@ -323,15 +364,28 @@ async function verifyServiceKanbanMotion(page, name) {
     if (movingState.cardWidth < movingState.laneWidth * 0.75) {
       failures.push(`${name}: dragged service card collapsed inside its lane`);
     }
+    if (movingState.cursorPhase !== "drag") failures.push(`${name}: service cursor skipped its drag phase`);
     if (movingState.cursorOpacity < 0.25) failures.push(`${name}: service drag cursor is not visible`);
-    if (movingState.cursorGripDelta > 12) {
-      failures.push(`${name}: service drag cursor is not attached to the moving card grip`);
+    if (movingState.cursorGripDelta > 18) {
+      failures.push(
+        `${name}: service cursor does not accurately carry the moving card (${movingState.cursorGripDelta.toFixed(1)}px from grip)`,
+      );
     }
     if (!movingState.contained) failures.push(`${name}: dragged service card escaped the Kanban board`);
 
+    await motionPage.waitForFunction(
+      ({ selector, stage }) => {
+        const section = document.querySelector(selector);
+        return (
+          section?.getAttribute("data-service-cursor-phase") === "parked" &&
+          section?.getAttribute("data-service-stage") !== stage
+        );
+      },
+      { selector: '[data-animation="service-kanban"]', stage: initialStage },
+      { timeout: 2_000 },
+    );
     await board.hover();
     const landingStage = await board.getAttribute("data-service-stage");
-    await motionPage.waitForTimeout(1_900);
     const landedState = await board.evaluate((section) => {
       const stage = section.getAttribute("data-service-stage");
       const cardElement = section.querySelector("[data-service-drag-card]");
@@ -342,6 +396,7 @@ async function verifyServiceKanbanMotion(page, name) {
       const lane = stage ? section.querySelector(`[data-lane="${stage}"]`)?.getBoundingClientRect() : undefined;
       return {
         stage,
+        cursorPhase: section.getAttribute("data-service-cursor-phase"),
         cursorOpacity: cursor ? Number.parseFloat(getComputedStyle(cursor).opacity) : 0,
         cursorGripDelta: handle && pointer ? Math.hypot(pointer.left - handle.left, pointer.top - handle.top) : Infinity,
         centerDelta: card && lane ? Math.abs((card.left + card.right - lane.left - lane.right) / 2) : Infinity,
@@ -353,8 +408,9 @@ async function verifyServiceKanbanMotion(page, name) {
     if (landedState.centerDelta > 3 || !landedState.insideTargetLane) {
       failures.push(`${name}: dragged service card did not land fully inside the ${landingStage} column`);
     }
-    if (landedState.cursorOpacity < 0.55) failures.push(`${name}: service drag cursor disappears after drop`);
-    if (landedState.cursorGripDelta > 12) failures.push(`${name}: service drag cursor drifts away after drop`);
+    if (landedState.cursorPhase !== "parked") failures.push(`${name}: service cursor did not retreat after release`);
+    if (landedState.cursorOpacity < 0.55) failures.push(`${name}: service cursor disappears after release`);
+    if (landedState.cursorGripDelta < 24) failures.push(`${name}: service cursor remains coupled to the card after release`);
   } finally {
     await motionPage.close();
   }
@@ -380,6 +436,7 @@ async function verifyWheelSteppedMotion(page, name) {
       attribute: "data-service-stage",
       order: ["queued", "in-service", "cleared"],
       loop: true,
+      settle: 1_350,
     },
     {
       selector: '[data-animation="unified-release"]',
@@ -423,7 +480,16 @@ async function verifyWheelSteppedMotion(page, name) {
         failures.push(`${name}: ${motionCase.selector} has no wheel target`);
         continue;
       }
-      await motionPage.mouse.move(box.x + box.width / 2, Math.min(box.y + box.height / 2, 700));
+      if (motionCase.selector.includes("service-kanban")) {
+        await section.locator("[data-stage]").hover();
+        await motionPage.waitForFunction(
+          (selector) => document.querySelector(selector)?.getAttribute("data-service-cursor-phase") === "parked",
+          motionCase.selector,
+          { timeout: 2_000 },
+        );
+      } else {
+        await motionPage.mouse.move(box.x + box.width / 2, Math.min(box.y + box.height / 2, 700));
+      }
 
       const before = await section.getAttribute(motionCase.attribute);
       const beforeIndex = motionCase.order.indexOf(before ?? "");
@@ -433,7 +499,7 @@ async function verifyWheelSteppedMotion(page, name) {
       }
 
       await motionPage.mouse.wheel(0, 128);
-      await motionPage.waitForTimeout(520);
+      await motionPage.waitForTimeout(motionCase.settle ?? 520);
       const afterDown = await section.getAttribute(motionCase.attribute);
       const expectedDown = motionCase.loop
         ? motionCase.order[(beforeIndex + 1) % motionCase.order.length]
@@ -447,7 +513,7 @@ async function verifyWheelSteppedMotion(page, name) {
 
       await motionPage.waitForTimeout(220);
       await motionPage.mouse.wheel(0, -128);
-      await motionPage.waitForTimeout(520);
+      await motionPage.waitForTimeout(motionCase.settle ?? 520);
       const afterUp = await section.getAttribute(motionCase.attribute);
       if (afterUp !== before) {
         failures.push(`${name}: ${motionCase.selector} did not reverse one wheel step (${afterDown} -> ${afterUp})`);
