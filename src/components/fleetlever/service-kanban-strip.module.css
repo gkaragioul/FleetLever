@@ -312,6 +312,7 @@
 }
 
 .cardLift {
+  position: relative;
   width: 100%;
   transform-origin: 74% 82%;
   transition:
@@ -430,31 +431,22 @@
 .trainCursor {
   position: absolute;
   z-index: 12;
-  top: 12.1rem;
-  left: calc(var(--queued-card-left) + var(--column-width) - 1.2rem);
+  top: 0.86rem;
+  left: 0.4rem;
   width: 2rem;
   height: 2rem;
-  opacity: 0;
-  transform: translate(0.5rem, 0.5rem) scale(0.96);
+  opacity: 0.72;
+  transform: translate(0.12rem, 0.12rem) scale(0.94);
   transition:
-    left 520ms cubic-bezier(0.65, 0, 0.35, 1),
-    opacity 140ms ease,
-    transform 180ms ease;
+    opacity 180ms ease,
+    transform 220ms ease;
   filter: drop-shadow(0 5px 7px rgb(12 43 39 / 0.28));
-  will-change: left, transform, opacity;
-}
-
-.trainCursor[data-cursor-stage="in-service"] {
-  left: calc(var(--service-card-left) + var(--column-width) - 1.2rem);
-}
-
-.trainCursor[data-cursor-stage="cleared"] {
-  left: calc(var(--cleared-card-left) + var(--column-width) - 1.2rem);
+  will-change: transform, opacity;
 }
 
 .board[data-moving="true"] .trainCursor {
   opacity: 1;
-  transform: translate(0, 0) scale(0.92);
+  transform: translate(0, 0) scale(0.94);
 }
 
 .trainCursor svg {
@@ -648,8 +640,7 @@
   }
 
   .trainCursor {
-    top: 9.25rem;
-    transform: scale(0.82);
+    display: none;
   }
 }
 

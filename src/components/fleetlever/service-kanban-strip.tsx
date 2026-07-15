@@ -274,38 +274,41 @@ export function ServiceKanbanStrip() {
                       } as TrainCardStyle
                     }
                   >
-                    <div className={styles.cardLift}>
-                      <div className={styles.featuredCard}>
-                        <div className={styles.featuredHeader}>
-                          <div className={styles.dragHandle}><GripVertical /></div>
-                          <strong>{job.code}</strong>
-                          <span>{stageMeta[cardStage].label}</span>
-                        </div>
-                        <div className={styles.featuredBody}>
-                          <Image
-                            src={job.image}
-                            alt=""
-                            width={160}
-                            height={116}
-                            className={styles.featuredImage}
-                          />
-                          <div className={styles.featuredCopy}>
-                            <p>{job.title}</p>
-                            <small>Owner / {job.owner}</small>
-                            <small>{job.due}</small>
+                      <div className={styles.cardLift}>
+                        <div className={styles.featuredCard}>
+                          <div className={styles.featuredHeader}>
+                            <div className={styles.dragHandle} data-service-drag-handle>
+                              <GripVertical />
+                            </div>
+                            <strong>{job.code}</strong>
+                            <span>{stageMeta[cardStage].label}</span>
                           </div>
+                          <div className={styles.featuredBody}>
+                            <Image
+                              src={job.image}
+                              alt=""
+                              width={160}
+                              height={116}
+                              className={styles.featuredImage}
+                            />
+                            <div className={styles.featuredCopy}>
+                              <p>{job.title}</p>
+                              <small>Owner / {job.owner}</small>
+                              <small>{job.due}</small>
+                            </div>
+                          </div>
+                          <div className={styles.parts}><PackageCheck /><span>{job.footer}</span></div>
                         </div>
-                        <div className={styles.parts}><PackageCheck /><span>{job.footer}</span></div>
+                        {active ? (
+                          <div className={styles.trainCursor} data-service-cursor>
+                            <span />
+                            <MousePointer2 />
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
                   </div>
                 );
               })}
-
-              <div className={styles.trainCursor} data-cursor-stage={visibleStage} data-service-cursor>
-                <span />
-                <MousePointer2 />
-              </div>
             </div>
           </div>
         </div>

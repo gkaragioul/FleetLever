@@ -240,15 +240,23 @@ async function verifyServiceKanbanMotion(page, name) {
     const movingState = await board.evaluate((section) => {
       const boardWindow = section.querySelector("[data-stage]");
       const card = section.querySelector("[data-service-drag-card]");
+      const handle = card?.querySelector("[data-service-drag-handle] svg");
       const cursor = section.querySelector("[data-service-cursor]");
+      const pointer = cursor?.querySelector("svg");
       const lane = section.querySelector("[data-lane]");
       const boardRect = boardWindow?.getBoundingClientRect();
       const cardRect = card?.getBoundingClientRect();
+      const handleRect = handle?.getBoundingClientRect();
+      const pointerRect = pointer?.getBoundingClientRect();
       const laneRect = lane?.getBoundingClientRect();
       return {
         cardWidth: cardRect?.width ?? 0,
         laneWidth: laneRect?.width ?? 0,
         cursorOpacity: cursor ? Number.parseFloat(getComputedStyle(cursor).opacity) : 0,
+        cursorGripDelta:
+          handleRect && pointerRect
+            ? Math.hypot(pointerRect.left - handleRect.left, pointerRect.top - handleRect.top)
+            : Infinity,
         contained: Boolean(
           boardRect &&
             cardRect &&
@@ -264,6 +272,9 @@ async function verifyServiceKanbanMotion(page, name) {
       failures.push(`${name}: dragged service card collapsed inside its lane`);
     }
     if (movingState.cursorOpacity < 0.25) failures.push(`${name}: service drag cursor is not visible`);
+    if (movingState.cursorGripDelta > 12) {
+      failures.push(`${name}: service drag cursor is not attached to the moving card grip`);
+    }
     if (!movingState.contained) failures.push(`${name}: dragged service card escaped the Kanban board`);
 
     await board.hover();
@@ -271,10 +282,16 @@ async function verifyServiceKanbanMotion(page, name) {
     await motionPage.waitForTimeout(1_900);
     const landedState = await board.evaluate((section) => {
       const stage = section.getAttribute("data-service-stage");
-      const card = section.querySelector("[data-service-drag-card]")?.getBoundingClientRect();
+      const cardElement = section.querySelector("[data-service-drag-card]");
+      const cursor = section.querySelector("[data-service-cursor]");
+      const handle = cardElement?.querySelector("[data-service-drag-handle] svg")?.getBoundingClientRect();
+      const pointer = cursor?.querySelector("svg")?.getBoundingClientRect();
+      const card = cardElement?.getBoundingClientRect();
       const lane = stage ? section.querySelector(`[data-lane="${stage}"]`)?.getBoundingClientRect() : undefined;
       return {
         stage,
+        cursorOpacity: cursor ? Number.parseFloat(getComputedStyle(cursor).opacity) : 0,
+        cursorGripDelta: handle && pointer ? Math.hypot(pointer.left - handle.left, pointer.top - handle.top) : Infinity,
         centerDelta: card && lane ? Math.abs((card.left + card.right - lane.left - lane.right) / 2) : Infinity,
         insideTargetLane: Boolean(card && lane && card.left >= lane.left && card.right <= lane.right),
       };
@@ -284,6 +301,8 @@ async function verifyServiceKanbanMotion(page, name) {
     if (landedState.centerDelta > 3 || !landedState.insideTargetLane) {
       failures.push(`${name}: dragged service card did not land fully inside the ${landingStage} column`);
     }
+    if (landedState.cursorOpacity < 0.55) failures.push(`${name}: service drag cursor disappears after drop`);
+    if (landedState.cursorGripDelta > 12) failures.push(`${name}: service drag cursor drifts away after drop`);
   } finally {
     await motionPage.close();
   }
