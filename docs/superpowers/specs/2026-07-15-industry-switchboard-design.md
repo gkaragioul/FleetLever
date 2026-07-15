@@ -48,7 +48,7 @@ Industries:
 
 ## Accessibility And Motion
 
-- The drawers use a tablist/tab relationship with `aria-selected` and labelled panels.
+- Each drawer uses an `aria-expanded` disclosure button and a labelled region.
 - Keyboard focus opens a drawer and always has a visible focus treatment.
 - Images have descriptive alternative text.
 - Motion uses transforms, opacity, and flex growth only.
@@ -63,4 +63,12 @@ Industries:
 - Mobile shows a usable stacked accordion without overflow.
 - Auto-rotation, hover pause, manual selection, keyboard use, and reduced motion work.
 - Existing homepage order, anchors, analytics, copy language, and alternating section background remain intact.
+
+## Cutoff Timeline Companion Pass
+
+The adjacent `A blocker becomes a decision before morning` chapter becomes a scroll-controlled operating story rather than a one-time entrance animation. On desktop, the chapter remains pinned while the four timeline moments reveal at deliberate intervals. Scroll direction is authoritative: moving upward rewinds the sequence instead of leaving the outcome permanently revealed.
+
+The header uses a balanced two-column composition so the promise, supporting copy, and four-step process fill the full editorial width. The CR-04 example becomes a compact case file at left, while the timeline receives the larger right-hand track. This removes the unused right side without adding dashboard-style cards.
+
+Reduced-motion users receive the complete timeline with no transform or sticky-scroll animation. Mobile keeps a natural stacked document flow and avoids a long pinned section.
 

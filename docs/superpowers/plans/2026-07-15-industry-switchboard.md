@@ -29,7 +29,7 @@
 - Consumes: homepage source and browser-rendered `data-animation="industry-switchboard"`.
 - Produces: a failing test requiring the new component, four drawers, pause behaviour, and reduced-motion stability.
 
-- [ ] Add source-contract assertions for the switchboard component, copy, industries, tab semantics, timing constant, visibility pause, and reduced-motion CSS.
+- [ ] Add source-contract assertions for the switchboard component, copy, industries, disclosure semantics, timing constant, visibility pause, and reduced-motion CSS.
 - [ ] Add browser assertions that click changes the active industry, hover pauses rotation, leaving resumes it, and reduced motion remains stable.
 - [ ] Run `npm.cmd run test:commercial-site` and confirm failure because the component does not exist.
 
@@ -43,7 +43,7 @@
 
 **Interfaces:**
 - Consumes: local image paths and the existing commercial palette.
-- Produces: `IndustrySwitchboard`, with `data-industry-active` and four accessible drawer tabs.
+- Produces: `IndustrySwitchboard`, with `data-industry-active` and four accessible drawer disclosures.
 
 - [ ] Import and locally store the two missing licensed industry photographs; reuse existing construction and municipal photography.
 - [ ] Implement the four-industry data model and accessible tab/drawer markup.
@@ -65,4 +65,21 @@
 - [ ] Run `FLEETLEVER_EDITION=site npm.cmd run build` and expect a successful production build.
 - [ ] Run local and live `npm.cmd run test:commercial-ui`; inspect desktop and mobile screenshots.
 - [ ] Deploy to Railway and verify `/api/health` plus both switchboard interactions on the production URL.
+
+### Task 4: Scroll-Driven Cutoff Timeline
+
+**Files:**
+- Modify: `src/components/fleetlever/pre-morning-timeline.tsx`
+- Modify: `src/components/fleetlever/pre-morning-timeline.module.css`
+- Modify: `scripts/verify-commercial-site.mjs`
+- Modify: `scripts/verify-commercial-ui.mjs`
+
+**Interfaces:**
+- Consumes: section scroll progress and the existing CR-04 decision story.
+- Produces: reversible `data-scroll-stage` values, a progress-driven timeline track, and a balanced sticky desktop chapter.
+
+- [ ] Replace the one-shot observer with requestAnimationFrame scroll progress and four deliberate reveal breakpoints.
+- [ ] Recompose the header and case/timeline grid to use the full content width.
+- [ ] Keep mobile flow natural and present the complete sequence under reduced motion.
+- [ ] Verify that scrolling down reveals every stage and scrolling up rewinds the sequence.
 

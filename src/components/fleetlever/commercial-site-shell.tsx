@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FleetLeverLogo } from "./fleetlever-logo";
+import { PublicDemoLauncher } from "./public-demo-launcher";
 
 export const demoHref = "/request-demo";
 
@@ -15,9 +16,9 @@ const consoleHref =
     : "https://fleetlever-app-production.up.railway.app/login");
 
 const navItems = [
-  ["How it works", "/#how-it-works"],
   ["Product", "/#product"],
-  ["Who it is for", "/#for-whom"],
+  ["How it works", "/#how-it-works"],
+  ["Use cases", "/#for-whom"],
   ["Pricing", "/pricing"],
 ] as const;
 
@@ -82,14 +83,11 @@ export function CommercialSiteHeader() {
             >
               Sign in
             </a>
-            <Link
-              href={demoHref}
-              data-analytics="header_demo"
-              className={`hidden min-h-11 items-center justify-center gap-2 rounded-md bg-[#103d37] px-4 text-sm font-bold text-white transition hover:bg-[#007c89] active:translate-y-px sm:inline-flex ${focusRing}`}
-            >
-              Request a demo
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            <PublicDemoLauncher
+              label="Try the app"
+              analytics="header_demo"
+              triggerClassName={`hidden min-h-11 items-center justify-center gap-2 rounded-md bg-[#103d37] px-4 text-sm font-bold text-white transition hover:bg-[#007c89] active:translate-y-px disabled:cursor-wait disabled:opacity-75 sm:inline-flex ${focusRing}`}
+            />
             <button
               type="button"
               aria-label={isOpen ? "Close menu" : "Open menu"}
@@ -129,13 +127,12 @@ export function CommercialSiteHeader() {
               >
                 Sign in
               </a>
-              <Link
-                href={demoHref}
-                data-analytics="mobile_menu_demo"
-                className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#103d37] text-sm font-bold text-white"
-              >
-                Request a demo
-              </Link>
+              <PublicDemoLauncher
+                label="Try the app"
+                analytics="mobile_menu_demo"
+                onBeforeOpen={() => setIsOpen(false)}
+                triggerClassName="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] text-sm font-bold text-white disabled:cursor-wait disabled:opacity-75"
+              />
             </div>
           </nav>
         </div>
@@ -166,7 +163,7 @@ export function CommercialSiteFooter() {
             <p className="font-bold text-white">Explore</p>
             <div className="mt-3 grid gap-2.5 text-[#bfd0ca]">
               <Link href="/#product" className="hover:text-white">Product</Link>
-              <Link href="/#for-whom" className="hover:text-white">Who it is for</Link>
+              <Link href="/#for-whom" className="hover:text-white">Use cases</Link>
               <Link href="/pricing" className="hover:text-white">Pricing</Link>
             </div>
           </div>

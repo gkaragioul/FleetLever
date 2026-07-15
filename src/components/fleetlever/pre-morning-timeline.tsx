@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   CheckCircle2,
   FileWarning,
@@ -9,6 +9,11 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import styles from "./pre-morning-timeline.module.css";
+
+const TIMELINE_STAGE_BREAKPOINTS = [0.12, 0.35, 0.58, 0.81] as const;
+const EVENT_REVEAL_STARTS = [0.04, 0.27, 0.5, 0.73] as const;
+const EVENT_REVEAL_DISTANCE = 0.16;
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const timelineEvents = [
   {
@@ -35,133 +40,235 @@ const timelineEvents = [
     tone: "resolved",
     Icon: RefreshCcw,
   },
-] as const;
-
-const workflowSteps = [
   {
-    number: "01",
-    title: "Declare the next operation",
-    body: "Shift, job or rental and the assets it requires.",
-  },
-  {
-    number: "02",
-    title: "See what is missing",
-    body: "Documents, maintenance, people and handovers checked together.",
-  },
-  {
-    number: "03",
-    title: "Close with evidence",
-    body: "Owner, next action, deadline and proof in one record.",
+    time: "05:45",
+    signal: "Outcome",
+    title: "The shift starts without surprises.",
+    body: "2 assets ready. 2 held back with a recorded reason and owner.",
+    tone: "outcome",
+    Icon: CheckCircle2,
   },
 ] as const;
 
-type TimelineStyle = CSSProperties & { "--event-index": number };
+const controlPhases = ["Detect", "Assign", "Replan", "Release"] as const;
+
+type TimelineStage = 0 | 1 | 2 | 3 | 4;
+type TimelineStyle = CSSProperties & {
+  "--event-index": number;
+  "--event-offset": string;
+  "--event-node-offset": string;
+  "--event-scale": number;
+  "--event-visibility": "hidden" | "visible";
+};
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function stageForProgress(progress: number): TimelineStage {
+  if (progress < TIMELINE_STAGE_BREAKPOINTS[0]) return 0;
+  if (progress < TIMELINE_STAGE_BREAKPOINTS[1]) return 1;
+  if (progress < TIMELINE_STAGE_BREAKPOINTS[2]) return 2;
+  if (progress < TIMELINE_STAGE_BREAKPOINTS[3]) return 3;
+  return 4;
+}
+
+function subscribeToReducedMotion(callback: () => void) {
+  const media = window.matchMedia(REDUCED_MOTION_QUERY);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+
+function reducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function serverReducedMotionSnapshot() {
+  return false;
+}
 
 export function PreMorningTimeline() {
-  const storyRef = useRef<HTMLDivElement>(null);
-  const [animationState, setAnimationState] = useState<"waiting" | "revealed">("waiting");
+  const sectionRef = useRef<HTMLElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef(0);
+  const stageRef = useRef<TimelineStage>(0);
+  const [stage, setStage] = useState<TimelineStage>(0);
+  const reducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    reducedMotionSnapshot,
+    serverReducedMotionSnapshot,
+  );
+  const visibleStage: TimelineStage = reducedMotion ? 4 : stage;
 
   useEffect(() => {
-    const story = storyRef.current;
-    if (!story) return;
+    const section = sectionRef.current;
+    const timeline = timelineRef.current;
+    if (!section || !timeline) return;
 
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motionPreference.matches) return;
+    const events = Array.from(timeline.querySelectorAll<HTMLElement>("[data-timeline-event]"));
+
+    const update = () => {
+      frameRef.current = 0;
+      const rect = section.getBoundingClientRect();
+      const compactLayout = window.innerWidth < 1024;
+      const travel = compactLayout
+        ? Math.max(1, rect.height + window.innerHeight * 0.55)
+        : Math.max(1, rect.height - window.innerHeight);
+      const progress = reducedMotion
+        ? 1
+        : compactLayout
+          ? clamp((window.innerHeight * 0.82 - rect.top) / travel, 0, 1)
+          : clamp(-rect.top / travel, 0, 1);
+      const nextStage = reducedMotion ? 4 : stageForProgress(progress);
+
+      timeline.style.setProperty("--timeline-progress", progress.toFixed(3));
+      events.forEach((event, index) => {
+        const localProgress = reducedMotion
+          ? 1
+          : clamp((progress - EVENT_REVEAL_STARTS[index]) / EVENT_REVEAL_DISTANCE, 0, 1);
+        const easedProgress = localProgress * localProgress * (3 - 2 * localProgress);
+        event.style.setProperty("--event-visibility", localProgress > 0.02 ? "visible" : "hidden");
+        event.style.setProperty("--event-offset", `${((1 - easedProgress) * 42).toFixed(2)}px`);
+        event.style.setProperty("--event-node-offset", `${((1 - easedProgress) * 12).toFixed(2)}px`);
+        event.style.setProperty("--event-scale", (0.985 + easedProgress * 0.015).toFixed(3));
+      });
+
+      if (nextStage !== stageRef.current) {
+        stageRef.current = nextStage;
+        setStage(nextStage);
+      }
+    };
+
+    const scheduleUpdate = () => {
+      if (frameRef.current) return;
+      frameRef.current = window.requestAnimationFrame(update);
+    };
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setAnimationState("revealed");
-        observer.disconnect();
+        if (entry.isIntersecting) scheduleUpdate();
       },
-      { threshold: 0.24 },
+      { rootMargin: "20% 0px 20% 0px" },
     );
 
-    observer.observe(story);
-    return () => observer.disconnect();
-  }, []);
+    observer.observe(section);
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    scheduleUpdate();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
+    };
+  }, [reducedMotion]);
 
   return (
-    <section className={styles.section} aria-labelledby="pre-morning-title" data-section-tone="mist">
+    <section
+      aria-labelledby="pre-morning-title"
+      className={styles.section}
+      data-animation="cutoff-timeline"
+      data-scroll-stage={visibleStage}
+      data-section-tone="mist"
+      ref={sectionRef}
+    >
       <div className={styles.inner}>
-        <div className={styles.flowHeader}>
-          <p className={styles.eyebrow}>How it works</p>
-          <h2 className={styles.heading} id="pre-morning-title">
-            Three moves before the shift starts.
-          </h2>
-          <p className={styles.intro}>
-            FleetLever does not replace your ERP, CMMS or rental system. It connects the plan ahead with the final,
-            evidence-backed release decision.
-          </p>
-        </div>
-
-        <ol className={styles.steps} aria-label="The three FleetLever workflow steps">
-          {workflowSteps.map((step) => (
-            <li className={styles.step} key={step.number}>
-              <span className={styles.stepNumber}>{step.number}</span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-
-        <div className={styles.story} ref={storyRef}>
-          <div className={styles.copyColumn}>
-            <p className={styles.storyEyebrow}>In practice</p>
-            <h3 className={styles.storyHeading}>Tomorrow&apos;s shift is decided today.</h3>
-            <p className={styles.storyIntro}>
-              FleetLever finds what is missing, assigns the right person and keeps an asset out until its readiness is
-              proven or a replacement is secured.
-            </p>
-          </div>
-
-          <div className={styles.timeline} data-animation={animationState}>
-            <div className={styles.track} aria-hidden="true">
-              <span />
+        <div className={styles.layout}>
+          <div className={styles.narrative}>
+            <div className={styles.headlineBlock}>
+              <p className={styles.eyebrow}>Act before the cutoff</p>
+              <h2 className={styles.heading} id="pre-morning-title">
+                A blocker becomes a decision before morning.
+              </h2>
             </div>
 
-            <div className={styles.events} role="list" aria-label="Timeline for preparing tomorrow's operation">
-              {timelineEvents.map(({ time, signal, title, body, tone, Icon }, index) => (
-                <article
-                  className={styles.event}
-                  data-tone={tone}
-                  key={time}
-                  role="listitem"
-                  style={{ "--event-index": index } as TimelineStyle}
-                >
-                  <time className={styles.time} dateTime={time}>
-                    {time}
-                  </time>
-                  <span className={styles.node} aria-hidden="true">
-                    <Icon />
-                  </span>
-                  <div className={styles.eventCopy}>
-                    <p className={styles.signal}>{signal}</p>
-                    <h4>{title}</h4>
-                    <p className={styles.eventBody}>{body}</p>
-                  </div>
-                </article>
-              ))}
-
-              <article
-                className={`${styles.event} ${styles.outcome}`}
-                role="listitem"
-                style={{ "--event-index": timelineEvents.length } as TimelineStyle}
-              >
-                <time className={styles.time} dateTime="05:45">
-                  05:45
-                </time>
-                <span className={styles.node} aria-hidden="true">
-                  <CheckCircle2 />
-                </span>
-                <div className={styles.eventCopy}>
-                  <p className={styles.signal}>Outcome</p>
-                  <h4>The shift starts without surprises.</h4>
-                  <p className={styles.eventBody}>2 assets ready. 2 held back with a recorded reason and owner.</p>
+            <aside className={styles.copyColumn} aria-label="CR-04 release case">
+              <p className={styles.storyEyebrow}>One asset. One evening.</p>
+              <h3 className={styles.storyHeading}>CR-04 is due on tomorrow&apos;s lifting job.</h3>
+              <p className={styles.storyIntro}>
+                The plan is set. FleetLever finds the expired certificate, assigns the action and protects the job
+                with a replacement before the cutoff.
+              </p>
+              <dl className={styles.caseMeta}>
+                <div>
+                  <dt>Dispatch</dt>
+                  <dd>Tomorrow, 07:00</dd>
                 </div>
-              </article>
+                <div>
+                  <dt>Job</dt>
+                  <dd>Lifting operation</dd>
+                </div>
+                <div>
+                  <dt>Cutoff</dt>
+                  <dd>18:30 today</dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+
+          <div className={styles.flow}>
+            <div className={styles.headerAside}>
+              <p className={styles.intro}>
+                FleetLever detects what is missing, gives it an owner and keeps the operation moving with a recorded
+                outcome.
+              </p>
+              <ol className={styles.phaseRail} aria-label="FleetLever release-control sequence">
+                {controlPhases.map((phase, index) => (
+                  <li data-active={visibleStage > index} key={phase}>
+                    <span>0{index + 1}</span>
+                    {phase}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className={styles.timeline} data-scroll-stage={visibleStage} ref={timelineRef}>
+              <div className={styles.timelineHeader}>
+                <span>Evening control log</span>
+                <span>{visibleStage}/4 decisions recorded</span>
+              </div>
+              <div className={styles.track} aria-hidden="true">
+                <span />
+              </div>
+
+              <div className={styles.events} role="list" aria-label="Timeline for preparing tomorrow's operation">
+                {timelineEvents.map(({ time, signal, title, body, tone, Icon }, index) => {
+                  const revealed = index < visibleStage;
+                  return (
+                    <article
+                      aria-current={visibleStage === index + 1 ? "step" : undefined}
+                      className={`${styles.event} ${tone === "outcome" ? styles.outcome : ""}`}
+                      data-revealed={revealed}
+                      data-timeline-event
+                      data-tone={tone}
+                      key={time}
+                      role="listitem"
+                      style={
+                        {
+                          "--event-index": index,
+                          "--event-offset": reducedMotion ? "0px" : "42px",
+                          "--event-node-offset": reducedMotion ? "0px" : "12px",
+                          "--event-scale": reducedMotion ? 1 : 0.985,
+                          "--event-visibility": reducedMotion ? "visible" : "hidden",
+                        } as TimelineStyle
+                      }
+                    >
+                      <time className={styles.time} dateTime={time}>
+                        {time}
+                      </time>
+                      <span className={styles.node} aria-hidden="true">
+                        <Icon />
+                      </span>
+                      <div className={styles.eventCopy}>
+                        <p className={styles.signal}>{signal}</p>
+                        <h4>{title}</h4>
+                        <p className={styles.eventBody}>{body}</p>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

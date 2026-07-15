@@ -5,7 +5,6 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardCheck,
-  HardHat,
   History,
 } from "lucide-react";
 import {
@@ -13,9 +12,14 @@ import {
   CommercialSiteHeader,
   demoHref,
 } from "@/components/fleetlever/commercial-site-shell";
+import { IndustrySwitchboard } from "@/components/fleetlever/industry-switchboard";
 import { MachinePassportAssembly } from "@/components/fleetlever/machine-passport-assembly";
+import { MultiIndustryHero } from "@/components/fleetlever/multi-industry-hero";
 import { PreMorningTimeline } from "@/components/fleetlever/pre-morning-timeline";
+import { PublicDemoLauncher } from "@/components/fleetlever/public-demo-launcher";
 import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
+import { FleetInventoryStrip } from "@/components/fleetlever/fleet-inventory-strip";
+import { ServiceKanbanStrip } from "@/components/fleetlever/service-kanban-strip";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
 
 export const metadata: Metadata = {
@@ -25,25 +29,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: { url: "/" },
 };
-
-const useCases = [
-  [
-    "Construction and heavy equipment",
-    "Verify machines, operators, attachments and job requirements before release to site.",
-  ],
-  [
-    "Equipment rental",
-    "Control return, inspection, damage, cleaning, accessories and checkout before the next customer.",
-  ],
-  [
-    "Municipal and public works",
-    "Confirm vehicles, crews, routes and compliance before the next public-service assignment.",
-  ],
-  [
-    "Specialist and service fleets",
-    "Check vans, tools, technicians and job-specific requirements before dispatch.",
-  ],
-] as const;
 
 const productJsonLd = {
   "@context": "https://schema.org",
@@ -65,13 +50,20 @@ function ProductScreenshot({
   src,
   alt,
   priority = false,
+  mobileFocus = false,
 }: {
   src: string;
   alt: string;
   priority?: boolean;
+  mobileFocus?: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_24px_70px_rgba(16,61,55,0.14)]">
+    <div
+      className={`overflow-hidden rounded-lg border border-[#cfd8d4] bg-white shadow-[0_24px_70px_rgba(16,61,55,0.14)] ${
+        mobileFocus ? "h-[13rem] sm:h-auto" : ""
+      }`}
+      data-mobile-focus={mobileFocus ? "true" : undefined}
+    >
       <ScreenshotMagnifier
         src={src}
         alt={alt}
@@ -79,7 +71,11 @@ function ProductScreenshot({
         height={1200}
         priority={priority}
         sizes="(min-width: 1024px) 72vw, 100vw"
-        imageClassName="h-auto w-full"
+        imageClassName={
+          mobileFocus
+            ? "h-full w-[160%] max-w-none -translate-x-[21%] object-cover object-top sm:h-auto sm:w-full sm:max-w-full sm:translate-x-0"
+            : "h-auto w-full"
+        }
       />
     </div>
   );
@@ -95,15 +91,7 @@ export default function LandingPage() {
       />
 
       <section className="relative isolate flex min-h-[620px] max-h-[780px] items-end overflow-hidden bg-[#071b18] sm:min-h-[680px] lg:min-h-[720px]">
-        <Image
-          src="/fleetlever/site/hero-photos/site-crew-crane.jpg"
-          alt="Construction crew working beside a crawler crane"
-          fill
-          priority
-          sizes="100vw"
-          className="-z-20 object-cover object-[62%_58%]"
-        />
-        <div className="absolute inset-0 -z-10 bg-[#071b18]/74" aria-hidden="true" />
+        <MultiIndustryHero />
 
         <div className="mx-auto w-full max-w-[86rem] px-5 pb-14 sm:px-7 sm:pb-16 lg:px-10 lg:pb-20">
           <div className="max-w-[49rem] text-white">
@@ -113,23 +101,20 @@ export default function LandingPage() {
               Know what can go out next. And what cannot.
             </p>
             <p className="mt-5 max-w-[42rem] text-base font-medium leading-7 text-white sm:text-lg">
-              FleetLever checks vehicles, equipment, documents, maintenance, people and job requirements before
-              assets are released to their next job, rental or assignment.
+              FleetLever checks every asset before its next job, rental or assignment, then assigns whatever is
+              missing before it causes a delay.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={demoHref}
-                data-analytics="hero_demo"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                See it with your fleet
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              <PublicDemoLauncher
+                analytics="hero_demo"
+                label="Try the app"
+                triggerClassName="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px disabled:cursor-wait disabled:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              />
               <a
                 href="#how-it-works"
                 className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/55 bg-[#071b18]/45 px-5 text-sm font-bold text-white transition hover:border-white hover:bg-[#071b18]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                See how it works
+                See the release flow
               </a>
             </div>
           </div>
@@ -139,21 +124,21 @@ export default function LandingPage() {
       <ReadinessLanes />
 
       <section
-        className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
+        className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-20"
         id="product"
         data-section-tone="white"
       >
         <div className="mx-auto w-full max-w-[86rem]">
           <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
             <div>
-              <p className="text-sm font-bold uppercase text-[#007c89]">Tomorrow&apos;s operation</p>
+              <p className="text-sm font-bold uppercase text-[#007c89]">See the operational truth</p>
               <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
-                One screen. One release decision.
+                One board shows what can go out next.
               </h2>
             </div>
             <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
-              See what is ready, what needs review, what is blocked and who owns the next action before the shift
-              starts.
+              The plan becomes a clear operational answer: ready, needs review or blocked, with the next action and
+              owner visible before the shift starts.
             </p>
           </div>
           <div className="mt-10">
@@ -161,6 +146,7 @@ export default function LandingPage() {
               src="/fleetlever/site/tomorrow-readiness-dashboard.png"
               alt="FleetLever tomorrow-readiness board showing ready, review and blocked assets"
               priority
+              mobileFocus
             />
           </div>
           <div className="mt-7 grid gap-px overflow-hidden rounded-lg border border-[#d9e1dd] bg-[#d9e1dd] sm:grid-cols-3">
@@ -179,44 +165,60 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <FleetInventoryStrip />
+      <ServiceKanbanStrip />
+
       <div className="scroll-mt-24" id="how-it-works">
         <PreMorningTimeline />
       </div>
 
       <section
-        className="border-y border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
+        className="border-y border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-20"
         data-section-tone="white"
       >
         <div className="mx-auto w-full max-w-[86rem]">
-          <article className="grid gap-10 border-b border-[#cfd8d4] pb-16 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pb-24">
+          <header className="grid gap-6 border-b border-[#cfd8d4] pb-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end lg:pb-14">
+            <div>
+              <p className="text-sm font-bold uppercase text-[#007c89]">Release with proof</p>
+              <h2 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl">
+                From blocker to auditable release.
+              </h2>
+            </div>
+            <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
+              A red status is only the beginning. FleetLever keeps the action, evidence and final decision connected
+              to the same asset and next assignment.
+            </p>
+          </header>
+
+          <article className="grid gap-8 border-b border-[#cfd8d4] py-12 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:py-16">
             <ProductScreenshot
               src="/fleetlever/site/stop-list.png"
               alt="FleetLever action queue with blockers, owners and next actions"
+              mobileFocus
             />
             <div>
               <ClipboardCheck className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Action queue</p>
-              <h2 className="mt-3 text-4xl font-semibold leading-tight">Every blocker becomes an owned action.</h2>
+              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Own the blocker</p>
+              <h3 className="mt-3 text-4xl font-semibold leading-tight">Every blocker gets an owner.</h3>
               <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
-                Cause, operational impact, owner, next step, deadline and required evidence stay together. The team
-                knows exactly what must close today.
+                Cause, operational impact, next step, deadline and required proof stay together. The right person
+                knows exactly what must close before cutoff.
               </p>
             </div>
           </article>
 
           <MachinePassportAssembly />
 
-          <article className="grid gap-10 pt-16 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pt-24">
+          <article className="grid gap-8 border-t border-[#cfd8d4] pt-12 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pt-16">
             <ProductScreenshot
               src="/fleetlever/site/decision-history-audit-trail.png"
               alt="FleetLever decision history with actions, release decisions and evidence"
+              mobileFocus
             />
             <div>
               <History className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Decision history</p>
-              <h2 className="mt-3 text-4xl font-semibold leading-tight">
-                The decision has the evidence behind it.
-              </h2>
+              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Keep the record</p>
+              <h3 className="mt-3 text-4xl font-semibold leading-tight">Every release remains traceable.</h3>
               <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
                 Every release, hold, replacement and authorized override remains traceable: who decided, when it
                 happened and what proof supported it.
@@ -226,36 +228,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section
-        className="scroll-mt-24 bg-[#edf2ee] px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
-        id="for-whom"
-        data-section-tone="mist"
-      >
-        <div className="mx-auto w-full max-w-[86rem]">
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <HardHat className="h-7 w-7 text-[#006d78]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#006d78]">Who it is for</p>
-              <h2 className="mt-3 max-w-lg text-4xl font-semibold leading-tight sm:text-5xl">
-                For operations that cannot discover the problem in the morning.
-              </h2>
-            </div>
-            <div className="border-t border-[#cfd8d4]">
-              {useCases.map(([title, body]) => (
-                <article
-                  key={title}
-                  className="grid gap-3 border-b border-[#cfd8d4] py-6 sm:grid-cols-[0.72fr_1.28fr] sm:gap-8"
-                >
-                  <h3 className="text-lg font-semibold">{title}</h3>
-                  <p className="text-base font-medium leading-7 text-[#53635f]">{body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <IndustrySwitchboard />
 
-      <section className="relative isolate overflow-hidden bg-[#071b18] px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-28">
+      <section className="relative isolate overflow-hidden bg-[#071b18] px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-24">
         <Image
           src="/fleetlever/site/hero-photos/heavy-lift-steel.jpg"
           alt="Heavy lifting machine working beside a steel structure"
@@ -266,16 +241,16 @@ export default function LandingPage() {
         <div className="absolute inset-0 -z-10 bg-[#071b18]/82" aria-hidden="true" />
         <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <p className="text-sm font-bold uppercase text-[#9af6f7]">30-day founding pilot</p>
+            <p className="text-sm font-bold uppercase text-[#9af6f7]">Start with one real operation</p>
             <h2 className="mt-3 max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl">
-              Use your real fleet. Measure what changes.
+              Use your fleet. Measure what changes before morning.
             </h2>
             <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-[#d8e5e1]">
               Up to 30 critical assets, one real readiness workflow, guided setup and a measured final review. You
               finish with evidence, not a sales promise.
             </p>
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold text-[#d8e5e1]">
-              {["Fixed scope", "Real operational data", "Measured results review"].map((item) => (
+              {["Readiness at cutoff", "Blockers resolved", "Replacements secured", "Failed releases prevented"].map((item) => (
                 <span key={item} className="inline-flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-[#73dce3]" aria-hidden="true" />
                   {item}

@@ -17,9 +17,9 @@ import styles from "./machine-passport-assembly.module.css";
 
 const stages = [
   {
-    signal: "CR-04 | 5 release requirements",
-    title: "The evidence is still scattered.",
-    body: "Certificate, inspection, maintenance, operator and photo evidence must all connect to the same asset and next assignment.",
+    signal: "CR-04 / 5 release requirements",
+    title: "Five requirements. One asset record.",
+    body: "Certificate, inspection, maintenance, operator and photo evidence all connect to CR-04 and tomorrow's job.",
     status: "Collecting evidence",
   },
   {
@@ -29,12 +29,6 @@ const stages = [
     status: "Action required",
   },
   {
-    signal: "The evidence is recorded",
-    title: "The missing proof lands in the right record.",
-    body: "The new certificate is linked to CR-04, the responsible person and tomorrow's job.",
-    status: "Complete asset record",
-  },
-  {
     signal: "5 of 5 requirements passed",
     title: "Ready for release.",
     body: "The decision now rests on one complete, reviewable asset record that follows the equipment.",
@@ -42,10 +36,12 @@ const stages = [
   },
 ] as const;
 
+const PASSPORT_STAGE_BREAKPOINTS = [0.34, 0.72] as const;
+
 const evidence = [
   {
     label: "Safety inspection",
-    meta: "Inspected | 14 Jul",
+    meta: "Inspected / 14 Jul",
     Icon: ShieldCheck,
     className: styles.safetyEvidence,
     position: {
@@ -58,7 +54,7 @@ const evidence = [
   },
   {
     label: "Service CR-04",
-    meta: "Completed | 16:20",
+    meta: "Completed / 16:20",
     Icon: Wrench,
     className: styles.serviceEvidence,
     position: {
@@ -71,7 +67,7 @@ const evidence = [
   },
   {
     label: "Assigned operator",
-    meta: "Dimitris | Ready",
+    meta: "Dimitris / Ready",
     Icon: UserRoundCheck,
     className: styles.operatorEvidence,
     position: {
@@ -84,7 +80,7 @@ const evidence = [
   },
   {
     label: "Inspection photo",
-    meta: "Uploaded | 16:42",
+    meta: "Uploaded / 16:42",
     Icon: Camera,
     className: styles.photoEvidence,
     position: {
@@ -139,7 +135,12 @@ export function MachinePassportAssembly() {
       const rect = section.getBoundingClientRect();
       const travel = Math.max(1, rect.height - window.innerHeight);
       const progress = media.matches ? 1 : clamp((76 - rect.top) / travel);
-      const nextStage = progress < 0.24 ? 0 : progress < 0.51 ? 1 : progress < 0.78 ? 2 : 3;
+      const nextStage =
+        progress < PASSPORT_STAGE_BREAKPOINTS[0]
+          ? 0
+          : progress < PASSPORT_STAGE_BREAKPOINTS[1]
+            ? 1
+            : 2;
 
       if (nextStage !== stageRef.current) {
         stageRef.current = nextStage;
@@ -178,17 +179,22 @@ export function MachinePassportAssembly() {
   const current = stages[stage];
 
   return (
-    <section className={styles.section} ref={sectionRef} aria-labelledby="passport-assembly-title">
+    <section
+      className={styles.section}
+      ref={sectionRef}
+      aria-labelledby="passport-assembly-title"
+      data-animation="passport-assembly"
+    >
       <div className={styles.stickyFrame}>
         <div className={styles.layout}>
           <div className={styles.copyColumn}>
             <BadgeCheck className={styles.sectionIcon} aria-hidden="true" />
             <p className={styles.eyebrow}>Asset passport</p>
-            <h2 className={styles.heading} id="passport-assembly-title">
-              The decision has the evidence behind it.
-            </h2>
+            <h3 className={styles.heading} id="passport-assembly-title">
+              Every requirement stays with the asset.
+            </h3>
             <p className={styles.intro}>
-              Watch the asset record assemble as each release requirement connects to the equipment before approval.
+              Evidence is attached to the asset, accountable owner and next assignment before approval.
             </p>
 
             <div className={styles.stageCopy} data-stage={stage} aria-live="polite">
@@ -212,7 +218,7 @@ export function MachinePassportAssembly() {
                 <div className={styles.passportHeader}>
                   <span>
                     <ClipboardCheck aria-hidden="true" />
-                    CR-04 | Asset passport
+                    CR-04 / Asset passport
                   </span>
                   <strong>{current.status}</strong>
                 </div>

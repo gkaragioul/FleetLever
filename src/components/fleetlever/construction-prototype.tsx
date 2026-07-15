@@ -29,6 +29,11 @@ import {
 } from "lucide-react";
 import { MunicipalBrandLockup, PortalReturnLink } from "@/components/fleetlever/municipal-brand";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
+import {
+  currentDemoSessionStorageKey,
+  demoSessionStateEndpoint,
+  publicDemoSessionIdFromLocation,
+} from "@/lib/commercial/demo-session-client";
 
 type MachineState = "ready" | "at_risk" | "blocked";
 type ViewKey =
@@ -1216,8 +1221,16 @@ const worksites: Worksite[] = allowDemoConsoleData ? cloneConsoleData(seedWorksi
 const machines: Machine[] = allowDemoConsoleData ? cloneConsoleData(seedMachines) : [];
 const releaseHistory: ReleaseRecord[] = allowDemoConsoleData ? cloneConsoleData(seedReleaseHistory) : [];
 
-const consoleSnapshotKey = isMunicipalConsole ? "fleetlever-elliniko-console-state-v5" : "fleetlever-console-state-v5";
-const consoleSnapshotEndpoint = "/api/fleetlever/console-state";
+const defaultConsoleSnapshotKey = isMunicipalConsole ? "fleetlever-elliniko-console-state-v5" : "fleetlever-console-state-v5";
+
+function activeConsoleSnapshotKey() {
+  return currentDemoSessionStorageKey() ?? defaultConsoleSnapshotKey;
+}
+
+function activeConsoleSnapshotEndpoint() {
+  const demoSessionId = publicDemoSessionIdFromLocation();
+  return demoSessionId ? demoSessionStateEndpoint(demoSessionId) : "/api/fleetlever/console-state";
+}
 
 function cloneConsoleData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -1264,14 +1277,14 @@ function consoleSnapshot(notifications: OperationalNotification[], organizationN
 
 function saveConsoleSnapshot(notifications: OperationalNotification[]) {
   if (typeof window === "undefined") return;
-  if (!allowDemoConsoleData) return;
-  window.localStorage.setItem(consoleSnapshotKey, JSON.stringify(consoleSnapshot(notifications)));
+  if (!allowDemoConsoleData || publicDemoSessionIdFromLocation()) return;
+  window.localStorage.setItem(activeConsoleSnapshotKey(), JSON.stringify(consoleSnapshot(notifications)));
 }
 
 function loadConsoleSnapshot() {
   if (typeof window === "undefined") return null;
-  if (!allowDemoConsoleData) return null;
-  const rawSnapshot = window.localStorage.getItem(consoleSnapshotKey);
+  if (!allowDemoConsoleData || publicDemoSessionIdFromLocation()) return null;
+  const rawSnapshot = window.localStorage.getItem(activeConsoleSnapshotKey());
   if (!rawSnapshot) return null;
 
   try {
@@ -1287,7 +1300,7 @@ function loadConsoleSnapshot() {
 }
 
 async function loadServerConsoleSnapshot() {
-  const response = await fetch(consoleSnapshotEndpoint, {
+  const response = await fetch(activeConsoleSnapshotEndpoint(), {
     cache: "no-store",
   });
 
@@ -1312,13 +1325,17 @@ async function loadServerConsoleSnapshot() {
 }
 
 async function saveServerConsoleSnapshot(notifications: OperationalNotification[], organizationName = defaultClientName) {
-  await fetch(consoleSnapshotEndpoint, {
+  const response = await fetch(activeConsoleSnapshotEndpoint(), {
     body: JSON.stringify(consoleSnapshot(notifications, organizationName)),
     headers: {
       "Content-Type": "application/json",
     },
     method: "PUT",
   });
+
+  if (!response.ok) {
+    throw new Error("The console state could not be synchronized.");
+  }
 }
 
 async function recordConsoleAction(payload: {
@@ -1329,6 +1346,7 @@ async function recordConsoleAction(payload: {
   recordTable?: string;
   title: string;
 }) {
+  if (publicDemoSessionIdFromLocation()) return;
   if (!process.env.NEXT_PUBLIC_FLEETLEVER_RECORD_CONSOLE_ACTIONS && allowDemoConsoleData) return;
 
   await fetch("/api/fleetlever/console-actions", {
@@ -1651,6 +1669,11 @@ async function uploadConsoleFile(
   machine: Pick<Machine, "id" | "code">,
   metadata: { documentCategory?: string; documentTitle?: string; expiresAt?: string } = {},
 ) {
+  if (publicDemoSessionIdFromLocation()) {
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+    return { demo: true, ok: true };
+  }
+
   const formData = new FormData();
   formData.set("file", file);
   formData.set("scope", scope);

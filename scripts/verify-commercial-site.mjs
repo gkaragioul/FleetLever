@@ -12,10 +12,26 @@ const files = {
   landing: await source("src/app/landing/page.tsx"),
   pricing: await source("src/app/pricing/page.tsx"),
   shell: await source("src/components/fleetlever/commercial-site-shell.tsx"),
+  demoLauncher: await source("src/components/fleetlever/public-demo-launcher.tsx"),
+  demoWorkspace: await source("src/components/fleetlever/public-demo-workspace.tsx"),
+  demoStore: await source("src/lib/commercial/demo-session-store.ts"),
+  demoSessionApi: await source("src/app/api/commercial/demo-sessions/route.ts"),
+  demoStateApi: await source("src/app/api/commercial/demo-sessions/[sessionId]/state/route.ts"),
+  demoRoute: await source("src/app/try/[sessionId]/page.tsx"),
   lanes: await source("src/components/fleetlever/readiness-lanes.tsx"),
   lanesStyles: await source("src/components/fleetlever/readiness-lanes.module.css"),
   preMorning: await source("src/components/fleetlever/pre-morning-timeline.tsx"),
+  preMorningStyles: await source("src/components/fleetlever/pre-morning-timeline.module.css"),
   passport: await source("src/components/fleetlever/machine-passport-assembly.tsx"),
+  passportStyles: await source("src/components/fleetlever/machine-passport-assembly.module.css"),
+  inventoryStrip: await source("src/components/fleetlever/fleet-inventory-strip.tsx"),
+  inventoryStripStyles: await source("src/components/fleetlever/fleet-inventory-strip.module.css"),
+  serviceStrip: await source("src/components/fleetlever/service-kanban-strip.tsx"),
+  serviceStripStyles: await source("src/components/fleetlever/service-kanban-strip.module.css"),
+  industrySwitchboard: await source("src/components/fleetlever/industry-switchboard.tsx"),
+  industrySwitchboardStyles: await source("src/components/fleetlever/industry-switchboard.module.css"),
+  multiIndustryHero: await source("src/components/fleetlever/multi-industry-hero.tsx"),
+  multiIndustryHeroStyles: await source("src/components/fleetlever/multi-industry-hero.module.css"),
   demoPage: await source("src/app/request-demo/page.tsx"),
   demoForm: await source("src/components/fleetlever/demo-request-form.tsx"),
   demoApi: await source("src/app/api/commercial/demo-request/route.ts"),
@@ -49,24 +65,39 @@ requireTokens("landing", [
   "ReadinessLanes",
   "PreMorningTimeline",
   "MachinePassportAssembly",
-  "One screen. One release decision.",
-  "Every blocker becomes an owned action.",
-  "Decision history",
-  "Construction and heavy equipment",
-  "Equipment rental",
-  "Municipal and public works",
-  "Specialist and service fleets",
+  "FleetInventoryStrip",
+  "ServiceKanbanStrip",
+  "IndustrySwitchboard",
+  "MultiIndustryHero",
+  "One board shows what can go out next.",
+  "From blocker to auditable release.",
+  "Every blocker gets an owner.",
+  "Every release remains traceable.",
+  "Readiness at cutoff",
+  "Failed releases prevented",
   'id="product"',
   'id="how-it-works"',
-  'id="for-whom"',
-  "/fleetlever/site/hero-photos/site-crew-crane.jpg",
   "/fleetlever/site/tomorrow-readiness-dashboard.png",
   "/fleetlever/site/stop-list.png",
   "/fleetlever/site/decision-history-audit-trail.png",
 ]);
 
+requireTokens("multiIndustryHero", [
+  'data-animation="multi-industry-hero"',
+  "/fleetlever/site/hero-photos/site-crew-crane.jpg",
+  "/fleetlever/site/industries/equipment-rental.jpg",
+  "/fleetlever/municipal-real/aporrimmatofora-1.jpg",
+  "/fleetlever/site/industries/service-fleet.jpg",
+]);
+
+requireTokens("multiIndustryHeroStyles", [
+  "mask-image",
+  "heroPanelDrift",
+  "prefers-reduced-motion: reduce",
+]);
+
 requireTokens("pricing", [
-  "Start with 30 days, not an annual leap of faith.",
+  "Start with proof. Scale with the operation.",
   "Single Team",
   "Operations",
   "Enterprise",
@@ -74,45 +105,153 @@ requireTokens("pricing", [
   "Up to 100 active assets",
   "Additional block of 25 assets",
   "credited against the first annual agreement",
-  "Implementation and expansion",
+  "Included in every annual plan",
+  "What changes the price",
+  "Launch",
+  "Expand",
+  "Integrate",
   "Commercial terms",
 ]);
 
 requireTokens("shell", [
-  'demoHref = "/request-demo"',
   "How it works",
   "Product",
-  "Who it is for",
+  "Use cases",
   "Pricing",
-  "Request a demo",
+  "Try the app",
+  "PublicDemoLauncher",
   "Menu",
   "/privacy",
   "/terms",
   "/security",
 ]);
 
+requireTokens("demoLauncher", [
+  "Your 10-hour FleetLever workspace",
+  "Create demo workspace",
+  "Copy share link",
+  "Open full screen",
+  "backdrop-blur",
+  'role="dialog"',
+]);
+
+requireTokens("demoWorkspace", [
+  "Demo workspace",
+  "This workspace expires in",
+  "Copy share link",
+  "ConstructionPrototype",
+]);
+
+requireTokens("demoStore", [
+  "DEMO_SESSION_TTL_MS",
+  "10 * 60 * 60 * 1000",
+  "cleanupExpiredDemoSessions",
+  "expiresAt",
+  "randomUUID",
+]);
+
+requireTokens("demoSessionApi", ["createDemoSession", "expiresAt", "shareUrl"]);
+requireTokens("demoStateApi", ["readDemoSession", "writeDemoSessionSnapshot", "expired"]);
+requireTokens("demoRoute", ["readDemoSession", "PublicDemoWorkspace", "DemoExpiredState"]);
+
 requireTokens("lanes", [
-  "One route to the next assignment",
-  "CR-04 stops here, not on site.",
+  "Set the plan",
+  "Every next assignment enters one release flow.",
+  "FleetLever stops CR-04 before the site.",
+  "Every asset leaves, waits or gets replaced.",
   "Documents",
   "Maintenance",
   "Operator",
   "Evidence",
 ]);
 
-requireTokens("lanesStyles", ["prefers-reduced-motion: reduce"]);
+requireTokens("lanesStyles", ["min-height: 160svh", "prefers-reduced-motion: reduce"]);
 
 requireTokens("preMorning", [
-  "Three moves before the shift starts.",
-  "Tomorrow&apos;s shift is decided today.",
+  "Act before the cutoff",
+  "A blocker becomes a decision before morning.",
+  "One asset. One evening.",
   "The shift starts without surprises.",
+  "TIMELINE_STAGE_BREAKPOINTS = [0.12, 0.35, 0.58, 0.81]",
+  "requestAnimationFrame",
+  "getBoundingClientRect",
+  "data-scroll-stage",
+]);
+
+requireTokens("preMorningStyles", [
+  "min-height: 190svh",
+  "position: sticky",
+  "--timeline-progress",
+  "data-scroll-stage",
+  "--event-offset",
+  "prefers-reduced-motion: reduce",
 ]);
 
 requireTokens("passport", [
   "Asset passport",
+  "Every requirement stays with the asset.",
   "No evidence, no release.",
   "Ready for release",
   "Full decision history",
+  "PASSPORT_STAGE_BREAKPOINTS = [0.34, 0.72]",
+  "requestAnimationFrame",
+  "getBoundingClientRect",
+]);
+
+requireTokens("passportStyles", ["min-height: 220svh", "position: sticky", "prefers-reduced-motion: reduce"]);
+
+if (files.passport.includes("setTimeout")) {
+  failures.push("passport animation is still timer-driven instead of scroll-driven");
+}
+
+requireTokens("inventoryStrip", [
+  'data-animation="fleet-inventory"',
+  "Fleet inventory",
+  "Every machine, sorted by what needs attention.",
+  "Blocked",
+  "Review",
+  "Ready",
+  "data-inventory-focus",
+  "prefers-reduced-motion: reduce",
+]);
+requireTokens("inventoryStripStyles", ["grid-template-columns", "data-focus", "prefers-reduced-motion: reduce"]);
+
+requireTokens("serviceStrip", [
+  'data-animation="service-kanban"',
+  "A new way to manage service",
+  "Manage service as a flow, not a list.",
+  "Queued",
+  "In service",
+  "Cleared",
+  "KANBAN_STAGE_DURATION = 3600",
+  "KANBAN_QUEUE_DURATION = 1800",
+  "MousePointer2",
+  "data-service-stage",
+  "visibilitychange",
+  "prefers-reduced-motion: reduce",
+]);
+requireTokens("serviceStripStyles", ["dragToService", "cardLiftToService", "cursorToService", "data-stage", "prefers-reduced-motion: reduce"]);
+
+requireTokens("industrySwitchboard", [
+  'data-animation="industry-switchboard"',
+  "One control loop. Four operating worlds.",
+  "Built for the moment before any fleet goes out.",
+  "The assets change. The release decision does not.",
+  "Construction and heavy equipment",
+  "Equipment rental",
+  "Municipal and public works",
+  "Specialist and service fleets",
+  "INDUSTRY_ROTATION_MS = 5800",
+  'id="for-whom"',
+  "aria-expanded",
+  'role="region"',
+  "visibilitychange",
+]);
+requireTokens("industrySwitchboardStyles", [
+  ".drawers",
+  "flex-grow",
+  "prefers-reduced-motion: reduce",
+  "@media (max-width: 760px)",
 ]);
 
 requireTokens("demoPage", ["Request a FleetLever demo", "CommercialSiteHeader"]);
@@ -148,6 +287,9 @@ const englishCommercialFiles = [
   "lanes",
   "preMorning",
   "passport",
+  "inventoryStrip",
+  "serviceStrip",
+  "industrySwitchboard",
   "demoPage",
   "demoForm",
   "privacy",
@@ -170,6 +312,20 @@ for (const fileName of ["landing", "pricing", "shell"]) {
 
 if (!files.landing.includes('type="application/ld+json"')) {
   failures.push("landing is missing structured product data");
+}
+
+if (files.landing.includes("The decision has the evidence behind it.")) {
+  failures.push("landing still repeats the old evidence headline");
+}
+
+if (files.landing.includes("const useCases")) {
+  failures.push("landing still contains the old flat industry list");
+}
+
+const productNavIndex = files.shell.indexOf('["Product", "/#product"]');
+const howNavIndex = files.shell.indexOf('["How it works", "/#how-it-works"]');
+if (productNavIndex < 0 || howNavIndex < 0 || productNavIndex > howNavIndex) {
+  failures.push("shell navigation does not lead with Product before How it works");
 }
 
 if (!files.proxy.includes("NextResponse.redirect")) {

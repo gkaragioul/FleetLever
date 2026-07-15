@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  min-height: 148svh;
+  min-height: 160svh;
   border-block: 1px solid #d3deda;
   background: #edf2ee;
   color: #13211f;
@@ -292,7 +292,7 @@
 
 @media (max-width: 900px) {
   .section {
-    min-height: 145svh;
+    min-height: 150svh;
   }
 
   .stickyFrame {
@@ -340,7 +340,7 @@
 
 @media (max-width: 560px) {
   .section {
-    min-height: 150svh;
+    min-height: 148svh;
   }
 
   .stickyFrame {

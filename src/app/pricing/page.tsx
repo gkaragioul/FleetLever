@@ -4,10 +4,13 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  CircleHelp,
+  ChevronDown,
   FileCheck2,
   Gauge,
   Layers3,
+  Network,
+  UsersRound,
+  Wrench,
 } from "lucide-react";
 import {
   CommercialSiteFooter,
@@ -24,46 +27,138 @@ export const metadata: Metadata = {
 };
 
 const pilotIncludes = [
-  "One real readiness workflow",
+  "One live release workflow",
   "Up to 30 critical assets",
-  "Guided setup and a basic data import",
-  "Weekly review and a measured final decision",
+  "Guided setup and basic import",
+  "Weekly reviews and a final evidence report",
 ] as const;
 
 const plans = [
   {
+    slug: "single_team",
     name: "Single Team",
-    price: "EUR 6,000 / year",
-    monthly: "EUR 500 billed monthly on a 12-month agreement",
-    audience: "One fleet team, workshop or project with a clear release workflow.",
-    scope: "Up to 30 active assets and one operating unit.",
-    features: ["Upcoming-work readiness", "Action ownership", "Asset passports", "Decision history", "Standard support"],
+    descriptor: "For one operating unit",
+    amount: "EUR 6,000",
+    cadence: "/ year",
+    monthly: "EUR 500 / month equivalent",
+    audience: "One fleet team, workshop or project running a clear release workflow.",
+    assetValue: "30",
+    assetLabel: "active assets",
+    unitValue: "1",
+    unitLabel: "operating unit",
+    scope: "Up to 30 active assets",
+    features: [
+      "Standard onboarding",
+      "One release workflow",
+      "Standard support",
+      "Core exports",
+    ],
     featured: false,
   },
   {
+    slug: "operations",
     name: "Operations",
-    price: "EUR 12,000 / year",
-    monthly: "EUR 1,000 billed monthly on a 12-month agreement",
+    descriptor: "For coordinated fleet operations",
+    amount: "EUR 12,000",
+    cadence: "/ year",
+    monthly: "EUR 1,000 / month equivalent",
     audience: "Multiple teams coordinating fleet, workshop and compliance decisions.",
-    scope: "Up to 100 active assets and three operating units.",
-    features: ["Everything in Single Team", "Cross-team workflows", "Role-based access", "Priority support", "Operational reviews"],
+    assetValue: "100",
+    assetLabel: "active assets",
+    unitValue: "3",
+    unitLabel: "operating units",
+    scope: "Up to 100 active assets",
+    features: [
+      "Cross-team workflows",
+      "Role-based access",
+      "Priority support",
+      "Quarterly operational reviews",
+    ],
     featured: true,
   },
   {
+    slug: "enterprise",
     name: "Enterprise",
-    price: "From EUR 24,000 / year",
-    monthly: "Annual scope agreed around operating complexity",
-    audience: "Large or distributed fleets with governance, integration or SLA requirements.",
-    scope: "More than 100 assets, multiple business units or custom controls.",
-    features: ["Everything in Operations", "Custom governance", "Integration scope", "Service-level agreement", "Dedicated review cadence"],
+    descriptor: "For complex or distributed fleets",
+    amount: "From EUR 24,000",
+    cadence: "/ year",
+    monthly: "Annual scope agreed with your team",
+    audience: "Large fleets with governance, integration, security or SLA requirements.",
+    assetValue: "100+",
+    assetLabel: "active assets",
+    unitValue: "Multi",
+    unitLabel: "operating units",
+    scope: "More than 100 assets",
+    features: [
+      "Custom governance",
+      "Integration scope",
+      "SLA and security review",
+      "Dedicated review cadence",
+    ],
     featured: false,
   },
 ] as const;
 
+const sharedCapabilities = [
+  "Upcoming-work readiness",
+  "Blocker owners and deadlines",
+  "Asset passports and evidence",
+  "Decision history and exports",
+] as const;
+
+const priceDrivers = [
+  {
+    title: "Launch",
+    subtitle: "One-time implementation",
+    icon: Wrench,
+    description: "Configuration, initial import and launch support.",
+    entries: [
+      ["Single Team setup", "EUR 1,500"],
+      ["Operations setup", "EUR 3,000"],
+    ],
+  },
+  {
+    title: "Expand",
+    subtitle: "Annual operating scope",
+    icon: Layers3,
+    description: "Add capacity when the real operation grows.",
+    entries: [
+      ["Additional operating unit", "From EUR 3,000 / year"],
+      ["Additional block of 25 assets", "EUR 1,500-2,000 / year"],
+    ],
+  },
+  {
+    title: "Integrate",
+    subtitle: "Defined custom work",
+    icon: Network,
+    description: "Price only the interfaces and controls you actually need.",
+    entries: [
+      ["ERP, CMMS or API work", "Quoted separately"],
+      ["Custom workflow or migration", "Quoted separately"],
+    ],
+  },
+] as const;
+
+const commercialTerms = [
+  ["Term", "12 months after the pilot"],
+  ["Billing", "Monthly, quarterly or annual"],
+  ["VAT", "Listed prices exclude VAT"],
+  ["Discounts", "Linked to term, scope or prepayment"],
+] as const;
+
 const faqs = [
-  ["Is the pilot free?", "No. It is a fixed-scope operational test using your real workflow and data. The fee is credited against the first annual agreement when conversion happens within 15 days of the final review."],
-  ["Do you charge per user?", "Not aggressively. Plans are based on operating scope, assets and organisational complexity so contributors can upload evidence without becoming a licensing problem."],
-  ["Can we cancel monthly?", "Monthly billing is available, but the commercial term is 12 months. The pilot is the shorter decision point before that commitment."],
+  [
+    "Is the pilot free?",
+    "No. It is a fixed-scope operational test using your real workflow and data. The fee is credited against the first annual agreement when you continue within 15 days of the final review.",
+  ],
+  [
+    "Do you charge per user?",
+    "Plans follow operating scope, active assets and organisational complexity. Contributors can submit evidence without turning every field action into a licensing decision.",
+  ],
+  [
+    "Can we cancel monthly?",
+    "Monthly billing is available, but the commercial term is 12 months. The 30-day pilot is the shorter decision point before that commitment.",
+  ],
 ] as const;
 
 export default function PricingPage() {
@@ -71,214 +166,385 @@ export default function PricingPage() {
     <main id="main-content" className="min-h-screen bg-[#f3f6f2] text-[#13211f]">
       <CommercialSiteHeader />
 
-      <section className="border-b border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-24">
-        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
-          <div>
-            <p className="text-sm font-bold uppercase text-[#006c74]">Pricing built around proof</p>
-            <h1 className="mt-3 max-w-2xl text-5xl font-semibold leading-[1.03] text-balance sm:text-6xl">
-              Start with 30 days, not an annual leap of faith.
+      <section className="border-b border-[#d7dfdb] bg-white px-5 py-14 sm:px-7 lg:px-10 lg:py-20">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
+          <div className="max-w-xl">
+            <p className="text-sm font-bold uppercase text-[#006c74]">
+              Pricing built around proof
+            </p>
+            <h1 className="mt-3 text-5xl font-semibold leading-[1.02] text-balance sm:text-6xl">
+              Start with proof. Scale with the operation.
             </h1>
-            <p className="mt-6 max-w-xl text-lg font-medium leading-8 text-[#53635f]">
-              Prove FleetLever on one real fleet workflow. Continue only when the final review shows a measurable operational case.
+            <p className="mt-6 max-w-[34rem] text-lg font-medium leading-8 text-[#53635f]">
+              Run FleetLever on one live readiness workflow for 30 days. Choose
+              an annual scope only when the evidence supports it.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href={demoHref}
                 data-analytics="pricing_hero_demo"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] px-5 text-sm font-bold text-white transition hover:bg-[#006c74]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] px-5 text-sm font-bold text-white transition duration-200 hover:bg-[#006c74] active:translate-y-px"
               >
                 Request a demo
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <a href="#plans" className="inline-flex min-h-12 items-center justify-center px-4 text-sm font-bold text-[#334641] hover:text-[#006c74]">
+              <a
+                href="#plans"
+                className="inline-flex min-h-12 items-center justify-center px-4 text-sm font-bold text-[#334641] transition hover:text-[#006c74]"
+              >
                 Compare annual plans
               </a>
             </div>
           </div>
-          <div className="relative overflow-hidden border border-[#c7d3ce] bg-[#e7eeea] shadow-[0_24px_70px_rgba(16,61,55,0.12)]">
-            <Image
-              src="/fleetlever/site/tomorrow-readiness-dashboard.png"
-              alt="FleetLever tomorrow readiness dashboard"
-              width={1920}
-              height={1200}
-              priority
-              sizes="(min-width: 1024px) 56vw, 100vw"
-              className="h-auto w-full"
-            />
-            <div className="absolute inset-x-3 bottom-3 grid grid-cols-3 border border-white/80 bg-white/96 shadow-lg sm:inset-x-6 sm:bottom-6">
-              {[["30 days", "pilot"], ["1 flow", "measured"], ["0", "hidden fees"]].map(([value, label]) => (
-                <div key={label} className="border-r border-[#d7dfdb] px-3 py-3 last:border-r-0 sm:px-5 sm:py-4">
-                  <p className="font-mono text-lg font-semibold text-[#103d37] sm:text-2xl">{value}</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase text-[#52655f] sm:text-xs">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="bg-[#103d37] px-5 py-16 text-white sm:px-7 lg:px-10 lg:py-20">
-        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[0.62fr_1.38fr]">
-          <div>
-            <p className="text-sm font-bold uppercase text-[#9af6f7]">Founding pilot</p>
-            <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">Thirty days with your actual fleet.</h2>
-            <p className="mt-6 font-mono text-5xl font-semibold">EUR 1,000</p>
-            <p className="mt-2 text-sm font-medium text-[#c7d7d2]">one-off fee · excluding VAT</p>
-            <p className="mt-6 max-w-md border-l-2 border-[#73dce3] pl-4 text-sm font-semibold leading-6 text-[#eef6f3]">
-              Fully credited against the first annual agreement when you continue within 15 days of the final review.
-            </p>
-          </div>
-          <div className="border-t border-white/25">
-            <div className="grid gap-6 border-b border-white/25 py-7 sm:grid-cols-2">
-              {pilotIncludes.map((item) => (
-                <p key={item} className="flex gap-3 text-sm font-semibold leading-6 text-[#eef6f3]">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#9af6f7]" aria-hidden="true" />
-                  {item}
-                </p>
-              ))}
-            </div>
-            <div className="grid gap-5 py-7 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div>
-                <p className="text-lg font-semibold">Define success before the first asset enters the flow.</p>
-                <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#c7d7d2]">
-                  The final review covers early detection, time to ownership, evidence coverage and risk carried into the next shift.
-                </p>
+          <article className="overflow-hidden rounded-lg border border-[#b9c9c3] bg-[#eff4f1] shadow-[0_24px_70px_rgba(16,61,55,0.12)]">
+            <div className="grid bg-[#103d37] text-white sm:grid-cols-[0.72fr_1.28fr]">
+              <div className="flex min-h-52 flex-col justify-between p-6 sm:p-7">
+                <div>
+                  <p className="text-xs font-bold uppercase text-[#9af6f7]">
+                    Founding pilot
+                  </p>
+                  <h2 className="mt-3 text-3xl font-semibold leading-tight">
+                    30 days on your actual fleet
+                  </h2>
+                </div>
+                <div className="mt-7">
+                  <p className="font-mono text-4xl font-semibold">EUR 1,000</p>
+                  <p className="mt-1 text-sm font-medium text-[#c7d7d2]">
+                    one-time, excluding VAT
+                  </p>
+                </div>
               </div>
-              <Link href={demoHref} data-analytics="pricing_pilot_demo" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] hover:bg-white">
-                Scope the pilot
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              <div className="relative min-h-56 overflow-hidden border-t border-white/20 sm:min-h-0 sm:border-l sm:border-t-0">
+                <Image
+                  src="/fleetlever/site/tomorrow-readiness-dashboard.png"
+                  alt="FleetLever readiness board used during the 30-day pilot"
+                  fill
+                  preload
+                  sizes="(min-width: 1024px) 38vw, (min-width: 640px) 55vw, 100vw"
+                  className="object-cover object-left"
+                />
+                <div className="absolute bottom-4 left-4 bg-white px-3 py-2 text-[11px] font-bold uppercase text-[#103d37] shadow-md">
+                  One live workflow
+                </div>
+              </div>
             </div>
-          </div>
+
+            <div className="p-6 sm:p-7">
+              <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                {pilotIncludes.map((item) => (
+                  <p
+                    key={item}
+                    className="flex gap-3 text-sm font-semibold leading-6 text-[#334641]"
+                  >
+                    <Check
+                      className="mt-1 h-4 w-4 shrink-0 text-[#16834b]"
+                      aria-hidden="true"
+                    />
+                    {item}
+                  </p>
+                ))}
+              </div>
+              <div className="mt-6 grid gap-5 border-t border-[#c7d3ce] pt-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                <p className="max-w-xl text-sm font-semibold leading-6 text-[#334641]">
+                  The fee is fully credited against the first annual agreement
+                  when you continue within 15 days of the final review.
+                </p>
+                <Link
+                  href={demoHref}
+                  data-analytics="pricing_pilot_demo"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#0a777e] px-4 text-sm font-bold text-[#006c74] transition duration-200 hover:bg-[#006c74] hover:text-white active:translate-y-px"
+                >
+                  Scope the pilot
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section className="bg-[#f3f6f2] px-5 py-16 sm:px-7 lg:px-10 lg:py-24" id="plans">
+      <section
+        className="bg-[#e8efeb] px-5 py-16 sm:px-7 lg:px-10 lg:py-24"
+        id="plans"
+      >
         <div className="mx-auto w-full max-w-[86rem]">
-          <div className="grid gap-6 border-b border-[#bdcbc5] pb-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase text-[#006c74]">After the pilot</p>
-              <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">Choose operating scope, not a pile of licences.</h2>
-            </div>
-            <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
-              Plans grow with active assets, operating units and governance. They do not punish a technician for uploading one piece of evidence.
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase text-[#006c74]">
+              Annual operating scopes
+            </p>
+            <h2 className="mt-3 text-4xl font-semibold leading-tight text-balance sm:text-5xl">
+              Choose the footprint you operate today.
+            </h2>
+            <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-[#53635f]">
+              The platform stays consistent. Price changes with active assets,
+              operating units and governance.
             </p>
           </div>
 
-          <div className="border-b border-[#bdcbc5]">
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
             {plans.map((plan) => (
-              <article key={plan.name} className={`grid gap-7 border-t border-[#bdcbc5] py-8 lg:grid-cols-[0.72fr_0.95fr_1.18fr] lg:gap-10 lg:px-6 lg:py-10 ${plan.featured ? "bg-[#e7f2ee] lg:-mx-6 lg:px-12" : ""}`}>
-                <div>
-                  {plan.featured && <p className="mb-3 inline-flex bg-[#006c74] px-2 py-1 text-[11px] font-bold uppercase text-white">Most common starting scope</p>}
-                  <h3 className="text-2xl font-semibold">{plan.name}</h3>
-                  <p className="mt-4 font-mono text-3xl font-semibold text-[#103d37]">{plan.price}</p>
-                  <p className="mt-2 text-sm font-medium leading-6 text-[#5c6f68]">{plan.monthly}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase text-[#006c74]">Best fit</p>
-                  <p className="mt-3 text-base font-semibold leading-7">{plan.audience}</p>
-                  <p className="mt-5 border-l-2 border-[#00aebe] pl-4 text-sm font-bold leading-6 text-[#334641]">{plan.scope}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase text-[#006c74]">Includes</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {plan.features.map((feature) => (
-                      <p key={feature} className="flex gap-2.5 text-sm font-semibold leading-6 text-[#334641]">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#16834b]" aria-hidden="true" />
-                        {feature}
+              <article
+                key={plan.name}
+                className={
+                  "relative flex min-h-full flex-col overflow-hidden rounded-lg border bg-white p-6 transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(16,61,55,0.10)] sm:p-7 " +
+                  (plan.featured
+                    ? "border-[#0a777e] shadow-[0_14px_36px_rgba(16,61,55,0.10)]"
+                    : "border-[#c4d0cb]")
+                }
+              >
+                <div
+                  className={
+                    "absolute inset-x-0 top-0 h-1 " +
+                    (plan.featured ? "bg-[#00aebe]" : "bg-[#d5dfda]")
+                  }
+                  aria-hidden="true"
+                />
+                <div className="min-h-28">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase text-[#006c74]">
+                        {plan.descriptor}
                       </p>
-                    ))}
+                      <h3 className="mt-2 text-2xl font-semibold">{plan.name}</h3>
+                    </div>
+                    {plan.featured && (
+                      <span className="shrink-0 bg-[#103d37] px-2 py-1 text-[10px] font-bold uppercase text-white">
+                        Recommended
+                      </span>
+                    )}
                   </div>
-                  <Link href={demoHref} data-analytics={`pricing_${plan.name.toLowerCase().replaceAll(" ", "_")}`} className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#006c74] hover:text-[#103d37]">
-                    Discuss this scope
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
+                  <p className="mt-3 text-sm font-medium leading-6 text-[#5c6f68]">
+                    {plan.audience}
+                  </p>
                 </div>
+
+                <div className="mt-5 min-h-28 border-t border-[#d7dfdb] pt-5">
+                  <div className="flex flex-wrap items-end gap-x-2">
+                    <p className="font-mono text-3xl font-semibold text-[#103d37]">
+                      {plan.amount}
+                    </p>
+                    <p className="pb-1 text-sm font-bold text-[#53635f]">
+                      {plan.cadence}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-[#5c6f68]">
+                    {plan.monthly}
+                  </p>
+                </div>
+
+                <div className="mt-2 grid grid-cols-2 divide-x divide-[#d7dfdb] border-y border-[#d7dfdb]">
+                  <div className="py-4 pr-4">
+                    <p className="font-mono text-2xl font-semibold text-[#103d37]">
+                      {plan.assetValue}
+                    </p>
+                    <p className="mt-1 text-xs font-bold uppercase text-[#60716b]">
+                      {plan.assetLabel}
+                    </p>
+                  </div>
+                  <div className="py-4 pl-4">
+                    <p className="font-mono text-2xl font-semibold text-[#103d37]">
+                      {plan.unitValue}
+                    </p>
+                    <p className="mt-1 text-xs font-bold uppercase text-[#60716b]">
+                      {plan.unitLabel}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-5 text-sm font-bold text-[#006c74]">
+                  {plan.scope}
+                </p>
+                <ul className="mt-5 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex gap-2.5 text-sm font-semibold leading-6 text-[#334641]"
+                    >
+                      <Check
+                        className="mt-1 h-4 w-4 shrink-0 text-[#16834b]"
+                        aria-hidden="true"
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={demoHref}
+                  data-analytics={"pricing_" + plan.slug}
+                  className={
+                    "mt-7 inline-flex min-h-11 items-center justify-between gap-2 rounded-md px-4 text-sm font-bold transition duration-200 active:translate-y-px " +
+                    (plan.featured
+                      ? "bg-[#103d37] text-white hover:bg-[#006c74]"
+                      : "border border-[#afc2ba] text-[#103d37] hover:border-[#006c74] hover:text-[#006c74]")
+                  }
+                >
+                  Discuss this scope
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
               </article>
             ))}
+          </div>
+
+          <div className="mt-5 rounded-lg border border-[#c4d0cb] bg-white p-6 sm:p-7">
+            <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
+              <div>
+                <p className="text-sm font-bold uppercase text-[#006c74]">
+                  Included in every annual plan
+                </p>
+                <p className="mt-2 text-sm font-medium leading-6 text-[#53635f]">
+                  The core release-control loop is not split into add-ons.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {sharedCapabilities.map((capability) => (
+                  <p
+                    key={capability}
+                    className="flex gap-2.5 text-sm font-semibold text-[#334641]"
+                  >
+                    <Check
+                      className="h-4 w-4 shrink-0 text-[#16834b]"
+                      aria-hidden="true"
+                    />
+                    {capability}
+                  </p>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="border-y border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-20">
-        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[0.68fr_1.32fr]">
-          <div>
-            <Layers3 className="h-7 w-7 text-[#006c74]" aria-hidden="true" />
-            <p className="mt-6 text-sm font-bold uppercase text-[#006c74]">Implementation and expansion</p>
-            <h2 className="mt-3 text-4xl font-semibold leading-tight">The price changes only when the operation changes.</h2>
-            <p className="mt-5 max-w-md text-base font-medium leading-7 text-[#53635f]">
-              Setup is quoted once. Expansion follows assets, operating units or genuinely custom integration work.
+        <div className="mx-auto w-full max-w-[86rem]">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase text-[#006c74]">
+              What changes the price
+            </p>
+            <h2 className="mt-3 text-4xl font-semibold leading-tight text-balance sm:text-5xl">
+              Launch once. Expand when the operation does.
+            </h2>
+            <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-[#53635f]">
+              No marketplace of small add-ons. Only implementation, added
+              operating scope and clearly defined custom work.
             </p>
           </div>
-          <div className="border-t border-[#bdcbc5]">
-            {[
-              ["Single Team setup", "EUR 1,500", "Configuration, basic import and launch support."],
-              ["Operations setup", "EUR 3,000", "Multi-team configuration, roles and launch reviews."],
-              ["Additional operating unit", "From EUR 3,000 / year", "A separate team, depot, project or legal operating scope."],
-              ["Additional block of 25 assets", "EUR 1,500-2,000 / year", "Extend an existing operating unit without forcing an early plan change."],
-              ["Custom integrations", "Quoted separately", "Only after the interface, ownership and support boundary are defined."],
-            ].map(([title, price, body]) => (
-              <article key={title} className="grid gap-2 border-b border-[#bdcbc5] py-5 sm:grid-cols-[0.9fr_0.65fr_1.25fr] sm:gap-6">
-                <h3 className="text-base font-semibold">{title}</h3>
-                <p className="font-mono text-base font-semibold text-[#103d37]">{price}</p>
-                <p className="text-sm font-medium leading-6 text-[#53635f]">{body}</p>
-              </article>
-            ))}
+
+          <div className="mt-10 overflow-hidden rounded-lg border border-[#c4d0cb] md:grid md:grid-cols-3 md:divide-x md:divide-[#c4d0cb]">
+            {priceDrivers.map((driver) => {
+              const Icon = driver.icon;
+              return (
+                <article
+                  key={driver.title}
+                  className="border-b border-[#c4d0cb] bg-[#f6f8f6] p-6 last:border-b-0 md:border-b-0 sm:p-7"
+                >
+                  <Icon
+                    className="h-6 w-6 text-[#006c74]"
+                    aria-hidden="true"
+                  />
+                  <p className="mt-6 text-xs font-bold uppercase text-[#006c74]">
+                    {driver.subtitle}
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold">{driver.title}</h3>
+                  <p className="mt-3 min-h-12 text-sm font-medium leading-6 text-[#53635f]">
+                    {driver.description}
+                  </p>
+                  <dl className="mt-6 border-t border-[#c4d0cb]">
+                    {driver.entries.map(([label, value]) => (
+                      <div
+                        key={label}
+                        className="border-b border-[#d7dfdb] py-4 last:border-b-0"
+                      >
+                        <dt className="text-sm font-semibold">{label}</dt>
+                        <dd className="mt-1 font-mono text-sm font-semibold text-[#103d37]">
+                          {value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
 
       <section className="bg-[#edf2ee] px-5 py-16 sm:px-7 lg:px-10 lg:py-20">
-        <div className="mx-auto grid w-full max-w-[86rem] gap-12 lg:grid-cols-2">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-12 lg:grid-cols-[0.82fr_1.18fr]">
           <div>
-            <FileCheck2 className="h-7 w-7 text-[#006c74]" aria-hidden="true" />
-            <p className="mt-6 text-sm font-bold uppercase text-[#006c74]">Commercial terms</p>
-            <h2 className="mt-3 text-4xl font-semibold leading-tight">Clear before signature.</h2>
-            <div className="mt-7 border-t border-[#bdcbc5]">
-              {[
-                ["Term", "12-month agreement after the pilot."],
-                ["Billing", "Monthly, quarterly or annual."],
-                ["VAT", "All listed prices exclude VAT."],
-                ["Discounts", "Only in exchange for scope, term, prepayment or reference rights."],
-              ].map(([title, body]) => (
-                <div key={title} className="grid grid-cols-[0.35fr_0.65fr] gap-5 border-b border-[#bdcbc5] py-4 text-sm">
-                  <p className="font-bold">{title}</p>
-                  <p className="font-medium leading-6 text-[#53635f]">{body}</p>
+            <FileCheck2
+              className="h-7 w-7 text-[#006c74]"
+              aria-hidden="true"
+            />
+            <h2 className="mt-5 text-3xl font-semibold leading-tight">
+              Commercial terms
+            </h2>
+            <div className="mt-6 grid border-l border-t border-[#bdcbc5] sm:grid-cols-2">
+              {commercialTerms.map(([title, body]) => (
+                <div
+                  key={title}
+                  className="min-h-28 border-b border-r border-[#bdcbc5] bg-white p-4"
+                >
+                  <p className="text-xs font-bold uppercase text-[#006c74]">
+                    {title}
+                  </p>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-[#334641]">
+                    {body}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
+
           <div>
-            <CircleHelp className="h-7 w-7 text-[#006c74]" aria-hidden="true" />
-            <p className="mt-6 text-sm font-bold uppercase text-[#006c74]">Questions before you decide</p>
-            <div className="mt-4 border-t border-[#bdcbc5]">
+            <UsersRound
+              className="h-7 w-7 text-[#006c74]"
+              aria-hidden="true"
+            />
+            <h2 className="mt-5 text-3xl font-semibold leading-tight">
+              Common questions
+            </h2>
+            <div className="mt-6 border-t border-[#bdcbc5]">
               {faqs.map(([question, answer]) => (
-                <article key={question} className="border-b border-[#bdcbc5] py-5">
-                  <h3 className="text-base font-semibold">{question}</h3>
-                  <p className="mt-2 text-sm font-medium leading-6 text-[#53635f]">{answer}</p>
-                </article>
+                <details
+                  key={question}
+                  className="group border-b border-[#bdcbc5]"
+                >
+                  <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-5 py-4 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#006c74] [&::-webkit-details-marker]:hidden">
+                    {question}
+                    <ChevronDown
+                      className="h-5 w-5 shrink-0 text-[#006c74] transition-transform duration-200 group-open:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </summary>
+                  <p className="max-w-2xl pb-5 pr-10 text-sm font-medium leading-6 text-[#53635f]">
+                    {answer}
+                  </p>
+                </details>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative isolate overflow-hidden bg-[#071b18] px-5 py-20 text-white sm:px-7 lg:px-10 lg:py-24">
-        <Image
-          src="/fleetlever/site/hero-photos/crane-workers.jpg"
-          alt="Technical crew beside heavy lifting equipment"
-          fill
-          priority
-          sizes="100vw"
-          className="-z-20 object-cover object-center"
-        />
-        <div className="absolute inset-0 -z-10 bg-[#071b18]/85" aria-hidden="true" />
-        <div className="mx-auto flex w-full max-w-[86rem] flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+      <section className="bg-[#071b18] px-5 py-16 text-white sm:px-7 lg:px-10 lg:py-20">
+        <div className="mx-auto grid w-full max-w-[86rem] gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <Gauge className="h-7 w-7 text-[#9af6f7]" aria-hidden="true" />
-            <h2 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">Pick one critical flow. Measure what changes in 30 days.</h2>
+            <h2 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight text-balance sm:text-5xl">
+              Put one live release flow through the pilot.
+            </h2>
+            <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-[#c7d7d2]">
+              Define the workflow, measure the result, then decide whether an
+              annual deployment earns its place.
+            </p>
           </div>
-          <Link href={demoHref} data-analytics="pricing_final_demo" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] hover:bg-white">
+          <Link
+            href={demoHref}
+            data-analytics="pricing_final_demo"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px"
+          >
             Request a demo
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>

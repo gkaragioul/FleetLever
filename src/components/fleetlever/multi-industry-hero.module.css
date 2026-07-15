@@ -1,0 +1,185 @@
+.backdrop {
+  position: absolute;
+  z-index: -20;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #071b18;
+}
+
+.scenes {
+  position: absolute;
+  inset: -2.5%;
+}
+
+.scene {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.scene[data-scene="construction"] {
+  z-index: 1;
+  left: 0;
+  width: 34%;
+}
+
+.scene[data-scene="rental"] {
+  z-index: 2;
+  left: 23%;
+  width: 34%;
+}
+
+.scene[data-scene="municipal"] {
+  z-index: 3;
+  left: 47%;
+  width: 34%;
+}
+
+.scene[data-scene="service"] {
+  z-index: 4;
+  left: 71%;
+  width: 31%;
+}
+
+.scene:not(:first-child) {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 100%);
+}
+
+.image {
+  z-index: -2;
+  object-fit: cover;
+  opacity: 0.92;
+  filter: saturate(0.7) contrast(1.08);
+  transform: scale(1.08) translate3d(-0.8%, 0, 0);
+  animation: heroPanelDrift 32s cubic-bezier(0.36, 0, 0.24, 1) infinite alternate;
+  will-change: transform, opacity;
+}
+
+.scene[data-scene="construction"] .image {
+  object-position: 62% 58%;
+}
+
+.scene[data-scene="rental"] .image {
+  object-position: 52% center;
+  animation-delay: -9s;
+  animation-duration: 38s;
+}
+
+.scene[data-scene="municipal"] .image {
+  object-position: 50% center;
+  animation-delay: -17s;
+  animation-duration: 35s;
+}
+
+.scene[data-scene="service"] .image {
+  object-position: 54% center;
+  animation-delay: -24s;
+  animation-duration: 40s;
+}
+
+.sceneTone {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(6 35 31 / 14%), rgb(5 25 22 / 36%)),
+    linear-gradient(90deg, rgb(7 32 28 / 10%), rgb(7 32 28 / 28%));
+  mix-blend-mode: multiply;
+}
+
+.colorGrade,
+.readabilityVeil,
+.edgeVeil {
+  position: absolute;
+  inset: 0;
+}
+
+.colorGrade {
+  z-index: 5;
+  background: #0d4740;
+  opacity: 0.15;
+  mix-blend-mode: color;
+}
+
+.readabilityVeil {
+  z-index: 6;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(4 25 22 / 88%) 0%,
+      rgb(4 25 22 / 78%) 25%,
+      rgb(4 25 22 / 52%) 56%,
+      rgb(4 25 22 / 58%) 100%
+    ),
+    linear-gradient(180deg, rgb(4 21 19 / 24%) 0%, rgb(4 21 19 / 18%) 43%, rgb(4 21 19 / 66%) 100%);
+}
+
+.edgeVeil {
+  z-index: 7;
+  box-shadow:
+    inset 0 7rem 8rem rgb(3 18 16 / 18%),
+    inset 0 -8rem 9rem rgb(3 18 16 / 38%);
+}
+
+@keyframes heroPanelDrift {
+  0% {
+    opacity: 0.88;
+    transform: scale(1.08) translate3d(-0.9%, 0.25%, 0);
+  }
+
+  52% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.93;
+    transform: scale(1.12) translate3d(1.1%, -0.35%, 0);
+  }
+}
+
+@media (max-width: 760px) {
+  .scenes {
+    inset: -1.5%;
+  }
+
+  .scene[data-scene="construction"] {
+    width: 39%;
+  }
+
+  .scene[data-scene="rental"] {
+    left: 24%;
+    width: 39%;
+  }
+
+  .scene[data-scene="municipal"] {
+    left: 49%;
+    width: 38%;
+  }
+
+  .scene[data-scene="service"] {
+    left: 74%;
+    width: 28%;
+  }
+
+  .scene:not(:first-child) {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 31%, #000 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 31%, #000 100%);
+  }
+
+  .readabilityVeil {
+    background:
+      linear-gradient(90deg, rgb(4 25 22 / 84%) 0%, rgb(4 25 22 / 63%) 100%),
+      linear-gradient(180deg, rgb(4 21 19 / 24%) 0%, rgb(4 21 19 / 46%) 48%, rgb(4 21 19 / 82%) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image {
+    animation: none;
+    transform: scale(1.08);
+  }
+}

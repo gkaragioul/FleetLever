@@ -15,18 +15,18 @@ import styles from "./readiness-lanes.module.css";
 const stages = [
   {
     signal: "3 assets scheduled",
-    title: "The next assignments enter one release flow.",
-    body: "Each asset is linked to the job, rental or assignment and everything it needs before it can leave.",
+    title: "Tomorrow's work is declared.",
+    body: "Each job, rental or shift is linked to the assets, people and evidence it requires.",
   },
   {
-    signal: "1 release blocker found",
-    title: "CR-04 stops here, not on site.",
-    body: "Its lifting certificate is missing. Alex owns the action, due today at 17:00.",
+    signal: "1 blocker before cutoff",
+    title: "FleetLever stops CR-04 before the site.",
+    body: "Its lifting certificate is expired. Maria owns the action, due today at 17:00.",
   },
   {
-    signal: "3 ready to go",
-    title: "Only ready assets move forward.",
-    body: "The shift closes knowing what leaves, what stays back and who owns every open action.",
+    signal: "3 clear release decisions",
+    title: "Every asset leaves, waits or gets replaced.",
+    body: "The shift closes with a recorded outcome for every asset and an owner for anything still open.",
   },
 ] as const;
 
@@ -149,12 +149,13 @@ export function ReadinessLanes() {
       <div className={styles.stickyFrame}>
         <div className={styles.layout}>
           <div className={styles.copyColumn}>
-            <p className={styles.eyebrow}>One route to the next assignment</p>
+            <p className={styles.eyebrow}>Set the plan</p>
             <h2 className={styles.heading} id="readiness-lanes-title">
-              Every asset passes the same release check before it leaves.
+              Every next assignment enters one release flow.
             </h2>
             <p className={styles.intro}>
-              Documents, maintenance, operator and evidence. If something is missing, it stops early and gets an owner.
+              Jobs, rentals and shifts arrive with the assets, people and proof they require before anything is
+              released.
             </p>
 
             <div className={styles.stageCopy} data-stage={stage}>
@@ -203,9 +204,9 @@ export function ReadinessLanes() {
               </g>
 
               <g className={styles.laneLabels} aria-hidden="true">
-                <text x="48" y="112">CR-04 · CRANE</text>
-                <text x="48" y="287">EX-12 · EXCAVATOR</text>
-                <text x="48" y="462">TR-08 · TRUCK</text>
+                <text x="48" y="112">CR-04 / CRANE</text>
+                <text x="48" y="287">EX-12 / EXCAVATOR</text>
+                <text x="48" y="462">TR-08 / TRUCK</text>
               </g>
 
               <path
@@ -243,7 +244,7 @@ export function ReadinessLanes() {
               <g className={styles.blockerGate} aria-hidden="true">
                 <line x1="390" y1="201" x2="390" y2="256" />
                 <text x="405" y="195">CERTIFICATE MISSING</text>
-                <text x="405" y="214">Assigned to Alex · 17:00</text>
+                <text x="405" y="214">Assigned to Maria · 17:00</text>
               </g>
 
               <g className={styles.readyGate} aria-hidden="true">
