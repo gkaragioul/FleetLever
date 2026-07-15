@@ -119,60 +119,80 @@ async function verifyHomepageStory(page, name) {
 }
 
 async function verifyServiceKanbanMotion(page, name) {
-  const board = page.locator('[data-animation="service-kanban"]');
-  await board.scrollIntoViewIfNeeded();
-  await board.waitFor({ state: "visible", timeout: 5_000 });
+  const motionPage = await page.context().newPage();
+  try {
+    await motionPage.goto(`${origin}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    const board = motionPage.locator('[data-animation="service-kanban"]');
+    await board.scrollIntoViewIfNeeded();
+    await board.waitFor({ state: "visible", timeout: 5_000 });
 
-  await board.hover();
-  const pausedStage = await board.getAttribute("data-service-stage");
-  await page.waitForTimeout(3_600);
-  const stageAfterPause = await board.getAttribute("data-service-stage");
-  if (pausedStage !== stageAfterPause) failures.push(`${name}: service Kanban did not pause on hover`);
+    await motionPage.mouse.move(4, 4);
+    const initialStage = await board.getAttribute("data-service-stage");
+    await motionPage.waitForFunction(
+      ({ selector, stage }) => document.querySelector(selector)?.getAttribute("data-service-stage") !== stage,
+      { selector: '[data-animation="service-kanban"]', stage: initialStage },
+      { timeout: 1_400 },
+    ).catch(() => failures.push(`${name}: service Kanban starts too late after entering the viewport`));
 
-  await page.mouse.move(4, 4);
-  await page.waitForFunction(
-    ({ selector, stage }) => document.querySelector(selector)?.getAttribute("data-service-stage") !== stage,
-    { selector: '[data-animation="service-kanban"]', stage: stageAfterPause },
-    { timeout: 5_000 },
-  ).catch(() => failures.push(`${name}: service Kanban did not advance after interaction ended`));
+    if ((await board.getAttribute("data-service-stage")) === initialStage) {
+      await motionPage.waitForFunction(
+        ({ selector, stage }) => document.querySelector(selector)?.getAttribute("data-service-stage") !== stage,
+        { selector: '[data-animation="service-kanban"]', stage: initialStage },
+        { timeout: 2_000 },
+      );
+    }
 
-  if ((await board.getAttribute("data-service-stage")) === "queued") {
-    await page.waitForFunction(
-      () => document.querySelector('[data-animation="service-kanban"]')?.getAttribute("data-service-stage") === "in-service",
-      null,
-      { timeout: 2_500 },
-    );
+    await motionPage.waitForTimeout(300);
+    const movingState = await board.evaluate((section) => {
+      const boardWindow = section.querySelector("[data-stage]");
+      const card = section.querySelector("[data-service-drag-card]");
+      const cursor = section.querySelector("[data-service-cursor]");
+      const lane = section.querySelector("[data-lane]");
+      const boardRect = boardWindow?.getBoundingClientRect();
+      const cardRect = card?.getBoundingClientRect();
+      const laneRect = lane?.getBoundingClientRect();
+      return {
+        cardWidth: cardRect?.width ?? 0,
+        laneWidth: laneRect?.width ?? 0,
+        cursorOpacity: cursor ? Number.parseFloat(getComputedStyle(cursor).opacity) : 0,
+        contained: Boolean(
+          boardRect &&
+            cardRect &&
+            cardRect.left >= boardRect.left - 2 &&
+            cardRect.right <= boardRect.right + 2 &&
+            cardRect.top >= boardRect.top - 2 &&
+            cardRect.bottom <= boardRect.bottom + 2,
+        ),
+      };
+    });
+
+    if (movingState.cardWidth < movingState.laneWidth * 0.75) {
+      failures.push(`${name}: dragged service card collapsed inside its lane`);
+    }
+    if (movingState.cursorOpacity < 0.25) failures.push(`${name}: service drag cursor is not visible`);
+    if (!movingState.contained) failures.push(`${name}: dragged service card escaped the Kanban board`);
+
+    await board.hover();
+    const landingStage = await board.getAttribute("data-service-stage");
+    await motionPage.waitForTimeout(1_900);
+    const landedState = await board.evaluate((section) => {
+      const stage = section.getAttribute("data-service-stage");
+      const card = section.querySelector("[data-service-drag-card]")?.getBoundingClientRect();
+      const lane = stage ? section.querySelector(`[data-lane="${stage}"]`)?.getBoundingClientRect() : undefined;
+      return {
+        stage,
+        centerDelta: card && lane ? Math.abs((card.left + card.right - lane.left - lane.right) / 2) : Infinity,
+        insideTargetLane: Boolean(card && lane && card.left >= lane.left && card.right <= lane.right),
+      };
+    });
+
+    if (landedState.stage !== landingStage) failures.push(`${name}: service Kanban changed stage while paused`);
+    if (landedState.centerDelta > 3 || !landedState.insideTargetLane) {
+      failures.push(`${name}: dragged service card did not land fully inside the ${landingStage} column`);
+    }
+  } finally {
+    await motionPage.close();
   }
-
-  await page.waitForTimeout(560);
-  const dragState = await board.evaluate((section) => {
-    const boardWindow = section.querySelector("[data-stage]");
-    const card = section.querySelector("[data-service-drag-card]");
-    const cursor = section.querySelector("[data-service-cursor]");
-    const lane = section.querySelector("[data-lane]");
-    const boardRect = boardWindow?.getBoundingClientRect();
-    const cardRect = card?.getBoundingClientRect();
-    const laneRect = lane?.getBoundingClientRect();
-    return {
-      cardWidth: cardRect?.width ?? 0,
-      laneWidth: laneRect?.width ?? 0,
-      cursorOpacity: cursor ? Number.parseFloat(getComputedStyle(cursor).opacity) : 0,
-      contained: Boolean(
-        boardRect &&
-          cardRect &&
-          cardRect.left >= boardRect.left - 2 &&
-          cardRect.right <= boardRect.right + 2 &&
-          cardRect.top >= boardRect.top - 2 &&
-          cardRect.bottom <= boardRect.bottom + 2,
-      ),
-    };
-  });
-
-  if (dragState.cardWidth < dragState.laneWidth * 0.75) {
-    failures.push(`${name}: dragged service card collapsed inside its lane`);
-  }
-  if (dragState.cursorOpacity < 0.25) failures.push(`${name}: service drag cursor is not visible`);
-  if (!dragState.contained) failures.push(`${name}: dragged service card escaped the Kanban board`);
 }
 
 async function verifyIndustrySwitchboardMotion(page, name) {

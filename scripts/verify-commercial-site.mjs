@@ -224,13 +224,22 @@ requireTokens("serviceStrip", [
   "In service",
   "Cleared",
   "KANBAN_STAGE_DURATION = 3600",
-  "KANBAN_QUEUE_DURATION = 1800",
+  "KANBAN_QUEUE_DURATION = 900",
   "MousePointer2",
   "data-service-stage",
   "visibilitychange",
   "prefers-reduced-motion: reduce",
 ]);
-requireTokens("serviceStripStyles", ["dragToService", "cardLiftToService", "cursorToService", "data-stage", "prefers-reduced-motion: reduce"]);
+requireTokens("serviceStripStyles", [
+  "--queued-card-left",
+  "--service-card-left",
+  "--cleared-card-left",
+  "dragToService",
+  "cardLiftToService",
+  "cursorToService",
+  "data-stage",
+  "prefers-reduced-motion: reduce",
+]);
 
 requireTokens("industrySwitchboard", [
   'data-animation="industry-switchboard"',

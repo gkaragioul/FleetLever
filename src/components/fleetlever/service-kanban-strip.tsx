@@ -9,7 +9,7 @@ type ServiceStage = "queued" | "in-service" | "cleared";
 
 const stages: ServiceStage[] = ["queued", "in-service", "cleared"];
 const KANBAN_STAGE_DURATION = 3600;
-const KANBAN_QUEUE_DURATION = 1800;
+const KANBAN_QUEUE_DURATION = 900;
 
 const stageMeta: Record<ServiceStage, { label: string; note: string }> = {
   queued: { label: "Queued", note: "Waiting for workshop" },
@@ -67,7 +67,7 @@ export function ServiceKanbanStrip() {
     if (!section) return;
 
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      threshold: 0.25,
+      threshold: 0.12,
     });
     observer.observe(section);
     return () => observer.disconnect();

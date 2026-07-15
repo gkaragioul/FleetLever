@@ -153,9 +153,11 @@
 .kanbanCanvas {
   --canvas-padding: 0.75rem;
   --lane-gap: 0.75rem;
+  --drag-inset: 0.65rem;
   --column-width: calc((100% - 3rem) / 3);
-  --lane-step: calc(var(--column-width) + var(--lane-gap));
-  --lane-step-double: calc(var(--column-width) + var(--column-width) + var(--lane-gap) + var(--lane-gap));
+  --queued-card-left: calc(var(--canvas-padding) + var(--drag-inset));
+  --service-card-left: calc(var(--queued-card-left) + var(--column-width) + var(--lane-gap));
+  --cleared-card-left: calc(var(--service-card-left) + var(--column-width) + var(--lane-gap));
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -330,10 +332,10 @@
   position: absolute;
   z-index: 8;
   top: 6.65rem;
-  left: 1.5rem;
-  width: calc(var(--column-width) - 1.5rem);
+  left: var(--queued-card-left);
+  width: calc(var(--column-width) - var(--drag-inset) - var(--drag-inset));
   pointer-events: none;
-  will-change: transform, opacity;
+  will-change: left, opacity;
 }
 
 .dragLayer[data-drag-stage="in-service"] {
@@ -345,7 +347,7 @@
 }
 
 .board[data-stage="queued"] .dragLayer {
-  animation: returnToQueue 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: returnToQueue 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .board[data-stage="in-service"] .dragLayer {
@@ -521,44 +523,39 @@
   animation: cursorRingToCleared 1850ms ease both;
 }
 
-.section[data-animation-state="paused"] .dragLayer,
-.section[data-animation-state="paused"] .cardLift,
-.section[data-animation-state="paused"] .dragCursor,
-.section[data-animation-state="paused"] .dragCursor span {
-  animation-play-state: paused;
-}
-
 @keyframes dragToService {
   0%,
-  18% {
-    transform: translate3d(0, 0, 0);
+  4% {
+    left: var(--queued-card-left);
   }
-  82%,
+  70%,
   100% {
-    transform: translate3d(var(--lane-step), 0, 0);
+    left: var(--service-card-left);
   }
 }
 
 @keyframes dragToCleared {
   0%,
-  18% {
-    transform: translate3d(var(--lane-step), 0, 0);
+  4% {
+    left: var(--service-card-left);
   }
-  82%,
+  70%,
   100% {
-    transform: translate3d(var(--lane-step-double), 0, 0);
+    left: var(--cleared-card-left);
   }
 }
 
 @keyframes returnToQueue {
   0% {
+    left: var(--queued-card-left);
     opacity: 0;
     transform: translate3d(0, 0.4rem, 0) scale(0.985);
   }
-  48% {
+  30% {
     opacity: 0;
   }
   100% {
+    left: var(--queued-card-left);
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
@@ -566,15 +563,16 @@
 
 @keyframes cardLiftToService {
   0%,
-  16% {
+  4% {
     transform: translateY(0) rotate(0) scale(1);
     filter: drop-shadow(0 0 0 transparent);
   }
-  31%,
-  76% {
+  18%,
+  63% {
     transform: translateY(-0.9rem) rotate(-0.8deg) scale(1.025);
     filter: drop-shadow(0 18px 20px rgb(16 61 55 / 0.2));
   }
+  76%,
   100% {
     transform: translateY(0) rotate(0) scale(1);
     filter: drop-shadow(0 0 0 transparent);
@@ -583,15 +581,16 @@
 
 @keyframes cardLiftToCleared {
   0%,
-  16% {
+  4% {
     transform: translateY(0) rotate(0) scale(1);
     filter: drop-shadow(0 0 0 transparent);
   }
-  31%,
-  76% {
+  18%,
+  63% {
     transform: translateY(-0.9rem) rotate(0.8deg) scale(1.025);
     filter: drop-shadow(0 18px 20px rgb(16 61 55 / 0.2));
   }
+  76%,
   100% {
     transform: translateY(0) rotate(0) scale(1);
     filter: drop-shadow(0 0 0 transparent);
@@ -603,19 +602,19 @@
     opacity: 0;
     transform: translate(1.1rem, 1rem) scale(1);
   }
-  10% {
+  4% {
     opacity: 1;
     transform: translate(0.5rem, 0.55rem) scale(1);
   }
-  20% {
+  10% {
     opacity: 1;
     transform: translate(0, 0) scale(0.92);
   }
-  76% {
+  67% {
     opacity: 1;
     transform: translate(0, 0) scale(0.92);
   }
-  91% {
+  78% {
     opacity: 1;
     transform: translate(0.35rem, 0.35rem) scale(1);
   }
@@ -630,19 +629,19 @@
     opacity: 0;
     transform: translate(1.1rem, 1rem) scale(1);
   }
-  10% {
+  4% {
     opacity: 1;
     transform: translate(0.5rem, 0.55rem) scale(1);
   }
-  20% {
+  10% {
     opacity: 1;
     transform: translate(0, 0) scale(0.92);
   }
-  76% {
+  67% {
     opacity: 1;
     transform: translate(0, 0) scale(0.92);
   }
-  91% {
+  78% {
     opacity: 1;
     transform: translate(0.35rem, 0.35rem) scale(1);
   }
@@ -654,15 +653,15 @@
 
 @keyframes cursorRingToService {
   0%,
-  15% {
+  3% {
     opacity: 0;
     transform: scale(0.35);
   }
-  24% {
+  10% {
     opacity: 0.9;
     transform: scale(1);
   }
-  40%,
+  28%,
   100% {
     opacity: 0;
     transform: scale(1.65);
@@ -671,15 +670,15 @@
 
 @keyframes cursorRingToCleared {
   0%,
-  15% {
+  3% {
     opacity: 0;
     transform: scale(0.35);
   }
-  24% {
+  10% {
     opacity: 0.9;
     transform: scale(1);
   }
-  40%,
+  28%,
   100% {
     opacity: 0;
     transform: scale(1.65);
@@ -743,6 +742,7 @@
   .kanbanCanvas {
     --canvas-padding: 0.4rem;
     --lane-gap: 0.35rem;
+    --drag-inset: 0.3rem;
     --column-width: calc((100% - 1.5rem) / 3);
     min-height: 21rem;
   }
@@ -804,8 +804,6 @@
 
   .dragLayer {
     top: 5.65rem;
-    left: 0.7rem;
-    width: calc(var(--column-width) - 0.6rem);
   }
 
   .featuredCard {
@@ -874,15 +872,18 @@
   }
 
   .board[data-stage="queued"] .dragLayer {
-    transform: translate3d(0, 0, 0);
+    left: var(--queued-card-left);
+    transform: none;
   }
 
   .board[data-stage="in-service"] .dragLayer {
-    transform: translate3d(var(--lane-step), 0, 0);
+    left: var(--service-card-left);
+    transform: none;
   }
 
   .board[data-stage="cleared"] .dragLayer {
-    transform: translate3d(var(--lane-step-double), 0, 0);
+    left: var(--cleared-card-left);
+    transform: none;
   }
 
   .dragCursor {
