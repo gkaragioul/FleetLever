@@ -172,6 +172,46 @@ async function verifyHomepageStory(page, name) {
   if (duplicates.length > 0) failures.push(`${name}: duplicate headings ${[...new Set(duplicates)].join(" | ")}`);
 }
 
+async function verifyPassportClarity(page, name) {
+  const section = page.locator('[data-animation="passport-assembly"]');
+  await section.scrollIntoViewIfNeeded();
+  await section.waitFor({ state: "visible", timeout: 5_000 });
+
+  const passport = section.locator('[data-passport-panel]');
+  const rows = passport.locator('[data-passport-requirement]');
+  const flowSteps = passport.locator('[aria-label="Release workflow progress"] li');
+
+  if ((await passport.count()) !== 1) failures.push(`${name}: asset passport should use one fixed panel`);
+  if ((await rows.count()) !== 5) failures.push(`${name}: asset passport should keep five requirements visible`);
+  if ((await flowSteps.count()) !== 3) failures.push(`${name}: asset passport should explain three clear release steps`);
+
+  const layout = await passport.evaluate((panel) => {
+    const panelRect = panel.getBoundingClientRect();
+    const requirements = [...panel.querySelectorAll('[data-passport-requirement]')];
+    const labels = requirements.map((row) => row.getAttribute("data-passport-requirement"));
+
+    return {
+      fixed: panel.getAttribute("data-passport-ui") === "fixed",
+      uniqueLabels: new Set(labels).size === labels.length,
+      rowsContained: requirements.every((row) => {
+        const rect = row.getBoundingClientRect();
+        return (
+          rect.left >= panelRect.left - 1 &&
+          rect.right <= panelRect.right + 1 &&
+          rect.top >= panelRect.top - 1 &&
+          rect.bottom <= panelRect.bottom + 1
+        );
+      }),
+      rowsStayStill: requirements.every((row) => getComputedStyle(row).transform === "none"),
+    };
+  });
+
+  if (!layout.fixed) failures.push(`${name}: asset passport is not marked as a fixed, stable interface`);
+  if (!layout.uniqueLabels) failures.push(`${name}: asset passport repeats a requirement`);
+  if (!layout.rowsContained) failures.push(`${name}: asset passport requirements escape the main panel`);
+  if (!layout.rowsStayStill) failures.push(`${name}: asset passport rows still move spatially between states`);
+}
+
 async function verifyServiceKanbanMotion(page, name) {
   const motionPage = await page.context().newPage();
   try {
@@ -651,6 +691,7 @@ try {
       await verifyAlternatingSectionBackgrounds(page, "landing desktop");
       await verifyHomepageRhythm(page, "landing desktop", 40);
       await verifyHomepageStory(page, "landing desktop");
+      await verifyPassportClarity(page, "landing desktop");
       await verifyWheelSteppedMotion(page, "landing desktop");
       await verifyServiceKanbanMotion(page, "landing desktop");
       await verifyCutoffTimelineScroll(page, "landing desktop");
@@ -678,6 +719,7 @@ try {
       await verifyAlternatingSectionBackgrounds(page, "landing mobile");
       await verifyHomepageRhythm(page, "landing mobile", 20);
       await verifyHomepageStory(page, "landing mobile");
+      await verifyPassportClarity(page, "landing mobile");
       await verifyMobileProductFocus(page, "landing mobile");
       const industrySwitchboard = page.locator('[data-animation="industry-switchboard"]');
       await industrySwitchboard.scrollIntoViewIfNeeded();

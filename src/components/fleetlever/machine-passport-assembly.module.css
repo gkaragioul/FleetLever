@@ -17,8 +17,8 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.28fr);
-  gap: clamp(2rem, 4.5vw, 5rem);
+  grid-template-columns: minmax(18rem, 0.76fr) minmax(0, 1.24fr);
+  gap: clamp(2.5rem, 5vw, 5.5rem);
   width: 100%;
   max-width: var(--landing-container, 86rem);
   margin-inline: auto;
@@ -27,7 +27,7 @@
 
 .copyColumn {
   position: relative;
-  z-index: 3;
+  z-index: 2;
   max-width: 35rem;
 }
 
@@ -70,6 +70,7 @@
   margin-top: clamp(2rem, 6vh, 4rem);
   padding-top: 1.5rem;
   border-top: 1px solid var(--landing-line, #cbd6d1);
+  animation: stage-copy-reveal 320ms ease-out both;
 }
 
 .stageSignal {
@@ -85,7 +86,7 @@
   width: 0.65rem;
   height: 0.65rem;
   background: #007c89;
-  transition: background-color 320ms ease;
+  transition: background-color 260ms ease;
 }
 
 .stageCopy[data-stage="1"] .signalSquare {
@@ -116,358 +117,567 @@
 }
 
 .visualColumn {
-  position: relative;
   min-width: 0;
 }
 
-.workspace {
-  position: relative;
-  min-height: 32rem;
-  isolation: isolate;
-}
-
-.passportSurface {
-  position: absolute;
-  z-index: 1;
-  top: 13%;
-  right: 11%;
-  bottom: 11%;
-  left: 11%;
+.passportPanel {
+  width: 100%;
   overflow: hidden;
-  border: 1px solid var(--landing-line, #cbd6d1);
+  border: 1px solid #bdcbc6;
   border-radius: var(--landing-panel-radius, 8px);
   background: #ffffff;
-  box-shadow: 0 28px 75px rgb(17 54 49 / 0.15);
-  opacity: 1;
-  filter: saturate(0.65);
-  transform: scale(0.9);
-  transform-origin: center;
-  transition:
-    opacity 900ms ease,
-    filter 900ms ease,
-    transform 1050ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 900ms ease;
+  box-shadow: 0 28px 72px rgb(17 54 49 / 0.13);
 }
 
-.passportHeader,
-.passportFooter {
+.assetHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(10rem, 0.72fr) minmax(9.5rem, auto);
+  gap: 1.25rem;
+  min-height: 6.4rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #d7e0dc;
+}
+
+.assetIdentity {
   display: flex;
+  min-width: 0;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  min-height: 3rem;
-  padding-inline: 1rem;
-  color: #213b36;
+  gap: 0.85rem;
+}
+
+.assetImage {
+  width: 4.6rem;
+  height: 3.65rem;
+  flex: 0 0 auto;
+  border: 1px solid #cbd7d2;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.assetIdentity > span,
+.assignment,
+.statusBadge span {
+  min-width: 0;
+}
+
+.assetIdentity small,
+.assetIdentity strong,
+.assetIdentity em,
+.assignment small,
+.assignment strong,
+.assignment span {
+  display: block;
+}
+
+.assetIdentity small,
+.assignment small {
+  color: #667771;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.assetIdentity strong {
+  margin-top: 0.18rem;
+  color: #17342f;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.assetIdentity em {
+  margin-top: 0.2rem;
+  overflow: hidden;
+  color: #52645e;
   font-size: 0.72rem;
-  font-weight: 750;
+  font-style: normal;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.passportHeader {
-  border-bottom: 1px solid #dce4e0;
+.assignment {
+  padding-left: 1.25rem;
+  border-left: 1px solid #d7e0dc;
 }
 
-.passportHeader span {
+.assignment strong {
+  margin-top: 0.3rem;
+  color: #17342f;
+  font-size: 0.78rem;
+}
+
+.assignment span {
+  margin-top: 0.2rem;
+  color: #667771;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.statusBadge {
   display: inline-flex;
+  width: 100%;
+  min-height: 2.55rem;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #b9d7d4;
+  border-radius: 4px;
+  background: #edf7f6;
+  color: #006d78;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: center;
+  transition:
+    border-color 260ms ease,
+    background-color 260ms ease,
+    color 260ms ease;
 }
 
-.passportHeader svg {
+.statusBadge svg {
   width: 1rem;
   height: 1rem;
-  color: #007c89;
+  flex: 0 0 auto;
 }
 
-.passportHeader strong {
+.statusBadge[data-state="action"] {
+  border-color: #efb6b2;
+  background: #fff2f1;
+  color: #b52622;
+}
+
+.statusBadge[data-state="ready"] {
+  border-color: #a9d8bc;
+  background: #edf9f1;
+  color: #0a6d3c;
+}
+
+.flowRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0.85rem 1.25rem 0.95rem;
+  border-bottom: 1px solid #d7e0dc;
+  background: #f7f9f8;
+  list-style: none;
+}
+
+.flowRail li {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.65rem;
+  border-top: 2px solid #d5dfdb;
+  color: #788681;
+  transition:
+    border-color 260ms ease,
+    color 260ms ease;
+}
+
+.flowRail li + li {
+  margin-left: 0.45rem;
+}
+
+.flowRail li > span {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c7d3ce;
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 0.61rem;
+  font-weight: 800;
+  transition:
+    border-color 260ms ease,
+    background-color 260ms ease,
+    color 260ms ease;
+}
+
+.flowRail li strong {
+  overflow: hidden;
+  font-size: 0.69rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flowRail li[data-state="active"] {
+  border-color: #007c89;
   color: #006d78;
 }
 
-.passportImage {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9.3;
-  object-fit: cover;
-  object-position: top center;
+.flowRail li[data-state="active"] > span {
+  border-color: #007c89;
+  background: #e7f5f4;
+  color: #006d78;
 }
 
-.passportFooter {
-  border-top: 1px solid #dce4e0;
-  background: #f8faf8;
+.flowRail li[data-state="complete"] {
+  border-color: #16834b;
+  color: #0a6d3c;
 }
 
-.passportFooter strong {
-  color: #be2f2a;
-  transition: color 320ms ease;
+.flowRail li[data-state="complete"] > span {
+  border-color: #16834b;
+  background: #16834b;
+  color: #ffffff;
 }
 
-.visualColumn[data-stage="1"] .passportSurface {
-  opacity: 1;
-  filter: saturate(0.82);
-  transform: scale(0.95);
-}
-
-.visualColumn[data-stage="2"] .passportSurface {
-  opacity: 1;
-  filter: saturate(1);
-  transform: scale(1);
-}
-
-.visualColumn[data-stage="2"] .passportFooter strong,
-.visualColumn[data-stage="2"] .passportHeader strong {
-  color: #0a6034;
-}
-
-.evidenceItem {
-  position: absolute;
-  z-index: 3;
-  left: var(--source-x);
-  top: var(--source-y);
-  display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr);
-  gap: 0.7rem;
-  width: min(12.5rem, 29%);
-  min-height: 3.9rem;
-  padding: 0.65rem;
-  border: 1px solid #b9c9c3;
-  border-radius: 5px;
-  background: #ffffff;
-  box-shadow: 0 12px 28px rgb(20 58 52 / 0.12);
-  transform: translate(-50%, -50%) rotate(var(--source-r));
-  transition:
-    left 1100ms cubic-bezier(0.22, 1, 0.36, 1),
-    top 1100ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 700ms ease,
-    border-color 320ms ease,
-    background-color 320ms ease,
-    transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.evidenceIcon {
+.requirementsHeader {
   display: flex;
-  width: 2.2rem;
-  height: 2.2rem;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 1.25rem;
+  color: #677772;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.requirementsHeader strong {
+  color: #17342f;
+  font-size: 0.68rem;
+}
+
+.requirementsList {
+  border-top: 1px solid #d7e0dc;
+}
+
+.requirementRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr) minmax(10.5rem, 0.7fr);
+  gap: 0.8rem;
+  min-height: 4.25rem;
+  align-items: center;
+  padding: 0.65rem 1.25rem;
+  background: #ffffff;
+  transition:
+    background-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.requirementRow + .requirementRow {
+  border-top: 1px solid #e1e7e4;
+}
+
+.requirementRow::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: transparent;
+  content: "";
+  transition: background-color 260ms ease;
+}
+
+.requirementRow[data-requirement-state="review"] {
+  background: #f6fbfa;
+  box-shadow: inset 0 0 0 1px rgb(0 124 137 / 0.08);
+}
+
+.requirementRow[data-requirement-state="review"]::before {
+  background: #007c89;
+}
+
+.requirementRow[data-requirement-state="action"] {
+  background: #fff5f4;
+  box-shadow: inset 0 0 0 1px rgb(190 47 42 / 0.12);
+}
+
+.requirementRow[data-requirement-state="action"]::before {
+  background: #d73a34;
+}
+
+.requirementRow[data-passport-requirement="certificate"][data-requirement-state="complete"] {
+  background: #f1faf4;
+}
+
+.requirementRow[data-passport-requirement="certificate"][data-requirement-state="complete"]::before {
+  background: #16834b;
+}
+
+.requirementIcon {
+  display: flex;
+  width: 2.35rem;
+  height: 2.35rem;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  background: #e8f4f3;
+  background: #edf5f3;
   color: #007c89;
 }
 
-.evidenceIcon svg {
+.requirementIcon svg {
   width: 1.05rem;
   height: 1.05rem;
 }
 
-.evidenceItem > span:last-child {
+.requirementCopy,
+.requirementStatus,
+.requirementStatus > span {
   min-width: 0;
 }
 
-.evidenceItem strong,
-.evidenceItem small {
+.requirementCopy strong,
+.requirementCopy small,
+.requirementStatus strong,
+.requirementStatus small {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.evidenceItem strong {
-  display: -webkit-box;
-  color: #203b36;
-  font-size: 0.72rem;
+.requirementCopy strong {
+  color: #17342f;
+  font-size: 0.75rem;
   line-height: 1.3;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
-.evidenceItem small {
-  margin-top: 0.2rem;
-  color: #586964;
-  font-size: 0.62rem;
-  font-weight: 650;
+.requirementCopy small {
+  margin-top: 0.18rem;
+  overflow: hidden;
+  color: #65756f;
+  font-size: 0.65rem;
+  font-weight: 620;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.missingEvidence {
-  border-color: #e0aaa7;
-  background: #fff8f7;
+.requirementStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #16834b;
 }
 
-.missingEvidence .evidenceIcon {
-  background: #fbe6e4;
+.requirementStatus > svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+}
+
+.requirementStatus strong {
+  font-size: 0.69rem;
+  line-height: 1.25;
+}
+
+.requirementStatus small {
+  margin-top: 0.15rem;
+  overflow: hidden;
+  color: #65756f;
+  font-size: 0.61rem;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.requirementRow[data-requirement-state="review"] .requirementStatus {
+  color: #007c89;
+}
+
+.requirementRow[data-requirement-state="action"] .requirementStatus {
   color: #be2f2a;
 }
 
-.visualColumn[data-stage="1"] .evidenceItem:not(.missingEvidence),
-.visualColumn[data-stage="2"] .evidenceItem {
-  left: var(--dock-x);
-  top: var(--dock-y);
-  opacity: 0;
-  transform: translate(-50%, -50%) rotate(0) scale(0.72);
+.requirementRow[data-requirement-state="action"] .requirementStatus > svg,
+.requirementRow[data-requirement-state="complete"] .requirementStatus > svg {
+  animation: status-confirm 340ms ease-out both;
 }
 
-.visualColumn[data-stage="1"] .missingEvidence {
-  left: var(--source-x);
-  top: var(--source-y);
-  opacity: 1;
-  transform: translate(-50%, -50%) rotate(0) scale(1.04);
-}
-
-.missingSlot {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 72%;
-  display: flex;
-  width: min(18rem, 45%);
-  min-height: 3rem;
+.releaseSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(17rem, 1.1fr);
+  gap: 1.25rem;
+  min-height: 5.6rem;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px dashed #d18a86;
-  border-radius: 4px;
-  background: rgb(255 248 247 / 0.96);
-  color: #a92320;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.86);
-  transition:
-    opacity 620ms ease,
-    color 320ms ease,
-    border-color 320ms ease,
-    background-color 320ms ease,
-    transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid #d7e0dc;
+  background: #f7f9f8;
+  transition: background-color 260ms ease;
 }
 
-.missingSlot svg {
-  flex: 0 0 auto;
-  width: 1rem;
-  height: 1rem;
-}
-
-.missingSlot span {
+.progressGroup > span:first-child,
+.releaseDecision span {
   min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  font-size: 0.67rem;
-  font-weight: 750;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.missingSlot strong {
-  font-size: 0.62rem;
-  white-space: nowrap;
-}
-
-.visualColumn[data-stage="1"] .missingSlot {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.visualColumn[data-stage="2"] .missingSlot {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.92);
-}
-
-.releaseSeal {
-  position: absolute;
-  z-index: 4;
-  right: 4%;
-  bottom: 6%;
+.progressGroup > span:first-child {
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  min-width: 14rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #74bf96;
-  border-radius: 5px;
-  background: #edf9f1;
-  color: #0a6034;
-  box-shadow: 0 18px 40px rgb(17 118 64 / 0.15);
-  opacity: 0;
-  transform: translateY(1.25rem) rotate(-2deg) scale(0.92);
-  transition:
-    opacity 620ms ease,
-    transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.releaseSeal svg {
-  flex: 0 0 auto;
-  width: 1.6rem;
-  height: 1.6rem;
-}
-
-.releaseSeal small,
-.releaseSeal strong {
+.progressGroup strong,
+.progressGroup small,
+.releaseDecision strong,
+.releaseDecision small {
   display: block;
 }
 
-.releaseSeal small {
-  font-size: 0.62rem;
-  font-weight: 800;
+.progressGroup strong {
+  color: #17342f;
+  font-size: 0.73rem;
 }
 
-.releaseSeal strong {
-  margin-top: 0.12rem;
-  font-size: 0.78rem;
+.progressGroup small {
+  color: #53635f;
+  font-size: 0.61rem;
+  font-weight: 650;
 }
 
-.visualColumn[data-stage="2"] .releaseSeal {
-  opacity: 1;
-  transform: translateY(0) rotate(-2deg) scale(1);
+.progressTrack {
+  display: block;
+  height: 0.35rem;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dce5e1;
 }
 
-.auditNote {
-  position: absolute;
-  z-index: 2;
-  left: 13%;
-  bottom: 3%;
+.progressTrack > span {
+  display: block;
+  width: 80%;
+  height: 100%;
+  border-radius: inherit;
+  background: #007c89;
+  transition:
+    width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 260ms ease;
+}
+
+.releaseDecision {
   display: flex;
-  gap: 0.85rem;
-  color: #435650;
+  min-height: 3.7rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding-left: 1.25rem;
+  border-left: 1px solid #d7e0dc;
+  color: #007c89;
+  transition: color 260ms ease;
+}
+
+.releaseDecision > svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+}
+
+.releaseDecision strong {
+  color: currentColor;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.releaseDecision small {
+  margin-top: 0.2rem;
+  color: #53635f;
   font-size: 0.62rem;
-  font-weight: 750;
-  opacity: 0;
-  transform: translateY(0.75rem);
-  transition: transform 580ms cubic-bezier(0.22, 1, 0.36, 1) 120ms;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
-.auditNote span + span::before {
-  content: "/";
-  margin-right: 0.85rem;
-  color: #9aa9a4;
+.releaseSummary[data-state="action"] {
+  background: #fff9f8;
 }
 
-.visualColumn[data-stage="2"] .auditNote {
-  opacity: 1;
-  transform: translateY(0);
+.releaseSummary[data-state="action"] .releaseDecision {
+  color: #be2f2a;
 }
 
-@media (max-width: 960px) {
+.releaseSummary[data-state="ready"] {
+  background: #eff9f2;
+}
+
+.releaseSummary[data-state="ready"] .releaseDecision {
+  color: #0a6d3c;
+}
+
+.releaseSummary[data-state="ready"] .progressTrack > span {
+  width: 100%;
+  background: #16834b;
+}
+
+@keyframes stage-copy-reveal {
+  from {
+    opacity: 0.55;
+    transform: translateY(0.35rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes status-confirm {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.82);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 1080px) {
+  .layout {
+    gap: 2.5rem;
+  }
+
+  .assetHeader {
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, 0.7fr);
+  }
+
+  .statusBadge {
+    grid-column: 1 / -1;
+    min-height: 2.25rem;
+  }
+}
+
+@media (max-width: 820px) {
   .section {
-    min-height: 210svh;
+    min-height: 220svh;
   }
 
   .stickyFrame {
-    position: sticky;
     top: 4.75rem;
     min-height: calc(100svh - 4.75rem);
     align-items: flex-start;
-    padding-block: 2.5rem 3rem;
+    padding-block: 2rem 2.5rem;
   }
 
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    gap: 1.35rem;
   }
 
   .copyColumn {
-    max-width: 44rem;
+    display: grid;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.76fr);
+    column-gap: 2rem;
+  }
+
+  .sectionIcon,
+  .eyebrow,
+  .heading,
+  .intro {
+    grid-column: 1;
   }
 
   .heading {
-    max-width: 17ch;
-    font-size: clamp(2.25rem, 7vw, 3.6rem);
+    max-width: 18ch;
+    font-size: clamp(2.2rem, 6vw, 3.2rem);
   }
 
   .intro {
@@ -475,9 +685,11 @@
   }
 
   .stageCopy {
-    min-height: 8.25rem;
-    margin-top: 1.4rem;
-    padding-top: 1rem;
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    min-height: 0;
+    margin-top: 0;
+    padding-top: 1.15rem;
   }
 
   .stageCopy h3 {
@@ -486,23 +698,35 @@
 
   .stageCopy p {
     margin-top: 0.5rem;
+    font-size: 0.88rem;
   }
 
-  .workspace {
-    min-height: 27rem;
+  .assetHeader {
+    grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.65fr) minmax(9.5rem, auto);
+  }
+
+  .statusBadge {
+    grid-column: auto;
   }
 }
 
 @media (max-width: 600px) {
   .section {
-    min-height: 215svh;
+    min-height: 220svh;
   }
 
   .stickyFrame {
-    position: sticky;
     top: 4.25rem;
     min-height: calc(100svh - 4.25rem);
-    padding: 1.5rem 0 2rem;
+    padding: 1.25rem 0 1.75rem;
+  }
+
+  .layout {
+    gap: 1rem;
+  }
+
+  .copyColumn {
+    display: block;
   }
 
   .sectionIcon {
@@ -511,13 +735,13 @@
 
   .eyebrow {
     margin-top: 0;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
   .heading {
     max-width: 20ch;
-    margin-top: 0.55rem;
-    font-size: 1.95rem;
+    margin-top: 0.45rem;
+    font-size: 1.85rem;
   }
 
   .intro {
@@ -525,88 +749,186 @@
   }
 
   .stageCopy {
-    min-height: 7rem;
-    margin-top: 1.1rem;
+    min-height: 6.6rem;
+    margin-top: 0.9rem;
+    padding-top: 0.8rem;
+  }
+
+  .stageSignal {
+    font-size: 0.7rem;
   }
 
   .stageCopy h3 {
     max-width: none;
-    font-size: 1.13rem;
+    margin-top: 0.5rem;
+    font-size: 1.08rem;
   }
 
   .stageCopy p {
-    font-size: 0.84rem;
-    line-height: 1.45;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    line-height: 1.4;
   }
 
-  .workspace {
-    min-height: 21.5rem;
-    margin-inline: -0.85rem;
+  .passportPanel {
+    border-radius: 6px;
   }
 
-  .passportSurface {
-    top: 17%;
-    right: 4%;
-    bottom: 12%;
-    left: 4%;
+  .assetHeader {
+    grid-template-columns: minmax(0, 1fr) minmax(8.2rem, auto);
+    gap: 0.65rem;
+    min-height: 4.6rem;
+    padding: 0.65rem 0.75rem;
   }
 
-  .passportHeader,
-  .passportFooter {
-    min-height: 2.45rem;
-    padding-inline: 0.7rem;
-    font-size: 0.6rem;
+  .assetImage {
+    width: 3.3rem;
+    height: 2.8rem;
   }
 
-  .passportImage {
-    aspect-ratio: 16 / 10;
+  .assetIdentity {
+    gap: 0.55rem;
   }
 
-  .evidenceItem {
-    grid-template-columns: 1.75rem minmax(0, 1fr);
-    gap: 0.45rem;
-    width: 9.2rem;
-    min-height: 3.55rem;
-    padding: 0.45rem;
+  .assetIdentity small {
+    display: none;
   }
 
-  .evidenceIcon {
-    width: 1.75rem;
-    height: 1.75rem;
+  .assetIdentity strong {
+    margin-top: 0;
+    font-size: 0.9rem;
   }
 
-  .evidenceItem strong {
+  .assetIdentity em {
+    max-width: 9rem;
     font-size: 0.61rem;
   }
 
-  .evidenceItem small {
+  .assignment {
+    display: none;
+  }
+
+  .statusBadge {
+    grid-column: auto;
+    min-height: 2.15rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.61rem;
+  }
+
+  .flowRail {
+    padding: 0.55rem 0.75rem 0.65rem;
+  }
+
+  .flowRail li {
+    gap: 0.3rem;
+    padding-top: 0.45rem;
+  }
+
+  .flowRail li > span {
+    width: 1.15rem;
+    height: 1.15rem;
     font-size: 0.53rem;
   }
 
-  .safetyEvidence,
-  .serviceEvidence {
-    --source-x: 22% !important;
+  .flowRail li strong {
+    font-size: 0.58rem;
   }
 
-  .operatorEvidence,
-  .photoEvidence,
-  .certificateEvidence {
-    --source-x: 78% !important;
+  .requirementsHeader {
+    min-height: 2.25rem;
+    padding-inline: 0.75rem;
+    font-size: 0.58rem;
   }
 
-  .missingSlot {
-    top: 74%;
-    width: 72%;
+  .requirementsHeader strong {
+    font-size: 0.58rem;
   }
 
-  .releaseSeal {
-    right: 1%;
-    bottom: 4%;
-    min-width: 12rem;
+  .requirementRow {
+    grid-template-columns: 1.85rem minmax(0, 1fr) minmax(6.5rem, auto);
+    gap: 0.55rem;
+    min-height: 3.05rem;
+    padding: 0.42rem 0.75rem;
   }
 
-  .auditNote {
+  .requirementIcon {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .requirementIcon svg,
+  .requirementStatus > svg {
+    width: 0.88rem;
+    height: 0.88rem;
+  }
+
+  .requirementCopy strong,
+  .requirementStatus strong {
+    font-size: 0.61rem;
+  }
+
+  .requirementCopy small,
+  .requirementStatus small {
+    font-size: 0.52rem;
+  }
+
+  .requirementStatus {
+    gap: 0.35rem;
+  }
+
+  .releaseSummary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+    min-height: 4.6rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .progressGroup > span:first-child {
+    justify-content: flex-start;
+  }
+
+  .progressGroup small {
+    font-size: 0.53rem;
+  }
+
+  .progressTrack {
+    margin-top: 0.35rem;
+  }
+
+  .releaseDecision {
+    min-height: 0;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0;
+    border-top: 1px solid #d7e0dc;
+    border-left: 0;
+  }
+
+  .releaseDecision > svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .releaseDecision strong {
+    font-size: 0.66rem;
+  }
+
+  .releaseDecision small {
+    margin-top: 0.12rem;
+    font-size: 0.54rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .requirementRow {
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+  }
+
+  .requirementStatus small {
     display: none;
+  }
+
+  .statusBadge span {
+    max-width: 6.5rem;
   }
 }
 
@@ -621,29 +943,18 @@
     min-height: auto;
   }
 
-  .passportSurface,
-  .evidenceItem,
-  .missingSlot,
-  .releaseSeal,
-  .auditNote,
-  .signalSquare {
+  .stageCopy,
+  .statusBadge,
+  .flowRail li,
+  .flowRail li > span,
+  .requirementRow,
+  .requirementRow::before,
+  .releaseSummary,
+  .releaseDecision,
+  .progressTrack > span,
+  .signalSquare,
+  .requirementStatus > svg {
+    animation: none;
     transition: none;
-  }
-
-  .evidenceItem,
-  .missingSlot {
-    display: none;
-  }
-
-  .passportSurface {
-    opacity: 1;
-    filter: none;
-    transform: none;
-  }
-
-  .releaseSeal,
-  .auditNote {
-    opacity: 1;
-    transform: none;
   }
 }
