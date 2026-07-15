@@ -98,7 +98,7 @@ export function PreMorningTimeline() {
     reducedMotionSnapshot,
     serverReducedMotionSnapshot,
   );
-  const visibleStage: TimelineStage = reducedMotion ? 4 : stage;
+  const visibleStage: TimelineStage = reducedMotion ? 4 : (Math.max(stage, 1) as TimelineStage);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -123,7 +123,7 @@ export function PreMorningTimeline() {
 
       timeline.style.setProperty("--timeline-progress", progress.toFixed(3));
       events.forEach((event, index) => {
-        const localProgress = reducedMotion
+        const localProgress = index === 0 || reducedMotion
           ? 1
           : clamp((progress - EVENT_REVEAL_STARTS[index]) / EVENT_REVEAL_DISTANCE, 0, 1);
         const easedProgress = localProgress * localProgress * (3 - 2 * localProgress);
@@ -169,11 +169,12 @@ export function PreMorningTimeline() {
       aria-labelledby="pre-morning-title"
       className={styles.section}
       data-animation="cutoff-timeline"
+      data-home-strip="scroll"
       data-scroll-stage={visibleStage}
       data-section-tone="mist"
       ref={sectionRef}
     >
-      <div className={styles.inner}>
+      <div className={styles.inner} data-home-shell>
         <div className={styles.layout}>
           <div className={styles.narrative}>
             <div className={styles.headlineBlock}>

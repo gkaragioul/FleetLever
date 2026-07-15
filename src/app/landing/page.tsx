@@ -21,6 +21,7 @@ import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
 import { FleetInventoryStrip } from "@/components/fleetlever/fleet-inventory-strip";
 import { ServiceKanbanStrip } from "@/components/fleetlever/service-kanban-strip";
 import { ScreenshotMagnifier } from "@/components/fleetlever/screenshot-magnifier";
+import landingStyles from "./landing-page.module.css";
 
 export const metadata: Metadata = {
   title: "Fleet and equipment readiness before release",
@@ -83,7 +84,7 @@ function ProductScreenshot({
 
 export default function LandingPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-[#f3f6f2] text-[#13211f]">
+    <main id="main-content" className={landingStyles.page}>
       <CommercialSiteHeader />
       <script
         type="application/ld+json"
@@ -124,24 +125,25 @@ export default function LandingPage() {
       <ReadinessLanes />
 
       <section
-        className="scroll-mt-24 bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-20"
+        className={`${landingStyles.regularStrip} ${landingStyles.paperStrip} scroll-mt-24`}
+        data-home-strip="regular"
         id="product"
         data-section-tone="white"
       >
-        <div className="mx-auto w-full max-w-[86rem]">
-          <div className="grid gap-7 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
+        <div className={landingStyles.shell} data-home-shell>
+          <header className={landingStyles.splitLead}>
             <div>
-              <p className="text-sm font-bold uppercase text-[#007c89]">See the operational truth</p>
-              <h2 className="mt-3 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
+              <p className={landingStyles.eyebrow}>See the operational truth</p>
+              <h2 className={landingStyles.sectionTitle}>
                 One board shows what can go out next.
               </h2>
             </div>
-            <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
+            <p className={landingStyles.sectionIntro}>
               The plan becomes a clear operational answer: ready, needs review or blocked, with the next action and
               owner visible before the shift starts.
             </p>
-          </div>
-          <div className="mt-10">
+          </header>
+          <div className={landingStyles.productFrame}>
             <ProductScreenshot
               src="/fleetlever/site/tomorrow-readiness-dashboard.png"
               alt="FleetLever tomorrow-readiness board showing ready, review and blocked assets"
@@ -149,16 +151,16 @@ export default function LandingPage() {
               mobileFocus
             />
           </div>
-          <div className="mt-7 grid gap-px overflow-hidden rounded-lg border border-[#d9e1dd] bg-[#d9e1dd] sm:grid-cols-3">
+          <div className={landingStyles.statusRail}>
             {["Ready for the next shift", "Needs review", "Stops the operation"].map((label, index) => (
-              <div key={label} className="flex items-center gap-3 bg-[#f8faf7] px-5 py-4">
+              <div key={label} className={landingStyles.statusItem}>
                 <span
-                  className={`h-2.5 w-2.5 ${
+                  className={`${landingStyles.statusDot} ${
                     index === 0 ? "bg-[#16834b]" : index === 1 ? "bg-[#c07808]" : "bg-[#be2f2a]"
                   }`}
                   aria-hidden="true"
                 />
-                <span className="text-sm font-bold text-[#263b37]">{label}</span>
+                <span>{label}</span>
               </div>
             ))}
           </div>
@@ -173,53 +175,56 @@ export default function LandingPage() {
       </div>
 
       <section
-        className="border-y border-[#d7dfdb] bg-white px-5 py-16 sm:px-7 lg:px-10 lg:py-20"
+        className={`${landingStyles.regularStrip} ${landingStyles.paperStrip}`}
+        data-home-strip="regular"
         data-section-tone="white"
       >
-        <div className="mx-auto w-full max-w-[86rem]">
-          <header className="grid gap-6 border-b border-[#cfd8d4] pb-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end lg:pb-14">
+        <div className={landingStyles.shell} data-home-shell>
+          <header className={`${landingStyles.splitLead} ${landingStyles.proofHeader}`}>
             <div>
-              <p className="text-sm font-bold uppercase text-[#007c89]">Release with proof</p>
-              <h2 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl">
+              <p className={landingStyles.eyebrow}>Release with proof</p>
+              <h2 className={landingStyles.sectionTitle}>
                 From blocker to auditable release.
               </h2>
             </div>
-            <p className="max-w-2xl text-lg font-medium leading-8 text-[#53635f] lg:justify-self-end">
+            <p className={landingStyles.sectionIntro}>
               A red status is only the beginning. FleetLever keeps the action, evidence and final decision connected
               to the same asset and next assignment.
             </p>
           </header>
 
-          <article className="grid gap-8 border-b border-[#cfd8d4] py-12 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:py-16">
+          <article className={landingStyles.proofArticle}>
             <ProductScreenshot
               src="/fleetlever/site/stop-list.png"
               alt="FleetLever action queue with blockers, owners and next actions"
               mobileFocus
             />
-            <div>
-              <ClipboardCheck className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Own the blocker</p>
-              <h3 className="mt-3 text-4xl font-semibold leading-tight">Every blocker gets an owner.</h3>
-              <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
+            <div className={landingStyles.proofCopy}>
+              <ClipboardCheck className={landingStyles.proofIcon} aria-hidden="true" />
+              <p className={`${landingStyles.eyebrow} mt-6`}>Own the blocker</p>
+              <h3 className={landingStyles.proofTitle}>Every blocker gets an owner.</h3>
+              <p className={landingStyles.proofBody}>
                 Cause, operational impact, next step, deadline and required proof stay together. The right person
                 knows exactly what must close before cutoff.
               </p>
             </div>
           </article>
 
-          <MachinePassportAssembly />
+          <div className={landingStyles.passportChapter}>
+            <MachinePassportAssembly />
+          </div>
 
-          <article className="grid gap-8 border-t border-[#cfd8d4] pt-12 lg:grid-cols-[1.14fr_0.86fr] lg:items-center lg:pt-16">
+          <article className={landingStyles.proofArticle}>
             <ProductScreenshot
               src="/fleetlever/site/decision-history-audit-trail.png"
               alt="FleetLever decision history with actions, release decisions and evidence"
               mobileFocus
             />
-            <div>
-              <History className="h-7 w-7 text-[#007c89]" aria-hidden="true" />
-              <p className="mt-6 text-sm font-bold uppercase text-[#007c89]">Keep the record</p>
-              <h3 className="mt-3 text-4xl font-semibold leading-tight">Every release remains traceable.</h3>
-              <p className="mt-5 text-lg font-medium leading-8 text-[#53635f]">
+            <div className={landingStyles.proofCopy}>
+              <History className={landingStyles.proofIcon} aria-hidden="true" />
+              <p className={`${landingStyles.eyebrow} mt-6`}>Keep the record</p>
+              <h3 className={landingStyles.proofTitle}>Every release remains traceable.</h3>
+              <p className={landingStyles.proofBody}>
                 Every release, hold, replacement and authorized override remains traceable: who decided, when it
                 happened and what proof supported it.
               </p>

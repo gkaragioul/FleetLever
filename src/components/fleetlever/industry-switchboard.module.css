@@ -1,13 +1,14 @@
 .section {
-  padding: clamp(4.5rem, 7vw, 7rem) 1.25rem;
-  border-top: 1px solid #cbd6d1;
-  background: #edf2ee;
-  color: #13211f;
+  padding: var(--landing-section-y, clamp(4rem, 7vw, 6.5rem))
+    var(--landing-gutter, clamp(1.25rem, 3.5vw, 2.5rem));
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  background: var(--landing-tone-mist, #edf2ee);
+  color: var(--landing-ink, #13211f);
 }
 
 .inner {
   width: 100%;
-  max-width: 86rem;
+  max-width: var(--landing-container, 86rem);
   margin-inline: auto;
 }
 
@@ -19,7 +20,7 @@
 
 .eyebrow {
   margin: 0;
-  color: #006d78;
+  color: var(--landing-accent, #007681);
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -37,7 +38,7 @@
 .intro {
   max-width: 38rem;
   margin: 0;
-  color: #53635f;
+  color: var(--landing-muted, #53635f);
   font-size: 1.05rem;
   font-weight: 520;
   line-height: 1.7;
@@ -49,8 +50,8 @@
   height: clamp(34rem, 45vw, 41rem);
   margin-top: clamp(2.5rem, 4vw, 4rem);
   overflow: hidden;
-  border: 1px solid #aebdb7;
-  border-radius: 6px;
+  border: 1px solid var(--landing-line, #cbd6d1);
+  border-radius: var(--landing-panel-radius, 8px);
   background: #0b2925;
   box-shadow: 0 1.6rem 4rem rgb(16 61 55 / 12%);
 }
@@ -330,10 +331,6 @@
 }
 
 @media (min-width: 760px) {
-  .section {
-    padding-inline: 1.75rem;
-  }
-
   .header {
     grid-template-columns: minmax(0, 1.04fr) minmax(24rem, 0.96fr);
     gap: clamp(3rem, 8vw, 8rem);
@@ -342,12 +339,6 @@
   .intro {
     justify-self: end;
     padding-bottom: 0.4rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .section {
-    padding-inline: 2.5rem;
   }
 }
 
@@ -371,10 +362,6 @@
 }
 
 @media (max-width: 760px) {
-  .section {
-    padding-block: 4rem;
-  }
-
   .heading {
     font-size: 2.45rem;
   }

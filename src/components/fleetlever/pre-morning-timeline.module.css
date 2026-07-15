@@ -1,22 +1,22 @@
 .section {
   min-height: 190svh;
-  padding-inline: clamp(1.25rem, 3vw, 2.5rem);
-  border-top: 1px solid #cbd6d1;
-  background: #edf2ee;
-  color: #13211f;
+  padding-inline: var(--landing-gutter, clamp(1.25rem, 3.5vw, 2.5rem));
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  background: var(--landing-tone-mist, #edf2ee);
+  color: var(--landing-ink, #13211f);
 }
 
 .inner {
   position: sticky;
-  top: 0;
+  top: 4.75rem;
   display: flex;
   width: 100%;
-  max-width: 86rem;
-  min-height: 100svh;
+  max-width: var(--landing-container, 86rem);
+  min-height: calc(100svh - 4.75rem);
   margin-inline: auto;
   flex-direction: column;
   justify-content: center;
-  padding-block: clamp(5rem, 7vh, 6.25rem) clamp(2rem, 4vh, 3rem);
+  padding-block: clamp(3.5rem, 6vh, 5rem);
 }
 
 .layout {
@@ -42,8 +42,8 @@
 .eyebrow,
 .storyEyebrow {
   margin: 0;
-  color: #006d78;
-  font-size: 0.76rem;
+  color: var(--landing-accent, #007681);
+  font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -51,7 +51,7 @@
 .heading {
   max-width: 14ch;
   margin: 0.72rem 0 0;
-  font-size: clamp(2.8rem, 3.8vw, 4.15rem);
+  font-size: clamp(2.45rem, 4vw, 4rem);
   font-weight: 650;
   line-height: 1.02;
   text-wrap: balance;
@@ -61,7 +61,7 @@
   min-width: 0;
   max-width: 29rem;
   padding-top: 1rem;
-  border-top: 1px solid #aebdb7;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
 }
 
 .storyHeading {
@@ -76,7 +76,7 @@
 .storyIntro {
   max-width: 28rem;
   margin: 0.95rem 0 0;
-  color: #53635f;
+  color: var(--landing-muted, #53635f);
   font-size: 0.94rem;
   font-weight: 520;
   line-height: 1.58;
@@ -87,14 +87,14 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 1.3rem 0 0;
-  border-top: 1px solid #c3ceca;
-  border-bottom: 1px solid #c3ceca;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  border-bottom: 1px solid var(--landing-line, #cbd6d1);
 }
 
 .caseMeta div {
   min-width: 0;
   padding: 0.72rem 0.6rem 0.72rem 0;
-  border-right: 1px solid #c3ceca;
+  border-right: 1px solid var(--landing-line, #cbd6d1);
 }
 
 .caseMeta div:not(:first-child) {
@@ -127,7 +127,7 @@
 .headerAside {
   min-width: 0;
   padding-top: 1.05rem;
-  border-top: 1px solid #aebdb7;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
 }
 
 .intro {
@@ -145,7 +145,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 1.35rem 0 0;
   padding: 0;
-  border-top: 1px solid #c0cbc6;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
   list-style: none;
 }
 
@@ -193,8 +193,8 @@
   min-width: 0;
   margin-top: clamp(1.6rem, 3vh, 2.25rem);
   overflow: hidden;
-  border: 1px solid #b9c7c1;
-  border-radius: 7px;
+  border: 1px solid var(--landing-line, #cbd6d1);
+  border-radius: var(--landing-panel-radius, 8px);
   background: rgb(255 255 255 / 58%);
   box-shadow: 0 20px 54px rgb(26 66 59 / 8%);
 }
@@ -206,7 +206,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding-inline: 1.05rem;
-  border-bottom: 1px solid #c3ceca;
+  border-bottom: 1px solid var(--landing-line, #cbd6d1);
   background: rgb(255 255 255 / 42%);
   color: #50615d;
   font-size: 0.65rem;
@@ -228,7 +228,7 @@
   left: 7.15rem;
   width: 1px;
   overflow: hidden;
-  background: #b7c5bf;
+  background: var(--landing-line, #cbd6d1);
 }
 
 .track span {
@@ -253,7 +253,7 @@
   align-items: start;
   column-gap: var(--timeline-gap);
   padding: 1.12rem 1.05rem;
-  border-bottom: 1px solid #c7d2cd;
+  border-bottom: 1px solid var(--landing-line, #cbd6d1);
   visibility: var(--event-visibility);
   transition: background-color 500ms ease;
 }
@@ -389,8 +389,9 @@
 
   .inner {
     position: static;
+    top: auto;
     min-height: auto;
-    padding-block: 4rem;
+    padding-block: var(--landing-section-y, 4rem);
   }
 
   .layout {
@@ -418,11 +419,11 @@
 
 @media (max-width: 640px) {
   .section {
-    padding-inline: 1.25rem;
+    padding-inline: var(--landing-gutter, 1.25rem);
   }
 
   .inner {
-    padding-block: 3.5rem;
+    padding-block: var(--landing-section-y, 4rem);
   }
 
   .eyebrow,
@@ -458,7 +459,7 @@
     align-items: center;
     padding: 0.58rem 0;
     border-right: 0;
-    border-bottom: 1px solid #c3ceca;
+    border-bottom: 1px solid var(--landing-line, #cbd6d1);
   }
 
   .caseMeta div:last-child {

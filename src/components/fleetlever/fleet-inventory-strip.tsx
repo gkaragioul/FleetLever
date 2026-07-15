@@ -127,11 +127,12 @@ export function FleetInventoryStrip() {
       className={styles.section}
       ref={sectionRef}
       data-section-tone="mist"
+      data-home-strip="regular"
       data-animation="fleet-inventory"
       data-inventory-focus={visibleFocus}
       aria-labelledby="fleet-inventory-title"
     >
-      <div className={styles.inner}>
+      <div className={styles.inner} data-home-shell>
         <div className={styles.copy}>
           <p className={styles.eyebrow}>Fleet inventory</p>
           <h2 className={styles.heading} id="fleet-inventory-title">

@@ -148,6 +148,7 @@ export function IndustrySwitchboard() {
     <section
       className={styles.section}
       data-animation="industry-switchboard"
+      data-home-strip="regular"
       data-industry-active={activeIndustry.id}
       data-paused={paused}
       data-section-tone="mist"
@@ -162,7 +163,7 @@ export function IndustrySwitchboard() {
       onPointerLeave={() => setPointerPaused(false)}
       ref={sectionRef}
     >
-      <div className={styles.inner}>
+      <div className={styles.inner} data-home-shell>
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}>One control loop. Four operating worlds.</p>

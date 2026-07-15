@@ -144,10 +144,11 @@ export function ReadinessLanes() {
       ref={sectionRef}
       aria-labelledby="readiness-lanes-title"
       data-animation="readiness-lanes"
+      data-home-strip="scroll"
       data-section-tone="mist"
     >
       <div className={styles.stickyFrame}>
-        <div className={styles.layout}>
+        <div className={styles.layout} data-home-shell>
           <div className={styles.copyColumn}>
             <p className={styles.eyebrow}>Set the plan</p>
             <h2 className={styles.heading} id="readiness-lanes-title">

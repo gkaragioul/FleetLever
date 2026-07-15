@@ -88,6 +88,60 @@ async function verifyAlternatingSectionBackgrounds(page, name) {
   }
 }
 
+async function verifyHomepageRhythm(page, name, expectedInset) {
+  const strips = await page.locator("[data-home-strip]").evaluateAll((elements) =>
+    elements.map((element) => {
+      const style = getComputedStyle(element);
+      const shell = element.querySelector("[data-home-shell]");
+      const shellRect = shell?.getBoundingClientRect();
+
+      return {
+        tone: element.getAttribute("data-section-tone"),
+        kind: element.getAttribute("data-home-strip"),
+        background: style.backgroundColor,
+        borderTopColor: style.borderTopColor,
+        borderTopWidth: style.borderTopWidth,
+        paddingTop: Number.parseFloat(style.paddingTop),
+        paddingBottom: Number.parseFloat(style.paddingBottom),
+        shellLeft: shellRect?.left ?? -1,
+        shellRight: shellRect ? window.innerWidth - shellRect.right : -1,
+      };
+    }),
+  );
+
+  if (strips.length !== 7) {
+    failures.push(`${name}: expected 7 coordinated homepage strips, found ${strips.length}`);
+    return;
+  }
+
+  const backgroundsAlternate = strips.every(
+    (strip, index) => index === 0 || strip.background !== strips[index - 1].background,
+  );
+  if (!backgroundsAlternate) failures.push(`${name}: homepage strip backgrounds do not alternate`);
+
+  const lineColors = new Set(strips.map((strip) => strip.borderTopColor));
+  if (lineColors.size !== 1 || strips.some((strip) => strip.borderTopWidth !== "1px")) {
+    failures.push(`${name}: homepage strips do not share one divider treatment (${JSON.stringify(strips)})`);
+  }
+
+  for (const strip of strips) {
+    if (Math.abs(strip.shellLeft - expectedInset) > 1.5 || Math.abs(strip.shellRight - expectedInset) > 1.5) {
+      failures.push(
+        `${name}: ${strip.tone} ${strip.kind} strip is off the shared grid ` +
+          `(${strip.shellLeft}px left, ${strip.shellRight}px right)`,
+      );
+    }
+  }
+
+  const regularStrips = strips.filter((strip) => strip.kind === "regular");
+  const regularPadding = new Set(
+    regularStrips.map((strip) => `${strip.paddingTop.toFixed(2)}/${strip.paddingBottom.toFixed(2)}`),
+  );
+  if (regularPadding.size !== 1) {
+    failures.push(`${name}: regular homepage strips do not share one vertical rhythm (${JSON.stringify(regularStrips)})`);
+  }
+}
+
 async function verifyHomepageStory(page, name) {
   const story = [
     "Every next assignment enters one release flow.",
@@ -487,6 +541,7 @@ try {
     interact: async (page) => {
       await verifyHowItWorksInset(page, "landing desktop", 32);
       await verifyAlternatingSectionBackgrounds(page, "landing desktop");
+      await verifyHomepageRhythm(page, "landing desktop", 40);
       await verifyHomepageStory(page, "landing desktop");
       await verifyServiceKanbanMotion(page, "landing desktop");
       await verifyCutoffTimelineScroll(page, "landing desktop");
@@ -512,6 +567,7 @@ try {
     interact: async (page) => {
       await verifyHowItWorksInset(page, "landing mobile", 20);
       await verifyAlternatingSectionBackgrounds(page, "landing mobile");
+      await verifyHomepageRhythm(page, "landing mobile", 20);
       await verifyHomepageStory(page, "landing mobile");
       await verifyMobileProductFocus(page, "landing mobile");
       const industrySwitchboard = page.locator('[data-animation="industry-switchboard"]');

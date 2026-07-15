@@ -102,12 +102,13 @@ export function ServiceKanbanStrip() {
       className={styles.section}
       ref={sectionRef}
       data-section-tone="white"
+      data-home-strip="regular"
       data-animation="service-kanban"
       data-service-stage={visibleStage}
       data-animation-state={reducedMotion ? "reduced" : paused ? "paused" : inView ? "running" : "waiting"}
       aria-labelledby="service-kanban-title"
     >
-      <div className={styles.inner}>
+      <div className={styles.inner} data-home-shell>
         <div className={styles.copy}>
           <Wrench className={styles.copyIcon} aria-hidden="true" />
           <p className={styles.eyebrow}>A new way to manage service</p>

@@ -1,0 +1,189 @@
+.page {
+  --landing-container: 86rem;
+  --landing-gutter: clamp(1.25rem, 3.5vw, 2.5rem);
+  --landing-section-y: clamp(4rem, 5.5vw, 5.5rem);
+  --landing-tone-mist: #edf2ee;
+  --landing-tone-paper: #ffffff;
+  --landing-line: #cbd6d1;
+  --landing-line-soft: #d9e1dd;
+  --landing-ink: #13211f;
+  --landing-muted: #53635f;
+  --landing-accent: #007681;
+  --landing-panel-radius: 8px;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--landing-tone-mist);
+  color: var(--landing-ink);
+}
+
+.regularStrip {
+  padding: var(--landing-section-y) var(--landing-gutter);
+  border-top: 1px solid var(--landing-line);
+}
+
+.paperStrip {
+  background: var(--landing-tone-paper);
+}
+
+.mistStrip {
+  background: var(--landing-tone-mist);
+}
+
+.shell {
+  width: min(100%, var(--landing-container));
+  margin-inline: auto;
+}
+
+.splitLead {
+  display: grid;
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--landing-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  max-width: 19ch;
+  margin: 0.8rem 0 0;
+  font-size: clamp(2.45rem, 4vw, 4rem);
+  font-weight: 650;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.sectionIntro {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--landing-muted);
+  font-size: 1.05rem;
+  font-weight: 520;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.productFrame {
+  margin-top: clamp(2.5rem, 4vw, 4rem);
+}
+
+.statusRail {
+  display: grid;
+  gap: 1px;
+  margin-top: 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--landing-line-soft);
+  border-radius: var(--landing-panel-radius);
+  background: var(--landing-line-soft);
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.5rem;
+  padding: 0.85rem 1rem;
+  background: #f8faf8;
+  color: #263b37;
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.statusDot {
+  width: 0.58rem;
+  height: 0.58rem;
+  flex: 0 0 auto;
+}
+
+.proofHeader {
+  padding-bottom: clamp(2.5rem, 4vw, 3.5rem);
+  border-bottom: 1px solid var(--landing-line);
+}
+
+.proofArticle {
+  display: grid;
+  gap: clamp(2.25rem, 4vw, 4rem);
+  align-items: center;
+  padding-block: clamp(3.5rem, 6vw, 5rem);
+  border-bottom: 1px solid var(--landing-line);
+}
+
+.proofArticle:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.passportChapter {
+  border-bottom: 1px solid var(--landing-line);
+}
+
+.proofCopy {
+  max-width: 34rem;
+}
+
+.proofIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--landing-accent);
+}
+
+.proofTitle {
+  max-width: 19ch;
+  margin: 0.8rem 0 0;
+  font-size: clamp(2.25rem, 3.25vw, 3.25rem);
+  font-weight: 650;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.proofBody {
+  max-width: 34rem;
+  margin: 1.2rem 0 0;
+  color: var(--landing-muted);
+  font-size: 1.05rem;
+  font-weight: 520;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+@media (min-width: 640px) {
+  .statusRail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .splitLead {
+    grid-template-columns: minmax(0, 0.84fr) minmax(24rem, 1.16fr);
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .sectionIntro {
+    justify-self: end;
+    padding-bottom: 0.4rem;
+  }
+
+  .proofArticle {
+    grid-template-columns: minmax(0, 1.08fr) minmax(22rem, 0.92fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .sectionTitle {
+    font-size: 2.45rem;
+  }
+
+  .sectionIntro,
+  .proofBody {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .proofTitle {
+    font-size: 2.25rem;
+  }
+}

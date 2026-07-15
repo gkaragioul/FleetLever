@@ -1,9 +1,10 @@
 .section {
   overflow: hidden;
-  border-bottom: 1px solid #d7dfdb;
-  background: #fff;
-  color: #13211f;
-  padding: clamp(4rem, 7vw, 6.5rem) clamp(1.25rem, 3.5vw, 2.5rem);
+  border-top: 1px solid var(--landing-line, #cbd6d1);
+  background: var(--landing-tone-paper, #fff);
+  color: var(--landing-ink, #13211f);
+  padding: var(--landing-section-y, clamp(4rem, 7vw, 6.5rem))
+    var(--landing-gutter, clamp(1.25rem, 3.5vw, 2.5rem));
 }
 
 .inner {
@@ -11,7 +12,7 @@
   grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 0.8fr);
   align-items: center;
   gap: clamp(2.5rem, 6vw, 6rem);
-  width: min(100%, 86rem);
+  width: min(100%, var(--landing-container, 86rem));
   margin: 0 auto;
 }
 
@@ -24,12 +25,12 @@
 .copyIcon {
   width: 1.8rem;
   height: 1.8rem;
-  color: #007c89;
+  color: var(--landing-accent, #007681);
 }
 
 .eyebrow {
   margin-top: 1.3rem;
-  color: #007c89;
+  color: var(--landing-accent, #007681);
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -38,7 +39,7 @@
 .heading {
   max-width: 30rem;
   margin-top: 0.8rem;
-  font-size: 3.2rem;
+  font-size: clamp(2.45rem, 3.6vw, 3.2rem);
   font-weight: 650;
   line-height: 0.98;
 }
@@ -46,7 +47,7 @@
 .intro {
   max-width: 30rem;
   margin-top: 1.4rem;
-  color: #53635f;
+  color: var(--landing-muted, #53635f);
   font-size: 1.08rem;
   font-weight: 560;
   line-height: 1.75;
@@ -54,14 +55,14 @@
 
 .outcomes {
   margin-top: 1.8rem;
-  border-top: 1px solid #d5ded9;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
 }
 
 .outcomes div {
   display: grid;
   grid-template-columns: 0.85fr 1.15fr;
   gap: 1rem;
-  border-bottom: 1px solid #d5ded9;
+  border-bottom: 1px solid var(--landing-line, #cbd6d1);
   padding: 0.75rem 0;
   font-size: 0.76rem;
 }
@@ -81,8 +82,8 @@
   grid-row: 1;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #cad6d1;
-  border-radius: 8px;
+  border: 1px solid var(--landing-line, #cbd6d1);
+  border-radius: var(--landing-panel-radius, 8px);
   background: #f6f8f7;
   box-shadow: 0 28px 75px rgb(17 54 49 / 0.13);
   outline: none;
@@ -712,10 +713,6 @@
 }
 
 @media (max-width: 650px) {
-  .section {
-    padding: 4rem 1rem;
-  }
-
   .heading {
     font-size: 2.45rem;
     line-height: 1.02;

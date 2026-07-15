@@ -2,7 +2,7 @@
   position: relative;
   min-height: 220svh;
   background: transparent;
-  color: #13211f;
+  color: var(--landing-ink, #13211f);
 }
 
 .stickyFrame {
@@ -20,7 +20,7 @@
   grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.28fr);
   gap: clamp(2rem, 4.5vw, 5rem);
   width: 100%;
-  max-width: 86rem;
+  max-width: var(--landing-container, 86rem);
   margin-inline: auto;
   align-items: center;
 }
@@ -34,14 +34,14 @@
 .sectionIcon {
   width: 1.75rem;
   height: 1.75rem;
-  color: #007c89;
+  color: var(--landing-accent, #007681);
 }
 
 .eyebrow {
   margin: 1.4rem 0 0;
-  color: #007c89;
-  font-size: 0.875rem;
-  font-weight: 750;
+  color: var(--landing-accent, #007681);
+  font-size: 0.78rem;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0;
 }
@@ -49,7 +49,7 @@
 .heading {
   max-width: 15ch;
   margin: 0.75rem 0 0;
-  font-size: clamp(2.45rem, 3.25vw, 3.7rem);
+  font-size: clamp(2.45rem, 3.6vw, 3.2rem);
   font-weight: 650;
   line-height: 1.03;
   text-wrap: balance;
@@ -58,7 +58,7 @@
 .intro {
   max-width: 34rem;
   margin: 1.5rem 0 0;
-  color: #53635f;
+  color: var(--landing-muted, #53635f);
   font-size: clamp(1rem, 1.2vw, 1.125rem);
   font-weight: 520;
   line-height: 1.7;
@@ -69,7 +69,7 @@
   min-height: 11.75rem;
   margin-top: clamp(2rem, 6vh, 4rem);
   padding-top: 1.5rem;
-  border-top: 1px solid #bccbc5;
+  border-top: 1px solid var(--landing-line, #cbd6d1);
 }
 
 .stageSignal {
@@ -108,7 +108,7 @@
 .stageCopy p {
   max-width: 32rem;
   margin: 0.85rem 0 0;
-  color: #53635f;
+  color: var(--landing-muted, #53635f);
   font-size: 0.98rem;
   font-weight: 520;
   line-height: 1.65;
@@ -134,8 +134,8 @@
   bottom: 11%;
   left: 11%;
   overflow: hidden;
-  border: 1px solid #b7c7c1;
-  border-radius: 6px;
+  border: 1px solid var(--landing-line, #cbd6d1);
+  border-radius: var(--landing-panel-radius, 8px);
   background: #ffffff;
   box-shadow: 0 28px 75px rgb(17 54 49 / 0.15);
   opacity: 1;
