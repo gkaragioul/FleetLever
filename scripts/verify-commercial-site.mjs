@@ -210,6 +210,8 @@ requireTokens("serviceStrip", [
   "data-service-train-card",
   "data-service-stage",
   "data-service-cursor-phase",
+  "data-motion-role",
+  "backgroundMotionProfiles",
   "visibilitychange",
   "prefers-reduced-motion: reduce",
 ]);
@@ -223,6 +225,8 @@ requireTokens("serviceStripStyles", [
   'data-cursor-phase="approach"',
   'data-cursor-phase="drag"',
   'data-cursor-phase="retreat"',
+  'data-motion-role="background"',
+  "backgroundCardRefresh",
   "cursorPulse",
   "data-stage",
   "prefers-reduced-motion: reduce",

@@ -275,9 +275,19 @@ async function verifyServiceKanbanMotion(page, name) {
     const cursorArchitecture = await board.evaluate((section) => {
       const card = section.querySelector("[data-service-drag-card]");
       const cursor = section.querySelector("[data-service-cursor]");
+      const pickedCard = section.querySelector('[data-motion-role="picked"]');
+      const backgroundCards = [...section.querySelectorAll('[data-motion-role="background"]')].filter(
+        (element) => Number.parseFloat(getComputedStyle(element).opacity) > 0.1,
+      );
+      const backgroundDelays = backgroundCards.map((element) =>
+        getComputedStyle(element).getPropertyValue("--train-delay").trim(),
+      );
       return {
         cursorNestedInCard: Boolean(card && cursor && card.contains(cursor)),
         cursorPhase: section.getAttribute("data-service-cursor-phase"),
+        pickedDelay: pickedCard ? getComputedStyle(pickedCard).getPropertyValue("--train-delay").trim() : null,
+        backgroundCardCount: backgroundCards.length,
+        uniqueBackgroundDelays: new Set(backgroundDelays).size,
       };
     });
     if (cursorArchitecture.cursorNestedInCard) {
@@ -285,6 +295,12 @@ async function verifyServiceKanbanMotion(page, name) {
     }
     if (!cursorArchitecture.cursorPhase) {
       failures.push(`${name}: service cursor does not expose an autonomous motion phase`);
+    }
+    if (cursorArchitecture.pickedDelay !== "0ms") {
+      failures.push(`${name}: cursor-picked service card is not the first card to move`);
+    }
+    if (cursorArchitecture.backgroundCardCount < 2 || cursorArchitecture.uniqueBackgroundDelays < 2) {
+      failures.push(`${name}: background service cards refresh in one synchronized group`);
     }
 
     await motionPage.mouse.move(4, 4);
@@ -341,6 +357,9 @@ async function verifyServiceKanbanMotion(page, name) {
       const handleRect = handle?.getBoundingClientRect();
       const pointerRect = pointer?.getBoundingClientRect();
       const laneRect = lane?.getBoundingClientRect();
+      const backgroundCards = [...section.querySelectorAll('[data-motion-role="background"]')].filter(
+        (element) => Number.parseFloat(getComputedStyle(element).opacity) > 0.1,
+      );
       return {
         cursorPhase: section.getAttribute("data-service-cursor-phase"),
         cardWidth: cardRect?.width ?? 0,
@@ -350,6 +369,9 @@ async function verifyServiceKanbanMotion(page, name) {
           handleRect && pointerRect
             ? Math.hypot(pointerRect.left - handleRect.left, pointerRect.top - handleRect.top)
             : Infinity,
+        backgroundAnimations: backgroundCards.map((element) =>
+          getComputedStyle(element.firstElementChild).animationName,
+        ),
         contained: Boolean(
           boardRect &&
             cardRect &&
@@ -366,6 +388,9 @@ async function verifyServiceKanbanMotion(page, name) {
     }
     if (movingState.cursorPhase !== "drag") failures.push(`${name}: service cursor skipped its drag phase`);
     if (movingState.cursorOpacity < 0.25) failures.push(`${name}: service drag cursor is not visible`);
+    if (!movingState.backgroundAnimations.some((animation) => animation !== "none")) {
+      failures.push(`${name}: background service cards do not refresh independently of the dragged card`);
+    }
     if (movingState.cursorGripDelta > 18) {
       failures.push(
         `${name}: service cursor does not accurately carry the moving card (${movingState.cursorGripDelta.toFixed(1)}px from grip)`,

@@ -97,7 +97,17 @@ const serviceTrainCatalog = [
 type TrainCardStyle = CSSProperties & {
   "--train-left": string;
   "--train-opacity": number;
+  "--train-delay": string;
+  "--train-refresh-duration": string;
+  "--train-refresh-y": string;
 };
+
+const backgroundMotionProfiles = [
+  { delay: 45, duration: 350, offset: "0.32rem" },
+  { delay: 125, duration: 345, offset: "-0.24rem" },
+  { delay: 80, duration: 375, offset: "0.2rem" },
+  { delay: 150, duration: 350, offset: "-0.3rem" },
+] as const;
 
 function trainLeftForSlot(slot: number) {
   if (slot <= -1) return "calc(var(--queued-card-left) - var(--column-width) - var(--lane-gap))";
@@ -109,6 +119,12 @@ function trainLeftForSlot(slot: number) {
 
 function stageForStep(step: number) {
   return stages[((step % stages.length) + stages.length) % stages.length];
+}
+
+function backgroundMotionForEntry(entry: number) {
+  const index =
+    ((entry % backgroundMotionProfiles.length) + backgroundMotionProfiles.length) % backgroundMotionProfiles.length;
+  return backgroundMotionProfiles[index];
 }
 
 function cursorTargetForMove(currentStep: number, nextStep: number, direction: -1 | 1): CursorAnchor {
@@ -329,12 +345,14 @@ export function ServiceKanbanStrip() {
                 const visible = slot >= 0 && slot <= 2;
                 const cardStage = stages[Math.min(2, Math.max(0, slot))];
                 const active = job.entry === activeEntry;
+                const backgroundMotion = backgroundMotionForEntry(job.entry);
 
                 return (
                   <div
                     className={styles.trainCard}
                     data-active={active}
                     data-card-stage={cardStage}
+                    data-motion-role={active ? "picked" : "background"}
                     data-service-drag-card={active ? "" : undefined}
                     data-service-train-card
                     data-train-slot={slot}
@@ -343,6 +361,11 @@ export function ServiceKanbanStrip() {
                       {
                         "--train-left": trainLeftForSlot(slot),
                         "--train-opacity": visible ? 1 : 0,
+                        "--train-delay": active ? "0ms" : `${backgroundMotion.delay}ms`,
+                        "--train-refresh-duration": active
+                          ? `${KANBAN_MOVE_DURATION}ms`
+                          : `${backgroundMotion.duration}ms`,
+                        "--train-refresh-y": active ? "0rem" : backgroundMotion.offset,
                       } as TrainCardStyle
                     }
                   >
