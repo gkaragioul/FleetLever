@@ -211,7 +211,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/pricing"
-              className="mt-4 block text-sm font-semibold text-[#d8e5e1] underline decoration-white/40 underline-offset-4 hover:text-white"
+              className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-[#d8e5e1] underline decoration-white/40 underline-offset-4 hover:text-white lg:justify-end"
             >
               View pricing and pilot terms
             </Link>

@@ -670,28 +670,52 @@
   }
 
   .kanbanCanvas {
-    --canvas-padding: 0.4rem;
-    --lane-gap: 0.35rem;
-    --drag-inset: 0.3rem;
-    --column-width: calc((100% - 1.5rem) / 3);
-    min-height: 21rem;
+    --canvas-padding: 0.55rem;
+    --lane-gap: 0.55rem;
+    --drag-inset: 0.55rem;
+    --column-width: calc((100% - 2.2rem) / 3);
+    width: 300%;
+    min-height: 22rem;
+    transform: translateX(0);
+    transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .board[data-stage="in-service"] .kanbanCanvas {
+    transform: translateX(-33.333333%);
+  }
+
+  .board[data-stage="cleared"] .kanbanCanvas {
+    transform: translateX(-66.666667%);
+  }
+
+  .board[data-rollover="true"] .kanbanCanvas {
+    transition-duration: 1ms;
+  }
+
+  .lane {
+    min-height: 20.9rem;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .board[data-stage="queued"] .lane[data-lane="queued"],
+  .board[data-stage="in-service"] .lane[data-lane="in-service"],
+  .board[data-stage="cleared"] .lane[data-lane="cleared"] {
+    opacity: 1;
+    visibility: visible;
   }
 
   .laneHeader {
-    display: flex;
-    min-height: 4.2rem;
-    flex-wrap: wrap;
-    align-content: center;
-    justify-content: space-between;
-    padding: 0.45rem 0.4rem;
+    min-height: 4.5rem;
+    padding: 0.62rem 0.7rem;
   }
 
   .laneHeader strong {
-    font-size: 0.59rem;
+    font-size: 0.76rem;
   }
 
   .laneHeader svg {
-    display: none;
+    display: block;
   }
 
   .laneHeader > span {
@@ -701,33 +725,33 @@
   }
 
   .laneHeader p {
-    width: 100%;
-    font-size: 0.48rem;
+    font-size: 0.61rem;
   }
 
   .dropGuide {
-    top: 5rem;
-    right: 0.3rem;
-    left: 0.3rem;
-    min-height: 8.7rem;
+    top: 5.35rem;
+    right: 0.55rem;
+    left: 0.55rem;
+    min-height: 11.2rem;
   }
 
   .dropGuide span {
-    display: none;
+    display: block;
   }
 
   .trainCard {
-    top: 5.65rem;
+    top: 6.35rem;
   }
 
   .featuredCard {
-    min-height: 8.7rem;
+    min-height: 11.2rem;
   }
 
   .featuredHeader {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-    padding: 0.35rem;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem;
+    min-height: 2.45rem;
+    padding: 0.45rem 0.55rem;
   }
 
   .dragHandle {
@@ -735,36 +759,41 @@
   }
 
   .featuredHeader strong {
-    font-size: 0.61rem;
+    font-size: 0.72rem;
   }
 
   .featuredHeader > span {
     width: fit-content;
-    margin-top: 0.1rem;
-    font-size: 0.39rem;
+    margin: 0;
+    font-size: 0.45rem;
   }
 
   .featuredBody {
-    display: block;
-    padding: 0.35rem;
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+    gap: 0.65rem;
+    padding: 0.6rem;
   }
 
   .featuredImage {
-    width: 100%;
-    height: 3.5rem;
+    width: 5.2rem;
+    height: 4.65rem;
   }
 
   .featuredCopy {
-    padding-top: 0.3rem;
+    align-self: center;
+    padding: 0;
   }
 
   .featuredCopy > p {
-    font-size: 0.51rem;
+    font-size: 0.65rem;
   }
 
-  .featuredCopy > small,
+  .featuredCopy > small {
+    font-size: 0.54rem;
+  }
+
   .parts {
-    display: none;
+    display: flex;
   }
 
   .trainCursor {

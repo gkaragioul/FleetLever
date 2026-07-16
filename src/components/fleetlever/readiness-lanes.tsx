@@ -85,6 +85,7 @@ export function ReadinessLanes() {
     if (!section) return;
 
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const compact = window.matchMedia("(max-width: 900px)");
     let frame = 0;
     let active = false;
 
@@ -93,7 +94,12 @@ export function ReadinessLanes() {
 
       const rect = section.getBoundingClientRect();
       const travel = Math.max(1, rect.height - window.innerHeight);
-      const progress = media.matches ? 1 : clamp((76 - rect.top) / travel);
+      const compactTravel = Math.max(1, rect.height * 0.82);
+      const progress = media.matches
+        ? 1
+        : compact.matches
+          ? clamp((window.innerHeight * 0.88 - rect.top) / compactTravel)
+          : clamp((76 - rect.top) / travel);
       const nextStage = progress < 0.3 ? 0 : progress < 0.7 ? 1 : 2;
 
       if (nextStage !== stageRef.current) {
@@ -139,11 +145,13 @@ export function ReadinessLanes() {
 
     observer.observe(section);
     media.addEventListener("change", onMotionPreferenceChange);
+    compact.addEventListener("change", onMotionPreferenceChange);
 
     return () => {
       active = false;
       observer.disconnect();
       media.removeEventListener("change", onMotionPreferenceChange);
+      compact.removeEventListener("change", onMotionPreferenceChange);
       window.cancelAnimationFrame(frame);
     };
   }, []);

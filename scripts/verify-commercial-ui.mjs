@@ -678,6 +678,89 @@ async function verifyMobileProductFocus(page, name) {
   }
 }
 
+async function verifyMobileOperationalCompositions(page, name) {
+  const readiness = page.locator('[data-animation="readiness-lanes"]');
+  const readinessHeight = await readiness.evaluate((element) => element.getBoundingClientRect().height);
+  if (readinessHeight > (page.viewportSize()?.height ?? 844) * 1.3) {
+    failures.push(`${name}: readiness motion keeps a desktop-sized scroll runway (${readinessHeight}px)`);
+  }
+
+  for (const { selector, label, laneSelector } of [
+    {
+      selector: '[data-animation="fleet-inventory"]',
+      label: "inventory",
+      laneSelector: '[data-state]',
+    },
+    {
+      selector: '[data-animation="service-kanban"]',
+      label: "service",
+      laneSelector: '[data-lane]',
+    },
+  ]) {
+    const board = page.locator(selector);
+    await board.scrollIntoViewIfNeeded();
+    const composition = await board.evaluate((element, targetSelector) => {
+      const boardRect = element.getBoundingClientRect();
+      const lanes = [...element.querySelectorAll(targetSelector)].map((lane) => {
+        const rect = lane.getBoundingClientRect();
+        const style = getComputedStyle(lane);
+        return {
+          display: style.display,
+          visibility: style.visibility,
+          width: rect.width,
+          height: rect.height,
+        };
+      });
+      const visible = lanes.filter(
+        (lane) => lane.display !== "none" && lane.visibility !== "hidden" && lane.width > 1 && lane.height > 1,
+      );
+      return {
+        boardWidth: boardRect.width,
+        visibleCount: visible.length,
+        widestLane: Math.max(0, ...visible.map((lane) => lane.width)),
+      };
+    }, laneSelector);
+
+    if (composition.visibleCount !== 1) {
+      failures.push(`${name}: mobile ${label} board shows ${composition.visibleCount} compressed lanes instead of one focus lane`);
+    }
+    if (composition.widestLane < composition.boardWidth * 0.82) {
+      failures.push(
+        `${name}: mobile ${label} lane is too narrow (${composition.widestLane}px / ${composition.boardWidth}px)`,
+      );
+    }
+  }
+
+  const compactTargets = await page.locator('[data-inventory-filter]').evaluateAll((buttons) =>
+    buttons
+      .map((button) => ({
+        label: button.textContent?.replace(/\s+/g, " ").trim() ?? "filter",
+        height: button.getBoundingClientRect().height,
+      }))
+      .filter((button) => button.height < 42),
+  );
+  if (compactTargets.length > 0) {
+    failures.push(`${name}: mobile inventory filters are below the touch target (${JSON.stringify(compactTargets)})`);
+  }
+
+  const shortFooterTargets = await page.locator("footer a").evaluateAll((links) =>
+    links
+      .filter((link) => {
+        const style = getComputedStyle(link);
+        const rect = link.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 1;
+      })
+      .map((link) => ({
+        label: link.textContent?.replace(/\s+/g, " ").trim() ?? "footer link",
+        height: link.getBoundingClientRect().height,
+      }))
+      .filter((link) => link.height < 40),
+  );
+  if (shortFooterTargets.length > 0) {
+    failures.push(`${name}: mobile footer links are below the touch target (${JSON.stringify(shortFooterTargets)})`);
+  }
+}
+
 async function verifyPage({ name, pathname, viewport, required, screenshot, maxHeight, interact }) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
   const page = await context.newPage();
@@ -873,6 +956,7 @@ try {
       await verifyHomepageStory(page, "landing mobile");
       await verifyUnifiedReleaseProcess(page, "landing mobile");
       await verifyMobileProductFocus(page, "landing mobile");
+      await verifyMobileOperationalCompositions(page, "landing mobile");
       const industrySwitchboard = page.locator('[data-animation="industry-switchboard"]');
       await industrySwitchboard.scrollIntoViewIfNeeded();
       await page.getByRole("button", { name: /Municipal and public works/i }).click();

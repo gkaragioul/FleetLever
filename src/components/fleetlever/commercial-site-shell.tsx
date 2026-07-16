@@ -152,7 +152,7 @@ export function CommercialSiteFooter() {
           </p>
           <a
             href="mailto:hello@fleetlever.com"
-            className="mt-5 inline-flex text-sm font-semibold text-[#73dce3] hover:text-white"
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[#73dce3] hover:text-white sm:mt-4 sm:min-h-8"
           >
             hello@fleetlever.com
           </a>
@@ -161,25 +161,25 @@ export function CommercialSiteFooter() {
         <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3 lg:justify-self-end">
           <div>
             <p className="font-bold text-white">Explore</p>
-            <div className="mt-3 grid gap-2.5 text-[#bfd0ca]">
-              <Link href="/#product" className="hover:text-white">Product</Link>
-              <Link href="/#for-whom" className="hover:text-white">Use cases</Link>
-              <Link href="/pricing" className="hover:text-white">Pricing</Link>
+            <div className="mt-2 grid text-[#bfd0ca] sm:mt-3 sm:gap-1">
+              <Link href="/#product" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Product</Link>
+              <Link href="/#for-whom" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Use cases</Link>
+              <Link href="/pricing" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Pricing</Link>
             </div>
           </div>
           <div>
             <p className="font-bold text-white">Trust</p>
-            <div className="mt-3 grid gap-2.5 text-[#bfd0ca]">
-              <Link href="/security" className="hover:text-white">Security</Link>
-              <Link href="/privacy" className="hover:text-white">Privacy</Link>
-              <Link href="/terms" className="hover:text-white">Terms</Link>
+            <div className="mt-2 grid text-[#bfd0ca] sm:mt-3 sm:gap-1">
+              <Link href="/security" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Security</Link>
+              <Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Privacy</Link>
+              <Link href="/terms" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Terms</Link>
             </div>
           </div>
           <div>
             <p className="font-bold text-white">Start</p>
-            <div className="mt-3 grid gap-2.5 text-[#bfd0ca]">
-              <Link href={demoHref} data-analytics="footer_demo" className="hover:text-white">Request a demo</Link>
-              <a href={consoleHref} className="hover:text-white">Sign in</a>
+            <div className="mt-2 grid text-[#bfd0ca] sm:mt-3 sm:gap-1">
+              <Link href={demoHref} data-analytics="footer_demo" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Request a demo</Link>
+              <a href={consoleHref} className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Sign in</a>
             </div>
           </div>
         </div>
