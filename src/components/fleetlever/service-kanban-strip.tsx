@@ -20,6 +20,7 @@ const CURSOR_APPROACH_DURATION = 220;
 const CURSOR_GRAB_DURATION = 80;
 const CURSOR_RELEASE_DURATION = 150;
 const CURSOR_RETREAT_DURATION = 220;
+const KANBAN_ROLLOVER_DURATION = 480;
 
 const stageMeta: Record<ServiceStage, { label: string; note: string }> = {
   queued: { label: "Queued", note: "Waiting for workshop" },
@@ -148,6 +149,7 @@ export function ServiceKanbanStrip() {
   const [cursorFrom, setCursorFrom] = useState<CursorAnchor>("queued");
   const [cursorTo, setCursorTo] = useState<CursorAnchor>("in-service");
   const [cursorPhase, setCursorPhase] = useState<CursorPhase>("parked");
+  const [rollingOver, setRollingOver] = useState(false);
   const [inView, setInView] = useState(false);
   const [paused, setPaused] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(true);
@@ -169,6 +171,21 @@ export function ServiceKanbanStrip() {
     const currentStep = pipelineStepRef.current;
     const nextStep = Math.max(0, currentStep + direction);
     if (nextStep === currentStep) return;
+
+    if (direction === 1 && stageForStep(currentStep) === "cleared") {
+      choreographyBusyRef.current = true;
+      clearChoreographyTimers();
+      setDragEntry(null);
+      setRollingOver(true);
+      pipelineStepRef.current = nextStep;
+      setPipelineStep(nextStep);
+
+      scheduleChoreography(() => {
+        setRollingOver(false);
+        choreographyBusyRef.current = false;
+      }, KANBAN_ROLLOVER_DURATION);
+      return;
+    }
 
     const sourceEntry = Math.floor(currentStep / stages.length) * stages.length;
     choreographyBusyRef.current = true;
@@ -303,6 +320,7 @@ export function ServiceKanbanStrip() {
           className={styles.board}
           data-stage={visibleStage}
           data-moving={moving}
+          data-rollover={rollingOver}
           data-pipeline-step={displayStep}
           tabIndex={0}
           aria-label="Animated service Kanban showing a convoy of machines moving from queued to cleared"

@@ -436,6 +436,40 @@ async function verifyServiceKanbanMotion(page, name) {
     if (landedState.cursorPhase !== "parked") failures.push(`${name}: service cursor did not retreat after release`);
     if (landedState.cursorOpacity < 0.55) failures.push(`${name}: service cursor disappears after release`);
     if (landedState.cursorGripDelta < 24) failures.push(`${name}: service cursor remains coupled to the card after release`);
+
+    await motionPage.mouse.move(4, 4);
+    await motionPage.waitForFunction(
+      (selector) => {
+        const section = document.querySelector(selector);
+        return (
+          section?.getAttribute("data-service-stage") === "cleared" &&
+          section?.getAttribute("data-service-cursor-phase") === "parked"
+        );
+      },
+      '[data-animation="service-kanban"]',
+      { timeout: 3_500 },
+    );
+    await motionPage.waitForFunction(
+      (selector) => {
+        const section = document.querySelector(selector);
+        const phase = section?.getAttribute("data-service-cursor-phase");
+        return (
+          section?.getAttribute("data-service-stage") === "queued" ||
+          (section?.querySelector("[data-service-cursor]")?.getAttribute("data-cursor-from") === "cleared" &&
+            phase !== "parked")
+        );
+      },
+      '[data-animation="service-kanban"]',
+      { timeout: 2_500 },
+    );
+    const clearedRollover = await board.evaluate((section) => ({
+      stage: section.getAttribute("data-service-stage"),
+      cursorPhase: section.getAttribute("data-service-cursor-phase"),
+      cursorFrom: section.querySelector("[data-service-cursor]")?.getAttribute("data-cursor-from"),
+    }));
+    if (clearedRollover.cursorFrom === "cleared" && clearedRollover.cursorPhase !== "parked") {
+      failures.push(`${name}: service cursor picks up a completed card from the Cleared lane`);
+    }
   } finally {
     await motionPage.close();
   }
