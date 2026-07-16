@@ -472,7 +472,7 @@ async function verifyWheelSteppedMotion(page, name) {
     {
       selector: '[data-animation="industry-switchboard"]',
       attribute: "data-industry-active",
-      order: ["construction", "rental", "municipal", "service"],
+      order: ["construction", "rental", "municipal", "car-rental"],
       loop: true,
     },
   ];
@@ -791,6 +791,7 @@ try {
       "Manage service as a flow, not a list.",
       "From blocker to release. One record.",
       "Equipment rental",
+      "Car rental operations",
     ],
     screenshot: "site-landing-desktop.png",
     interact: async (page) => {

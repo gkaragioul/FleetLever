@@ -44,15 +44,15 @@ const industries = [
     alt: "Municipal refuse trucks prepared in a public works fleet depot",
   },
   {
-    id: "service",
+    id: "car-rental",
     number: "04",
-    title: "Specialist and service fleets",
-    shortTitle: "Service fleets",
-    kicker: "Job dispatch",
-    question: "Can the van, technician and required tools be dispatched together?",
-    checks: ["Van and technician", "Tools and parts", "Job requirements"],
-    image: "/fleetlever/site/industries/service-fleet.jpg",
-    alt: "Field service technician holding tools beside an equipped service van",
+    title: "Car rental operations",
+    shortTitle: "Car rental",
+    kicker: "Rental readiness",
+    question: "Is the right car inspected, clean and ready before the next customer arrives?",
+    checks: ["Vehicle and booking", "Damage and cleaning", "Documents and handover"],
+    image: "/fleetlever/site/industries/car-rental.jpg",
+    alt: "A row of rental cars prepared for customer collection",
   },
 ] as const;
 
