@@ -118,12 +118,153 @@
   height: 0.95rem;
 }
 
+.attentionBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 5.25rem;
+  border-bottom: 1px solid #dce4e0;
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.attentionResult {
+  min-width: 0;
+  animation: inventoryResultIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.attentionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #007c89;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.attentionLabel svg {
+  width: 0.78rem;
+  height: 0.78rem;
+}
+
+.attentionResult > strong,
+.attentionResult > small {
+  display: block;
+}
+
+.attentionResult > strong {
+  margin-top: 0.25rem;
+  color: #17322e;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.attentionResult > small {
+  margin-top: 0.18rem;
+  overflow: hidden;
+  color: #60716c;
+  font-size: 0.63rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  border: 1px solid #d8e1dd;
+  border-radius: 6px;
+  padding: 0.22rem;
+  background: #f4f7f5;
+}
+
+.filterButton {
+  --filter-color: #315f58;
+  display: flex;
+  min-width: 5.35rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.46rem 0.52rem;
+  background: transparent;
+  color: #5b6b67;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color 240ms ease,
+    background-color 240ms ease,
+    color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.filterButton[data-inventory-filter="blocked"] {
+  --filter-color: #be2f2a;
+}
+
+.filterButton[data-inventory-filter="review"] {
+  --filter-color: #935800;
+}
+
+.filterButton[data-inventory-filter="ready"] {
+  --filter-color: #16834b;
+}
+
+.filterButton:hover,
+.filterButton[data-active="true"] {
+  border-color: color-mix(in srgb, var(--filter-color) 32%, white);
+  background: color-mix(in srgb, var(--filter-color) 9%, white);
+  color: var(--filter-color);
+}
+
+.filterButton[data-active="true"] {
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--filter-color) 10%, transparent);
+}
+
+.filterButton:focus-visible {
+  outline: 2px solid #007c89;
+  outline-offset: 2px;
+}
+
+.filterButton span {
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.filterButton strong {
+  display: grid;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.62rem;
+}
+
 .lanes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
   padding: 0.7rem;
   background: #f5f8f6;
+  transition: grid-template-columns 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.productWindow[data-focus="blocked"] .lanes {
+  grid-template-columns: 1.12fr 0.94fr 0.94fr;
+}
+
+.productWindow[data-focus="review"] .lanes {
+  grid-template-columns: 0.94fr 1.12fr 0.94fr;
+}
+
+.productWindow[data-focus="ready"] .lanes {
+  grid-template-columns: 0.94fr 0.94fr 1.12fr;
 }
 
 .lane {
@@ -134,11 +275,13 @@
   border-top: 3px solid var(--lane-color);
   border-radius: 6px;
   background: #fff;
-  transform: translateY(0.2rem) scale(0.985);
+  filter: saturate(0.08);
+  transform: translateY(0.3rem) scale(0.975);
   transition:
     border-color 700ms ease,
     box-shadow 700ms ease,
-    transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+    filter 520ms ease,
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .lane[data-state="blocked"] {
@@ -156,12 +299,19 @@
   --lane-wash: #f1fbf5;
 }
 
-.productWindow[data-focus="blocked"] .lane[data-state="blocked"],
-.productWindow[data-focus="review"] .lane[data-state="review"],
-.productWindow[data-focus="ready"] .lane[data-state="ready"] {
+.lane[data-active="true"] {
   border-color: color-mix(in srgb, var(--lane-color) 50%, white);
   box-shadow: 0 16px 35px color-mix(in srgb, var(--lane-color) 13%, transparent);
+  filter: saturate(1);
   transform: translateY(0) scale(1);
+}
+
+.lane[data-active="false"] {
+  background: #f5f8f6;
+}
+
+.lane[data-active="false"] .assetRow {
+  background: #f8faf9;
 }
 
 .laneHeader {
@@ -231,11 +381,14 @@
   transition: border-color 500ms ease, transform 500ms ease;
 }
 
-.productWindow[data-focus="blocked"] .lane[data-state="blocked"] .assetRow,
-.productWindow[data-focus="review"] .lane[data-state="review"] .assetRow,
-.productWindow[data-focus="ready"] .lane[data-state="ready"] .assetRow {
+.lane[data-active="true"] .assetRow {
   border-color: color-mix(in srgb, var(--lane-color) 32%, white);
   transform: translateY(-1px);
+  animation: inventoryAssetIn 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lane[data-active="true"] .assetRow:nth-child(2) {
+  animation-delay: 90ms;
 }
 
 .assetImage {
@@ -333,9 +486,34 @@
     display: none;
   }
 
+  .attentionBar {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .attentionResult > small {
+    white-space: normal;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filterButton {
+    min-width: 0;
+  }
+
   .lanes {
     gap: 0.35rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     padding: 0.4rem;
+  }
+
+  .productWindow[data-focus="blocked"] .lanes,
+  .productWindow[data-focus="review"] .lanes,
+  .productWindow[data-focus="ready"] .lanes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .lane {
@@ -402,9 +580,40 @@
   }
 }
 
+@keyframes inventoryResultIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes inventoryAssetIn {
+  from {
+    opacity: 0.45;
+    transform: translateY(0.45rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lane,
-  .assetRow {
+  .assetRow,
+  .lanes,
+  .filterButton {
     transition: none;
+  }
+
+  .attentionResult,
+  .lane[data-active="true"] .assetRow {
+    animation: none;
   }
 }

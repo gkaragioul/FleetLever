@@ -570,6 +570,17 @@ async function verifyWheelSteppedMotion(page, name) {
         continue;
       }
 
+      if (motionCase.selector.includes("fleet-inventory")) {
+        const inventoryState = await section.evaluate((element) => ({
+          result: element.querySelector("[data-inventory-result]")?.getAttribute("data-inventory-result"),
+          activeLanes: element.querySelectorAll('[data-state][data-active="true"]').length,
+          activeFilters: element.querySelectorAll('[data-inventory-filter][data-active="true"][aria-pressed="true"]').length,
+        }));
+        if (inventoryState.result !== afterDown || inventoryState.activeLanes !== 1 || inventoryState.activeFilters !== 1) {
+          failures.push(`${name}: fleet inventory focus is not reflected by one clear result, lane and filter`);
+        }
+      }
+
       await motionPage.waitForTimeout(220);
       await motionPage.mouse.wheel(0, -128);
       await motionPage.waitForTimeout(motionCase.settle ?? 520);

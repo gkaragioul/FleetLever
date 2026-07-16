@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { AlertTriangle, CheckCircle2, Search, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ListFilter, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./fleet-inventory-strip.module.css";
 import { useWheelMotionStep } from "./use-wheel-motion-step";
@@ -84,6 +84,26 @@ const inventoryLanes: Array<{
 
 const INVENTORY_FOCUS_DURATION = 2800;
 const INVENTORY_STATES: InventoryState[] = ["blocked", "review", "ready"];
+const inventoryFocusCopy: Record<
+  InventoryState,
+  {
+    result: string;
+    detail: string;
+  }
+> = {
+  blocked: {
+    result: "2 assets need action now",
+    detail: "Open the blockers before tomorrow's dispatch is committed.",
+  },
+  review: {
+    result: "2 assets need a decision",
+    detail: "Confirm the missing return evidence and operator assignment.",
+  },
+  ready: {
+    result: "1 asset cleared for dispatch",
+    detail: "Every release requirement has passed and the record is complete.",
+  },
+};
 
 export function FleetInventoryStrip() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -135,6 +155,7 @@ export function FleetInventoryStrip() {
   }, [focus, inView, paused, reducedMotion]);
 
   const visibleFocus: InventoryState = reducedMotion ? "ready" : focus;
+  const focusCopy = inventoryFocusCopy[visibleFocus];
 
   return (
     <section
@@ -179,9 +200,41 @@ export function FleetInventoryStrip() {
             </div>
           </div>
 
+          <div className={styles.attentionBar} data-inventory-result={visibleFocus}>
+            <div className={styles.attentionResult} key={visibleFocus}>
+              <span className={styles.attentionLabel}>
+                <ListFilter aria-hidden="true" />
+                Attention view
+              </span>
+              <strong>{focusCopy.result}</strong>
+              <small>{focusCopy.detail}</small>
+            </div>
+            <div className={styles.filters} role="group" aria-label="Filter assets by readiness">
+              {inventoryLanes.map((lane) => (
+                <button
+                  className={styles.filterButton}
+                  data-inventory-filter={lane.state}
+                  data-active={visibleFocus === lane.state ? "true" : "false"}
+                  aria-pressed={visibleFocus === lane.state}
+                  key={lane.state}
+                  type="button"
+                  onClick={() => setFocus(lane.state)}
+                >
+                  <span>{lane.label}</span>
+                  <strong>{lane.count}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className={styles.lanes}>
             {inventoryLanes.map((lane) => (
-              <article className={styles.lane} data-state={lane.state} key={lane.state}>
+              <article
+                className={styles.lane}
+                data-state={lane.state}
+                data-active={visibleFocus === lane.state ? "true" : "false"}
+                key={lane.state}
+              >
                 <header className={styles.laneHeader}>
                   <div>
                     <span className={styles.stateDot} aria-hidden="true" />

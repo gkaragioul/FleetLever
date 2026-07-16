@@ -189,10 +189,22 @@ requireTokens("inventoryStrip", [
   "Blocked",
   "Review",
   "Ready",
+  "2 assets need action now",
+  "2 assets need a decision",
+  "1 asset cleared for dispatch",
   "data-inventory-focus",
+  "data-inventory-result",
+  "data-inventory-filter",
+  "data-active",
   "prefers-reduced-motion: reduce",
 ]);
-requireTokens("inventoryStripStyles", ["grid-template-columns", "data-focus", "prefers-reduced-motion: reduce"]);
+requireTokens("inventoryStripStyles", [
+  "grid-template-columns",
+  "data-focus",
+  "data-active",
+  "filter: saturate",
+  "prefers-reduced-motion: reduce",
+]);
 
 requireTokens("serviceStrip", [
   'data-animation="service-kanban"',
