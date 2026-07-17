@@ -1,4 +1,5 @@
 import { requireFleetLeverApiSession } from "@/lib/auth/access";
+import { getActiveTenantContext } from "@/lib/db/tenant-context";
 import {
   lisaBridgeHeaders,
   lisaBridgeUrl,
@@ -7,6 +8,13 @@ import {
   noStoreJson,
   originMatches,
 } from "@/lib/lisa/server";
+import {
+  enqueueLisaRelayJob,
+  getLisaRelayConnectionStatus,
+  lisaRelayEnabled,
+  lisaRelayIsConfigured,
+  streamLisaRelayJob,
+} from "@/lib/lisa/relay";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,9 +27,6 @@ export async function POST(request: Request) {
 
   const contentLength = Number.parseInt(request.headers.get("content-length") ?? "0", 10);
   if (contentLength > lisaRequestLimitBytes) return noStoreJson({ status: "invalid_request", detail: "Request is too large." }, 413);
-
-  const headers = lisaBridgeHeaders();
-  if (!headers) return noStoreJson({ status: "misconfigured", detail: "Lisa bridge credentials are not configured." }, 503);
 
   let rawBody = "";
   try {
@@ -43,6 +48,38 @@ export async function POST(request: Request) {
   if (!question || question.length > 2000) {
     return noStoreJson({ status: "invalid_request", detail: "Question must be between 1 and 2,000 characters." }, 400);
   }
+
+  if (lisaRelayEnabled()) {
+    if (!lisaRelayIsConfigured()) {
+      return noStoreJson({ status: "misconfigured", detail: "Lisa relay credentials are not configured." }, 503);
+    }
+    const relayStatus = await getLisaRelayConnectionStatus();
+    if (relayStatus !== "connected") {
+      return noStoreJson(
+        {
+          status: relayStatus,
+          detail: relayStatus === "busy" ? "Lisa is answering another request." : "The local Lisa companion is not connected.",
+        },
+        relayStatus === "busy" ? 409 : 503,
+      );
+    }
+
+    const tenantContext = await getActiveTenantContext();
+    const requestBody = body as { context?: unknown };
+    const jobId = await enqueueLisaRelayJob(tenantContext, { question, context: requestBody.context });
+    return new Response(streamLisaRelayJob(tenantContext, jobId, request.signal), {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-transform",
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "X-Accel-Buffering": "no",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
+  const headers = lisaBridgeHeaders();
+  if (!headers) return noStoreJson({ status: "misconfigured", detail: "Lisa bridge credentials are not configured." }, 503);
 
   try {
     const upstream = await fetch(lisaBridgeUrl("v1/chat"), {

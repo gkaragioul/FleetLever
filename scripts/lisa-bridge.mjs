@@ -16,6 +16,7 @@ import {
   requestIsAuthorized,
   writeServerEvent,
 } from "./lib/lisa-bridge-core.mjs";
+import { classifyRelayConfig } from "../src/lib/lisa/relay-core.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, "..");
@@ -26,6 +27,11 @@ const secret = process.env.FLEETLEVER_LISA_BRIDGE_SECRET ?? "";
 const host = process.env.FLEETLEVER_LISA_BRIDGE_HOST ?? "127.0.0.1";
 const port = Number.parseInt(process.env.FLEETLEVER_LISA_BRIDGE_PORT ?? "3210", 10);
 const timeoutMs = Number.parseInt(process.env.FLEETLEVER_LISA_TIMEOUT_MS ?? "90000", 10);
+const relayEnabled = process.env.FLEETLEVER_LISA_RELAY_ENABLED === "true";
+const relayBaseUrl = process.env.FLEETLEVER_LISA_RELAY_URL ?? "";
+const relaySecret = process.env.FLEETLEVER_LISA_RELAY_SECRET ?? "";
+const relayCompanionId = (process.env.FLEETLEVER_LISA_RELAY_COMPANION_ID ?? "primary").slice(0, 120);
+const relayVersion = "0.11.0";
 const limiter = createRateLimiter({ limit: 12, windowMs: 60_000 });
 let activeRequest = null;
 
@@ -206,6 +212,151 @@ async function handleChat(request, response) {
   child.stdin.end(prompt);
 }
 
+function delay(ms) {
+  return new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
+}
+
+function relayUrl(pathname) {
+  return new URL(pathname, relayBaseUrl.endsWith("/") ? relayBaseUrl : `${relayBaseUrl}/`);
+}
+
+async function relayFetch(pathname, options = {}) {
+  return fetch(relayUrl(pathname), {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${relaySecret}`,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+    signal: options.signal ?? AbortSignal.timeout(10_000),
+  });
+}
+
+async function postRelayEvent(jobId, event, data) {
+  const response = await relayFetch(`api/fleetlever/lisa/relay/jobs/${jobId}/events`, {
+    body: JSON.stringify({ event, data }),
+    method: "POST",
+  });
+  if (!response.ok) throw new Error(`Relay event rejected (${response.status}).`);
+  return response.json();
+}
+
+async function forwardServerEvents(jobId, body) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let eventName = "message";
+  let dataLines = [];
+
+  const dispatch = async () => {
+    if (!dataLines.length) return;
+    let data;
+    try {
+      data = JSON.parse(dataLines.join("\n"));
+    } catch {
+      data = { status: "unavailable", detail: "Lisa returned an invalid stream event." };
+      eventName = "error";
+    }
+    await postRelayEvent(jobId, eventName, data);
+    eventName = "message";
+    dataLines = [];
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+    const lines = buffer.split(/\r?\n/);
+    buffer = done ? "" : (lines.pop() ?? "");
+    for (const line of lines) {
+      if (!line) {
+        await dispatch();
+      } else if (line.startsWith("event:")) {
+        eventName = line.slice("event:".length).trim();
+      } else if (line.startsWith("data:")) {
+        dataLines.push(line.slice("data:".length).trimStart());
+      }
+    }
+    if (done) break;
+  }
+  if (buffer) dataLines.push(buffer);
+  await dispatch();
+}
+
+async function runRelayJob(job) {
+  const controller = new AbortController();
+  let cancelled = false;
+  const heartbeat = setInterval(() => {
+    void relayFetch("api/fleetlever/lisa/relay/heartbeat", {
+      body: JSON.stringify({ companionId: relayCompanionId, status: "busy", version: relayVersion }),
+      method: "POST",
+    }).catch(() => {});
+  }, 15_000);
+  const cancellationPoll = setInterval(async () => {
+    try {
+      const response = await relayFetch(`api/fleetlever/lisa/relay/jobs/${job.id}/status`);
+      const status = await response.json();
+      if (status.cancel_requested === true || status.status === "cancelled") {
+        cancelled = true;
+        controller.abort();
+      }
+    } catch {
+      // A transient status check must not discard the active Codex response.
+    }
+  }, 1000);
+
+  try {
+    const response = await fetch(`http://${host}:${port}/v1/chat`, {
+      body: JSON.stringify({ question: job.question, context: job.context }),
+      headers: {
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      signal: controller.signal,
+    });
+    if (!response.ok || !response.body) {
+      await postRelayEvent(job.id, "error", { status: "unavailable", detail: "The local Codex companion could not answer." });
+      return;
+    }
+    await forwardServerEvents(job.id, response.body);
+  } catch {
+    if (!cancelled) {
+      await postRelayEvent(job.id, "error", { status: "unavailable", detail: "The local Lisa companion was interrupted." }).catch(() => {});
+    }
+  } finally {
+    clearInterval(heartbeat);
+    clearInterval(cancellationPoll);
+  }
+}
+
+async function runRelayLoop() {
+  const configuration = classifyRelayConfig({ enabled: relayEnabled, baseUrl: relayBaseUrl, secret: relaySecret });
+  if (configuration !== "connected") {
+    console.log(`[Lisa relay] ${configuration}; outbound relay is not running.`);
+    return;
+  }
+
+  console.log(`[Lisa relay] connecting outbound as ${relayCompanionId}.`);
+  while (relayEnabled) {
+    try {
+      const response = await relayFetch("api/fleetlever/lisa/relay/jobs/claim", {
+        body: JSON.stringify({ companionId: relayCompanionId, version: relayVersion }),
+        method: "POST",
+      });
+      if (response.status === 204) {
+        await delay(800);
+        continue;
+      }
+      if (!response.ok) throw new Error(`Relay claim rejected (${response.status}).`);
+      const payload = await response.json();
+      if (payload?.job?.id) await runRelayJob(payload.job);
+    } catch (error) {
+      console.error(`[Lisa relay] connection unavailable (${error?.name ?? "network"}).`);
+      await delay(3000);
+    }
+  }
+}
+
 const server = createServer(async (request, response) => {
   response.setHeader("Access-Control-Allow-Origin", "null");
   const remoteAddress = request.socket.remoteAddress ?? "unknown";
@@ -228,6 +379,7 @@ const server = createServer(async (request, response) => {
 server.listen(port, host, () => {
   const status = classifyBridgeConfig({ enabled, secret });
   console.log(`[Lisa bridge] ${status} on http://${host}:${port}`);
+  if (relayEnabled) void runRelayLoop();
 });
 
 function shutdown() {

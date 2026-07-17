@@ -1,4 +1,5 @@
 import { requireFleetLeverApiSession } from "@/lib/auth/access";
+import { getLisaRelayConnectionStatus, lisaRelayEnabled } from "@/lib/lisa/relay";
 import { lisaBridgeHeaders, lisaBridgeUrl, lisaEnabled, noStoreJson } from "@/lib/lisa/server";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,10 @@ export async function GET() {
   const authError = await requireFleetLeverApiSession({ activeAccess: true });
   if (authError) return authError;
   if (!lisaEnabled()) return noStoreJson({ status: "disabled" });
+  if (lisaRelayEnabled()) {
+    const status = await getLisaRelayConnectionStatus();
+    return noStoreJson({ status }, status === "connected" || status === "busy" ? 200 : 503);
+  }
 
   const headers = lisaBridgeHeaders();
   if (!headers) return noStoreJson({ status: "misconfigured" }, 503);
