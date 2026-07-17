@@ -22,7 +22,11 @@ function hasFleetLeverSessionCookie(request: NextRequest) {
 }
 
 function isProtectedPage(pathname: string) {
-  return pathname === "/console" || pathname.startsWith("/console/") || pathname.startsWith("/field/");
+  return pathname === "/fleet-management"
+    || pathname.startsWith("/fleet-management/")
+    || pathname === "/console"
+    || pathname.startsWith("/console/")
+    || pathname.startsWith("/field/");
 }
 
 function isProtectedApi(pathname: string) {
@@ -47,6 +51,21 @@ function isProductRoute(pathname: string) {
     || pathname.startsWith("/api/auth/");
 }
 
+function isAccountRoute(pathname: string) {
+  return ["/signup", "/forgot-password", "/reset-password", "/verify-email"].some((route) => startsWithRoute(pathname, route));
+}
+
+function rewriteToProductApp(request: NextRequest) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+
+  if (!appUrl) {
+    return null;
+  }
+
+  const destination = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, `${appUrl}/`);
+  return NextResponse.rewrite(destination);
+}
+
 function isMarketingRoute(pathname: string) {
   return ["/landing", "/pricing", "/request-demo", "/privacy", "/terms", "/security", "/api/commercial"].some((route) => startsWithRoute(pathname, route));
 }
@@ -64,6 +83,14 @@ export function proxy(request: NextRequest) {
 
   if (edition === "site" && pathname === "/landing") {
     return NextResponse.redirect(new URL("/", request.url), 308);
+  }
+
+  if (edition === "site" && (isProductRoute(pathname) || isAccountRoute(pathname))) {
+    const productAppResponse = rewriteToProductApp(request);
+
+    if (productAppResponse) {
+      return productAppResponse;
+    }
   }
 
   if (edition === "site" && (isMunicipalRoute(pathname) || isProductRoute(pathname))) {
@@ -102,6 +129,10 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
     "/console/:path*",
     "/field/:path*",
     "/api/auth/:path*",

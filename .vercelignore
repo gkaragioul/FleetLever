@@ -1,11 +1,17 @@
 node_modules
 .next
+.next-*
 .vercel
 out
 build
 coverage
+artifacts
+.codex-logs
+reports
 reference-repos
 .fleetlever
 .DS_Store
+.env*
+!.env.example
 *.log
 *.tsbuildinfo
