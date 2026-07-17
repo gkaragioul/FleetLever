@@ -12,7 +12,7 @@ export type SignupState = { error?: string };
 export async function signupAction(_state: SignupState, formData: FormData): Promise<SignupState> {
   const requestHeaders = await headers();
   const ipAddress = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? requestHeaders.get("x-real-ip");
-  if (!takeAuthRateLimit(`signup:${ipAddress ?? "unknown"}`)) return { error: "Too many attempts. Try again in a few minutes." };
+  if (!(await takeAuthRateLimit(`signup:${ipAddress ?? "unknown"}`))) return { error: "Too many attempts. Try again in a few minutes." };
   const password = String(formData.get("password") ?? "");
   if (password !== String(formData.get("passwordConfirmation") ?? "")) return { error: "The passwords do not match." };
 

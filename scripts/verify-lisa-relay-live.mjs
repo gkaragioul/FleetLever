@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import pg from "pg";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const databaseUrl = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_PUBLIC_URL;
 if (!databaseUrl) {
@@ -14,7 +15,7 @@ const expectedVersion = process.env.RELAY_EXPECTED_VERSION ?? packageMetadata.ve
 const timeoutMs = Number(process.env.RELAY_LIVE_TIMEOUT_MS ?? 120_000);
 const pool = new pg.Pool({
   connectionString: databaseUrl,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  ssl: databaseSsl(databaseUrl),
 });
 
 function wait(ms) {

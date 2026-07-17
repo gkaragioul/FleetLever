@@ -21,7 +21,7 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
   const password = String(formData.get("password") ?? "");
   const next = safeRedirectPath(formData.get("next"));
   const metadata = await requestMetadata();
-  if (!takeAuthRateLimit(`login:${metadata.ipAddress ?? "unknown"}`)) return { error: "Too many sign-in attempts. Try again in a few minutes." };
+  if (!(await takeAuthRateLimit(`login:${metadata.ipAddress ?? "unknown"}`))) return { error: "Too many sign-in attempts. Try again in a few minutes." };
   if (!email.trim() || !password) return { error: "Enter your email and password." };
 
   const account = await authenticateEmailAccount(email, password).catch(() => null);

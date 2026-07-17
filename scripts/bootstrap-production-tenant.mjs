@@ -1,4 +1,5 @@
 import pg from "pg";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const { Pool } = pg;
 
@@ -31,7 +32,7 @@ if (!profileEmail) {
 function createPool(databaseUrl) {
   return new Pool({
     connectionString: databaseUrl,
-    ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+    ssl: databaseSsl(databaseUrl),
   });
 }
 

@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import pg from "pg";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const { Pool } = pg;
 
@@ -24,7 +25,7 @@ if (process.env.SEED_DEMO === "true" && isProduction && process.env.FLEETLEVER_A
 function createPool(databaseUrl) {
   return new Pool({
     connectionString: databaseUrl,
-    ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+    ssl: databaseSsl(databaseUrl),
   });
 }
 

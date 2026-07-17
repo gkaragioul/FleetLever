@@ -10,7 +10,7 @@ export type ForgotPasswordState = { sent?: boolean; previewUrl?: string; error?:
 export async function forgotPasswordAction(_state: ForgotPasswordState, formData: FormData): Promise<ForgotPasswordState> {
   const requestHeaders = await headers();
   const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? requestHeaders.get("x-real-ip") ?? "unknown";
-  if (!takeAuthRateLimit(`forgot:${ip}`)) return { error: "Too many attempts. Try again in a few minutes." };
+  if (!(await takeAuthRateLimit(`forgot:${ip}`))) return { error: "Too many attempts. Try again in a few minutes." };
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return { error: "Enter your account email." };
   const token = await requestPasswordReset(email).catch(() => null);

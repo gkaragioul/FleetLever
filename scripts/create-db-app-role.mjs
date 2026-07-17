@@ -1,4 +1,5 @@
 import pg from "pg";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const { Pool } = pg;
 
@@ -23,7 +24,7 @@ if (!/^[a-z_][a-z0-9_]*$/i.test(appRole)) {
 
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  ssl: databaseSsl(databaseUrl),
 });
 
 async function quote(client, value, fnName) {
@@ -58,6 +59,8 @@ async function main() {
     await client.query(`revoke all on public.auth_sessions from ${roleIdentifier}`);
     await client.query(`revoke all on public.auth_tokens from ${roleIdentifier}`);
     await client.query(`revoke all on public.oauth_identities from ${roleIdentifier}`);
+    await client.query(`revoke all on app_private.account_credentials from ${roleIdentifier}`);
+    await client.query(`revoke all on app_private.rate_limit_buckets from ${roleIdentifier}`);
     await client.query(
       `alter default privileges in schema public grant select, insert, update, delete on tables to ${roleIdentifier}`,
     );

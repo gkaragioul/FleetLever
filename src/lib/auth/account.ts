@@ -12,7 +12,7 @@ import {
 } from "@/lib/auth/account-core.mjs";
 
 export const accountSessionCookieName = "fleetlever_account_session";
-const sessionDurationSeconds = 60 * 60 * 24 * 30;
+const sessionDurationSeconds = 60 * 60 * 24 * 7;
 
 type AccountRow = {
   profile_id: string;

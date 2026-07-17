@@ -65,6 +65,8 @@ export async function GET(
       "Content-Length": String(file.file_size_bytes),
       "Content-Disposition": contentDisposition(file.file_name),
       "Cache-Control": "private, max-age=60",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

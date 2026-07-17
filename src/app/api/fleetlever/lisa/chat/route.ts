@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   }
 
   const tenantContext = await getActiveTenantContext();
-  if (!takeLisaRateLimit(tenantContext.profileId)) {
+  if (!(await takeLisaRateLimit(tenantContext.profileId))) {
     return new Response(JSON.stringify({ status: "rate_limited", detail: "Lisa has received too many requests. Try again in a minute." }), {
       status: 429,
       headers: {

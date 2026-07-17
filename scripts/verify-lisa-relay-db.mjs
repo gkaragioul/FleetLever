@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 import pg from "pg";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const databaseUrl = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_PUBLIC_URL;
 if (!databaseUrl) {
@@ -10,7 +11,7 @@ if (!databaseUrl) {
 
 const pool = new pg.Pool({
   connectionString: databaseUrl,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  ssl: databaseSsl(databaseUrl),
 });
 const client = await pool.connect();
 

@@ -1,4 +1,5 @@
 import pg from "pg";
+import { resolveDatabaseSsl } from "@/lib/db/connection-security.mjs";
 
 const { Pool } = pg;
 
@@ -12,10 +13,12 @@ export function getDbPool() {
 
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl:
-        process.env.DATABASE_SSL === "false"
-          ? false
-          : { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true" },
+      ssl: resolveDatabaseSsl({
+        connectionString: process.env.DATABASE_URL,
+        databaseSsl: process.env.DATABASE_SSL,
+        rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED,
+        hostedDeployment: process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL),
+      }),
       max: Number(process.env.DATABASE_POOL_MAX ?? 10),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,

@@ -3,6 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import pg from "pg";
 import { chromium } from "playwright";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const { Pool } = pg;
 const origin = process.env.FLEETLEVER_CONSOLE_URL ?? "http://127.0.0.1:3101";
@@ -19,7 +20,7 @@ await mkdir(outputDir, { recursive: true });
 
 const pool = new Pool({
   connectionString: adminDatabaseUrl,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  ssl: databaseSsl(adminDatabaseUrl),
 });
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });

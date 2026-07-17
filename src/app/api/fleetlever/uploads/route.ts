@@ -3,6 +3,7 @@ import { withTenant } from "@/lib/db/client";
 import { requireObjectStorageForProduction, uploadObject } from "@/lib/storage/object-storage";
 import { requireFleetLeverApiSession } from "@/lib/auth/access";
 import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
+import { validateUpload } from "@/lib/security/upload-policy.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -56,19 +57,30 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "Files must be 10MB or smaller." }, { status: 413 });
   }
 
+  const body = Buffer.from(await file.arrayBuffer());
+  let validatedFile: { extension: string; mimeType: string };
+  try {
+    validatedFile = validateUpload({ fileName: file.name, declaredMimeType: file.type, bytes: body });
+  } catch (error) {
+    return Response.json(
+      { ok: false, error: error instanceof Error ? error.message : "This file could not be validated." },
+      { status: 415 },
+    );
+  }
+
   const scope = typeof formData.get("scope") === "string" ? String(formData.get("scope")) : "general";
   const machineCode = typeof formData.get("machineCode") === "string" ? String(formData.get("machineCode")) : "machine";
   const assetId = cleanRecordId(formData.get("assetId"));
   const evidenceTitle = cleanText(formData.get("documentTitle"), safeNameWithoutExtension(file.name));
   const evidenceCategory = cleanText(formData.get("documentCategory"), "Safety document");
   const expiresAt = dateOrNull(formData.get("expiresAt"));
-  const safeName = sanitizeFileName(file.name);
-  const extension = safeName.includes(".") ? safeName.slice(safeName.lastIndexOf(".")) : "";
-  const key = `console/${tenant.organizationId}/${storageSlug(scope)}/${storageSlug(machineCode)}/${crypto.randomUUID()}-${storageSlug(safeName)}${extension}`;
+  const safeBaseName = sanitizeFileName(safeNameWithoutExtension(file.name));
+  const safeName = `${safeBaseName}${validatedFile.extension}`;
+  const key = `console/${tenant.organizationId}/${storageSlug(scope)}/${storageSlug(machineCode)}/${crypto.randomUUID()}-${storageSlug(safeBaseName)}${validatedFile.extension}`;
   const stored = await uploadObject({
     key,
-    body: Buffer.from(await file.arrayBuffer()),
-    contentType: file.type || "application/octet-stream",
+    body,
+    contentType: validatedFile.mimeType,
     fileName: safeName,
   });
 
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
           evidenceCategory,
           stored.storageKey,
           safeName,
-          file.type || "application/octet-stream",
+          validatedFile.mimeType,
           file.size,
           expiresAt,
         ],
@@ -131,7 +143,7 @@ export async function POST(request: Request) {
           stored.storageProvider,
           stored.storageBucket,
           safeName,
-          file.type || "application/octet-stream",
+          validatedFile.mimeType,
           file.size,
           stored.sha256,
           tenant.profileId,
@@ -204,7 +216,7 @@ export async function POST(request: Request) {
     file: {
       name: safeName,
       size: file.size,
-      mimeType: file.type || "application/octet-stream",
+      mimeType: validatedFile.mimeType,
       storageKey: stored.storageKey,
       storageProvider: stored.storageProvider,
       storageBucket: stored.storageBucket,

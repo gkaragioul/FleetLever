@@ -1,5 +1,6 @@
 import pg from "pg";
 import nextEnv from "@next/env";
+import { databaseSsl } from "./lib/database-connection.mjs";
 
 const { Pool } = pg;
 const { loadEnvConfig } = nextEnv;
@@ -50,7 +51,7 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+  ssl: databaseSsl(process.env.DATABASE_URL),
 });
 
 async function checkTenant() {
