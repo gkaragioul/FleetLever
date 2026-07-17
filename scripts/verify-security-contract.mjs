@@ -33,6 +33,8 @@ const rateLimitServer = await readFile("src/lib/auth/rate-limit.ts", "utf8");
 const uploadRoute = await readFile("src/app/api/fleetlever/uploads/route.ts", "utf8");
 const roleBootstrap = await readFile("scripts/create-db-app-role.mjs", "utf8");
 const resetPasswordAction = await readFile("src/app/reset-password/actions.ts", "utf8");
+const accountEmail = await readFile("src/lib/auth/email.ts", "utf8");
+const healthRoute = await readFile("src/app/api/health/route.ts", "utf8");
 const nextConfig = await readFile("next.config.ts", "utf8");
 const proxy = await readFile("src/proxy.ts", "utf8");
 
@@ -86,6 +88,11 @@ assert.match(uploadRoute, /validateUpload/, "Evidence uploads must validate exte
 assert.match(roleBootstrap, /revoke update, delete on public\.audit_logs/i, "Role bootstrap must preserve append-only audit logs.");
 assert.match(roleBootstrap, /revoke all on public\.auth_sessions/i, "Role bootstrap must preserve private auth tables.");
 assert.match(resetPasswordAction, /takeAuthRateLimit\(`reset:/, "Password-reset consumption must be rate limited.");
+assert.match(accountEmail, /AbortSignal\.timeout\(10_000\)/, "Transactional email requests must have a bounded timeout.");
+assert.match(accountEmail, /provider_unavailable/, "Email-provider failures must not break an already-created account.");
+assert.match(healthRoute, /Cache-Control[^\n]+no-store/, "Public health responses must never be cached.");
+assert.match(healthRoute, /checks:\s*\{/, "Public health responses must expose component status without infrastructure details.");
+assert.doesNotMatch(healthRoute, /database_name|database_user|json_agg\(version/, "Public health responses must not query or expose database identity and migration history.");
 assert.match(nextConfig, /Strict-Transport-Security/, "Hosted responses must advertise HSTS.");
 assert.match(nextConfig, /poweredByHeader:\s*false/, "Hosted responses must not disclose the Next.js implementation header.");
 assert.match(nextConfig, /default-src 'self'/, "The CSP must define a restrictive default source.");

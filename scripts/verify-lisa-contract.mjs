@@ -17,7 +17,7 @@ assert.match(route, /requireFleetLeverApiSession/);
 assert.match(route, /activeAccess:\s*true/);
 assert.match(route, /takeLisaRateLimit/);
 assert.match(route, /status:\s*"rate_limited"/);
-assert.match(rateLimit, /export function takeLisaRateLimit/);
+assert.match(rateLimit, /export async function takeLisaRateLimit/);
 
 assert.match(consoleSource, /\/api\/fleetlever\/lisa\/chat/);
 assert.match(consoleSource, /\/api\/fleetlever\/lisa\/health/);

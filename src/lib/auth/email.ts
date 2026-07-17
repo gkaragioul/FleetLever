@@ -13,11 +13,17 @@ export async function sendAccountEmail(input: { email: string; subject: string; 
   const from = process.env.FLEETLEVER_EMAIL_FROM;
   if (!apiKey || !from) return { delivered: false as const, reason: "not_configured" as const };
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [input.email], subject: input.subject, html: input.html }),
-  });
-  if (!response.ok) return { delivered: false as const, reason: "provider_error" as const };
-  return { delivered: true as const };
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [input.email], subject: input.subject, html: input.html }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return { delivered: false as const, reason: "provider_error" as const };
+    return { delivered: true as const };
+  } catch (error) {
+    console.error("FleetLever account email delivery failed", error instanceof Error ? error.message : error);
+    return { delivered: false as const, reason: "provider_unavailable" as const };
+  }
 }
