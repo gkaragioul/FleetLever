@@ -1,6 +1,6 @@
 {
   "name": "fleetlever-app",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "private": true,
   "engines": {
     "node": ">=20.19.0"
@@ -34,6 +34,7 @@
     "lisa:bridge": "node scripts/lisa-bridge.mjs",
     "test:lisa": "node --test scripts/test-lisa-bridge.mjs scripts/test-lisa-relay.mjs && node scripts/verify-lisa-contract.mjs",
     "test:lisa:db": "node scripts/verify-lisa-relay-db.mjs",
+    "test:lisa:live": "node scripts/verify-lisa-relay-live.mjs",
     "test:auth": "node --test scripts/test-account-auth.mjs",
     "test:customization": "node scripts/verify-customization-contract.mjs && node --test scripts/test-console-snapshot.mjs",
     "test:customization-ui": "node scripts/verify-customization-ui.mjs",

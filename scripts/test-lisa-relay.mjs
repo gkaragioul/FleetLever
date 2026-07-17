@@ -47,8 +47,9 @@ test("relay connection status expires stale companion heartbeats", () => {
 });
 
 test("hosted relay contract uses ephemeral tenant jobs and outbound companion routes", async () => {
-  const [migration, relayServer, chatRoute, bridge, proxy] = await Promise.all([
+  const [migration, runtimeGrantMigration, relayServer, chatRoute, bridge, proxy] = await Promise.all([
     readFile("db/migrations/0006_lisa_outbound_relay.sql", "utf8"),
+    readFile("db/migrations/0007_lisa_relay_runtime_grants.sql", "utf8"),
     readFile("src/lib/lisa/relay.ts", "utf8"),
     readFile("src/app/api/fleetlever/lisa/chat/route.ts", "utf8"),
     readFile("scripts/lisa-bridge.mjs", "utf8"),
@@ -60,6 +61,9 @@ test("hosted relay contract uses ephemeral tenant jobs and outbound companion ro
   assert.match(migration, /row level security/);
   assert.match(migration, /security definer/);
   assert.match(migration, /revoke all on function app_private\.claim_lisa_relay_job\(text\) from public/i);
+  assert.match(runtimeGrantMigration, /grant execute on function app_private\.lisa_relay_heartbeat\(text, text, text\) to fleetlever_app/i);
+  assert.match(runtimeGrantMigration, /grant execute on function app_private\.claim_lisa_relay_job\(text\) to fleetlever_app/i);
+  assert.doesNotMatch(runtimeGrantMigration, /grant execute on all functions/i);
   assert.match(relayServer, /enqueueLisaRelayJob/);
   assert.match(relayServer, /claimLisaRelayJob/);
   assert.match(chatRoute, /streamLisaRelayJob/);
