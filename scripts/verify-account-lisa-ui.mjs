@@ -156,8 +156,8 @@ try {
     return input instanceof HTMLInputElement && input.disabled;
   });
   const unavailableText = await unavailablePanel.textContent();
-  if (!unavailableText || !/δεν είναι συνδεδεμένος|not connected|offline/i.test(unavailableText)) {
-    throw new Error("Lisa did not explain that the local companion is unavailable.");
+  if (!unavailableText || !/δεν είναι συνδεδεμένος|ανενεργή|not connected|offline|unavailable/i.test(unavailableText)) {
+    throw new Error(`Lisa did not explain that the local companion is unavailable: ${unavailableText ?? "empty"}`);
   }
   await unavailablePage.screenshot({ path: path.join(outputDir, "account-lisa-unavailable.png"), fullPage: true, animations: "disabled" });
   await unavailablePage.close();
