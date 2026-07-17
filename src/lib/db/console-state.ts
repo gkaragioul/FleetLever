@@ -3,6 +3,16 @@ import { getActiveTenantContext } from "@/lib/db/tenant-context";
 
 const snapshotKey = "construction-console";
 
+function customizationState(snapshot: unknown) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
+  const value = snapshot as Record<string, unknown>;
+  return {
+    branding: value.branding ?? null,
+    customFieldDefinitions: value.customFieldDefinitions ?? [],
+    assetColumnLayout: value.assetColumnLayout ?? [],
+  };
+}
+
 export async function readConsoleSnapshotFromDatabase() {
   const context = await getActiveTenantContext();
 
@@ -26,6 +36,20 @@ export async function writeConsoleSnapshotToDatabase(snapshot: unknown) {
   const context = await getActiveTenantContext();
 
   await withTenant(context, async (client) => {
+    const previousResult = await client.query<{ snapshot: unknown }>(
+      `
+        select snapshot
+        from public.console_snapshots
+        where organization_id = $1
+          and snapshot_key = $2
+        limit 1
+      `,
+      [context.organizationId, snapshotKey],
+    );
+    const previousCustomization = customizationState(previousResult.rows[0]?.snapshot);
+    const nextCustomization = customizationState(snapshot);
+    const customizationChanged = JSON.stringify(previousCustomization) !== JSON.stringify(nextCustomization);
+
     await client.query(
       `
         insert into public.console_snapshots (
@@ -43,6 +67,31 @@ export async function writeConsoleSnapshotToDatabase(snapshot: unknown) {
       `,
       [context.organizationId, snapshotKey, JSON.stringify(snapshot), context.profileId],
     );
+
+    if (customizationChanged) {
+      await client.query(
+        `
+          insert into public.audit_logs (
+            organization_id,
+            actor_profile_id,
+            action,
+            record_table,
+            record_id,
+            metadata
+          )
+          values ($1, $2, 'console.customization_updated', 'console_snapshots', $1, $3::jsonb)
+        `,
+        [
+          context.organizationId,
+          context.profileId,
+          JSON.stringify({
+            brandingChanged: JSON.stringify(previousCustomization?.branding) !== JSON.stringify(nextCustomization?.branding),
+            customFieldsChanged: JSON.stringify(previousCustomization?.customFieldDefinitions) !== JSON.stringify(nextCustomization?.customFieldDefinitions),
+            assetColumnsChanged: JSON.stringify(previousCustomization?.assetColumnLayout) !== JSON.stringify(nextCustomization?.assetColumnLayout),
+          }),
+        ],
+      );
+    }
   });
 }
 

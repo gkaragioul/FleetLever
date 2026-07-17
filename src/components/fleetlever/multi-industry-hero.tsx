@@ -40,7 +40,7 @@ export function MultiIndustryHero() {
               fill
               loading={index === 0 ? undefined : "eager"}
               preload={index === 0}
-              quality={78}
+              quality={75}
               sizes="(min-width: 900px) 34vw, 48vw"
               src={scene.src}
             />

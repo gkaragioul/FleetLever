@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { withTenant } from "@/lib/db/client";
+import { getAccountSession } from "@/lib/auth/account";
 import type { TenantContext } from "@/lib/db/queries";
 
 const organizationCookie = "fleetlever_organization_id";
@@ -36,6 +37,9 @@ function defaultTenantContext(): TenantContext {
 }
 
 export async function getActiveTenantContext(): Promise<TenantContext> {
+  const account = await getAccountSession().catch(() => null);
+  if (account) return { organizationId: account.organizationId, profileId: account.profileId };
+
   const cookieStore = await cookies();
   const organizationId = cookieStore.get(organizationCookie)?.value;
   const profileId = cookieStore.get(profileCookie)?.value;
@@ -56,11 +60,13 @@ export async function setActiveTenantContext(context: TenantContext) {
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 180,
+    secure: isProductionDeployment(),
   });
   cookieStore.set(profileCookie, context.profileId, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 180,
+    secure: isProductionDeployment(),
   });
 }

@@ -1,0 +1,41 @@
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+
+const passwordHashPrefix = "scrypt-v1";
+
+export function normalizeEmail(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+export function createPasswordHash(password) {
+  const salt = randomBytes(16).toString("base64url");
+  const derived = scryptSync(password, salt, 64).toString("base64url");
+  return `${passwordHashPrefix}:${salt}:${derived}`;
+}
+
+export function verifyPassword(password, storedHash) {
+  const [prefix, salt, hash] = String(storedHash ?? "").split(":");
+  if (prefix !== passwordHashPrefix || !salt || !hash) return false;
+  const expected = Buffer.from(hash, "base64url");
+  const derived = scryptSync(password, salt, expected.length);
+  return expected.length === derived.length && timingSafeEqual(expected, derived);
+}
+
+export function hashOpaqueToken(token) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export function safeRedirectPath(value, fallback = "/fleet-management") {
+  const candidate = String(value ?? "");
+  return candidate.startsWith("/") && !candidate.startsWith("//") ? candidate : fallback;
+}
+
+export function trialAccessState(startedAt, endsAt, now = Date.now()) {
+  const start = Date.parse(startedAt);
+  const end = Date.parse(endsAt);
+  const active = Number.isFinite(start) && Number.isFinite(end) && now >= start && now < end;
+  return {
+    active,
+    daysRemaining: active ? Math.max(1, Math.ceil((end - now) / 86_400_000)) : 0,
+    expired: Number.isFinite(end) && now >= end,
+  };
+}

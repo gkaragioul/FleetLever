@@ -1,4 +1,11 @@
 import type { FleetLeverData, FleetDocument, Issue, MaintenanceTask } from "@/lib/fleetlever";
+import {
+  defaultAssetColumnLayout,
+  defaultBrandingSettings,
+  type AssetColumnLayout,
+  type BrandingSettings,
+  type CustomFieldDefinition,
+} from "@/lib/fleetlever/customization";
 
 type MachineState = "ready" | "at_risk" | "blocked";
 
@@ -59,7 +66,10 @@ type ConsoleWorksite = {
 
 export type ProductionConsoleSnapshot = {
   organizationName: string;
-  schemaVersion: 1;
+  schemaVersion: 5;
+  branding: BrandingSettings;
+  customFieldDefinitions: CustomFieldDefinition[];
+  assetColumnLayout: AssetColumnLayout[];
   machines: ConsoleMachine[];
   notifications: Array<{ id: number; title: string; detail: string; createdAt: string; read: boolean }>;
   releaseHistory: Array<{
@@ -72,6 +82,7 @@ export type ProductionConsoleSnapshot = {
     user: string;
     override: "Yes" | "No";
   }>;
+  staff: Record<string, unknown>[];
   updatedAt: string;
   worksites: ConsoleWorksite[];
 };
@@ -297,10 +308,14 @@ export function buildProductionConsoleSnapshot(data: FleetLeverData): Production
 
   return {
     organizationName: data.organization.name,
-    schemaVersion: 1,
+    schemaVersion: 5,
+    branding: defaultBrandingSettings,
+    customFieldDefinitions: [],
+    assetColumnLayout: defaultAssetColumnLayout,
     machines,
     notifications: [],
     releaseHistory: [],
+    staff: [],
     updatedAt: new Date().toISOString(),
     worksites: [
       {

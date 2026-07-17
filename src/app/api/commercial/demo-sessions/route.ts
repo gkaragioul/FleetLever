@@ -1,9 +1,11 @@
 import { createDemoSession } from "@/lib/commercial/demo-session-store";
+import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (!originMatches(request)) return originErrorResponse();
   const session = await createDemoSession();
   const origin = new URL(request.url).origin;
   const shareUrl = `${origin}/try/${session.id}`;

@@ -1,6 +1,7 @@
 import { withTenant } from "@/lib/db/client";
 import { getActiveTenantContext } from "@/lib/db/tenant-context";
-import { requireSuperAdminApiSession } from "@/lib/auth/super-admin";
+import { requireFleetLeverApiSession } from "@/lib/auth/access";
+import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,7 +28,8 @@ function cleanRecordId(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireSuperAdminApiSession();
+  if (!originMatches(request)) return originErrorResponse();
+  const authError = await requireFleetLeverApiSession({ activeAccess: true });
   if (authError) return authError;
 
   if (!process.env.DATABASE_URL) {

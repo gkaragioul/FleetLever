@@ -20,6 +20,7 @@ import {
   Plus,
   Search,
   Send,
+  Settings,
   ShieldAlert,
   Smartphone,
   Truck,
@@ -29,11 +30,22 @@ import {
 } from "lucide-react";
 import { MunicipalBrandLockup, PortalReturnLink } from "@/components/fleetlever/municipal-brand";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
+import { SettingsView } from "@/components/fleetlever/settings-view";
 import {
   currentDemoSessionStorageKey,
   demoSessionStateEndpoint,
   publicDemoSessionIdFromLocation,
 } from "@/lib/commercial/demo-session-client";
+import {
+  customFieldDisplayValue,
+  defaultAssetColumnLayout,
+  defaultBrandingSettings,
+  normalizedCustomFieldValue,
+  type AssetColumnLayout,
+  type BrandingSettings,
+  type CustomFieldDefinition,
+  type CustomFieldValue,
+} from "@/lib/fleetlever/customization";
 
 type MachineState = "ready" | "at_risk" | "blocked";
 type ViewKey =
@@ -44,7 +56,8 @@ type ViewKey =
   | "certificates"
   | "service"
   | "staff"
-  | "history";
+  | "history"
+  | "settings";
 type DrawerMode = "why" | "passport";
 type PassportTab = "overview" | "documents" | "service" | "issues" | "photos" | "history";
 
@@ -58,6 +71,7 @@ type Certificate = {
   due?: string;
   assignmentStatus?: "Χωρίς ανάθεση" | "Ανατέθηκε" | "Έγινε αποδεκτό" | "Εκπρόθεσμο";
   assignedAt?: string;
+  customFields?: Record<string, CustomFieldValue>;
 };
 
 type ServiceBlocker = {
@@ -71,6 +85,7 @@ type ServiceBlocker = {
   partsStatus?: "Δεν χρειάζεται" | "Χρειάζεται" | "Παραγγέλθηκε" | "Σε αναμονή" | "Παραλήφθηκε";
   assignmentStatus?: "Χωρίς ανάθεση" | "Ανατέθηκε" | "Έγινε αποδεκτό" | "Εκπρόθεσμο";
   assignedAt?: string;
+  customFields?: Record<string, CustomFieldValue>;
 };
 
 type Machine = {
@@ -95,6 +110,7 @@ type Machine = {
   service: ServiceBlocker[];
   issues: Array<{ title: string; severity: string; owner: string; status: string }>;
   photos: Array<{ title: string; category: string; date: string }>;
+  customFields?: Record<string, CustomFieldValue>;
 };
 
 type Worksite = {
@@ -103,6 +119,7 @@ type Worksite = {
   location: string;
   date: string;
   requiredMachineIds: string[];
+  customFields?: Record<string, CustomFieldValue>;
 };
 
 type ReleaseRecord = {
@@ -141,6 +158,7 @@ type StaffMember = {
   phone: string;
   note: string;
   replacement?: string;
+  customFields?: Record<string, CustomFieldValue>;
 };
 
 type OperationalNotification = {
@@ -153,10 +171,14 @@ type OperationalNotification = {
 
 type ConsoleSnapshot = {
   organizationName?: string;
-  schemaVersion: 4;
+  schemaVersion: 5;
+  branding: BrandingSettings;
+  customFieldDefinitions: CustomFieldDefinition[];
+  assetColumnLayout: AssetColumnLayout[];
   machines: Machine[];
   notifications: OperationalNotification[];
   releaseHistory: ReleaseRecord[];
+  staff: StaffMember[];
   updatedAt: string;
   worksites: Worksite[];
 };
@@ -178,7 +200,6 @@ type WorkshopJobDraft = {
   parts: string;
   partsStatus: NonNullable<ServiceBlocker["partsStatus"]>;
 };
-type LisaIntent = "morning-check" | "blockers" | "next-action" | "documents" | "workshop" | "staff" | "history" | "capabilities";
 type LisaMessage = {
   id: number;
   role: "lisa" | "user";
@@ -191,6 +212,7 @@ type LisaMessage = {
   text: string;
   bullets?: string[];
 };
+type LisaConnectionStatus = "checking" | "connected" | "unavailable" | "busy" | "misconfigured" | "disabled";
 type WorkshopDragState = {
   jobId: string;
   x: number;
@@ -1263,22 +1285,88 @@ function replaceConsoleArray<T>(target: T[], next: T[]) {
   target.splice(0, target.length, ...cloneConsoleData(next));
 }
 
-function consoleSnapshot(notifications: OperationalNotification[], organizationName = defaultClientName): ConsoleSnapshot {
+function consoleSnapshot(
+  notifications: OperationalNotification[],
+  organizationName = defaultClientName,
+  branding: BrandingSettings = defaultBrandingSettings,
+  customFieldDefinitions: CustomFieldDefinition[] = [],
+  assetColumnLayout: AssetColumnLayout[] = defaultAssetColumnLayout,
+): ConsoleSnapshot {
   return {
     organizationName,
-    schemaVersion: 4,
+    schemaVersion: 5,
+    branding: cloneConsoleData(branding),
+    customFieldDefinitions: cloneConsoleData(customFieldDefinitions),
+    assetColumnLayout: cloneConsoleData(assetColumnLayout),
     machines: cloneConsoleData(machines),
     notifications: cloneConsoleData(notifications),
     releaseHistory: normalizeReleaseHistory(cloneConsoleData(releaseHistory)),
+    staff: cloneConsoleData(staffMembers),
     updatedAt: new Date().toISOString(),
     worksites: cloneConsoleData(worksites),
   };
 }
 
-function saveConsoleSnapshot(notifications: OperationalNotification[]) {
+function saveConsoleSnapshot(
+  notifications: OperationalNotification[],
+  organizationName: string,
+  branding: BrandingSettings,
+  customFieldDefinitions: CustomFieldDefinition[],
+  assetColumnLayout: AssetColumnLayout[],
+) {
   if (typeof window === "undefined") return;
   if (!allowDemoConsoleData || publicDemoSessionIdFromLocation()) return;
-  window.localStorage.setItem(activeConsoleSnapshotKey(), JSON.stringify(consoleSnapshot(notifications)));
+  window.localStorage.setItem(activeConsoleSnapshotKey(), JSON.stringify(consoleSnapshot(notifications, organizationName, branding, customFieldDefinitions, assetColumnLayout)));
+}
+
+function normalizeConsoleSnapshot(snapshot: Partial<Omit<ConsoleSnapshot, "schemaVersion">> & { schemaVersion?: number }): ConsoleSnapshot | null {
+  if (
+    !snapshot ||
+    (snapshot.schemaVersion !== 4 && snapshot.schemaVersion !== 5) ||
+    !Array.isArray(snapshot.machines) ||
+    !Array.isArray(snapshot.worksites) ||
+    !Array.isArray(snapshot.releaseHistory) ||
+    !Array.isArray(snapshot.notifications)
+  ) return null;
+
+  const normalizedMachines = snapshot.machines.map((machine) => ({
+    ...machine,
+    certificates: Array.isArray(machine.certificates)
+      ? machine.certificates.map((certificate) => ({
+          ...certificate,
+          customFields: certificate.customFields && typeof certificate.customFields === "object" ? certificate.customFields : {},
+        }))
+      : [],
+    customFields: machine.customFields && typeof machine.customFields === "object" ? machine.customFields : {},
+    service: Array.isArray(machine.service)
+      ? machine.service.map((service) => ({
+          ...service,
+          customFields: service.customFields && typeof service.customFields === "object" ? service.customFields : {},
+        }))
+      : [],
+  }));
+  const normalizedWorksites = snapshot.worksites.map((worksite) => ({
+    ...worksite,
+    customFields: worksite.customFields && typeof worksite.customFields === "object" ? worksite.customFields : {},
+  }));
+  const normalizedStaff = (Array.isArray(snapshot.staff) ? snapshot.staff : staffMembers).map((person) => ({
+    ...person,
+    customFields: person.customFields && typeof person.customFields === "object" ? person.customFields : {},
+  }));
+
+  return {
+    organizationName: snapshot.organizationName,
+    schemaVersion: 5,
+    branding: snapshot.branding ?? defaultBrandingSettings,
+    customFieldDefinitions: Array.isArray(snapshot.customFieldDefinitions) ? snapshot.customFieldDefinitions : [],
+    assetColumnLayout: Array.isArray(snapshot.assetColumnLayout) ? snapshot.assetColumnLayout : defaultAssetColumnLayout,
+    machines: normalizedMachines,
+    notifications: snapshot.notifications,
+    releaseHistory: normalizeReleaseHistory(snapshot.releaseHistory),
+    staff: normalizedStaff,
+    updatedAt: snapshot.updatedAt ?? new Date(0).toISOString(),
+    worksites: normalizedWorksites,
+  };
 }
 
 function loadConsoleSnapshot() {
@@ -1289,11 +1377,7 @@ function loadConsoleSnapshot() {
 
   try {
     const parsed = JSON.parse(rawSnapshot) as Partial<ConsoleSnapshot>;
-    if (parsed.schemaVersion !== 4 || !Array.isArray(parsed.machines) || !Array.isArray(parsed.worksites) || !Array.isArray(parsed.releaseHistory)) return null;
-    return {
-      ...parsed,
-      releaseHistory: normalizeReleaseHistory(parsed.releaseHistory),
-    } as ConsoleSnapshot;
+    return normalizeConsoleSnapshot(parsed);
   } catch {
     return null;
   }
@@ -1308,25 +1392,18 @@ async function loadServerConsoleSnapshot() {
 
   const payload = await response.json() as ServerConsoleSnapshotPayload;
   const snapshot = payload.snapshot;
-  if (
-    snapshot?.schemaVersion !== 4 ||
-    !Array.isArray(snapshot.machines) ||
-    !Array.isArray(snapshot.worksites) ||
-    !Array.isArray(snapshot.releaseHistory) ||
-    !Array.isArray(snapshot.notifications)
-  ) {
-    return null;
-  }
-
-  return {
-    ...snapshot,
-    releaseHistory: normalizeReleaseHistory(snapshot.releaseHistory),
-  } as ConsoleSnapshot;
+  return normalizeConsoleSnapshot(snapshot ?? {});
 }
 
-async function saveServerConsoleSnapshot(notifications: OperationalNotification[], organizationName = defaultClientName) {
+async function saveServerConsoleSnapshot(
+  notifications: OperationalNotification[],
+  organizationName: string,
+  branding: BrandingSettings,
+  customFieldDefinitions: CustomFieldDefinition[],
+  assetColumnLayout: AssetColumnLayout[],
+) {
   const response = await fetch(activeConsoleSnapshotEndpoint(), {
-    body: JSON.stringify(consoleSnapshot(notifications, organizationName)),
+    body: JSON.stringify(consoleSnapshot(notifications, organizationName, branding, customFieldDefinitions, assetColumnLayout)),
     headers: {
       "Content-Type": "application/json",
     },
@@ -1372,6 +1449,7 @@ function restoreInitialConsoleSnapshot() {
     replaceConsoleArray(worksites, initialConsoleSnapshot.worksites);
     replaceConsoleArray(machines, initialConsoleSnapshot.machines);
     replaceConsoleArray(releaseHistory, initialConsoleSnapshot.releaseHistory);
+    replaceConsoleArray(staffMembers, initialConsoleSnapshot.staff);
   }
 
   return initialConsoleSnapshot;
@@ -1390,6 +1468,7 @@ const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{
   { key: "service", label: "Συνεργείο", icon: Wrench },
   { key: "staff", label: "Προσωπικό", icon: CircleUserRound },
   { key: "history", label: "Ιστορικό βαρδιών", icon: History },
+  { key: "settings", label: "Ρυθμίσεις", icon: Settings },
 ];
 
 const passportTabs: Array<{ key: PassportTab; label: string }> = [
@@ -2029,49 +2108,8 @@ function ToolbarMenuItem({
   );
 }
 
-function lisaOpeningMessage(counts: { ready: number; attention: number; blocked: number; total: number }, primaryBlockedMachine?: Machine): LisaMessage {
-  const staffGaps = staffMembers.filter((person) => person.status === "missing" || person.status === "leave" || person.status === "sick");
-  if (primaryBlockedMachine) {
-    return {
-      id: 1,
-      role: "lisa",
-      text: `Βλέπω ${counts.blocked} ανοιχτές εκκρεμότητες για αύριο. Θα ξεκινούσα από το ${primaryBlockedMachine.code}.`,
-      bullets: [
-        primaryBlockedMachine.reason,
-        `Υπεύθυνος: ${primaryBlockedMachine.owner}`,
-        `Επόμενο βήμα: ${primaryBlockedMachine.nextAction}`,
-      ],
-      action: {
-        label: `Προβολή ${primaryBlockedMachine.code}`,
-        machineId: primaryBlockedMachine.id,
-        tone: "danger",
-      },
-    };
-  }
-
-  if (staffGaps.length) {
-    return {
-      id: 1,
-      role: "lisa",
-      text: `Τα οχήματα είναι καθαρά, αλλά υπάρχουν ${staffGaps.length} θέματα προσωπικού για αύριο.`,
-      bullets: staffGaps.slice(0, 3).map((person) => `${person.name} · ${staffStatusLabel(person.status)}: ${person.replacement ?? person.note}`),
-      action: {
-        label: "Άνοιγμα προσωπικού",
-        tone: "neutral",
-        view: "staff",
-      },
-    };
-  }
-
-  return {
-    id: 1,
-    role: "lisa",
-    text: `Η αυριανή βάρδια φαίνεται καθαρή: ${counts.ready}/${counts.total} οχήματα είναι έτοιμα.`,
-    bullets: counts.attention ? [`${counts.attention} θέλουν έναν γρήγορο έλεγχο πριν κλειδώσει η βάρδια.`] : ["Δεν υπάρχει εκκρεμότητα που να σταματά την εκκίνηση."],
-  };
-}
-
 function LisaAssistant({
+  activeView,
   counts,
   machinesList,
   onClose,
@@ -2081,6 +2119,7 @@ function LisaAssistant({
   open,
   selectedWorksite,
 }: {
+  activeView: ViewKey;
   counts: { ready: number; attention: number; blocked: number; total: number };
   machinesList: Machine[];
   onClose: () => void;
@@ -2090,39 +2129,128 @@ function LisaAssistant({
   open: boolean;
   selectedWorksite: Worksite;
 }) {
-  const blockedMachines = machinesForWorksite(selectedWorksite).filter((machine) => machine.state === "blocked");
-  const primaryBlockedMachine = blockedMachines[0];
-  const [messages, setMessages] = useState<LisaMessage[]>(() => [
-    lisaOpeningMessage(counts, primaryBlockedMachine),
-  ]);
+  const [messages, setMessages] = useState<LisaMessage[]>(() => [{
+    id: 1,
+    role: "lisa",
+    text: "Η Lisa συνδέεται με τον ασφαλή τοπικό βοηθό…",
+  }]);
   const [draft, setDraft] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState<LisaConnectionStatus>("checking");
+  const [responding, setResponding] = useState(false);
   const messageIdRef = useRef(1);
+  const requestControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
   const [renderPanel, setRenderPanel] = useState(open);
   const [panelVisible, setPanelVisible] = useState(open);
-  const quickOptions: Array<{ label: string; intent: LisaIntent }> = [
-    { label: "Τι προέχει;", intent: "next-action" },
-    { label: "Έγγραφα", intent: "documents" },
-    { label: "Συνεργείο", intent: "workshop" },
-    { label: "Προσωπικό", intent: "staff" },
+  const quickOptions = [
+    "Τι χρειάζεται προσοχή τώρα;",
+    "Πού προσθέτω προσαρμοσμένο πεδίο;",
+    "Πώς ανεβάζω απόδειξη;",
+    "Πώς λειτουργεί το συνεργείο;",
   ];
 
-  function askLisa(label: string, intent: LisaIntent) {
+  function navigationActionForResponse(text: string) {
+    const match = text.match(/(?:^|\n)NAVIGATE:\s*(tomorrow|worksites|machines|blockers|certificates|service|staff|history|settings)\s*$/i);
+    if (!match) return { text: text.trim() };
+    const view = match[1].toLowerCase() as ViewKey;
+    return {
+      text: text.replace(match[0], "").trim(),
+      action: {
+        label: "Άνοιγμα σχετικής σελίδας",
+        tone: "neutral" as const,
+        view,
+      },
+    };
+  }
+
+  async function askLisa(label: string) {
+    const question = label.trim();
+    if (!question || responding) return;
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     messageIdRef.current += 1;
-    const userMessage: LisaMessage = { id: messageIdRef.current, role: "user", text: label };
+    const userMessage: LisaMessage = { id: messageIdRef.current, role: "user", text: question };
     messageIdRef.current += 1;
-    const answer = { ...lisaAnswerForIntent(intent, selectedWorksite, machinesList), id: messageIdRef.current };
+    const answerId = messageIdRef.current;
     setMessages((current) => [
-      ...current.slice(-4).map((message) => {
-        if (!message.action) return message;
-        return message.bullets
-          ? { id: message.id, role: message.role, text: message.text, bullets: message.bullets }
-          : { id: message.id, role: message.role, text: message.text };
-      }),
+      ...current.slice(-8),
       userMessage,
-      answer,
+      { id: answerId, role: "lisa", text: "Σκέφτομαι…" },
     ]);
+    setDraft("");
+    setResponding(true);
+
+    try {
+      const relevantMachines = machinesForWorksite(selectedWorksite).length ? machinesForWorksite(selectedWorksite) : machinesList;
+      const summary = relevantMachines.slice(0, 12).map((machine) => (
+        `${machine.code}: ${machine.state}; ${machine.reason}; owner ${machine.owner}; next ${machine.nextAction}`
+      )).join("\n");
+      const response = await fetch("/api/fleetlever/lisa/chat", {
+        body: JSON.stringify({
+          question,
+          context: {
+            locale: document.documentElement.lang || navigator.language || "el",
+            organization: document.title,
+            route: window.location.pathname,
+            selectedAsset: relevantMachines[0]?.code ?? null,
+            summary: `Counts: ${counts.ready} ready, ${counts.attention} review, ${counts.blocked} blocked, ${counts.total} total.\n${summary}`,
+            view: activeView,
+          },
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        const error = await response.json().catch(() => ({ status: "unavailable" }));
+        const status = (error.status ?? "unavailable") as LisaConnectionStatus;
+        setConnectionStatus(status);
+        throw new Error(error.detail ?? "Η Lisa δεν είναι διαθέσιμη αυτή τη στιγμή.");
+      }
+
+      setConnectionStatus("connected");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answerText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() ?? "";
+        for (const frame of frames) {
+          const event = frame.match(/^event:\s*(.+)$/m)?.[1];
+          const rawData = frame.match(/^data:\s*(.+)$/m)?.[1];
+          if (!event || !rawData) continue;
+          const data = JSON.parse(rawData) as { detail?: string; status?: LisaConnectionStatus; text?: string };
+          if (event === "message" && data.text) {
+            answerText = data.text;
+            const normalized = navigationActionForResponse(answerText);
+            setMessages((current) => current.map((message) => (
+              message.id === answerId ? { id: answerId, role: "lisa", ...normalized } : message
+            )));
+          }
+          if (event === "error") throw new Error(data.detail ?? "Η Lisa δεν μπόρεσε να απαντήσει.");
+        }
+      }
+
+      if (!answerText) throw new Error("Η Lisa δεν επέστρεψε απάντηση.");
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setMessages((current) => current.map((message) => (
+        message.id === answerId
+          ? { id: answerId, role: "lisa", text: error instanceof Error ? error.message : "Η Lisa δεν είναι διαθέσιμη αυτή τη στιγμή." }
+          : message
+      )));
+    } finally {
+      if (requestControllerRef.current === controller) requestControllerRef.current = null;
+      setResponding(false);
+    }
   }
 
   function handleLisaAction(message: LisaMessage) {
@@ -2139,36 +2267,30 @@ function LisaAssistant({
 
   function submitDraft(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const value = draft.trim();
-    if (!value) return;
-    const normalized = value
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .toLocaleLowerCase("el-GR");
-    const intent: LisaIntent =
-      normalized.includes("προσωπ") || normalized.includes("οδηγ") || normalized.includes("πληρωμ") || normalized.includes("απουσ")
-        ? "staff"
-        : normalized.includes("document") ||
-      normalized.includes("certificate") ||
-      normalized.includes("inspection") ||
-      normalized.includes("εγγρα") ||
-      normalized.includes("αδεια") ||
-      normalized.includes("κτεο")
-        ? "documents"
-        : normalized.includes("workshop") || normalized.includes("service") || normalized.includes("συνεργ") || normalized.includes("ανταλλακ")
-          ? "workshop"
-          : normalized.includes("history") || normalized.includes("evidence") || normalized.includes("ιστορ") || normalized.includes("αποφασ")
-            ? "history"
-            : normalized.includes("action") || normalized.includes("owner") || normalized.includes("next") || normalized.includes("επομε") || normalized.includes("ενεργ")
-              ? "next-action"
-              : normalized.includes("block") || normalized.includes("σταματ") || normalized.includes("μπλοκ")
-                ? "blockers"
-                : normalized.includes("βαρδια") || normalized.includes("συνοψ") || normalized.includes("ετοιμ")
-                  ? "morning-check"
-                  : "capabilities";
-    askLisa(value, intent);
-    setDraft("");
+    void askLisa(draft);
   }
+
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    setConnectionStatus("checking");
+    fetch("/api/fleetlever/lisa/health", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => ({ ok: response.ok, body: await response.json() as { status?: LisaConnectionStatus } }))
+      .then(({ ok, body }) => {
+        const status = body.status ?? "unavailable";
+        setConnectionStatus(status);
+        setMessages((current) => current.map((message, index) => index === 0 ? {
+          ...message,
+          text: ok && status === "connected"
+            ? "Είμαι συνδεδεμένη. Ρώτησέ με για το FleetLever ή για τα εξουσιοδοτημένα δεδομένα της τρέχουσας σελίδας."
+            : "Ο ασφαλής τοπικός βοηθός δεν είναι συνδεδεμένος. Η Lisa δεν θα εμφανίσει έτοιμες απαντήσεις ως τεχνητή νοημοσύνη.",
+        } : message));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setConnectionStatus("unavailable");
+      });
+    return () => controller.abort();
+  }, [open]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
@@ -2214,6 +2336,8 @@ function LisaAssistant({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClose, open]);
+
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   if (!open && !renderPanel) {
     return (
@@ -2266,8 +2390,11 @@ function LisaAssistant({
             </span>
             <div className="min-w-0">
               <p className="text-[11px] font-black uppercase tracking-wide text-[#8BE4DF]">Βοηθός FleetLever</p>
-              <h2 className="mt-1 text-xl font-black text-white">Lisa</h2>
-              <p className="mt-1 max-w-sm text-sm font-semibold leading-5 text-white/72">Δείχνει τι προέχει και πού να πάτε.</p>
+              <div className="mt-1 flex items-center gap-2">
+                <h2 className="text-xl font-black text-white">Lisa</h2>
+                <span className={`h-2 w-2 rounded-full ${connectionStatus === "connected" ? "bg-[#5EE49B]" : connectionStatus === "checking" || connectionStatus === "busy" ? "bg-[#FBBF24]" : "bg-[#F87171]"}`} aria-hidden="true" />
+              </div>
+              <p className="mt-1 max-w-sm text-sm font-semibold leading-5 text-white/72">Προτείνει και σας οδηγεί. Δεν εκτελεί αλλαγές.</p>
             </div>
           </div>
           <button
@@ -2322,12 +2449,13 @@ function LisaAssistant({
           <div className="grid grid-cols-2 gap-2">
             {quickOptions.map((option) => (
               <button
-                key={option.label}
+                key={option}
                 type="button"
-                onClick={() => askLisa(option.label, option.intent)}
+                onClick={() => void askLisa(option)}
+                disabled={connectionStatus !== "connected" || responding}
                 className="min-h-11 rounded-sm border border-[#D9E2EC] bg-[#F8FAFC] px-3 text-left text-xs font-bold leading-4 text-[#102A27] transition hover:border-[#20B7C9] hover:bg-[#ECFEFF]"
               >
-                {option.label}
+                {option}
               </button>
             ))}
           </div>
@@ -2337,17 +2465,21 @@ function LisaAssistant({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Ρώτα τη Lisa..."
+              disabled={connectionStatus !== "connected" || responding}
               className="h-12 min-w-0 flex-1 rounded-sm border border-[#D9E2EC] bg-white px-4 text-sm font-semibold text-[#102A27] outline-none placeholder:text-[#94A3B8] focus:border-[#20B7C9]"
             />
             <button
               type="submit"
+              disabled={connectionStatus !== "connected" || responding || !draft.trim()}
               className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm bg-[#0D2F2D] text-white transition hover:bg-[#123C38]"
               aria-label="Αποστολή μηνύματος στη Lisa"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
             </button>
           </form>
-          <p className="text-[10px] font-semibold leading-4 text-[#7B8983]">Η Lisa προτείνει και σας οδηγεί. Οι αλλαγές γίνονται μόνο από εσάς.</p>
+          <p className="text-[10px] font-semibold leading-4 text-[#7B8983]">
+            {connectionStatus === "connected" ? "Συνδεδεμένη με τον τοπικό Codex βοηθό · Οι αλλαγές γίνονται μόνο από εσάς." : "Η Lisa παραμένει ανενεργή μέχρι να συνδεθεί ο ασφαλής τοπικός βοηθός."}
+          </p>
         </div>
       </section>
     </div>
@@ -2377,150 +2509,15 @@ function countsForMachines(machineList: Machine[]) {
   };
 }
 
-function lisaAnswerForIntent(intent: LisaIntent, worksite: Worksite, machineList: Machine[]): LisaMessage {
-  const list = machinesForWorksite(worksite).length ? machinesForWorksite(worksite) : machineList;
-  const counts = countsForMachines(list);
-  const blocked = list.filter((machine) => machine.state === "blocked");
-  const review = list.filter((machine) => machine.state === "at_risk");
-  const firstBlocker = blocked[0] ?? review[0];
-  const documentActions = list.flatMap((machine) =>
-    machine.certificates
-      .filter((certificate) => certificate.status !== "Σε ισχύ")
-      .map((certificate) => `${machine.code}: ${certificate.name} ${certificate.status.toLowerCase()} · ${certificate.owner}`),
-  );
-  const workshopActions = list.flatMap((machine) =>
-    machine.service
-      .filter((service) => service.status !== "Λύθηκε")
-      .map((service) => `${machine.code}: ${service.issue} · ${service.status} · ${service.due}`),
-  );
-
-  if (intent === "morning-check") {
-    return {
-      id: 0,
-      role: "lisa",
-      text: counts.blocked ? `Η βάρδια δεν κλειδώνει ακόμα. Ξεκίνα από το ${blocked[0]?.code ?? firstBlocker?.code}.` : "Η βάρδια μπορεί να κλειδώσει. Δεν υπάρχει κρίσιμη εκκρεμότητα.",
-      bullets: counts.blocked
-        ? [`${counts.ready}/${counts.total} οχήματα έτοιμα`, `${counts.blocked} εκκρεμότητες παραμένουν ανοιχτές`, `${blocked[0]?.reason ?? firstBlocker?.reason}`]
-        : [`${counts.ready}/${counts.total} οχήματα έτοιμα`, counts.attention ? `${counts.attention} θέλουν έναν γρήγορο έλεγχο` : "Καμία άμεση ενέργεια"],
-      action: firstBlocker
-        ? {
-            label: `Προβολή ${firstBlocker.code}`,
-            machineId: firstBlocker.id,
-            tone: firstBlocker.state === "blocked" ? "danger" : "neutral",
-          }
-        : undefined,
-    };
-  }
-
-  if (intent === "blockers") {
-    return {
-      id: 0,
-      role: "lisa",
-      text: blocked.length ? `Υπάρχουν ${blocked.length} κρίσιμες εκκρεμότητες. Η πρώτη αφορά το ${blocked[0].code}.` : "Δεν βρέθηκαν κρίσιμες εκκρεμότητες για αυτή την υπηρεσία.",
-      bullets: blocked.length ? blocked.slice(0, 3).map((machine) => `${machine.code}: ${machine.reason}`) : ["Τρέξε τον τελικό έλεγχο όταν είσαι έτοιμος."],
-      action: blocked[0]
-        ? {
-            label: `Προβολή ${blocked[0].code}`,
-            machineId: blocked[0].id,
-            tone: "danger",
-          }
-        : undefined,
-    };
-  }
-
-  if (intent === "next-action") {
-    return {
-      id: 0,
-      role: "lisa",
-      text: firstBlocker ? `Καλύτερη επόμενη ενέργεια: ${firstBlocker.nextAction}.` : "Καλύτερη επόμενη ενέργεια: κλείδωσε τα καθαρά οχήματα για αύριο.",
-      bullets: firstBlocker
-        ? [`Όχημα: ${firstBlocker.code}`, `Υπεύθυνος: ${firstBlocker.owner}`, `Εκτίμηση: ${firstBlocker.eta}`]
-        : [`${counts.ready} οχήματα είναι έτοιμα για αύριο.`],
-      action: firstBlocker
-        ? {
-            label: `Προβολή ${firstBlocker.code}`,
-            machineId: firstBlocker.id,
-            tone: firstBlocker.state === "blocked" ? "danger" : "neutral",
-          }
-        : {
-            label: "Άνοιγμα αυριανής βάρδιας",
-            tone: "neutral",
-            view: "tomorrow",
-          },
-    };
-  }
-
-  if (intent === "documents") {
-    return {
-      id: 0,
-      role: "lisa",
-      text: documentActions.length ? "Αυτά είναι τα έγγραφα που θέλουν προσοχή πριν το κλείδωμα." : "Δεν βλέπω έγγραφο που να μπλοκάρει αυτή τη στιγμή.",
-      bullets: documentActions.length ? documentActions.slice(0, 3) : ["Τα βασικά έγγραφα για την επιλεγμένη υπηρεσία είναι σε ισχύ."],
-      action: {
-        label: "Άνοιγμα εγγράφων",
-        tone: "neutral",
-        view: "certificates",
-      },
-    };
-  }
-
-  if (intent === "workshop") {
-    return {
-      id: 0,
-      role: "lisa",
-      text: workshopActions.length ? "Αυτές είναι οι εργασίες συνεργείου που μένουν ανοιχτές." : "Δεν βλέπω ανοιχτή εργασία συνεργείου που να σταματά τη βάρδια.",
-      bullets: workshopActions.length ? workshopActions.slice(0, 3) : ["Καμία εργασία συνεργείου δεν σταματά την αυριανή βάρδια."],
-      action: {
-        label: "Άνοιγμα συνεργείου",
-        tone: "neutral",
-        view: "service",
-      },
-    };
-  }
-
-  if (intent === "staff") {
-    const staffGaps = staffMembers.filter((person) => person.status === "missing" || person.status === "leave" || person.status === "sick");
-    return {
-      id: 0,
-      role: "lisa",
-      text: staffGaps.length
-        ? `${staffGaps.length} ${staffGaps.length === 1 ? "θέμα προσωπικού χρειάζεται" : "θέματα προσωπικού χρειάζονται"} κάλυψη.`
-        : "Δεν βλέπω κενό προσωπικού για την αυριανή υπηρεσία.",
-      bullets: staffGaps.length
-        ? staffGaps.slice(0, 3).map((person) => `${person.name} · ${staffStatusLabel(person.status)}: ${person.replacement ?? person.note}`)
-        : ["Η δηλωμένη στελέχωση καλύπτει τις ενεργές υπηρεσίες."],
-      action: {
-        label: "Άνοιγμα προσωπικού",
-        tone: "neutral",
-        view: "staff",
-      },
-    };
-  }
-
-  if (intent === "capabilities") {
-    return {
-      id: 0,
-      role: "lisa",
-      text: "Μπορώ να σας δείξω τι προέχει, τις κρίσιμες εκκρεμότητες, έγγραφα, συνεργείο, προσωπικό και ιστορικό.",
-      bullets: ["Δεν αλλάζω αναθέσεις, ετοιμότητα ή αποφάσεις αποδέσμευσης."],
-    };
-  }
-
-  return {
-    id: 0,
-    role: "lisa",
-    text: "Στο ιστορικό μένει η απόφαση, ο λόγος και το πακέτο αποδείξεων.",
-    bullets: ["Ποιος αποφάσισε", "Γιατί απελευθερώθηκε ή μπλοκαρίστηκε", "Τι απόδειξη υπάρχει για έλεγχο"],
-    action: {
-      label: "Άνοιγμα ιστορικού",
-      tone: "neutral",
-      view: "history",
-    },
-  };
-}
-
-export function ConstructionPrototype() {
+export function ConstructionPrototype({
+  trialInfo,
+}: {
+  trialInfo?: { daysRemaining: number; endsAt: string; userName: string; organizationName: string };
+} = {}) {
   const [clientName, setClientName] = useState(defaultClientName);
+  const [branding, setBranding] = useState<BrandingSettings>(defaultBrandingSettings);
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<CustomFieldDefinition[]>([]);
+  const [assetColumnLayout, setAssetColumnLayout] = useState<AssetColumnLayout[]>(defaultAssetColumnLayout);
   const [activeView, setActiveView] = useState<ViewKey>("tomorrow");
   const [worksiteId, setWorksiteId] = useState(worksites[0]?.id ?? emptyWorksite.id);
   const [dateMode, setDateMode] = useState<"Σήμερα" | "Αύριο" | "Προσαρμογή">("Αύριο");
@@ -2551,6 +2548,9 @@ export function ConstructionPrototype() {
     queueMicrotask(() => {
       if (bootSnapshot) {
         setClientName(bootSnapshot.organizationName ?? defaultClientName);
+        setBranding(bootSnapshot.branding);
+        setCustomFieldDefinitions(bootSnapshot.customFieldDefinitions);
+        setAssetColumnLayout(bootSnapshot.assetColumnLayout);
         setNotifications(bootSnapshot.notifications ?? (allowDemoConsoleData ? initialNotifications : []));
         setWorksiteId(bootSnapshot.worksites[0]?.id ?? worksites[0]?.id ?? emptyWorksite.id);
         setSelectedMachineId(bootSnapshot.machines[0]?.id ?? machines[0]?.id ?? emptyMachine.id);
@@ -2563,12 +2563,12 @@ export function ConstructionPrototype() {
 
   useEffect(() => {
     if (!browserHydrated) return;
-    saveConsoleSnapshot(notifications);
+    saveConsoleSnapshot(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout);
     if (!serverHydrated) return;
-    void saveServerConsoleSnapshot(notifications, clientName).catch(() => {
+    void saveServerConsoleSnapshot(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout).catch(() => {
       emitConsoleToast("Αποθηκεύτηκε τοπικά. Ο συγχρονισμός με τον server θα ξαναδοκιμάσει στην επόμενη αλλαγή.");
     });
-  }, [browserHydrated, clientName, notifications, serverHydrated, version]);
+  }, [assetColumnLayout, branding, browserHydrated, clientName, customFieldDefinitions, notifications, serverHydrated, version]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2582,7 +2582,11 @@ export function ConstructionPrototype() {
           replaceConsoleArray(worksites, serverSnapshot.worksites);
           replaceConsoleArray(machines, serverSnapshot.machines);
           replaceConsoleArray(releaseHistory, serverSnapshot.releaseHistory);
+          replaceConsoleArray(staffMembers, serverSnapshot.staff);
           setClientName(serverSnapshot.organizationName ?? defaultClientName);
+          setBranding(serverSnapshot.branding);
+          setCustomFieldDefinitions(serverSnapshot.customFieldDefinitions);
+          setAssetColumnLayout(serverSnapshot.assetColumnLayout);
           setNotifications(serverSnapshot.notifications);
           setWorksiteId(serverSnapshot.worksites[0]?.id ?? worksites[0]?.id ?? emptyWorksite.id);
           setSelectedMachineId(serverSnapshot.machines[0]?.id ?? machines[0]?.id ?? emptyMachine.id);
@@ -2854,6 +2858,66 @@ export function ConstructionPrototype() {
     recordDecision(machine, "Ανατέθηκε υπεύθυνος", assignmentSummary, `${owner} αναλαμβάνει την επόμενη ενέργεια · Προθεσμία ${assignmentDue}${note ? ` · ${note}` : ""}`, "FleetLever", "Όχι");
     addOperationalNotification(`${machine.code}: ${computedStatus.toLowerCase()} στον/στην ${owner}`, `${assignmentSummary} · Προθεσμία ${assignmentDue} · ${channels.join(", ")}${note ? ` · ${note}` : ""}`);
     refreshConsole(`${machine.code}: ${blockerId ? "η εκκρεμότητα" : "οι ανοιχτές εκκρεμότητες"} ${computedStatus.toLowerCase()} στον/στην ${owner}.`);
+  }
+
+  function updateMachineCustomField(machineId: string, fieldId: string, value: unknown) {
+    const machine = machines.find((item) => item.id === machineId);
+    const field = customFieldDefinitions.find((item) => item.id === fieldId && item.module === "assets" && !item.archived);
+    if (!machine || !field) return;
+    machine.customFields = {
+      ...(machine.customFields ?? {}),
+      [fieldId]: normalizedCustomFieldValue(field, value),
+    };
+    machine.lastUpdated = "Μόλις τώρα";
+    refreshConsole(`${machine.code}: ενημερώθηκε το πεδίο ${field.name}.`);
+  }
+
+  function updateWorksiteCustomField(worksiteId: string, fieldId: string, value: unknown) {
+    const worksite = worksites.find((item) => item.id === worksiteId);
+    const field = customFieldDefinitions.find((item) => item.id === fieldId && item.module === "assignments" && !item.archived);
+    if (!worksite || !field) return;
+    worksite.customFields = {
+      ...(worksite.customFields ?? {}),
+      [fieldId]: normalizedCustomFieldValue(field, value),
+    };
+    refreshConsole(`${worksite.name}: ενημερώθηκε το πεδίο ${field.name}.`);
+  }
+
+  function updateCertificateCustomField(machineId: string, certificateName: string, fieldId: string, value: unknown) {
+    const machine = machines.find((item) => item.id === machineId);
+    const certificate = machine?.certificates.find((item) => item.name === certificateName);
+    const field = customFieldDefinitions.find((item) => item.id === fieldId && item.module === "documents" && !item.archived);
+    if (!machine || !certificate || !field) return;
+    certificate.customFields = {
+      ...(certificate.customFields ?? {}),
+      [fieldId]: normalizedCustomFieldValue(field, value),
+    };
+    machine.lastUpdated = "Μόλις τώρα";
+    refreshConsole(`${machine.code}: ενημερώθηκε το πεδίο ${field.name}.`);
+  }
+
+  function updateServiceCustomField(machineId: string, issue: string, fieldId: string, value: unknown) {
+    const machine = machines.find((item) => item.id === machineId);
+    const service = machine?.service.find((item) => item.issue === issue);
+    const field = customFieldDefinitions.find((item) => item.id === fieldId && item.module === "service" && !item.archived);
+    if (!machine || !service || !field) return;
+    service.customFields = {
+      ...(service.customFields ?? {}),
+      [fieldId]: normalizedCustomFieldValue(field, value),
+    };
+    machine.lastUpdated = "Μόλις τώρα";
+    refreshConsole(`${machine.code}: ενημερώθηκε το πεδίο ${field.name}.`);
+  }
+
+  function updateStaffCustomField(personId: string, fieldId: string, value: unknown) {
+    const person = staffMembers.find((item) => item.id === personId);
+    const field = customFieldDefinitions.find((item) => item.id === fieldId && item.module === "people" && !item.archived);
+    if (!person || !field) return;
+    person.customFields = {
+      ...(person.customFields ?? {}),
+      [fieldId]: normalizedCustomFieldValue(field, value),
+    };
+    refreshConsole(`${person.name}: ενημερώθηκε το πεδίο ${field.name}.`);
   }
 
   function completeBlocker(machineId: string, blockerId: string, note: string) {
@@ -3259,6 +3323,12 @@ export function ConstructionPrototype() {
             <div className="min-w-0">
               {isMunicipalConsole ? (
                 <MunicipalBrandLockup compact inverse />
+              ) : branding.logo ? (
+                <div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={branding.logo.dataUrl} alt={`${clientName} logo`} className="max-h-16 max-w-[13rem] object-contain object-left" />
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-wide text-white/55">Powered by FleetLever</p>
+                </div>
               ) : (
                 <div>
                   <FleetLeverLogo inverse />
@@ -3294,6 +3364,7 @@ export function ConstructionPrototype() {
         />
 
         <LisaAssistant
+          activeView={activeView}
           counts={counts}
           machinesList={visibleMachines}
           onClose={() => setLisaOpen(false)}
@@ -3355,6 +3426,11 @@ export function ConstructionPrototype() {
                 ) : null}
               </div>
               {isMunicipalConsole ? <PortalReturnLink className="hidden shrink-0 md:inline-flex" /> : null}
+              {trialInfo ? (
+                <div className="hidden h-9 shrink-0 items-center rounded-md border border-[#B8D5CC] bg-[#F1FAF6] px-3 text-[11px] font-black uppercase text-[#116149] lg:inline-flex" title={`Trial ends ${new Date(trialInfo.endsAt).toLocaleDateString("en-GB")}`}>
+                  Trial · {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? "day" : "days"} left
+                </div>
+              ) : null}
               <div data-toolbar-menu className="relative">
                 <button
                   type="button"
@@ -3473,7 +3549,7 @@ export function ConstructionPrototype() {
                 {userMenuOpen ? (
                   <ToolbarPopover className="w-60">
                     <div className="border-b border-[#DCE5E1] px-3 py-2.5">
-                      <p className="text-sm font-bold text-[#0D2F2D]">Γιώργος</p>
+                      <p className="text-sm font-bold text-[#0D2F2D]">{trialInfo?.userName ?? "Γιώργος"}</p>
                       <p className="mt-0.5 text-[11px] font-semibold text-[#64748B]">
                         {isMunicipalConsole ? "Διαχειριστής δημοτικού στόλου" : "Διαχειριστής στόλου"}
                       </p>
@@ -3491,11 +3567,11 @@ export function ConstructionPrototype() {
                       <ToolbarMenuItem
                         icon={<LogOut className="h-4 w-4" aria-hidden="true" />}
                         label="Αποσύνδεση"
-                        detail="Η δοκιμαστική σύνδεση παραμένει ενεργή"
+                        detail="Κλείσιμο της τρέχουσας σύνδεσης"
                         tone="danger"
                         onClick={() => {
                           setUserMenuOpen(false);
-                          refreshConsole("Η δοκιμαστική σύνδεση παραμένει ενεργή.");
+                          void fetch("/api/auth/logout", { method: "POST" }).finally(() => window.location.assign("/login"));
                         }}
                       />
                     </div>
@@ -3504,6 +3580,20 @@ export function ConstructionPrototype() {
               </div>
             </div>
           </header>
+          {branding.banner ? (
+            <div
+              className="relative h-20 overflow-hidden border-b border-[#CAD9CF] bg-[#123C36] bg-cover bg-center px-4 text-white sm:h-24 xl:px-6"
+              style={{ backgroundImage: `linear-gradient(90deg,rgba(13,47,45,.92),rgba(13,47,45,.25)),url(${branding.banner.dataUrl})`, backgroundPosition: `${branding.banner.positionX}% ${branding.banner.positionY}%`, backgroundSize: branding.banner.fit === "cover" ? "cover" : "contain" }}
+            >
+              <div className="mx-auto flex h-full max-w-[1560px] items-center gap-3">
+                {branding.compactLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={branding.compactLogo.dataUrl} alt="" className="h-11 w-11 rounded-sm bg-white/90 object-contain p-1" />
+                ) : null}
+                <div><p className="text-[10px] font-black uppercase tracking-wide text-[#8BE4DF]">Organization workspace</p><p className="mt-1 text-lg font-black sm:text-xl">{clientName}</p></div>
+              </div>
+            </div>
+          ) : null}
 
           <div className="p-4 xl:p-6">
             {activeView === "tomorrow" ? (
@@ -3524,7 +3614,9 @@ export function ConstructionPrototype() {
             ) : null}
             {activeView === "worksites" ? (
               <WorksitesView
+                customFields={customFieldDefinitions.filter((field) => field.module === "assignments" && !field.archived)}
                 worksitesList={visibleWorksites}
+                onCustomFieldChange={updateWorksiteCustomField}
                 onOpenPlanner={(worksite) => {
                   setWorksiteId(worksite.id);
                   showView("tomorrow");
@@ -3532,12 +3624,23 @@ export function ConstructionPrototype() {
                 }}
               />
             ) : null}
-            {activeView === "machines" ? <MachinesView machinesList={visibleMachines} onMachineOpen={openMachine} /> : null}
+            {activeView === "machines" ? (
+              <MachinesView
+                assetColumnLayout={assetColumnLayout}
+                customFields={customFieldDefinitions.filter((field) => field.module === "assets" && !field.archived)}
+                machinesList={visibleMachines}
+                onColumnLayoutChange={setAssetColumnLayout}
+                onCustomFieldChange={updateMachineCustomField}
+                onMachineOpen={openMachine}
+              />
+            ) : null}
             {activeView === "blockers" ? <ActionQueueView machinesList={visibleMachines} onActionStart={startMachineAction} onMachineOpen={openMachine} /> : null}
             {activeView === "certificates" ? (
               <DocumentsView
+                customFields={customFieldDefinitions.filter((field) => field.module === "documents" && !field.archived)}
                 machinesList={visibleMachines}
                 onActionStart={startMachineAction}
+                onCustomFieldChange={updateCertificateCustomField}
                 onMachineOpen={(machine) => {
                   openMachine(machine, "passport", "documents");
                 }}
@@ -3545,7 +3648,9 @@ export function ConstructionPrototype() {
             ) : null}
             {activeView === "service" ? (
               <WorkshopView
+                customFields={customFieldDefinitions.filter((field) => field.module === "service" && !field.archived)}
                 machinesList={visibleMachines}
+                onCustomFieldChange={updateServiceCustomField}
                 onJobCreate={addWorkshopJob}
                 onMachineOpen={(machine) => {
                   openMachine(machine, "passport", "service");
@@ -3553,13 +3658,28 @@ export function ConstructionPrototype() {
                 onServiceStatusChange={updateServiceStatus}
               />
             ) : null}
-            {activeView === "staff" ? <StaffView staffList={staffMembers} /> : null}
+            {activeView === "staff" ? (
+              <StaffView
+                customFields={customFieldDefinitions.filter((field) => field.module === "people" && !field.archived)}
+                onCustomFieldChange={updateStaffCustomField}
+                staffList={staffMembers}
+              />
+            ) : null}
             {activeView === "history" ? <ReleaseHistoryView searchTerm={searchTerm} /> : null}
+            {activeView === "settings" ? (
+              <SettingsView
+                branding={branding}
+                customFields={customFieldDefinitions}
+                onBrandingChange={(nextBranding) => { setBranding(nextBranding); setVersion((current) => current + 1); }}
+                onCustomFieldsChange={(fields) => { setCustomFieldDefinitions(fields); setVersion((current) => current + 1); }}
+              />
+            ) : null}
           </div>
         </div>
 
         {drawerOpen ? (
           <DetailDrawer
+            customFields={customFieldDefinitions.filter((field) => field.module === "assets" && !field.archived && field.visibility.form)}
             machine={selectedMachine}
             mode={drawerMode}
             onClose={() => setDrawerOpen(false)}
@@ -3570,6 +3690,7 @@ export function ConstructionPrototype() {
             onModeChange={setDrawerMode}
             onPassportTabChange={setPassportTab}
             onUploadDocument={(blockerId) => setDrawerAction({ type: "upload-document", blockerId, source: "passport" })}
+            onCustomFieldChange={(fieldId, value) => updateMachineCustomField(selectedMachine.id, fieldId, value)}
             passportTab={passportTab}
           />
         ) : null}
@@ -3986,6 +4107,7 @@ function MachineStatusBadge({ state }: { state: MachineState }) {
 }
 
 function DetailDrawer({
+  customFields,
   machine,
   mode,
   onAssignOwner,
@@ -3996,8 +4118,10 @@ function DetailDrawer({
   onModeChange,
   onPassportTabChange,
   onUploadDocument,
+  onCustomFieldChange,
   passportTab,
 }: {
+  customFields: CustomFieldDefinition[];
   machine: Machine;
   mode: DrawerMode;
   onAssignOwner: (blockerId?: string) => void;
@@ -4008,6 +4132,7 @@ function DetailDrawer({
   onModeChange: (mode: DrawerMode) => void;
   onPassportTabChange: (tab: PassportTab) => void;
   onUploadDocument: (blockerId?: string) => void;
+  onCustomFieldChange: (fieldId: string, value: unknown) => void;
   passportTab: PassportTab;
 }) {
   useOverlayEscape(onClose);
@@ -4055,7 +4180,9 @@ function DetailDrawer({
           ) : null}
           {mode === "passport" ? (
             <MachinePassport
+              customFields={customFields}
               machine={machine}
+              onCustomFieldChange={onCustomFieldChange}
               onExportPassport={onExportPassport}
               onPassportTabChange={onPassportTabChange}
               onUploadDocument={onUploadDocument}
@@ -4219,13 +4346,17 @@ function WhyBlocked({
 }
 
 function MachinePassport({
+  customFields,
   machine,
+  onCustomFieldChange,
   onExportPassport,
   onPassportTabChange,
   onUploadDocument,
   passportTab,
 }: {
+  customFields: CustomFieldDefinition[];
   machine: Machine;
+  onCustomFieldChange: (fieldId: string, value: unknown) => void;
   onExportPassport: () => void;
   onPassportTabChange: (tab: PassportTab) => void;
   onUploadDocument: (blockerId?: string) => void;
@@ -4256,6 +4387,30 @@ function MachinePassport({
           </div>
         ))}
       </div>
+      {customFields.length ? (
+        <section className="mt-5 border-t border-[#E2E8F0] pt-5">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase text-[#008C95]">Organization data</p>
+              <h3 className="mt-1 font-black text-[#0D2F2D]">Custom asset fields</h3>
+            </div>
+            <span className="text-xs font-semibold text-[#64748B]">Saved with this asset</span>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {[...customFields].sort((left, right) => left.order - right.order).map((field) => (
+              <label key={field.id} className="block text-[11px] font-black uppercase text-[#64748B]">
+                {field.name}
+                <CustomFieldInput
+                  field={field}
+                  value={machine.customFields?.[field.id]}
+                  onChange={(value) => onCustomFieldChange(field.id, value)}
+                />
+                {field.description ? <span className="mt-1 block normal-case font-medium leading-4 text-[#8A9A96]">{field.description}</span> : null}
+              </label>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <div className="mt-5">
         <OverlayTabs
           active={passportTab}
@@ -4956,7 +5111,17 @@ function AddItemModal({
   );
 }
 
-function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (worksite: Worksite) => void; worksitesList: Worksite[] }) {
+function WorksitesView({
+  customFields,
+  onCustomFieldChange,
+  onOpenPlanner,
+  worksitesList,
+}: {
+  customFields: CustomFieldDefinition[];
+  onCustomFieldChange: (worksiteId: string, fieldId: string, value: unknown) => void;
+  onOpenPlanner: (worksite: Worksite) => void;
+  worksitesList: Worksite[];
+}) {
   const [reviewWorksite, setReviewWorksite] = useState<Worksite | null>(null);
   const worksiteRows = worksitesList.map((worksite) => {
     const list = machinesForWorksite(worksite);
@@ -5036,6 +5201,17 @@ function WorksitesView({ onOpenPlanner, worksitesList }: { onOpenPlanner: (works
           })}
         </div>
       </Surface>
+      <CustomDataSection
+        fields={customFields}
+        title="Πεδία εργασιών και αναθέσεων"
+        records={sortedRows.map(({ worksite }) => ({
+          id: worksite.id,
+          label: worksite.name,
+          meta: `${worksite.location} · ${worksite.date}`,
+          values: worksite.customFields,
+        }))}
+        onChange={onCustomFieldChange}
+      />
       {reviewWorksite ? (
         <WorksiteReleaseReview
           worksite={reviewWorksite}
@@ -5199,8 +5375,24 @@ function machinePhotoPlaceholder(machine: Machine) {
   return photoMap[machine.id] ?? (isMunicipalConsole ? photoMap.af14 : photoMap.cr04);
 }
 
-function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]; onMachineOpen: (machine: Machine, mode?: DrawerMode) => void }) {
+function MachinesView({
+  assetColumnLayout,
+  customFields,
+  machinesList,
+  onColumnLayoutChange,
+  onCustomFieldChange,
+  onMachineOpen,
+}: {
+  assetColumnLayout: AssetColumnLayout[];
+  customFields: CustomFieldDefinition[];
+  machinesList: Machine[];
+  onColumnLayoutChange: (layout: AssetColumnLayout[]) => void;
+  onCustomFieldChange: (machineId: string, fieldId: string, value: unknown) => void;
+  onMachineOpen: (machine: Machine, mode?: DrawerMode) => void;
+}) {
   const [photoUploads, setPhotoUploads] = useState<Record<string, string>>({});
+  const [columnControlsOpen, setColumnControlsOpen] = useState(false);
+  const [sortFieldId, setSortFieldId] = useState<string>("code");
   const photoUploadUrls = useRef<string[]>([]);
   const grouped = {
     blocked: machinesList.filter((machine) => machine.state === "blocked"),
@@ -5234,12 +5426,59 @@ function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]
     }
   }
 
+  const systemColumns = [
+    { id: "code", label: "Asset", width: 120 },
+    { id: "name", label: "Description", width: 230 },
+    { id: "state", label: "Readiness", width: 140 },
+    { id: "owner", label: "Owner", width: 160 },
+  ];
+  const allColumns = [
+    ...systemColumns,
+    ...customFields.filter((field) => field.visibility.table).map((field) => ({ id: `custom:${field.id}`, label: field.name, width: field.width })),
+  ];
+  const resolvedLayout = allColumns.map((column, index) => assetColumnLayout.find((item) => item.id === column.id) ?? { id: column.id, width: column.width, hidden: false, order: index });
+  const visibleColumns = allColumns
+    .filter((column) => !resolvedLayout.find((item) => item.id === column.id)?.hidden)
+    .sort((left, right) => (resolvedLayout.find((item) => item.id === left.id)?.order ?? 0) - (resolvedLayout.find((item) => item.id === right.id)?.order ?? 0));
+  const sortedMachines = [...machinesList].sort((left, right) => {
+    if (sortFieldId.startsWith("custom:")) {
+      const fieldId = sortFieldId.slice(7);
+      return String(left.customFields?.[fieldId] ?? "").localeCompare(String(right.customFields?.[fieldId] ?? ""), undefined, { numeric: true });
+    }
+    return String(left[sortFieldId as "code" | "name" | "state" | "owner"] ?? "").localeCompare(String(right[sortFieldId as "code" | "name" | "state" | "owner"] ?? ""), undefined, { numeric: true });
+  });
+
+  function updateColumn(columnId: string, patch: Partial<AssetColumnLayout>) {
+    const current = resolvedLayout.find((item) => item.id === columnId) ?? { id: columnId, width: 150, hidden: false, order: resolvedLayout.length };
+    onColumnLayoutChange([...resolvedLayout.filter((item) => item.id !== columnId), { ...current, ...patch }]);
+  }
+
+  function exportMachines(format: "csv" | "xlsx") {
+    const columns: Array<ExportColumn<Machine>> = [
+      { header: "Asset", value: (machine) => machine.code },
+      { header: "Description", value: (machine) => machine.name },
+      { header: "Readiness", value: (machine) => externalStatus(machine.state) },
+      { header: "Owner", value: (machine) => machine.owner },
+      ...customFields.filter((field) => field.visibility.export).sort((left, right) => left.order - right.order).map((field) => ({
+        header: field.name,
+        value: (machine: Machine) => customFieldDisplayValue(field, machine.customFields?.[field.id]),
+      })),
+    ];
+    const date = new Date().toISOString().slice(0, 10);
+    if (format === "csv") downloadCsvFile(`fleetlever-assets-${date}.csv`, sortedMachines, columns);
+    else downloadXlsxFile(`fleetlever-assets-${date}.xlsx`, sortedMachines, columns);
+  }
+
   return (
     <ConsolePage>
       <ViewHeader
         title="Οχήματα"
         description="Κατάσταση, εκκρεμότητες και φάκελος κάθε οχήματος."
         exportLabel="Εξαγωγή λίστας οχημάτων"
+        exportActions={[
+          { label: "CSV", onClick: () => exportMachines("csv") },
+          { label: "XLSX", onClick: () => exportMachines("xlsx") },
+        ]}
       />
       <Surface className="overflow-hidden p-0">
         <PanelHeader
@@ -5282,7 +5521,141 @@ function MachinesView({ machinesList, onMachineOpen }: { machinesList: Machine[]
         ))}
         </div>
       </Surface>
+      <Surface className="overflow-hidden p-0">
+        <PanelHeader
+          eyebrow="Custom columns"
+          title="Operational asset data"
+          description="Edit organization-specific values here. Tap a heading to sort."
+          actions={(
+            <button type="button" onClick={() => setColumnControlsOpen((open) => !open)} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD9D4] bg-white px-4 text-sm font-bold text-[#0D2F2D]">
+              <Settings className="h-4 w-4" /> Columns
+            </button>
+          )}
+        />
+        {columnControlsOpen ? (
+          <div className="grid gap-3 border-b border-[#E2E8F0] bg-[#F8FAF9] p-4 sm:grid-cols-2 xl:grid-cols-3">
+            {allColumns.map((column) => {
+              const layout = resolvedLayout.find((item) => item.id === column.id)!;
+              return (
+                <div key={column.id} className="flex items-center gap-3 rounded-md border border-[#D7E2DE] bg-white p-3">
+                  <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-bold"><input type="checkbox" checked={!layout.hidden} onChange={(event) => updateColumn(column.id, { hidden: !event.target.checked })} /><span className="truncate">{column.label}</span></label>
+                  <input aria-label={`${column.label} width`} type="range" min="100" max="360" step="10" value={layout.width} onChange={(event) => updateColumn(column.id, { width: Number(event.target.value) })} className="w-20 accent-[#008C95]" />
+                  <span className="w-11 text-right text-[10px] font-bold text-[#64748B]">{layout.width}px</span>
+                </div>
+              );
+            })}
+            <button type="button" onClick={() => onColumnLayoutChange([...defaultAssetColumnLayout, ...customFields.map((field, index) => ({ id: `custom:${field.id}`, width: field.width, hidden: false, order: defaultAssetColumnLayout.length + index }))])} className="min-h-11 rounded-md border border-[#CBD9D4] bg-white px-4 text-sm font-bold">Restore default sizing</button>
+          </div>
+        ) : null}
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full table-fixed border-collapse" style={{ minWidth: `${Math.max(760, visibleColumns.reduce((total, column) => total + (resolvedLayout.find((item) => item.id === column.id)?.width ?? column.width), 90))}px` }}>
+            <thead className="bg-[#F4F7F6] text-left text-[10px] font-black uppercase text-[#64748B]">
+              <tr>{visibleColumns.map((column) => <th key={column.id} style={{ width: resolvedLayout.find((item) => item.id === column.id)?.width ?? column.width }} className="border-b border-[#DDE7E3] px-4 py-3"><button type="button" onClick={() => setSortFieldId(column.id)} className="font-black uppercase hover:text-[#008C95]">{column.label}{sortFieldId === column.id ? " ↑" : ""}</button></th>)}<th className="w-24 border-b border-[#DDE7E3] px-4 py-3">Record</th></tr>
+            </thead>
+            <tbody>{sortedMachines.map((machine) => (
+              <tr key={machine.id} className="border-b border-[#E2E8F0] last:border-b-0">
+                {visibleColumns.map((column) => {
+                  if (column.id === "code") return <td key={column.id} className="px-4 py-3 text-sm font-black">{machine.code}</td>;
+                  if (column.id === "name") return <td key={column.id} className="px-4 py-3 text-sm font-semibold">{machine.name}</td>;
+                  if (column.id === "state") return <td key={column.id} className="px-4 py-3"><MachineStatusBadge state={machine.state} /></td>;
+                  if (column.id === "owner") return <td key={column.id} className="px-4 py-3 text-sm font-semibold">{machine.owner}</td>;
+                  const field = customFields.find((item) => `custom:${item.id}` === column.id);
+                  return <td key={column.id} className="px-3 py-2">{field ? <CustomFieldInput compact field={field} value={machine.customFields?.[field.id]} onChange={(value) => onCustomFieldChange(machine.id, field.id, value)} /> : null}</td>;
+                })}
+                <td className="px-3 py-2"><button type="button" onClick={() => onMachineOpen(machine, "passport")} className="min-h-9 rounded-md border border-[#BDD3CF] px-3 text-xs font-bold">Open</button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="space-y-3 bg-[#F8FAF9] p-3 md:hidden">
+          {sortedMachines.map((machine) => (
+            <article key={machine.id} className="rounded-md border border-[#D7E2DE] bg-white p-4">
+              <div className="flex items-center justify-between gap-3"><div><p className="font-black">{machine.code}</p><p className="mt-1 text-xs text-[#64748B]">{machine.name}</p></div><MachineStatusBadge state={machine.state} /></div>
+              {customFields.filter((field) => field.visibility.table).map((field) => <label key={field.id} className="mt-3 block text-[11px] font-black uppercase text-[#64748B]">{field.name}<CustomFieldInput field={field} value={machine.customFields?.[field.id]} onChange={(value) => onCustomFieldChange(machine.id, field.id, value)} /></label>)}
+              <button type="button" onClick={() => onMachineOpen(machine, "passport")} className="mt-4 h-11 w-full rounded-md border border-[#BDD3CF] text-sm font-bold">Open record</button>
+            </article>
+          ))}
+        </div>
+      </Surface>
     </ConsolePage>
+  );
+}
+
+function CustomFieldInput({
+  compact = false,
+  field,
+  onChange,
+  value,
+}: {
+  compact?: boolean;
+  field: CustomFieldDefinition;
+  onChange: (value: unknown) => void;
+  value: CustomFieldValue | undefined;
+}) {
+  const className = `${compact ? "h-9" : "mt-2 h-11"} w-full min-w-0 rounded-md border border-[#CBD9D4] bg-white px-2 text-sm font-semibold`;
+  if (field.type === "boolean") return <input type="checkbox" checked={Boolean(value ?? field.defaultValue)} onChange={(event) => onChange(event.target.checked)} className="h-5 w-5 accent-[#008C95]" />;
+  if (field.type === "single-select") return <select value={String(value ?? field.defaultValue ?? "")} onChange={(event) => onChange(event.target.value)} className={className}><option value="">-</option>{field.options.map((option) => <option key={option}>{option}</option>)}</select>;
+  if (field.type === "multi-select") return <select multiple value={Array.isArray(value) ? value : []} onChange={(event) => onChange(Array.from(event.target.selectedOptions, (option) => option.value))} className={`${className} ${compact ? "h-14" : "h-24"}`}>{field.options.map((option) => <option key={option}>{option}</option>)}</select>;
+  const inputType = field.type === "date" ? "date" : field.type === "datetime" ? "datetime-local" : field.type === "url" ? "url" : field.type === "number" || field.type === "percentage" || field.type === "currency" ? "number" : "text";
+  return <input type={inputType} min={field.type === "percentage" ? 0 : undefined} max={field.type === "percentage" ? 100 : undefined} step={field.type === "currency" ? "0.01" : field.type === "number" || field.type === "percentage" ? "any" : undefined} required={field.required} value={String(value ?? field.defaultValue ?? "")} onChange={(event) => onChange(event.target.value)} className={className} />;
+}
+
+type CustomDataRecord = {
+  id: string;
+  label: string;
+  meta: string;
+  values: Record<string, CustomFieldValue> | undefined;
+};
+
+function CustomDataSection({
+  fields,
+  onChange,
+  records,
+  title,
+}: {
+  fields: CustomFieldDefinition[];
+  onChange: (recordId: string, fieldId: string, value: unknown) => void;
+  records: CustomDataRecord[];
+  title: string;
+}) {
+  const visibleFields = fields
+    .filter((field) => !field.archived && (field.visibility.table || field.visibility.form))
+    .sort((left, right) => left.order - right.order);
+  if (!visibleFields.length || !records.length) return null;
+
+  return (
+    <Surface className="overflow-hidden p-0">
+      <PanelHeader
+        eyebrow="Προσαρμοσμένα δεδομένα"
+        title={title}
+        description="Τα πεδία ορίζονται από τις Ρυθμίσεις και αποθηκεύονται μαζί με κάθε εγγραφή."
+        actions={<MetricChip tone="info">{visibleFields.length} {visibleFields.length === 1 ? "πεδίο" : "πεδία"}</MetricChip>}
+      />
+      <div className="max-h-[520px] divide-y divide-[#E2E8F0] overflow-y-auto">
+        {records.map((record) => (
+          <article key={record.id} className="grid gap-4 bg-white px-4 py-4 lg:grid-cols-[minmax(180px,0.75fr)_minmax(0,2fr)] lg:px-5">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black text-[#0D2F2D]">{record.label}</p>
+              <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{record.meta}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleFields.map((field) => (
+                <label key={field.id} className="min-w-0 text-[11px] font-black uppercase text-[#64748B]">
+                  <span className="flex min-h-4 items-center gap-1">
+                    {field.name}{field.required ? <span className="text-[#DC2626]">*</span> : null}
+                  </span>
+                  <CustomFieldInput
+                    field={field}
+                    value={record.values?.[field.id]}
+                    onChange={(value) => onChange(record.id, field.id, value)}
+                  />
+                </label>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </Surface>
   );
 }
 
@@ -5482,7 +5855,15 @@ function StaffCard({
   );
 }
 
-function StaffView({ staffList }: { staffList: StaffMember[] }) {
+function StaffView({
+  customFields,
+  onCustomFieldChange,
+  staffList,
+}: {
+  customFields: CustomFieldDefinition[];
+  onCustomFieldChange: (personId: string, fieldId: string, value: unknown) => void;
+  staffList: StaffMember[];
+}) {
   const [boardStaff, setBoardStaff] = useState(staffList);
   const [draggedStaffId, setDraggedStaffId] = useState<string | null>(null);
   const staffExportColumns: Array<ExportColumn<StaffMember>> = [
@@ -5496,6 +5877,13 @@ function StaffView({ staffList }: { staffList: StaffMember[] }) {
     { header: "Επαφή", value: (person) => person.phone },
     { header: "Σημείωση", value: (person) => person.note },
     { header: "Επόμενη κίνηση", value: (person) => person.replacement ?? "" },
+    ...customFields
+      .filter((field) => field.visibility.export && !field.archived)
+      .sort((left, right) => left.order - right.order)
+      .map((field): ExportColumn<StaffMember> => ({
+        header: field.name,
+        value: (person) => customFieldDisplayValue(field, person.customFields?.[field.id]),
+      })),
   ];
 
   const available = boardStaff.filter((person) => person.status === "available").length;
@@ -5523,6 +5911,18 @@ function StaffView({ staffList }: { staffList: StaffMember[] }) {
       ),
     );
     setDraggedStaffId(null);
+  }
+
+  function updatePersonCustomField(personId: string, fieldId: string, value: unknown) {
+    const field = customFields.find((item) => item.id === fieldId);
+    if (!field) return;
+    const normalizedValue = normalizedCustomFieldValue(field, value);
+    setBoardStaff((current) => current.map((person) => (
+      person.id === personId
+        ? { ...person, customFields: { ...(person.customFields ?? {}), [fieldId]: normalizedValue } }
+        : person
+    )));
+    onCustomFieldChange(personId, fieldId, normalizedValue);
   }
 
   function exportStaff(format: "csv" | "xlsx") {
@@ -5629,6 +6029,17 @@ function StaffView({ staffList }: { staffList: StaffMember[] }) {
         })}
         </div>
       </Surface>
+      <CustomDataSection
+        fields={customFields}
+        title="Πεδία προσωπικού και χειριστών"
+        records={boardStaff.map((person) => ({
+          id: person.id,
+          label: person.name,
+          meta: `${person.role} · ${person.team}`,
+          values: person.customFields,
+        }))}
+        onChange={updatePersonCustomField}
+      />
     </ConsolePage>
   );
 }
@@ -6016,12 +6427,16 @@ function ActionQueueRowItem({
 }
 
 function DocumentsView({
+  customFields,
   machinesList,
   onActionStart,
+  onCustomFieldChange,
   onMachineOpen,
 }: {
+  customFields: CustomFieldDefinition[];
   machinesList: Machine[];
   onActionStart: (machine: Machine, action: Exclude<DrawerAction, null>) => void;
+  onCustomFieldChange: (machineId: string, certificateName: string, fieldId: string, value: unknown) => void;
   onMachineOpen: (machine: Machine) => void;
 }) {
   const [filter, setFilter] = useState<DocumentFilter>("needs-action");
@@ -6145,6 +6560,20 @@ function DocumentsView({
           </div>
         )}
       </Surface>
+      <CustomDataSection
+        fields={customFields}
+        title="Πεδία εγγράφων και αποδεικτικών"
+        records={allCertificates.map(({ certificate, machine }) => ({
+          id: `${machine.id}::${certificate.name}`,
+          label: certificate.name,
+          meta: `${machine.code} · ${machine.name}`,
+          values: certificate.customFields,
+        }))}
+        onChange={(recordId, fieldId, value) => {
+          const separatorIndex = recordId.indexOf("::");
+          onCustomFieldChange(recordId.slice(0, separatorIndex), recordId.slice(separatorIndex + 2), fieldId, value);
+        }}
+      />
     </ConsolePage>
   );
 }
@@ -6241,12 +6670,16 @@ function WorkshopJobCardContent({ machine, service }: { machine: Machine; servic
 }
 
 function WorkshopView({
+  customFields,
   machinesList,
+  onCustomFieldChange,
   onJobCreate,
   onMachineOpen,
   onServiceStatusChange,
 }: {
+  customFields: CustomFieldDefinition[];
   machinesList: Machine[];
+  onCustomFieldChange: (machineId: string, issue: string, fieldId: string, value: unknown) => void;
   onJobCreate: (draft: WorkshopJobDraft) => void;
   onMachineOpen: (machine: Machine) => void;
   onServiceStatusChange: (machineId: string, issue: string, status: ServiceBlocker["status"]) => void;
@@ -6508,6 +6941,20 @@ function WorkshopView({
           })}
         </div>
       </Surface>
+      <CustomDataSection
+        fields={customFields}
+        title="Πεδία εργασιών συνεργείου"
+        records={serviceJobs.map(({ machine, service }) => ({
+          id: workshopJobId(machine, service),
+          label: service.issue,
+          meta: `${machine.code} · ${service.owner} · ${service.due}`,
+          values: service.customFields,
+        }))}
+        onChange={(recordId, fieldId, value) => {
+          const separatorIndex = recordId.indexOf("::");
+          onCustomFieldChange(recordId.slice(0, separatorIndex), recordId.slice(separatorIndex + 2), fieldId, value);
+        }}
+      />
       {pointerDrag && liftedJob ? (
         <div
           data-workshop-lifted-card="true"

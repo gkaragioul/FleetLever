@@ -5,15 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FleetLeverLogo } from "./fleetlever-logo";
-import { PublicDemoLauncher } from "./public-demo-launcher";
 
-export const demoHref = "/request-demo";
-
-const consoleHref =
+const configuredAppHref =
+  process.env.NEXT_PUBLIC_FLEETLEVER_APP_URL ??
   process.env.NEXT_PUBLIC_FLEETLEVER_CONSOLE_URL ??
   (process.env.NODE_ENV === "development"
-    ? "http://127.0.0.1:3001/login"
-    : "https://fleetlever-app-production.up.railway.app/login");
+    ? "http://127.0.0.1:3001"
+    : "https://fleetlever-app-production.up.railway.app");
+
+const appOrigin = configuredAppHref
+  .replace(/\/(?:login|signup)\/?$/i, "")
+  .replace(/\/$/, "");
+
+export const loginHref = `${appOrigin}/login`;
+export const trialHref = `${appOrigin}/signup`;
+export const demoHref = trialHref;
+export const requestDemoHref = "/request-demo";
 
 const navItems = [
   ["Product", "/#product"],
@@ -78,16 +85,19 @@ export function CommercialSiteHeader() {
 
           <div className="flex items-center gap-2">
             <a
-              href={consoleHref}
+              href={loginHref}
               className={`hidden min-h-11 items-center justify-center px-3 text-sm font-semibold text-[#334641] transition-colors hover:text-[#007c89] sm:inline-flex ${focusRing}`}
             >
               Sign in
             </a>
-            <PublicDemoLauncher
-              label="Try the app"
-              analytics="header_demo"
-              triggerClassName={`hidden min-h-11 items-center justify-center gap-2 rounded-md bg-[#103d37] px-4 text-sm font-bold text-white transition hover:bg-[#007c89] active:translate-y-px disabled:cursor-wait disabled:opacity-75 sm:inline-flex ${focusRing}`}
-            />
+            <a
+              href={trialHref}
+              data-analytics="header_trial"
+              className={`hidden min-h-11 items-center justify-center gap-2 rounded-md bg-[#103d37] px-4 text-sm font-bold text-white transition hover:bg-[#007c89] active:translate-y-px sm:inline-flex ${focusRing}`}
+            >
+              Try the app
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
             <button
               type="button"
               aria-label={isOpen ? "Close menu" : "Open menu"}
@@ -122,17 +132,20 @@ export function CommercialSiteHeader() {
             ))}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <a
-                href={consoleHref}
+                href={loginHref}
                 className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#bfcfc8] text-sm font-bold text-[#103d37]"
               >
                 Sign in
               </a>
-              <PublicDemoLauncher
-                label="Try the app"
-                analytics="mobile_menu_demo"
-                onBeforeOpen={() => setIsOpen(false)}
-                triggerClassName="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] text-sm font-bold text-white disabled:cursor-wait disabled:opacity-75"
-              />
+              <a
+                href={trialHref}
+                data-analytics="mobile_menu_trial"
+                onClick={() => setIsOpen(false)}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] text-sm font-bold text-white"
+              >
+                Try the app
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
             </div>
           </nav>
         </div>
@@ -178,8 +191,8 @@ export function CommercialSiteFooter() {
           <div>
             <p className="font-bold text-white">Start</p>
             <div className="mt-2 grid text-[#bfd0ca] sm:mt-3 sm:gap-1">
-              <Link href={demoHref} data-analytics="footer_demo" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Request a demo</Link>
-              <a href={consoleHref} className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Sign in</a>
+              <a href={trialHref} data-analytics="footer_trial" className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Start free trial</a>
+              <a href={loginHref} className="inline-flex min-h-11 items-center hover:text-white sm:min-h-8">Sign in</a>
             </div>
           </div>
         </div>

@@ -54,6 +54,17 @@ const industries = [
     image: "/fleetlever/site/industries/car-rental.jpg",
     alt: "A row of rental cars prepared for customer collection",
   },
+  {
+    id: "beyond",
+    number: "05",
+    title: "Aviation, marine and beyond",
+    shortTitle: "Beyond the road",
+    kicker: "Specialist operations",
+    question: "Can every aircraft, vessel or specialist asset meet its release requirements before the next assignment?",
+    checks: ["Configurable requirements", "Specialist evidence", "Recorded release"],
+    image: "/fleetlever/site/industries/aviation-hangar.jpg",
+    alt: "Aircraft undergoing readiness work inside a maintenance hangar",
+  },
 ] as const;
 
 const releaseLoop = ["Plan", "Verify", "Resolve", "Release"] as const;
@@ -99,7 +110,7 @@ export function IndustrySwitchboard() {
 
     const observer = new IntersectionObserver(
       ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.28 },
+      { rootMargin: "38% 0px 30% 0px", threshold: 0.01 },
     );
     observer.observe(section);
     return () => observer.disconnect();
@@ -172,7 +183,7 @@ export function IndustrySwitchboard() {
       <div className={styles.inner} data-home-shell>
         <header className={styles.header}>
           <div>
-            <p className={styles.eyebrow}>One control loop. Four operating worlds.</p>
+            <p className={styles.eyebrow}>One control loop. Five operating worlds.</p>
             <h2 className={styles.heading}>Built for the moment before any fleet goes out.</h2>
           </div>
           <p className={styles.intro}>

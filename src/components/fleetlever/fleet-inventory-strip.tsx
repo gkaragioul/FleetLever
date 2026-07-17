@@ -134,7 +134,8 @@ export function FleetInventoryStrip() {
     if (!section) return;
 
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      threshold: 0.25,
+      rootMargin: "38% 0px 30% 0px",
+      threshold: 0.01,
     });
     observer.observe(section);
     return () => observer.disconnect();

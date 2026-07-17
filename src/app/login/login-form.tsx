@@ -1,54 +1,34 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { loginAction, type LoginState } from "./actions";
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ googleConfigured, next }: { googleConfigured: boolean; next: string }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, {});
-
   return (
-    <form action={formAction} className="mt-7 space-y-5">
-      <input type="hidden" name="next" value={next} />
-      <div>
-        <label htmlFor="username" className="text-xs font-bold uppercase text-[#64746f]">
-          Χρήστης
+    <div className="mt-7">
+      <a href={`/api/auth/google/start?next=${encodeURIComponent(next)}`} aria-disabled={!googleConfigured} className={`flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-[#C9D8D3] bg-white px-5 text-sm font-bold text-[#123C38] transition hover:border-[#008C95] hover:bg-[#F4FAF8] ${googleConfigured ? "" : "pointer-events-none opacity-50"}`}>
+        <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full border border-[#C9D8D3] text-xs font-black text-[#4285F4]">G</span> Continue with Google
+      </a>
+      {!googleConfigured ? <p className="mt-2 text-center text-xs text-[#7B8D88]">Google sign-in will be available when this deployment is configured.</p> : null}
+      <div className="my-5 flex items-center gap-3 text-[10px] font-black uppercase text-[#8A9A96]"><span className="h-px flex-1 bg-[#DDE6E2]" />or use email<span className="h-px flex-1 bg-[#DDE6E2]" /></div>
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="next" value={next} />
+        <label className="block text-xs font-bold uppercase text-[#64746f]">Email
+          <input name="email" type="email" required autoComplete="email" className="mt-2 min-h-12 w-full rounded-md border border-[#cdd8d3] bg-white px-4 text-base font-semibold outline-none focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]" placeholder="you@company.com" />
         </label>
-        <input
-          id="username"
-          name="username"
-          autoComplete="username"
-          className="mt-2 min-h-12 w-full rounded-lg border border-[#cdd8d3] bg-white px-4 text-base font-semibold text-[#13211f] outline-none transition placeholder:text-[#9aa7a2] focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]"
-          placeholder="Πληκτρολογήστε χρήστη"
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className="text-xs font-bold uppercase text-[#64746f]">
-          Κωδικός πρόσβασης
+        <label className="block text-xs font-bold uppercase text-[#64746f]">Password
+          <input name="password" type="password" required autoComplete="current-password" className="mt-2 min-h-12 w-full rounded-md border border-[#cdd8d3] bg-white px-4 text-base font-semibold outline-none focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]" placeholder="Your password" />
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          className="mt-2 min-h-12 w-full rounded-lg border border-[#cdd8d3] bg-white px-4 text-base font-semibold text-[#13211f] outline-none transition placeholder:text-[#9aa7a2] focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]"
-          placeholder="Πληκτρολογήστε κωδικό"
-        />
-      </div>
-      {state.error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
-          {state.error}
-        </div>
-      ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#102b27] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#007C89] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-        {pending ? "Γίνεται σύνδεση..." : "Σύνδεση"}
-        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      </button>
-    </form>
+        <div className="text-right"><Link href="/forgot-password" className="text-sm font-bold text-[#007C89] hover:underline">Forgot password?</Link></div>
+        {state.error ? <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{state.error}</div> : null}
+        <button type="submit" disabled={pending} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#102b27] px-5 text-sm font-bold text-white transition hover:bg-[#007C89] focus-visible:ring-2 focus-visible:ring-[#00aebe] focus-visible:ring-offset-2 disabled:opacity-60">
+          <LockKeyhole className="h-4 w-4" />{pending ? "Signing in..." : "Sign in"}<ArrowRight className="h-4 w-4" />
+        </button>
+      </form>
+      <p className="mt-6 text-center text-sm text-[#64746F]">New to FleetLever? <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-black text-[#007C89] hover:underline">Start a 15-day trial</Link></p>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import {
   readDemoSession,
   writeDemoSessionSnapshot,
 } from "@/lib/commercial/demo-session-store";
+import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,6 +61,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
+  if (!originMatches(request)) return originErrorResponse();
   const { sessionId } = await params;
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
   if (declaredLength > maximumSnapshotBytes) {

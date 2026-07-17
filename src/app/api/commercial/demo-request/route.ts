@@ -1,11 +1,13 @@
 import { NextRequest } from "next/server";
 import { getDbPool } from "@/lib/db/client";
 import { validateDemoRequest } from "@/lib/commercial/demo-request-validation";
+import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  if (!originMatches(request)) return originErrorResponse();
   const payload = await request.json().catch(() => null);
   const result = validateDemoRequest(payload);
 

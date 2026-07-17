@@ -102,6 +102,14 @@
   object-position: 55% center;
 }
 
+.drawer[data-industry="car-rental"] .image {
+  object-position: 50% center;
+}
+
+.drawer[data-industry="beyond"] .image {
+  object-position: 54% center;
+}
+
 .drawer[data-active="true"] .image {
   filter: saturate(0.96) contrast(1.04);
   transform: scale(1);
@@ -367,7 +375,7 @@
   }
 
   .drawers {
-    height: 49rem;
+    height: 54rem;
     flex-direction: column;
     margin-top: 2.5rem;
   }
@@ -458,7 +466,7 @@
 
 @media (max-width: 420px) {
   .drawers {
-    height: 47rem;
+    height: 52rem;
   }
 
   .checks li {

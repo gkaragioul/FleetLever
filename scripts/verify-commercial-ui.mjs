@@ -85,6 +85,7 @@ async function verifyAlternatingSectionBackgrounds(page, name) {
     })),
   );
   const expected = [
+    { tone: "white", background: "rgb(255, 255, 255)" },
     { tone: "mist", background: "rgb(237, 242, 238)" },
     { tone: "white", background: "rgb(255, 255, 255)" },
     { tone: "mist", background: "rgb(237, 242, 238)" },
@@ -119,8 +120,8 @@ async function verifyHomepageRhythm(page, name, expectedInset) {
     }),
   );
 
-  if (strips.length !== 6) {
-    failures.push(`${name}: expected 6 coordinated homepage strips, found ${strips.length}`);
+  if (strips.length !== 7) {
+    failures.push(`${name}: expected 7 coordinated homepage strips, found ${strips.length}`);
     return;
   }
 
@@ -154,6 +155,7 @@ async function verifyHomepageRhythm(page, name, expectedInset) {
 
 async function verifyHomepageStory(page, name) {
   const story = [
+    "Add the fields your team actually needs.",
     "Every next assignment enters one release flow.",
     "One board shows what can go out next.",
     "Every machine, sorted by what needs attention.",
@@ -506,7 +508,7 @@ async function verifyWheelSteppedMotion(page, name) {
     {
       selector: '[data-animation="industry-switchboard"]',
       attribute: "data-industry-active",
-      order: ["construction", "rental", "municipal", "car-rental"],
+      order: ["construction", "rental", "municipal", "car-rental", "beyond"],
       loop: true,
     },
   ];
@@ -834,41 +836,29 @@ async function verifyPage({ name, pathname, viewport, required, screenshot, maxH
 }
 
 
-async function verifyPublicDemoWorkspace() {
+async function verifyTrialEntryLinks() {
   const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
   const page = await context.newPage();
 
   try {
     await page.goto(`${origin}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
-    await page.locator('[data-analytics="hero_demo"]').click();
-
-    const dialog = page.getByRole("dialog", { name: "Your 10-hour FleetLever workspace" });
-    await dialog.waitFor({ state: "visible", timeout: 10_000 });
-    await page.getByText("Changes sync to this share link and disappear after 10 hours.").waitFor();
-
-    const frame = page.locator('iframe[title="FleetLever interactive demo"]');
-    await frame.waitFor({ state: "visible", timeout: 15_000 });
-    const src = await frame.getAttribute("src");
-    if (!src || !/^\/try\/[0-9a-f-]+\?embed=1$/i.test(src)) {
-      failures.push(`public demo: unexpected iframe source ${src ?? "missing"}`);
-    } else {
-      const sessionId = src.split("/")[2]?.split("?")[0];
-      const stateResponse = await page.request.get(`${origin}/api/commercial/demo-sessions/${sessionId}/state`);
-      const state = await stateResponse.json().catch(() => null);
-      const ttl = Date.parse(state?.expiresAt ?? "") - Date.now();
-      if (!stateResponse.ok() || ttl < 35_900_000 || ttl > 36_100_000) {
-        failures.push(`public demo: session does not expose a ten-hour expiry (${stateResponse.status()}, ${ttl})`);
+    for (const analytics of ["hero_trial", "header_trial"]) {
+      const link = page.locator(`[data-analytics="${analytics}"]`);
+      await link.waitFor({ state: "visible", timeout: 10_000 });
+      const href = await link.getAttribute("href");
+      if (!href || new URL(href, origin).pathname !== "/signup") {
+        failures.push(`trial entry: ${analytics} points to ${href ?? "missing"} instead of /signup`);
       }
-
-      const sharedPage = await context.newPage();
-      await sharedPage.goto(`${origin}/try/${sessionId}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
-      await sharedPage.getByText("Demo workspace", { exact: true }).waitFor({ timeout: 10_000 });
-      await sharedPage.close();
     }
 
-    await page.screenshot({ path: path.join(outputDir, "site-public-demo-desktop.png"), fullPage: false });
-    await page.keyboard.press("Escape");
-    await dialog.waitFor({ state: "detached", timeout: 5_000 });
+    if ((await page.locator('iframe[title="FleetLever interactive demo"]').count()) > 0) {
+      failures.push("trial entry: legacy embedded demo iframe remains on the homepage");
+    }
+    if ((await page.getByRole("dialog", { name: /10-hour FleetLever workspace/i }).count()) > 0) {
+      failures.push("trial entry: legacy ten-hour demo dialog remains on the homepage");
+    }
+
+    await page.screenshot({ path: path.join(outputDir, "site-trial-entry-desktop.png"), fullPage: false });
   } finally {
     await context.close();
   }
@@ -879,29 +869,52 @@ async function verifyPublicDemoWorkspace() {
   try {
     await mobilePage.goto(`${origin}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await mobilePage.getByRole("button", { name: "Open menu" }).click();
-    await mobilePage.locator('[data-analytics="mobile_menu_demo"]').click();
-
-    const mobileDialog = mobilePage.getByRole("dialog", { name: "Your 10-hour FleetLever workspace" });
-    await mobileDialog.waitFor({ state: "visible", timeout: 10_000 });
-    const mobileFrame = mobilePage.locator('iframe[title="FleetLever interactive demo"]');
-    await mobileFrame.waitFor({ state: "visible", timeout: 15_000 });
-    await mobilePage.waitForFunction(
-      () => {
-        const frame = document.querySelector('iframe[title="FleetLever interactive demo"]');
-        return (frame?.contentDocument?.body?.innerText.length ?? 0) > 100;
-      },
-      null,
-      { timeout: 30_000 },
-    );
-
-    const bounds = await mobileDialog.boundingBox();
-    if (!bounds || bounds.width < 350 || bounds.width > 390 || bounds.height < 740 || bounds.height > 844) {
-      failures.push(`public demo mobile: unexpected dialog bounds ${JSON.stringify(bounds)}`);
+    const trialLink = mobilePage.locator('[data-analytics="mobile_menu_trial"]');
+    await trialLink.waitFor({ state: "visible", timeout: 10_000 });
+    const href = await trialLink.getAttribute("href");
+    if (!href || new URL(href, origin).pathname !== "/signup") {
+      failures.push(`trial entry mobile: link points to ${href ?? "missing"} instead of /signup`);
     }
 
-    await mobilePage.screenshot({ path: path.join(outputDir, "site-public-demo-mobile.png"), fullPage: false });
+    if ((await mobilePage.locator('iframe[title="FleetLever interactive demo"]').count()) > 0) {
+      failures.push("trial entry mobile: legacy embedded demo iframe remains");
+    }
+
+    await mobilePage.screenshot({ path: path.join(outputDir, "site-trial-entry-mobile.png"), fullPage: false });
   } finally {
     await mobileContext.close();
+  }
+}
+
+async function verifyMobileWidthMatrix() {
+  for (const width of [320, 360, 390, 430]) {
+    const context = await browser.newContext({ viewport: { width, height: 844 } });
+    const page = await context.newPage();
+    try {
+      await page.goto(`${origin}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      const metrics = await page.evaluate(() => ({
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      }));
+      if (metrics.documentWidth > metrics.viewportWidth + 1) {
+        failures.push(`mobile ${width}px: page overflows horizontally (${metrics.documentWidth}px document)`);
+      }
+
+      const menuButton = page.getByRole("button", { name: "Open menu" });
+      const menuBox = await menuButton.boundingBox();
+      if (!menuBox || menuBox.width < 44 || menuBox.height < 44) {
+        failures.push(`mobile ${width}px: menu touch target is smaller than 44px`);
+      }
+
+      await menuButton.click();
+      const trialLink = page.locator('[data-analytics="mobile_menu_trial"]');
+      await trialLink.waitFor({ state: "visible", timeout: 10_000 });
+      if (width === 320 || width === 430) {
+        await page.screenshot({ path: path.join(outputDir, `site-landing-${width}px.png`), fullPage: false });
+      }
+    } finally {
+      await context.close();
+    }
   }
 }
 
@@ -910,9 +923,10 @@ try {
     name: "landing desktop",
     pathname: "/",
     viewport: { width: 1440, height: 1000 },
-    maxHeight: 12750,
+    maxHeight: 14250,
     required: [
       "Know what can go out next. And what cannot.",
+      "Add the fields your team actually needs.",
       "Every next assignment enters one release flow.",
       "One board shows what can go out next.",
       "Every machine, sorted by what needs attention.",
@@ -920,6 +934,7 @@ try {
       "From blocker to release. One record.",
       "Equipment rental",
       "Car rental operations",
+      "Aviation, marine and beyond",
     ],
     screenshot: "site-landing-desktop.png",
     interact: async (page) => {
@@ -946,8 +961,8 @@ try {
     name: "landing mobile",
     pathname: "/",
     viewport: { width: 390, height: 844 },
-    maxHeight: 13200,
-    required: ["FleetLever", "See the release flow", "Try the app", "Pricing"],
+    maxHeight: 15200,
+    required: ["FleetLever", "Start 15-day trial", "Add the fields your team actually needs.", "Try the app", "Pricing"],
     screenshot: "site-landing-mobile.png",
     interact: async (page) => {
       await verifyHowItWorksInset(page, "landing mobile", 20);
@@ -1021,7 +1036,9 @@ try {
     });
   }
 
-  await verifyPublicDemoWorkspace();
+  await verifyTrialEntryLinks();
+
+  await verifyMobileWidthMatrix();
 
   await verifyReducedMotionKanban();
 

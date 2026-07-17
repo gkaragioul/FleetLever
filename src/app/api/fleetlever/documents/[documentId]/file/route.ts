@@ -1,7 +1,7 @@
 import { getActiveTenantContext } from "@/lib/db/tenant-context";
 import { withTenant } from "@/lib/db/client";
 import { readObject } from "@/lib/storage/object-storage";
-import { requireSuperAdminApiSession } from "@/lib/auth/super-admin";
+import { requireFleetLeverApiSession } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ documentId: string }> },
 ) {
-  const authError = await requireSuperAdminApiSession();
+  const authError = await requireFleetLeverApiSession({ activeAccess: true });
   if (authError) return authError;
 
   const { documentId } = await context.params;

@@ -6,10 +6,11 @@ import {
   CommercialSiteFooter,
   CommercialSiteHeader,
   demoHref,
+  requestDemoHref,
 } from "@/components/fleetlever/commercial-site-shell";
 import { IndustrySwitchboard } from "@/components/fleetlever/industry-switchboard";
 import { MultiIndustryHero } from "@/components/fleetlever/multi-industry-hero";
-import { PublicDemoLauncher } from "@/components/fleetlever/public-demo-launcher";
+import { ConfigurableWorkspaceStrip } from "@/components/fleetlever/configurable-workspace-strip";
 import { ReadinessLanes } from "@/components/fleetlever/readiness-lanes";
 import { ReleaseControlProcess } from "@/components/fleetlever/release-control-process";
 import { FleetInventoryStrip } from "@/components/fleetlever/fleet-inventory-strip";
@@ -99,12 +100,18 @@ export default function LandingPage() {
               FleetLever checks every asset before its next job, rental or assignment, then assigns whatever is
               missing before it causes a delay.
             </p>
+            <p className="mt-3 max-w-[42rem] text-sm font-semibold leading-6 text-[#cce5e0] sm:text-base">
+              Add the fields and columns your operation needs without waiting for custom development.
+            </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <PublicDemoLauncher
-                analytics="hero_demo"
-                label="Try the app"
-                triggerClassName="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px disabled:cursor-wait disabled:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              />
+              <a
+                href={demoHref}
+                data-analytics="hero_trial"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Start 15-day trial
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
               <a
                 href="#how-it-works"
                 className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/55 bg-[#071b18]/45 px-5 text-sm font-bold text-white transition hover:border-white hover:bg-[#071b18]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -115,6 +122,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <ConfigurableWorkspaceStrip />
 
       <ReadinessLanes />
 
@@ -202,7 +211,7 @@ export default function LandingPage() {
             <p className="font-mono text-4xl font-semibold">EUR 1,000</p>
             <p className="mt-1 text-sm font-medium text-[#c7d7d2]">fixed pilot fee, excluding VAT</p>
             <Link
-              href={demoHref}
+              href={requestDemoHref}
               data-analytics="pilot_demo"
               className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-6 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >

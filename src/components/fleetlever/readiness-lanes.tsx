@@ -4,9 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   FileCheck2,
-  Forklift,
-  Tractor,
-  Truck,
   UserRoundCheck,
   Wrench,
 } from "lucide-react";
@@ -53,6 +50,61 @@ function setVehiclePosition(
     tracedPath.style.strokeDasharray = `${length}`;
     tracedPath.style.strokeDashoffset = `${length - distance}`;
   }
+}
+
+function CraneMarker({ code }: { code: string }) {
+  return (
+    <>
+      <rect className={styles.machinePlate} x="-45" y="-25" width="90" height="50" rx="8" />
+      <text className={styles.machineCode} x="-36" y="-12">
+        {code}
+      </text>
+      <path className={styles.machineBoom} d="M -13 -6 L 29 -21" />
+      <path className={styles.machineCable} d="M 28 -20 L 28 -6" />
+      <path className={styles.machineHook} d="M 28 -6 c 6 0 6 8 0 8 c -5 0 -6 -4 -4 -7" />
+      <path className={styles.machineBody} d="M -31 0 h 31 v 13 h -31 z" />
+      <path className={styles.machineCab} d="M 2 -7 h 24 l 8 8 v 12 h -32 z" />
+      <path className={styles.machineLine} d="M -35 16 H 37" />
+      <circle className={styles.machineWheel} cx="-22" cy="17" r="5" />
+      <circle className={styles.machineWheel} cx="20" cy="17" r="5" />
+    </>
+  );
+}
+
+function ExcavatorMarker({ code }: { code: string }) {
+  return (
+    <>
+      <rect className={styles.machinePlate} x="-45" y="-25" width="90" height="50" rx="8" />
+      <text className={styles.machineCode} x="-36" y="-12">
+        {code}
+      </text>
+      <rect className={styles.machineTrack} x="-33" y="11" width="63" height="12" rx="6" />
+      <path className={styles.machineBody} d="M -22 -2 h 31 l 9 13 h -46 z" />
+      <path className={styles.machineCab} d="M -3 -16 h 19 l 8 11 v 16 h -27 z" />
+      <path className={styles.machineBoom} d="M 14 -11 L 34 -24 L 42 -8" />
+      <path className={styles.machineBucket} d="M 40 -7 l 10 5 l -8 8 l -7 -7 z" />
+      <circle className={styles.machineWheel} cx="-19" cy="17" r="2.6" />
+      <circle className={styles.machineWheel} cx="0" cy="17" r="2.6" />
+      <circle className={styles.machineWheel} cx="19" cy="17" r="2.6" />
+    </>
+  );
+}
+
+function TruckMarker({ code }: { code: string }) {
+  return (
+    <>
+      <rect className={styles.machinePlate} x="-45" y="-25" width="90" height="50" rx="8" />
+      <text className={styles.machineCode} x="-36" y="-12">
+        {code}
+      </text>
+      <path className={styles.machineBody} d="M -36 -4 h 39 l -6 18 h -33 z" />
+      <path className={styles.machineCab} d="M 5 -11 h 21 l 11 12 v 13 h -32 z" />
+      <path className={styles.machineLine} d="M -39 16 H 40" />
+      <circle className={styles.machineWheel} cx="-24" cy="17" r="5" />
+      <circle className={styles.machineWheel} cx="8" cy="17" r="5" />
+      <circle className={styles.machineWheel} cx="28" cy="17" r="5" />
+    </>
+  );
 }
 
 export function ReadinessLanes() {
@@ -280,8 +332,7 @@ export function ReadinessLanes() {
                 transform="translate(82 126)"
                 aria-hidden="true"
               >
-                <rect x="-29" y="-18" width="58" height="36" rx="6" />
-                <Forklift x="-12" y="-12" width="24" height="24" strokeWidth="1.8" />
+                <CraneMarker code="CR-04" />
               </g>
               <g
                 ref={excavatorMarkerRef}
@@ -289,8 +340,7 @@ export function ReadinessLanes() {
                 transform="translate(82 301)"
                 aria-hidden="true"
               >
-                <rect x="-29" y="-18" width="58" height="36" rx="6" />
-                <Tractor x="-12" y="-12" width="24" height="24" strokeWidth="1.8" />
+                <ExcavatorMarker code="EX-12" />
               </g>
               <g
                 ref={truckMarkerRef}
@@ -298,8 +348,7 @@ export function ReadinessLanes() {
                 transform="translate(82 476)"
                 aria-hidden="true"
               >
-                <rect x="-29" y="-18" width="58" height="36" rx="6" />
-                <Truck x="-12" y="-12" width="24" height="24" strokeWidth="1.8" />
+                <TruckMarker code="TR-08" />
               </g>
             </svg>
 

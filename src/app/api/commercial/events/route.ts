@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getDbPool } from "@/lib/db/client";
+import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ const clean = (value: unknown, max: number) =>
   typeof value === "string" ? value.trim().slice(0, max) : null;
 
 export async function POST(request: NextRequest) {
+  if (!originMatches(request)) return originErrorResponse();
   const payload = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!payload) return Response.json({ ok: false }, { status: 400 });
 

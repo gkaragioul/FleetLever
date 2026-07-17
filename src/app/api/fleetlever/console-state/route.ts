@@ -7,24 +7,21 @@ import {
 } from "@/lib/db/console-state";
 import { getFleetLeverData } from "@/lib/db/fleetlever-data";
 import { buildProductionConsoleSnapshot } from "@/lib/console/production-console";
-import { requireSuperAdminApiSession } from "@/lib/auth/super-admin";
+import { requireFleetLeverApiSession } from "@/lib/auth/access";
+import {
+  assertConsoleSnapshotTextSize,
+  normalizeConsoleSnapshotPayload,
+  SnapshotValidationError,
+} from "@/lib/fleetlever/console-snapshot-core.mjs";
+import { originMatches } from "@/lib/security/request-origin.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type ConsoleSnapshot = {
-  organizationName?: string;
-  schemaVersion: number;
-  machines: unknown[];
-  notifications: unknown[];
-  releaseHistory: unknown[];
-  updatedAt: string;
-  worksites: unknown[];
-};
-
 const statePath = join(process.cwd(), ".fleetlever", "console-state.json");
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 const isProductionDeployment = process.env.NODE_ENV === "production" || Boolean(process.env.RAILWAY_ENVIRONMENT);
+type NormalizedConsoleSnapshot = ReturnType<typeof normalizeConsoleSnapshotPayload>;
 
 function noStoreResponse(body: unknown, init?: ResponseInit) {
   return Response.json(body, {
@@ -36,38 +33,24 @@ function noStoreResponse(body: unknown, init?: ResponseInit) {
   });
 }
 
-function isConsoleSnapshot(value: unknown): value is ConsoleSnapshot {
-  if (!value || typeof value !== "object") return false;
-  const snapshot = value as Partial<ConsoleSnapshot>;
-
-  return (
-    typeof snapshot.schemaVersion === "number" &&
-    typeof snapshot.updatedAt === "string" &&
-    Array.isArray(snapshot.machines) &&
-    Array.isArray(snapshot.notifications) &&
-    Array.isArray(snapshot.releaseHistory) &&
-    Array.isArray(snapshot.worksites)
-  );
-}
-
 async function readFileConsoleSnapshot() {
   try {
     const content = await readFile(statePath, "utf8");
-    const parsed = JSON.parse(content) as unknown;
-    return isConsoleSnapshot(parsed) ? parsed : null;
+    assertConsoleSnapshotTextSize(content);
+    return JSON.parse(content) as unknown;
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return null;
     throw error;
   }
 }
 
-async function writeFileConsoleSnapshot(snapshot: ConsoleSnapshot) {
+async function writeFileConsoleSnapshot(snapshot: NormalizedConsoleSnapshot) {
   await mkdir(dirname(statePath), { recursive: true });
   await writeFile(statePath, JSON.stringify(snapshot, null, 2), "utf8");
 }
 
 export async function GET() {
-  const authError = await requireSuperAdminApiSession();
+  const authError = await requireFleetLeverApiSession({ activeAccess: true });
   if (authError) return authError;
 
   if (!hasDatabase && isProductionDeployment) {
@@ -80,14 +63,28 @@ export async function GET() {
   }
 
   const rawSnapshot = hasDatabase ? await readConsoleSnapshotFromDatabase() : await readFileConsoleSnapshot();
-  const snapshot = isConsoleSnapshot(rawSnapshot) ? rawSnapshot : null;
+  let snapshot: NormalizedConsoleSnapshot | null = null;
+
+  if (rawSnapshot) {
+    try {
+      snapshot = normalizeConsoleSnapshotPayload(rawSnapshot);
+    } catch (error) {
+      return noStoreResponse(
+        {
+          error: "The stored FleetLever console state is invalid.",
+          detail: error instanceof SnapshotValidationError ? error.message : "Unable to normalize tenant state.",
+        },
+        { status: 503 },
+      );
+    }
+  }
 
   if (!snapshot && hasDatabase) {
-    let derivedSnapshot: ConsoleSnapshot;
+    let derivedSnapshot: NormalizedConsoleSnapshot;
 
     try {
       const data = await getFleetLeverData();
-      derivedSnapshot = buildProductionConsoleSnapshot(data);
+      derivedSnapshot = normalizeConsoleSnapshotPayload(buildProductionConsoleSnapshot(data));
     } catch (error) {
       return noStoreResponse(
         {
@@ -113,7 +110,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const authError = await requireSuperAdminApiSession();
+  if (!originMatches(request)) return noStoreResponse({ error: "Origin does not match." }, { status: 403 });
+  const authError = await requireFleetLeverApiSession({ activeAccess: true });
   if (authError) return authError;
 
   if (!hasDatabase && isProductionDeployment) {
@@ -125,22 +123,30 @@ export async function PUT(request: Request) {
     );
   }
 
+  let text: string;
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
+    text = await request.text();
+    assertConsoleSnapshotTextSize(text);
+    body = JSON.parse(text) as unknown;
+  } catch (error) {
+    if (error instanceof SnapshotValidationError) {
+      return noStoreResponse({ error: error.message }, { status: 413 });
+    }
     return noStoreResponse({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  if (!isConsoleSnapshot(body)) {
-    return noStoreResponse({ error: "Invalid FleetLever console snapshot." }, { status: 400 });
+  let snapshot: NormalizedConsoleSnapshot;
+  try {
+    snapshot = normalizeConsoleSnapshotPayload(body);
+    snapshot.updatedAt = new Date().toISOString();
+  } catch (error) {
+    return noStoreResponse(
+      { error: error instanceof SnapshotValidationError ? error.message : "Invalid FleetLever console snapshot." },
+      { status: 400 },
+    );
   }
-
-  const snapshot = {
-    ...body,
-    updatedAt: new Date().toISOString(),
-  };
 
   if (hasDatabase) {
     await writeConsoleSnapshotToDatabase(snapshot);
@@ -154,8 +160,9 @@ export async function PUT(request: Request) {
   });
 }
 
-export async function DELETE() {
-  const authError = await requireSuperAdminApiSession();
+export async function DELETE(request: Request) {
+  if (!originMatches(request)) return noStoreResponse({ error: "Origin does not match." }, { status: 403 });
+  const authError = await requireFleetLeverApiSession({ activeAccess: true });
   if (authError) return authError;
 
   if (!hasDatabase && isProductionDeployment) {

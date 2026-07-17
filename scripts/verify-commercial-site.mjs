@@ -12,6 +12,8 @@ const files = {
   landing: await source("src/app/landing/page.tsx"),
   pricing: await source("src/app/pricing/page.tsx"),
   shell: await source("src/components/fleetlever/commercial-site-shell.tsx"),
+  configurableWorkspace: await source("src/components/fleetlever/configurable-workspace-strip.tsx"),
+  configurableWorkspaceStyles: await source("src/components/fleetlever/configurable-workspace-strip.module.css"),
   demoLauncher: await source("src/components/fleetlever/public-demo-launcher.tsx"),
   demoWorkspace: await source("src/components/fleetlever/public-demo-workspace.tsx"),
   demoStore: await source("src/lib/commercial/demo-session-store.ts"),
@@ -66,6 +68,9 @@ requireTokens("landing", [
   "ServiceKanbanStrip",
   "IndustrySwitchboard",
   "MultiIndustryHero",
+  "ConfigurableWorkspaceStrip",
+  "Add the fields and columns your operation needs",
+  "Start 15-day trial",
   "One board shows what can go out next.",
   "Readiness at cutoff",
   "Failed releases prevented",
@@ -111,12 +116,38 @@ requireTokens("shell", [
   "Use cases",
   "Pricing",
   "Try the app",
-  "PublicDemoLauncher",
+  "NEXT_PUBLIC_FLEETLEVER_APP_URL",
+  "trialHref",
+  'href={trialHref}',
   "Menu",
   "/privacy",
   "/terms",
   "/security",
 ]);
+
+requireTokens("configurableWorkspace", [
+  'data-animation="configurable-workspace"',
+  "Your operation. Your data.",
+  "Add the fields your team actually needs.",
+  "Battery level",
+  "Percentage",
+  "Configure columns",
+  "Custom columns included in CSV and XLSX",
+  "useWheelMotionStep",
+  "prefers-reduced-motion: reduce",
+]);
+requireTokens("configurableWorkspaceStyles", [
+  ".fieldPanel",
+  ".customHeader",
+  "data-column-visible",
+  "data-column-wide",
+  "@media (max-width: 650px)",
+  "prefers-reduced-motion: reduce",
+]);
+
+if (files.shell.includes("PublicDemoLauncher")) {
+  failures.push("shell still launches the retired embedded public demo");
+}
 
 requireTokens("demoLauncher", [
   "Your 10-hour FleetLever workspace",
@@ -246,13 +277,16 @@ requireTokens("serviceStripStyles", [
 
 requireTokens("industrySwitchboard", [
   'data-animation="industry-switchboard"',
-  "One control loop. Four operating worlds.",
+  "One control loop. Five operating worlds.",
   "Built for the moment before any fleet goes out.",
   "The assets change. The release decision does not.",
   "Construction and heavy equipment",
   "Equipment rental",
   "Municipal and public works",
   "Car rental operations",
+  "Aviation, marine and beyond",
+  "aircraft, vessel or specialist asset",
+  "/fleetlever/site/industries/aviation-hangar.jpg",
   "Is the right car inspected, clean and ready before the next customer arrives?",
   "Vehicle and booking",
   "Damage and cleaning",

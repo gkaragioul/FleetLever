@@ -15,7 +15,7 @@ import {
 import {
   CommercialSiteFooter,
   CommercialSiteHeader,
-  demoHref,
+  requestDemoHref,
 } from "@/components/fleetlever/commercial-site-shell";
 
 export const metadata: Metadata = {
@@ -181,7 +181,7 @@ export default function PricingPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href={demoHref}
+                href={requestDemoHref}
                 data-analytics="pricing_hero_demo"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] px-5 text-sm font-bold text-white transition duration-200 hover:bg-[#006c74] active:translate-y-px"
               >
@@ -251,7 +251,7 @@ export default function PricingPage() {
                   when you continue within 15 days of the final review.
                 </p>
                 <Link
-                  href={demoHref}
+                  href={requestDemoHref}
                   data-analytics="pricing_pilot_demo"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#0a777e] px-4 text-sm font-bold text-[#006c74] transition duration-200 hover:bg-[#006c74] hover:text-white active:translate-y-px"
                 >
@@ -371,7 +371,7 @@ export default function PricingPage() {
                 </ul>
 
                 <Link
-                  href={demoHref}
+                  href={requestDemoHref}
                   data-analytics={"pricing_" + plan.slug}
                   className={
                     "mt-7 inline-flex min-h-11 items-center justify-between gap-2 rounded-md px-4 text-sm font-bold transition duration-200 active:translate-y-px " +
@@ -541,7 +541,7 @@ export default function PricingPage() {
             </p>
           </div>
           <Link
-            href={demoHref}
+            href={requestDemoHref}
             data-analytics="pricing_final_demo"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px"
           >
