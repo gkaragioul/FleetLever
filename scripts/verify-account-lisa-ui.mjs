@@ -95,7 +95,16 @@ try {
     const response = await fetch("/api/fleetlever/lisa/health", { cache: "no-store" });
     return { ok: response.ok, body: await response.json() };
   });
-  if (!health.ok || health.body.status !== "connected") throw new Error(`Lisa health is not connected: ${JSON.stringify(health)}`);
+  if (!health.ok || health.body.status !== "connected") {
+    const browserCookies = (await context.cookies(origin)).map(({ name, domain, path: cookiePath, secure, sameSite }) => ({
+      name,
+      domain,
+      path: cookiePath,
+      secure,
+      sameSite,
+    }));
+    throw new Error(`Lisa health is not connected: ${JSON.stringify({ health, browserCookies })}`);
+  }
 
   await page.locator('button[aria-label*="Lisa"]').first().click();
   const lisaPanel = page.locator("[data-lisa-panel]");

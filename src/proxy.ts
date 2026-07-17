@@ -1,15 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getFleetLeverEdition } from "@/lib/fleetlever/edition";
 
-const sessionCookieName = "fleetlever_super_admin_session";
+const superAdminSessionCookieName = "fleetlever_super_admin_session";
+const accountSessionCookieName = "fleetlever_account_session";
 const localhostNames = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function allowsLocalhostAccess(request: NextRequest) {
   return process.env.NODE_ENV !== "production" && localhostNames.has(request.nextUrl.hostname);
 }
 
-function hasSessionCookie(request: NextRequest) {
-  return Boolean(request.cookies.get(sessionCookieName)?.value);
+function hasSuperAdminSessionCookie(request: NextRequest) {
+  return Boolean(request.cookies.get(superAdminSessionCookieName)?.value);
+}
+
+function hasAccountSessionCookie(request: NextRequest) {
+  return Boolean(request.cookies.get(accountSessionCookieName)?.value);
+}
+
+function hasFleetLeverSessionCookie(request: NextRequest) {
+  return hasSuperAdminSessionCookie(request) || hasAccountSessionCookie(request);
 }
 
 function isProtectedPage(pathname: string) {
@@ -73,17 +82,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/login" && hasSessionCookie(request)) {
-    return NextResponse.redirect(new URL("/console", request.url));
+  if (pathname === "/login" && hasFleetLeverSessionCookie(request)) {
+    return NextResponse.redirect(new URL(hasAccountSessionCookie(request) ? "/fleet-management" : "/console", request.url));
   }
 
-  if (!hasSessionCookie(request) && isProtectedPage(pathname)) {
+  if (!hasFleetLeverSessionCookie(request) && isProtectedPage(pathname)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (!hasSessionCookie(request) && isProtectedApi(pathname) && !isLisaCompanionRelayApi(pathname)) {
+  if (!hasFleetLeverSessionCookie(request) && isProtectedApi(pathname) && !isLisaCompanionRelayApi(pathname)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

@@ -31,6 +31,7 @@ const accountServer = await readFile("src/lib/auth/account.ts", "utf8");
 const roleBootstrap = await readFile("scripts/create-db-app-role.mjs", "utf8");
 const resetPasswordAction = await readFile("src/app/reset-password/actions.ts", "utf8");
 const nextConfig = await readFile("next.config.ts", "utf8");
+const proxy = await readFile("src/proxy.ts", "utf8");
 
 assert.match(coreMigration, /force row level security/i, "Core tenant tables must force RLS.");
 assert.match(coreMigration, /organization_id = app_private\.current_organization_id\(\)/i, "Core RLS must compare organization context.");
@@ -76,5 +77,7 @@ assert.match(roleBootstrap, /revoke update, delete on public\.audit_logs/i, "Rol
 assert.match(roleBootstrap, /revoke all on public\.auth_sessions/i, "Role bootstrap must preserve private auth tables.");
 assert.match(resetPasswordAction, /takeAuthRateLimit\(`reset:/, "Password-reset consumption must be rate limited.");
 assert.match(nextConfig, /Strict-Transport-Security/, "Hosted responses must advertise HSTS.");
+assert.match(proxy, /fleetlever_account_session/, "The production proxy must recognize authenticated trial accounts.");
+assert.match(proxy, /hasFleetLeverSessionCookie/, "Protected FleetLever APIs must accept either account or administrator sessions.");
 
 console.log("PASS security and tenant-isolation contract");
