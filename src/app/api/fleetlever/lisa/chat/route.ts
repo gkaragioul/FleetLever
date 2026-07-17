@@ -1,4 +1,5 @@
 import { requireFleetLeverApiSession } from "@/lib/auth/access";
+import { takeLisaRateLimit } from "@/lib/auth/rate-limit";
 import { getActiveTenantContext } from "@/lib/db/tenant-context";
 import {
   lisaBridgeHeaders,
@@ -49,6 +50,19 @@ export async function POST(request: Request) {
     return noStoreJson({ status: "invalid_request", detail: "Question must be between 1 and 2,000 characters." }, 400);
   }
 
+  const tenantContext = await getActiveTenantContext();
+  if (!takeLisaRateLimit(tenantContext.profileId)) {
+    return new Response(JSON.stringify({ status: "rate_limited", detail: "Lisa has received too many requests. Try again in a minute." }), {
+      status: 429,
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "application/json; charset=utf-8",
+        "Retry-After": "60",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
   if (lisaRelayEnabled()) {
     if (!lisaRelayIsConfigured()) {
       return noStoreJson({ status: "misconfigured", detail: "Lisa relay credentials are not configured." }, 503);
@@ -64,7 +78,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const tenantContext = await getActiveTenantContext();
     const requestBody = body as { context?: unknown };
     const jobId = await enqueueLisaRelayJob(tenantContext, { question, context: requestBody.context });
     return new Response(streamLisaRelayJob(tenantContext, jobId, request.signal), {

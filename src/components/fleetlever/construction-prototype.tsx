@@ -10,6 +10,7 @@ import {
   CalendarDays,
   ChevronDown,
   CircleUserRound,
+  ArrowLeft,
   ArrowRight,
   Download,
   FileText,
@@ -1307,6 +1308,19 @@ function consoleSnapshot(
   };
 }
 
+function consoleSnapshotSignature(
+  notifications: OperationalNotification[],
+  organizationName: string,
+  branding: BrandingSettings,
+  customFieldDefinitions: CustomFieldDefinition[],
+  assetColumnLayout: AssetColumnLayout[],
+) {
+  return JSON.stringify({
+    ...consoleSnapshot(notifications, organizationName, branding, customFieldDefinitions, assetColumnLayout),
+    updatedAt: "",
+  });
+}
+
 function saveConsoleSnapshot(
   notifications: OperationalNotification[],
   organizationName: string,
@@ -2152,10 +2166,11 @@ function LisaAssistant({
 
   function navigationActionForResponse(text: string) {
     const match = text.match(/(?:^|\n)NAVIGATE:\s*(tomorrow|worksites|machines|blockers|certificates|service|staff|history|settings)\s*$/i);
-    if (!match) return { text: text.trim() };
+    const cleanText = (value: string) => value.replace(/\*\*(.*?)\*\*/g, "$1").trim();
+    if (!match) return { text: cleanText(text) };
     const view = match[1].toLowerCase() as ViewKey;
     return {
-      text: text.replace(match[0], "").trim(),
+      text: cleanText(text.replace(match[0], "")),
       action: {
         label: "Άνοιγμα σχετικής σελίδας",
         tone: "neutral" as const,
@@ -2540,10 +2555,30 @@ export function ConstructionPrototype({
   const [version, setVersion] = useState(0);
   const [browserHydrated, setBrowserHydrated] = useState(false);
   const [serverHydrated, setServerHydrated] = useState(false);
+  const [serverHydrationRevision, setServerHydrationRevision] = useState(0);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
+  const serverSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const serverSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serverSnapshotSignatureRef = useRef<string | null>(null);
+  const hydrationFallbackSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     const bootSnapshot = restoreInitialConsoleSnapshot();
+    hydrationFallbackSignatureRef.current = bootSnapshot
+      ? consoleSnapshotSignature(
+          bootSnapshot.notifications ?? (allowDemoConsoleData ? initialNotifications : []),
+          bootSnapshot.organizationName ?? defaultClientName,
+          bootSnapshot.branding,
+          bootSnapshot.customFieldDefinitions,
+          bootSnapshot.assetColumnLayout,
+        )
+      : consoleSnapshotSignature(
+          allowDemoConsoleData ? initialNotifications : [],
+          defaultClientName,
+          defaultBrandingSettings,
+          [],
+          defaultAssetColumnLayout,
+        );
 
     queueMicrotask(() => {
       if (bootSnapshot) {
@@ -2565,10 +2600,32 @@ export function ConstructionPrototype({
     if (!browserHydrated) return;
     saveConsoleSnapshot(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout);
     if (!serverHydrated) return;
-    void saveServerConsoleSnapshot(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout).catch(() => {
-      emitConsoleToast("Αποθηκεύτηκε τοπικά. Ο συγχρονισμός με τον server θα ξαναδοκιμάσει στην επόμενη αλλαγή.");
-    });
+    const nextSignature = consoleSnapshotSignature(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout);
+    if (nextSignature === serverSnapshotSignatureRef.current) return;
+    if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
+    serverSaveTimerRef.current = setTimeout(() => {
+      serverSaveTimerRef.current = null;
+      serverSaveQueueRef.current = serverSaveQueueRef.current
+        .catch(() => undefined)
+        .then(async () => {
+          await saveServerConsoleSnapshot(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout);
+          serverSnapshotSignatureRef.current = nextSignature;
+        });
+      void serverSaveQueueRef.current.catch(() => {
+        emitConsoleToast("Αποθηκεύτηκε τοπικά. Ο συγχρονισμός με τον server θα ξαναδοκιμάσει στην επόμενη αλλαγή.");
+      });
+    }, 180);
   }, [assetColumnLayout, branding, browserHydrated, clientName, customFieldDefinitions, notifications, serverHydrated, version]);
+
+  useEffect(() => () => {
+    if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (serverHydrationRevision === 0 || !serverSnapshotSignatureRef.current) return;
+    const renderedSignature = consoleSnapshotSignature(notifications, clientName, branding, customFieldDefinitions, assetColumnLayout);
+    if (renderedSignature === serverSnapshotSignatureRef.current) setServerHydrated(true);
+  }, [assetColumnLayout, branding, clientName, customFieldDefinitions, notifications, serverHydrationRevision, version]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2579,25 +2636,43 @@ export function ConstructionPrototype({
         if (cancelled) return;
 
         if (serverSnapshot) {
-          replaceConsoleArray(worksites, serverSnapshot.worksites);
-          replaceConsoleArray(machines, serverSnapshot.machines);
-          replaceConsoleArray(releaseHistory, serverSnapshot.releaseHistory);
-          replaceConsoleArray(staffMembers, serverSnapshot.staff);
-          setClientName(serverSnapshot.organizationName ?? defaultClientName);
-          setBranding(serverSnapshot.branding);
-          setCustomFieldDefinitions(serverSnapshot.customFieldDefinitions);
-          setAssetColumnLayout(serverSnapshot.assetColumnLayout);
-          setNotifications(serverSnapshot.notifications);
-          setWorksiteId(serverSnapshot.worksites[0]?.id ?? worksites[0]?.id ?? emptyWorksite.id);
-          setSelectedMachineId(serverSnapshot.machines[0]?.id ?? machines[0]?.id ?? emptyMachine.id);
+          const hasTenantOperationalData = serverSnapshot.machines.length > 0;
+          if (hasTenantOperationalData) {
+            replaceConsoleArray(worksites, serverSnapshot.worksites);
+            replaceConsoleArray(machines, serverSnapshot.machines);
+            replaceConsoleArray(releaseHistory, serverSnapshot.releaseHistory);
+            replaceConsoleArray(staffMembers, serverSnapshot.staff);
+          }
+          const nextClientName = serverSnapshot.organizationName ?? defaultClientName;
+          const nextBranding = serverSnapshot.branding;
+          const nextCustomFieldDefinitions = serverSnapshot.customFieldDefinitions;
+          const nextAssetColumnLayout = serverSnapshot.assetColumnLayout;
+          const nextNotifications = hasTenantOperationalData ? serverSnapshot.notifications : initialNotifications;
+          setClientName(nextClientName);
+          setBranding(nextBranding);
+          setCustomFieldDefinitions(nextCustomFieldDefinitions);
+          setAssetColumnLayout(nextAssetColumnLayout);
+          setNotifications(nextNotifications);
+          setWorksiteId((hasTenantOperationalData ? serverSnapshot.worksites[0]?.id : worksites[0]?.id) ?? emptyWorksite.id);
+          setSelectedMachineId((hasTenantOperationalData ? serverSnapshot.machines[0]?.id : machines[0]?.id) ?? emptyMachine.id);
           setVersion((current) => current + 1);
+          serverSnapshotSignatureRef.current = consoleSnapshotSignature(
+            nextNotifications,
+            nextClientName,
+            nextBranding,
+            nextCustomFieldDefinitions,
+            nextAssetColumnLayout,
+          );
+        } else {
+          serverSnapshotSignatureRef.current = hydrationFallbackSignatureRef.current;
         }
       } catch {
         if (!cancelled) {
+          serverSnapshotSignatureRef.current = hydrationFallbackSignatureRef.current;
           emitConsoleToast("Η κατάσταση του FleetLever server δεν είναι διαθέσιμη.");
         }
       } finally {
-        if (!cancelled) setServerHydrated(true);
+        if (!cancelled) setServerHydrationRevision((current) => current + 1);
       }
     }
 
@@ -3310,6 +3385,20 @@ export function ConstructionPrototype({
       ].filter((group) => group.results.length)
     : [];
   const globalSearchResultCount = globalSearchGroups.reduce((total, group) => total + group.results.length, 0);
+
+  if (!serverHydrated) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#eef2e7] px-6 text-[#0D2F2D]" aria-busy="true">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <FleetLeverLogo />
+          <div className="h-1 w-36 overflow-hidden rounded-full bg-[#D4E0DA]">
+            <span className="block h-full w-1/2 animate-pulse rounded-full bg-[#008C95]" />
+          </div>
+          <p className="text-sm font-bold text-[#55706B]">Loading your operation…</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="h-screen overflow-y-auto bg-[#eef2e7] text-[#0D2F2D] [scrollbar-gutter:stable]">
@@ -5440,6 +5529,8 @@ function MachinesView({
   const visibleColumns = allColumns
     .filter((column) => !resolvedLayout.find((item) => item.id === column.id)?.hidden)
     .sort((left, right) => (resolvedLayout.find((item) => item.id === left.id)?.order ?? 0) - (resolvedLayout.find((item) => item.id === right.id)?.order ?? 0));
+  const orderedColumns = [...allColumns]
+    .sort((left, right) => (resolvedLayout.find((item) => item.id === left.id)?.order ?? 0) - (resolvedLayout.find((item) => item.id === right.id)?.order ?? 0));
   const sortedMachines = [...machinesList].sort((left, right) => {
     if (sortFieldId.startsWith("custom:")) {
       const fieldId = sortFieldId.slice(7);
@@ -5451,6 +5542,15 @@ function MachinesView({
   function updateColumn(columnId: string, patch: Partial<AssetColumnLayout>) {
     const current = resolvedLayout.find((item) => item.id === columnId) ?? { id: columnId, width: 150, hidden: false, order: resolvedLayout.length };
     onColumnLayoutChange([...resolvedLayout.filter((item) => item.id !== columnId), { ...current, ...patch }]);
+  }
+
+  function moveColumn(columnId: string, direction: -1 | 1) {
+    const ids = orderedColumns.map((column) => column.id);
+    const currentIndex = ids.indexOf(columnId);
+    const targetIndex = currentIndex + direction;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= ids.length) return;
+    [ids[currentIndex], ids[targetIndex]] = [ids[targetIndex], ids[currentIndex]];
+    onColumnLayoutChange(resolvedLayout.map((item) => ({ ...item, order: ids.indexOf(item.id) })));
   }
 
   function exportMachines(format: "csv" | "xlsx") {
@@ -5534,11 +5634,15 @@ function MachinesView({
         />
         {columnControlsOpen ? (
           <div className="grid gap-3 border-b border-[#E2E8F0] bg-[#F8FAF9] p-4 sm:grid-cols-2 xl:grid-cols-3">
-            {allColumns.map((column) => {
+            {orderedColumns.map((column, columnIndex) => {
               const layout = resolvedLayout.find((item) => item.id === column.id)!;
               return (
-                <div key={column.id} className="flex items-center gap-3 rounded-md border border-[#D7E2DE] bg-white p-3">
+                <div key={column.id} data-column-control={column.id} className="flex items-center gap-2 rounded-md border border-[#D7E2DE] bg-white p-3">
                   <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-bold"><input type="checkbox" checked={!layout.hidden} onChange={(event) => updateColumn(column.id, { hidden: !event.target.checked })} /><span className="truncate">{column.label}</span></label>
+                  <div className="inline-flex overflow-hidden rounded-md border border-[#D7E2DE] bg-[#F8FAF9]">
+                    <button type="button" aria-label={`Move ${column.label} left`} disabled={columnIndex === 0} onClick={() => moveColumn(column.id, -1)} className="grid h-9 w-9 place-items-center border-r border-[#D7E2DE] text-[#0D2F2D] hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"><ArrowLeft className="h-3.5 w-3.5" /></button>
+                    <button type="button" aria-label={`Move ${column.label} right`} disabled={columnIndex === orderedColumns.length - 1} onClick={() => moveColumn(column.id, 1)} className="grid h-9 w-9 place-items-center text-[#0D2F2D] hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"><ArrowRight className="h-3.5 w-3.5" /></button>
+                  </div>
                   <input aria-label={`${column.label} width`} type="range" min="100" max="360" step="10" value={layout.width} onChange={(event) => updateColumn(column.id, { width: Number(event.target.value) })} className="w-20 accent-[#008C95]" />
                   <span className="w-11 text-right text-[10px] font-bold text-[#64748B]">{layout.width}px</span>
                 </div>

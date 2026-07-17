@@ -31,7 +31,7 @@ const relayEnabled = process.env.FLEETLEVER_LISA_RELAY_ENABLED === "true";
 const relayBaseUrl = process.env.FLEETLEVER_LISA_RELAY_URL ?? "";
 const relaySecret = process.env.FLEETLEVER_LISA_RELAY_SECRET ?? "";
 const relayCompanionId = (process.env.FLEETLEVER_LISA_RELAY_COMPANION_ID ?? "primary").slice(0, 120);
-const relayVersion = "0.11.2";
+const relayVersion = "0.12.0";
 const limiter = createRateLimiter({ limit: 12, windowMs: 60_000 });
 let activeRequest = null;
 

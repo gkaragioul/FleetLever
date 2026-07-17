@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -86,4 +87,29 @@ test("Codex JSON events expose only assistant text", () => {
     null,
   );
   assert.equal(parseCodexEventLine("not json"), null);
+});
+
+test("Lisa knowledge covers the product modules and exact navigation protocol", async () => {
+  const knowledge = await readFile(new URL("../docs/lisa/knowledge.md", import.meta.url), "utf8");
+
+  for (const topic of [
+    "Tomorrow's work",
+    "Worksites / operations",
+    "Stop list",
+    "Machines / assets",
+    "Documents & checks",
+    "Service",
+    "People",
+    "Decision history",
+    "Settings",
+    "Battery level",
+    "logo or banner",
+  ]) {
+    assert.match(knowledge, new RegExp(topic.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
+
+  assert.match(knowledge, /NAVIGATE:\s*<view>/);
+  assert.match(knowledge, /tomorrow\|worksites\|machines\|blockers\|certificates\|service\|staff\|history\|settings/);
+  assert.match(knowledge, /final line/i);
+  assert.match(knowledge, /do not emit NAVIGATE/i);
 });

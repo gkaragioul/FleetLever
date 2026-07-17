@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import pg from "pg";
 
@@ -8,7 +9,8 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-const expectedVersion = process.env.RELAY_EXPECTED_VERSION ?? "0.11.2";
+const packageMetadata = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+const expectedVersion = process.env.RELAY_EXPECTED_VERSION ?? packageMetadata.version;
 const timeoutMs = Number(process.env.RELAY_LIVE_TIMEOUT_MS ?? 120_000);
 const pool = new pg.Pool({
   connectionString: databaseUrl,

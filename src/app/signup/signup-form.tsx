@@ -14,6 +14,7 @@ export function SignupForm({ googleConfigured, next }: { googleConfigured: boole
       <a href={`/api/auth/google/start?next=${encodeURIComponent(next)}`} aria-disabled={!googleConfigured} className={`flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-[#C9D8D3] bg-white px-5 text-sm font-bold text-[#123C38] transition hover:border-[#008C95] hover:bg-[#F4FAF8] ${googleConfigured ? "" : "pointer-events-none opacity-50"}`}>
         <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full border border-[#C9D8D3] text-xs font-black text-[#4285F4]">G</span> Start with Google
       </a>
+      {!googleConfigured ? <p className="mt-2 text-center text-xs text-[#7B8D88]">Google sign-up will be available when this deployment is configured.</p> : null}
       <div className="my-5 flex items-center gap-3 text-[10px] font-black uppercase text-[#8A9A96]"><span className="h-px flex-1 bg-[#DDE6E2]" />or use email<span className="h-px flex-1 bg-[#DDE6E2]" /></div>
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="next" value={next} />

@@ -5,6 +5,7 @@ import { createDocument, createIssue } from "@/app/actions";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 import { getFleetLeverData } from "@/lib/db/fleetlever-data";
 import { documentStatus, formatDate } from "@/lib/fleetlever";
+import { requireActiveFleetLeverPageSession } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ async function submitIssue(formData: FormData) {
   "use server";
 
   const assetId = String(formData.get("assetId") ?? "");
+  await requireActiveFleetLeverPageSession(`/field/${assetId}`);
   await createIssue(formData);
   redirect(`/field/${assetId}?saved=issue`);
 }
@@ -39,6 +41,7 @@ async function submitDocument(formData: FormData) {
   "use server";
 
   const assetId = String(formData.get("assetId") ?? "");
+  await requireActiveFleetLeverPageSession(`/field/${assetId}`);
   await createDocument(formData);
   redirect(`/field/${assetId}?saved=document`);
 }
@@ -52,7 +55,13 @@ export default async function FieldAssetPage({
 }) {
   const { assetId } = await params;
   const query = searchParams ? await searchParams : {};
-  const data = await getFleetLeverData();
+  const session = await requireActiveFleetLeverPageSession(`/field/${assetId}`);
+  const data = session.kind === "account"
+    ? await getFleetLeverData({
+        organizationId: session.account.organizationId,
+        profileId: session.account.profileId,
+      })
+    : await getFleetLeverData();
   const asset = data.assets.find((item) => item.id === assetId);
 
   if (!asset) {

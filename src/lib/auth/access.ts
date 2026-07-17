@@ -1,5 +1,6 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
 import { getAccountSession } from "@/lib/auth/account";
 import { getSuperAdminSession } from "@/lib/auth/super-admin";
 
@@ -21,4 +22,20 @@ export async function requireFleetLeverApiSession(options: { activeAccess?: bool
     );
   }
   return null;
+}
+
+export async function requireActiveFleetLeverMutationSession() {
+  const session = await getFleetLeverAccessSession();
+  if (!session) throw new Error("Unauthorized FleetLever mutation.");
+  if (session.kind === "account" && !session.account.trial.active) {
+    throw new Error("FleetLever access has expired.");
+  }
+  return session;
+}
+
+export async function requireActiveFleetLeverPageSession(nextPath: string) {
+  const session = await getFleetLeverAccessSession();
+  if (!session) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (session.kind === "account" && !session.account.trial.active) redirect("/fleet-management");
+  return session;
 }

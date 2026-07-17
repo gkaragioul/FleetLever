@@ -14,6 +14,7 @@ import {
 import { withTenant } from "@/lib/db/client";
 import type { TenantContext } from "@/lib/db/queries";
 import { getActiveTenantContext } from "@/lib/db/tenant-context";
+import { requireActiveFleetLeverMutationSession } from "@/lib/auth/access";
 
 type Queryable = pg.PoolClient;
 
@@ -350,6 +351,18 @@ export async function runTenantMutation<T>(
   callback: (client: Queryable, context: TenantContext) => Promise<T>,
   context?: TenantContext,
 ) {
-  const activeContext = context ?? await getActiveTenantContext();
+  const session = await requireActiveFleetLeverMutationSession();
+  const activeContext = session.kind === "account"
+    ? { organizationId: session.account.organizationId, profileId: session.account.profileId }
+    : context ?? await getActiveTenantContext();
+
+  if (
+    session.kind === "account"
+    && context
+    && (context.organizationId !== activeContext.organizationId || context.profileId !== activeContext.profileId)
+  ) {
+    throw new Error("Authenticated tenant context mismatch.");
+  }
+
   return withTenant(activeContext, async (client) => callback(client, activeContext));
 }

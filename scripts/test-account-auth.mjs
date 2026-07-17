@@ -43,3 +43,11 @@ test("trial dates are immutable server-side access inputs", () => {
     expired: true,
   });
 });
+
+test("a newly created trial tolerates bounded database and application clock skew", () => {
+  const applicationNow = Date.parse("2026-07-17T12:00:00.000Z");
+  assert.deepEqual(
+    trialAccessState("2026-07-17T12:00:30.000Z", "2026-08-01T12:00:30.000Z", applicationNow),
+    { active: true, daysRemaining: 15, expired: false },
+  );
+});

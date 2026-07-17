@@ -103,8 +103,7 @@ export async function createAccountSession(
   const token = randomOpaqueToken();
   const expiresAt = new Date(Date.now() + sessionDurationSeconds * 1000);
   await getDbPool().query(
-    `insert into public.auth_sessions (token_hash, profile_id, organization_id, expires_at, ip_address, user_agent)
-     values ($1, $2, $3, $4, nullif($5, '')::inet, left($6, 500))`,
+    "select app_private.create_auth_session($1::char(64), $2::uuid, $3::uuid, $4::timestamptz, $5, $6)",
     [hashOpaqueToken(token), account.profile_id, account.organization_id, expiresAt, metadata.ipAddress ?? "", metadata.userAgent ?? ""],
   );
   await setSessionCookie(token);
@@ -162,7 +161,7 @@ export async function clearAccountSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(accountSessionCookieName)?.value;
   if (token && process.env.DATABASE_URL) {
-    await getDbPool().query("update public.auth_sessions set revoked_at = now() where token_hash = $1", [hashOpaqueToken(token)]).catch(() => {});
+    await getDbPool().query("select app_private.revoke_auth_session($1::char(64))", [hashOpaqueToken(token)]).catch(() => {});
   }
   cookieStore.delete(accountSessionCookieName);
 }
@@ -170,8 +169,7 @@ export async function clearAccountSession() {
 export async function issueAccountToken(profileId: string, kind: "email_verification" | "password_reset", durationMinutes: number) {
   const token = randomOpaqueToken();
   await getDbPool().query(
-    `insert into public.auth_tokens (token_hash, profile_id, kind, expires_at)
-     values ($1, $2, $3, now() + ($4 * interval '1 minute'))`,
+    "select app_private.issue_auth_token($1::char(64), $2::uuid, $3, $4::integer)",
     [hashOpaqueToken(token), profileId, kind, durationMinutes],
   );
   return token;

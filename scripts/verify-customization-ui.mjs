@@ -1,18 +1,34 @@
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import pg from "pg";
 import { chromium } from "playwright";
 
+const { Pool } = pg;
 const origin = process.env.FLEETLEVER_CONSOLE_URL ?? "http://127.0.0.1:3001";
+const adminDatabaseUrl = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_PUBLIC_URL;
 const outputDir = path.join(process.cwd(), "artifacts", "verification");
+const testId = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+const email = `customization-ui-${testId}@example.test`;
+const password = `FleetLever!${testId}`;
+const organizationName = `Customization UI ${testId}`;
+
+if (!adminDatabaseUrl) throw new Error("MIGRATION_DATABASE_URL or DATABASE_PUBLIC_URL is required for customization UI verification.");
 
 await mkdir(outputDir, { recursive: true });
 
+const pool = new Pool({
+  connectionString: adminDatabaseUrl,
+  ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
+});
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
 const page = await context.newPage();
 const consoleErrors = [];
 const failedRequests = [];
+const consoleStateWrites = [];
+const consoleStateReads = [];
+let verificationPhase = "boot";
 
 async function waitForConsoleHydration(targetPage) {
   await targetPage.waitForFunction(
@@ -23,6 +39,24 @@ async function waitForConsoleHydration(targetPage) {
   );
 }
 
+async function waitForPersistedCustomization(targetPage) {
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    const persisted = await targetPage.evaluate(async () => {
+      const response = await fetch("/api/fleetlever/console-state", { cache: "no-store" });
+      if (!response.ok) return false;
+      const payload = await response.json();
+      const snapshot = payload.snapshot;
+      const batteryField = snapshot?.customFieldDefinitions?.find((field) => field.name === "Battery level");
+      const machine = snapshot?.machines?.find((item) => item.code === "CR-04");
+      return Boolean(snapshot?.branding?.logo && batteryField && machine?.customFields?.[batteryField.id] === 76);
+    });
+    if (persisted) return;
+    await targetPage.waitForTimeout(250);
+  }
+  throw new Error(`Customization did not reach the organization snapshot within 60 seconds. Reads: ${JSON.stringify(consoleStateReads)} Writes: ${JSON.stringify(consoleStateWrites)} Failed: ${JSON.stringify(failedRequests)}`);
+}
+
 page.on("console", (message) => {
   if (message.type() === "error") consoleErrors.push(message.text());
 });
@@ -31,9 +65,64 @@ page.on("requestfailed", (request) => {
   if (errorText.includes("ERR_ABORTED")) return;
   failedRequests.push(`${request.method()} ${request.url()}: ${errorText}`);
 });
+page.on("request", (request) => {
+  if (request.method() !== "PUT" || !request.url().endsWith("/api/fleetlever/console-state")) return;
+  const body = request.postDataJSON();
+  const batteryField = body?.customFieldDefinitions?.find((field) => field.name === "Battery level");
+  const machine = body?.machines?.find((item) => item.code === "CR-04");
+  consoleStateWrites.push({
+    phase: verificationPhase,
+    batteryFields: body?.customFieldDefinitions?.filter((field) => field.name === "Battery level").length ?? 0,
+    hasLogo: Boolean(body?.branding?.logo),
+    machineCount: body?.machines?.length ?? 0,
+    batteryValue: batteryField ? machine?.customFields?.[batteryField.id] : null,
+  });
+});
+page.on("response", async (response) => {
+  if (response.request().method() === "PUT" && response.url().endsWith("/api/fleetlever/console-state")) {
+    consoleStateWrites.push({ phase: `${verificationPhase}:response`, status: response.status() });
+    return;
+  }
+  if (response.request().method() !== "GET" || !response.url().endsWith("/api/fleetlever/console-state")) return;
+  const body = await response.json().catch(() => null);
+  const batteryField = body?.snapshot?.customFieldDefinitions?.find((field) => field.name === "Battery level");
+  const machine = body?.snapshot?.machines?.find((item) => item.code === "CR-04");
+  consoleStateReads.push({
+    phase: verificationPhase,
+    dataSource: body?.dataSource ?? null,
+    schemaVersion: body?.snapshot?.schemaVersion ?? null,
+    batteryFields: body?.snapshot?.customFieldDefinitions?.filter((field) => field.name === "Battery level").length ?? 0,
+    hasLogo: Boolean(body?.snapshot?.branding?.logo),
+    machineCount: body?.snapshot?.machines?.length ?? 0,
+    batteryValue: batteryField ? machine?.customFields?.[batteryField.id] : null,
+  });
+});
+
+async function accountRecord() {
+  const result = await pool.query(
+    `
+      select profile.id as profile_id, organization.id as organization_id
+      from public.profiles profile
+      join public.organization_members member on member.profile_id = profile.id
+      join public.organizations organization on organization.id = member.organization_id
+      where profile.email = $1::citext
+      limit 1
+    `,
+    [email],
+  );
+  return result.rows[0] ?? null;
+}
 
 try {
-  await page.goto(`${origin}/fleet-management`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.goto(`${origin}/signup?next=/fleet-management`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.getByRole("heading", { name: "Create your workspace" }).waitFor();
+  await page.getByLabel("Full name").fill("FleetLever Customization Owner");
+  await page.getByLabel("Organization").fill(organizationName);
+  await page.getByLabel("Work email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByLabel("Confirm password").fill(password);
+  await page.getByRole("button", { name: "Start 15-day trial" }).click();
+  await page.waitForFunction(() => window.location.pathname === "/fleet-management", null, { timeout: 90_000 });
   await page.getByText("CR-04", { exact: true }).first().waitFor({ state: "visible", timeout: 60_000 });
   await waitForConsoleHydration(page);
 
@@ -68,18 +157,46 @@ try {
 
   await page.getByRole("button", { name: "Οχήματα" }).click();
   await page.getByRole("columnheader", { name: "Battery level" }).waitFor();
-  const batteryInput = page.locator('tbody input[type="number"]').first();
+  await page.getByRole("button", { name: "Columns" }).click();
+  let batteryControl = page.locator("[data-column-control]", { hasText: "Battery level" }).first();
+  await batteryControl.waitFor();
+  await batteryControl.locator('input[type="range"]').fill("260");
+  batteryControl = page.locator("[data-column-control]", { hasText: "Battery level" }).first();
+  await batteryControl.waitFor();
+  await batteryControl.getByRole("button", { name: "Move Battery level left" }).click();
+  await page.getByRole("button", { name: "Columns" }).click();
+  const headingsAfterReorder = await page.locator("thead th").allTextContents();
+  if (headingsAfterReorder.indexOf("Battery level") >= headingsAfterReorder.indexOf("Owner")) {
+    throw new Error("Battery level column did not move before Owner.");
+  }
+  const batteryWidth = await page.getByRole("columnheader", { name: "Battery level" }).evaluate((element) => getComputedStyle(element).width);
+  if (Number.parseFloat(batteryWidth) < 240) throw new Error(`Battery level column width did not update: ${batteryWidth}.`);
+  const batteryInput = page.locator("tbody tr", { hasText: "CR-04" }).locator('input[type="number"]');
   await batteryInput.fill("76");
-  await page.waitForTimeout(1_200);
+  await waitForPersistedCustomization(page);
+  verificationPhase = "post-customization-reload";
   await page.reload({ waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.getByText("CR-04", { exact: true }).first().waitFor({ state: "visible", timeout: 60_000 });
   await waitForConsoleHydration(page);
+  const persistedAfterReload = await page.evaluate(async () => {
+    const response = await fetch("/api/fleetlever/console-state", { cache: "no-store" });
+    const payload = await response.json();
+    const batteryField = payload.snapshot?.customFieldDefinitions?.find((field) => field.name === "Battery level");
+    const machine = payload.snapshot?.machines?.find((item) => item.code === "CR-04");
+    return {
+      batteryValue: batteryField ? machine?.customFields?.[batteryField.id] : null,
+      hasLogo: Boolean(payload.snapshot?.branding?.logo),
+    };
+  });
+  if (!persistedAfterReload.hasLogo) throw new Error(`The persisted logo disappeared from the server after reload. Reads: ${JSON.stringify(consoleStateReads)} Writes: ${JSON.stringify(consoleStateWrites)}`);
+  if (persistedAfterReload.batteryValue !== 76) throw new Error(`The server lost CR-04's battery value after reload: ${JSON.stringify(persistedAfterReload)}. Reads: ${JSON.stringify(consoleStateReads)} Writes: ${JSON.stringify(consoleStateWrites)}`);
   await page.getByRole("button", { name: "Ρυθμίσεις" }).click();
+  await page.getByRole("heading", { name: "Settings" }).waitFor();
   await page.getByAltText("Company logo preview").waitFor();
   await page.getByRole("button", { name: "Οχήματα" }).click();
   await page.getByRole("columnheader", { name: "Battery level" }).waitFor();
-  const persistedValue = await page.locator('tbody input[type="number"]').first().inputValue();
-  if (persistedValue !== "76") throw new Error(`Battery level did not persist; received ${JSON.stringify(persistedValue)}.`);
+  const persistedValue = await page.locator("tbody tr", { hasText: "CR-04" }).locator('input[type="number"]').inputValue();
+  if (persistedValue !== "76") throw new Error(`Battery level did not persist; received ${JSON.stringify(persistedValue)}. Reads: ${JSON.stringify(consoleStateReads)} Writes: ${JSON.stringify(consoleStateWrites)}`);
 
   await page.getByRole("button", { name: "Εξαγωγή λίστας οχημάτων" }).click();
   const csvDownloadEvent = page.waitForEvent("download");
@@ -129,6 +246,12 @@ try {
     console.error(`Customization UI cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;
   }
+  const record = await accountRecord().catch(() => null);
+  if (record) {
+    await pool.query("delete from public.organizations where id = $1", [record.organization_id]);
+    await pool.query("delete from public.profiles where id = $1", [record.profile_id]);
+  }
   await context.close();
   await browser.close();
+  await pool.end();
 }

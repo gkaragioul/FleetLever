@@ -32,10 +32,13 @@ export function safeRedirectPath(value, fallback = "/fleet-management") {
 export function trialAccessState(startedAt, endsAt, now = Date.now()) {
   const start = Date.parse(startedAt);
   const end = Date.parse(endsAt);
-  const active = Number.isFinite(start) && Number.isFinite(end) && now >= start && now < end;
+  const validWindow = Number.isFinite(start) && Number.isFinite(end) && end > start;
+  const clockSkewTolerance = 5 * 60 * 1000;
+  const active = validWindow && now + clockSkewTolerance >= start && now < end;
+  const effectiveNow = active ? Math.max(now, start) : now;
   return {
     active,
-    daysRemaining: active ? Math.max(1, Math.ceil((end - now) / 86_400_000)) : 0,
+    daysRemaining: active ? Math.max(1, Math.ceil((end - effectiveNow) / 86_400_000)) : 0,
     expired: Number.isFinite(end) && now >= end,
   };
 }

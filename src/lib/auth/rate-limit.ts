@@ -11,3 +11,7 @@ export function takeAuthRateLimit(key: string, limit = 8, windowMs = 15 * 60_000
   bucket.count += 1;
   return true;
 }
+
+export function takeLisaRateLimit(profileId: string, limit = 12, windowMs = 60_000) {
+  return takeAuthRateLimit(`lisa:${profileId}`, limit, windowMs);
+}

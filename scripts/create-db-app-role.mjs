@@ -54,6 +54,10 @@ async function main() {
     await client.query(`grant select, insert, update, delete on all tables in schema public to ${roleIdentifier}`);
     await client.query(`grant usage, select, update on all sequences in schema public to ${roleIdentifier}`);
     await client.query(`grant execute on all functions in schema app_private to ${roleIdentifier}`);
+    await client.query(`revoke update, delete on public.audit_logs from ${roleIdentifier}`);
+    await client.query(`revoke all on public.auth_sessions from ${roleIdentifier}`);
+    await client.query(`revoke all on public.auth_tokens from ${roleIdentifier}`);
+    await client.query(`revoke all on public.oauth_identities from ${roleIdentifier}`);
     await client.query(
       `alter default privileges in schema public grant select, insert, update, delete on tables to ${roleIdentifier}`,
     );

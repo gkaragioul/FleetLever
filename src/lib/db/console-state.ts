@@ -3,6 +3,26 @@ import { getActiveTenantContext } from "@/lib/db/tenant-context";
 
 const snapshotKey = "construction-console";
 
+async function requireOrganizationAdministrator(
+  client: { query: <T>(text: string, values: unknown[]) => Promise<{ rows: T[] }> },
+  context: { organizationId: string; profileId: string },
+  errorMessage: string,
+) {
+  const result = await client.query<{ role: string }>(
+    `
+      select role
+      from public.organization_members
+      where organization_id = $1
+        and profile_id = $2
+        and status = 'active'
+      limit 1
+    `,
+    [context.organizationId, context.profileId],
+  );
+  const role = result.rows[0]?.role;
+  if (role !== "owner" && role !== "admin") throw new Error(errorMessage);
+}
+
 function customizationState(snapshot: unknown) {
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
   const value = snapshot as Record<string, unknown>;
@@ -49,6 +69,10 @@ export async function writeConsoleSnapshotToDatabase(snapshot: unknown) {
     const previousCustomization = customizationState(previousResult.rows[0]?.snapshot);
     const nextCustomization = customizationState(snapshot);
     const customizationChanged = JSON.stringify(previousCustomization) !== JSON.stringify(nextCustomization);
+
+    if (customizationChanged) {
+      await requireOrganizationAdministrator(client, context, "Only organization administrators may update branding and custom fields.");
+    }
 
     await client.query(
       `
@@ -99,6 +123,7 @@ export async function deleteConsoleSnapshotFromDatabase() {
   const context = await getActiveTenantContext();
 
   await withTenant(context, async (client) => {
+    await requireOrganizationAdministrator(client, context, "Only organization administrators may reset console state.");
     await client.query(
       `
         delete from public.console_snapshots
