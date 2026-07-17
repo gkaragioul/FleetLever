@@ -20,6 +20,10 @@ function isProtectedApi(pathname: string) {
   return pathname.startsWith("/api/fleetlever/");
 }
 
+function isLisaCompanionRelayApi(pathname: string) {
+  return pathname.startsWith("/api/fleetlever/lisa/relay/");
+}
+
 function startsWithRoute(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(`${route}/`);
 }
@@ -79,7 +83,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (!hasSessionCookie(request) && isProtectedApi(pathname)) {
+  if (!hasSessionCookie(request) && isProtectedApi(pathname) && !isLisaCompanionRelayApi(pathname)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

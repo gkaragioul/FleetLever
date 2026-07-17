@@ -47,11 +47,12 @@ test("relay connection status expires stale companion heartbeats", () => {
 });
 
 test("hosted relay contract uses ephemeral tenant jobs and outbound companion routes", async () => {
-  const [migration, relayServer, chatRoute, bridge] = await Promise.all([
+  const [migration, relayServer, chatRoute, bridge, proxy] = await Promise.all([
     readFile("db/migrations/0006_lisa_outbound_relay.sql", "utf8"),
     readFile("src/lib/lisa/relay.ts", "utf8"),
     readFile("src/app/api/fleetlever/lisa/chat/route.ts", "utf8"),
     readFile("scripts/lisa-bridge.mjs", "utf8"),
+    readFile("src/proxy.ts", "utf8"),
   ]);
 
   assert.match(migration, /lisa_relay_jobs/);
@@ -64,5 +65,7 @@ test("hosted relay contract uses ephemeral tenant jobs and outbound companion ro
   assert.match(chatRoute, /streamLisaRelayJob/);
   assert.match(bridge, /FLEETLEVER_LISA_RELAY_ENABLED/);
   assert.match(bridge, /runRelayLoop/);
+  assert.match(proxy, /isLisaCompanionRelayApi/);
+  assert.match(proxy, /!isLisaCompanionRelayApi\(pathname\)/);
   assert.doesNotMatch(bridge, /0\.0\.0\.0/);
 });
