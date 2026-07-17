@@ -18,6 +18,18 @@ test("accepts a matching forwarded production origin", () => {
   })), true);
 });
 
+test("accepts an explicitly trusted public proxy origin", () => {
+  assert.equal(
+    originMatches(
+      request("https://fleetlever-app-production.up.railway.app/api/action", {
+        origin: "https://fleetlever.com",
+      }),
+      ["https://fleetlever.com"],
+    ),
+    true,
+  );
+});
+
 test("rejects cross-origin and malformed origins", () => {
   assert.equal(originMatches(request("https://app.fleetlever.com/api/action", { origin: "https://attacker.example" })), false);
   assert.equal(originMatches(request("https://app.fleetlever.com/api/action", { origin: "not a URL" })), false);

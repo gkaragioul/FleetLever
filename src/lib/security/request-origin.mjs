@@ -1,4 +1,19 @@
-export function originMatches(request) {
+function configuredTrustedOrigins() {
+  return (process.env.FLEETLEVER_TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function normalizedOrigin(value) {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function originMatches(request, trustedOrigins = configuredTrustedOrigins()) {
   const origin = request.headers.get("origin");
   const fetchSite = request.headers.get("sec-fetch-site");
 
@@ -11,8 +26,10 @@ export function originMatches(request) {
     const expectedHost = forwardedHost || request.headers.get("host") || requestUrl.host;
     const expectedProtocol = forwardedProtocol || requestUrl.protocol.replace(":", "");
     const expectedOrigin = new URL(`${expectedProtocol}://${expectedHost}`).origin;
+    const receivedOrigin = new URL(origin).origin;
 
-    return new URL(origin).origin === expectedOrigin;
+    return receivedOrigin === expectedOrigin
+      || trustedOrigins.some((trustedOrigin) => normalizedOrigin(trustedOrigin) === receivedOrigin);
   } catch {
     return false;
   }
