@@ -3,6 +3,10 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypt
 const passwordHashPrefix = "scrypt-v1";
 
 export function normalizeEmail(value) {
+  return normalizeAccountIdentifier(value);
+}
+
+export function normalizeAccountIdentifier(value) {
   return String(value ?? "").trim().toLowerCase();
 }
 

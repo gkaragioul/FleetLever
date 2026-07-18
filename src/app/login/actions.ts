@@ -2,8 +2,8 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { authenticateEmailAccount, createAccountSession } from "@/lib/auth/account";
-import { safeRedirectPath } from "@/lib/auth/account-core.mjs";
+import { authenticateAccount, createAccountSession } from "@/lib/auth/account";
+import { normalizeAccountIdentifier, safeRedirectPath } from "@/lib/auth/account-core.mjs";
 import { takeAuthRateLimit } from "@/lib/auth/rate-limit";
 
 export type LoginState = { error?: string };
@@ -17,14 +17,17 @@ async function requestMetadata() {
 }
 
 export async function loginAction(_state: LoginState, formData: FormData): Promise<LoginState> {
-  const email = String(formData.get("email") ?? "");
+  const identifier = String(formData.get("identifier") ?? "");
   const password = String(formData.get("password") ?? "");
   const next = safeRedirectPath(formData.get("next"));
   const metadata = await requestMetadata();
-  if (!(await takeAuthRateLimit(`login:${metadata.ipAddress ?? "unknown"}`))) return { error: "Too many sign-in attempts. Try again in a few minutes." };
-  if (!email.trim() || !password) return { error: "Enter your email and password." };
+  const normalizedIdentifier = normalizeAccountIdentifier(identifier);
+  const allowedByIp = await takeAuthRateLimit(`login:ip:${metadata.ipAddress ?? "unknown"}`);
+  const allowedByAccount = await takeAuthRateLimit(`login:account:${normalizedIdentifier || "empty"}`);
+  if (!allowedByIp || !allowedByAccount) return { error: "Too many sign-in attempts. Try again in a few minutes." };
+  if (!normalizedIdentifier || !password) return { error: "Enter your email or username and password." };
 
-  const account = await authenticateEmailAccount(email, password).catch(() => null);
+  const account = await authenticateAccount(normalizedIdentifier, password).catch(() => null);
   if (!account) return { error: "Those details do not match a FleetLever account." };
   await createAccountSession(account, metadata);
   redirect(next);

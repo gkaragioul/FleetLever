@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createPasswordHash,
   hashOpaqueToken,
+  normalizeAccountIdentifier,
   normalizeEmail,
   safeRedirectPath,
   trialAccessState,
@@ -20,6 +21,7 @@ test("password hashes are salted and verifiable", () => {
 
 test("identity input is normalized conservatively", () => {
   assert.equal(normalizeEmail("  George@Example.COM "), "george@example.com");
+  assert.equal(normalizeAccountIdentifier("  ADMIN "), "admin");
   assert.equal(safeRedirectPath("/fleet-management?view=machines"), "/fleet-management?view=machines");
   assert.equal(safeRedirectPath("//attacker.example"), "/fleet-management");
   assert.equal(safeRedirectPath("https://attacker.example"), "/fleet-management");

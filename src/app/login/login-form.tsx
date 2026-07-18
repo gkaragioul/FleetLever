@@ -13,11 +13,11 @@ export function LoginForm({ googleConfigured, next }: { googleConfigured: boolea
         <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full border border-[#C9D8D3] text-xs font-black text-[#4285F4]">G</span> Continue with Google
       </a>
       {!googleConfigured ? <p className="mt-2 text-center text-xs text-[#7B8D88]">Google sign-in will be available when this deployment is configured.</p> : null}
-      <div className="my-5 flex items-center gap-3 text-[10px] font-black uppercase text-[#8A9A96]"><span className="h-px flex-1 bg-[#DDE6E2]" />or use email<span className="h-px flex-1 bg-[#DDE6E2]" /></div>
+      <div className="my-5 flex items-center gap-3 text-[10px] font-black uppercase text-[#8A9A96]"><span className="h-px flex-1 bg-[#DDE6E2]" />or use your account<span className="h-px flex-1 bg-[#DDE6E2]" /></div>
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="next" value={next} />
-        <label className="block text-xs font-bold uppercase text-[#64746f]">Email
-          <input name="email" type="email" required autoComplete="email" className="mt-2 min-h-12 w-full rounded-md border border-[#cdd8d3] bg-white px-4 text-base font-semibold outline-none focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]" placeholder="you@company.com" />
+        <label className="block text-xs font-bold uppercase text-[#64746f]">Email or username
+          <input name="identifier" type="text" required autoComplete="username" autoCapitalize="none" spellCheck={false} className="mt-2 min-h-12 w-full rounded-md border border-[#cdd8d3] bg-white px-4 text-base font-semibold outline-none focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]" placeholder="you@company.com or username" />
         </label>
         <label className="block text-xs font-bold uppercase text-[#64746f]">Password
           <input name="password" type="password" required autoComplete="current-password" className="mt-2 min-h-12 w-full rounded-md border border-[#cdd8d3] bg-white px-4 text-base font-semibold outline-none focus:border-[#007C89] focus:ring-2 focus:ring-[#bdeff3]" placeholder="Your password" />

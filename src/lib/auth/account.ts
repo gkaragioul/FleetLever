@@ -6,6 +6,7 @@ import { getDbPool } from "@/lib/db/client";
 import {
   createPasswordHash,
   hashOpaqueToken,
+  normalizeAccountIdentifier,
   normalizeEmail,
   trialAccessState,
   verifyPassword,
@@ -79,6 +80,11 @@ function sessionFromRow(row: AccountRow): FleetLeverAccountSession {
   };
 }
 
+async function accountByIdentifier(identifier: string) {
+  const result = await getDbPool().query<AccountRow>("select * from app_private.account_by_identifier($1)", [normalizeAccountIdentifier(identifier)]);
+  return result.rows[0] ?? null;
+}
+
 async function accountByEmail(email: string) {
   const result = await getDbPool().query<AccountRow>("select * from app_private.account_by_email($1::citext)", [normalizeEmail(email)]);
   return result.rows[0] ?? null;
@@ -132,8 +138,8 @@ export async function registerEmailAccount(input: {
   return { account, verificationToken };
 }
 
-export async function authenticateEmailAccount(email: string, password: string) {
-  const account = await accountByEmail(email);
+export async function authenticateAccount(identifier: string, password: string) {
+  const account = await accountByIdentifier(identifier);
   if (!account?.password_hash || !verifyPassword(password, account.password_hash)) return null;
   return account;
 }

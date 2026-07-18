@@ -28,6 +28,7 @@ const demoLogin = await readFile("src/app/api/auth/demo-login/route.ts", "utf8")
 const accountSecurityMigration = await readFile("db/migrations/0008_security_hardening.sql", "utf8");
 const runtimeFunctionGrants = await readFile("db/migrations/0009_runtime_account_function_grants.sql", "utf8");
 const phaseTwoSecurityMigration = await readFile("db/migrations/0010_auth_security_phase2.sql", "utf8");
+const accountUsernameMigration = await readFile("db/migrations/0011_account_usernames.sql", "utf8");
 const accountServer = await readFile("src/lib/auth/account.ts", "utf8");
 const rateLimitServer = await readFile("src/lib/auth/rate-limit.ts", "utf8");
 const uploadRoute = await readFile("src/app/api/fleetlever/uploads/route.ts", "utf8");
@@ -80,6 +81,9 @@ assert.match(phaseTwoSecurityMigration, /create table if not exists app_private\
 assert.match(phaseTwoSecurityMigration, /update public\.profiles[\s\S]*password_hash = null/i, "Public profile rows must not retain password hashes.");
 assert.match(phaseTwoSecurityMigration, /create table if not exists app_private\.rate_limit_buckets/i, "Rate limits must be shared across app instances.");
 assert.match(phaseTwoSecurityMigration, /consume_rate_limit/i, "Rate-limit writes must use a constrained database function.");
+assert.match(accountUsernameMigration, /profiles_username_unique_idx/i, "Usernames must be unique when present.");
+assert.match(accountUsernameMigration, /account_by_identifier/i, "Username login must use a constrained database lookup function.");
+assert.match(accountUsernameMigration, /revoke all on function app_private\.account_by_identifier\(text\) from public/i, "The username lookup function must not be executable by public.");
 assert.doesNotMatch(accountServer, /insert into public\.auth_sessions/i, "Application code must not insert session rows directly.");
 assert.doesNotMatch(accountServer, /insert into public\.auth_tokens/i, "Application code must not insert auth-token rows directly.");
 assert.doesNotMatch(accountServer, /60 \* 60 \* 24 \* 30/, "Account sessions must not remain valid for 30 days.");
