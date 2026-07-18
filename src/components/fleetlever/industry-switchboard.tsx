@@ -7,6 +7,7 @@ import styles from "./industry-switchboard.module.css";
 import { useWheelMotionStep } from "./use-wheel-motion-step";
 
 const INDUSTRY_ROTATION_MS = 3800;
+const INDUSTRY_FIRST_ROTATION_MS = 700;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const industries = [
@@ -91,15 +92,17 @@ export function IndustrySwitchboard() {
   const [focusPaused, setFocusPaused] = useState(false);
   const [documentHidden, setDocumentHidden] = useState(false);
   const [inView, setInView] = useState(false);
+  const [rotationStarted, setRotationStarted] = useState(false);
   const reducedMotion = useSyncExternalStore(
     subscribeToReducedMotion,
     reducedMotionSnapshot,
     serverReducedMotionSnapshot,
   );
-  const paused = pointerPaused || focusPaused || documentHidden;
+  const paused = focusPaused || documentHidden || (pointerPaused && rotationStarted);
   const activeIndustry = industries[activeIndex];
 
   useWheelMotionStep(sectionRef, (direction) => {
+    setRotationStarted(true);
     setActiveIndex((current) => (current + direction + industries.length) % industries.length);
     return false;
   });
@@ -107,13 +110,36 @@ export function IndustrySwitchboard() {
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
+    let frame = 0;
+
+    const updateInView = () => {
+      const rect = section.getBoundingClientRect();
+      setInView(rect.top < window.innerHeight * 1.18 && rect.bottom > -window.innerHeight * 0.18);
+    };
+
+    const scheduleInViewUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updateInView();
+      });
+    };
+
+    updateInView();
 
     const observer = new IntersectionObserver(
       ([entry]) => setInView(entry.isIntersecting),
       { rootMargin: "38% 0px 30% 0px", threshold: 0.01 },
     );
     observer.observe(section);
-    return () => observer.disconnect();
+    window.addEventListener("scroll", scheduleInViewUpdate, { passive: true });
+    window.addEventListener("resize", scheduleInViewUpdate);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("scroll", scheduleInViewUpdate);
+      window.removeEventListener("resize", scheduleInViewUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -125,14 +151,17 @@ export function IndustrySwitchboard() {
   useEffect(() => {
     if (!inView || paused || reducedMotion) return;
 
+    const delay = rotationStarted ? INDUSTRY_ROTATION_MS : INDUSTRY_FIRST_ROTATION_MS;
     const timer = window.setTimeout(() => {
+      setRotationStarted(true);
       setActiveIndex((current) => (current + 1) % industries.length);
-    }, INDUSTRY_ROTATION_MS);
+    }, delay);
 
     return () => window.clearTimeout(timer);
-  }, [activeIndex, inView, paused, reducedMotion]);
+  }, [activeIndex, inView, paused, reducedMotion, rotationStarted]);
 
   function selectIndustry(index: number) {
+    setRotationStarted(true);
     setActiveIndex(index);
   }
 
