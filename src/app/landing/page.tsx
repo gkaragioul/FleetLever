@@ -6,7 +6,6 @@ import {
   CommercialSiteFooter,
   CommercialSiteHeader,
   demoHref,
-  requestDemoHref,
 } from "@/components/fleetlever/commercial-site-shell";
 import { IndustrySwitchboard } from "@/components/fleetlever/industry-switchboard";
 import { MultiIndustryHero } from "@/components/fleetlever/multi-industry-hero";
@@ -188,7 +187,7 @@ export default function LandingPage() {
           className="-z-20 object-cover object-center"
         />
         <div className="absolute inset-0 -z-10 bg-[#071b18]/82" aria-hidden="true" />
-        <div className="mx-auto grid w-full max-w-[86rem] gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="mx-auto w-full max-w-[86rem]">
           <div>
             <p className="text-sm font-bold uppercase text-[#9af6f7]">Start with one real operation</p>
             <h2 className="mt-3 max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl">
@@ -206,24 +205,6 @@ export default function LandingPage() {
                 </span>
               ))}
             </div>
-          </div>
-          <div className="lg:text-right">
-            <p className="font-mono text-4xl font-semibold">EUR 1,000</p>
-            <p className="mt-1 text-sm font-medium text-[#c7d7d2]">fixed pilot fee, excluding VAT</p>
-            <Link
-              href={requestDemoHref}
-              data-analytics="pilot_demo"
-              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-6 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              Request a demo
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            <Link
-              href="/pricing"
-              className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-[#d8e5e1] underline decoration-white/40 underline-offset-4 hover:text-white lg:justify-end"
-            >
-              View pricing and pilot terms
-            </Link>
           </div>
         </div>
       </section>
