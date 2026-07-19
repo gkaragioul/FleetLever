@@ -236,6 +236,7 @@ type DrawerAction =
 const isMunicipalConsole = process.env.NEXT_PUBLIC_FLEETLEVER_EDITION === "elliniko";
 const defaultClientName = isMunicipalConsole ? "FleetLever Δήμος Demo" : "FleetLever Demo";
 const allowDemoConsoleData = process.env.NEXT_PUBLIC_FLEETLEVER_ALLOW_DEMO_CONSOLE !== "false";
+const lisaCodexUiEnabled = process.env.NEXT_PUBLIC_FLEETLEVER_LISA_CODEX_ENABLED === "true";
 
 const municipalTeamMembers: TeamMember[] = [
   { name: "Δημήτρης", role: "Γραφείο Κίνησης" },
@@ -1893,7 +1894,7 @@ function PanelHeader({
   wrapActions?: boolean;
 }) {
   return (
-    <header className="flex min-h-[100px] flex-col gap-4 border-b border-[#E2E8F0] px-5 py-4 lg:min-h-[160px] 2xl:min-h-[100px] 2xl:flex-row 2xl:items-center 2xl:justify-between">
+    <header className="flex min-h-0 flex-col gap-4 border-b border-[#E2E8F0] px-4 py-4 sm:px-5 2xl:min-h-[100px] 2xl:flex-row 2xl:items-center 2xl:justify-between">
       <div className="min-w-0">
         <p className="text-[11px] font-bold uppercase text-[#008C95]">{eyebrow}</p>
         <h2 className="mt-1 text-lg font-semibold leading-tight text-[#0D2F2D]">{title}</h2>
@@ -1902,10 +1903,10 @@ function PanelHeader({
       </div>
       {actions ? (
         <div
-          className={`flex max-w-full shrink-0 items-center gap-2 2xl:justify-end ${
+          className={`flex w-full max-w-full shrink-0 items-center gap-2 2xl:w-auto 2xl:justify-end ${
             wrapActions
               ? "flex-wrap overflow-visible"
-              : "flex-nowrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              : "flex-wrap overflow-visible sm:flex-nowrap sm:overflow-x-auto sm:[-ms-overflow-style:none] sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden"
           }`}
         >
           {actions}
@@ -1929,7 +1930,7 @@ function SplitRowAction({
   onPrimary: () => void;
 }) {
   return (
-    <div className="flex h-10 w-full overflow-hidden rounded-md border border-[#C9DAD3] bg-[#F5F8F7] 2xl:w-[184px]">
+    <div className="flex h-11 w-full overflow-hidden rounded-md border border-[#C9DAD3] bg-[#F5F8F7] 2xl:h-10 2xl:w-[184px]">
       <button
         type="button"
         onClick={onPrimary}
@@ -1945,7 +1946,7 @@ function SplitRowAction({
         onClick={onDetails}
         aria-label={detailsLabel}
         title={detailsLabel}
-        className="inline-flex w-10 shrink-0 items-center justify-center border-l border-[#C9DAD3] bg-white text-[#64748B] transition duration-200 hover:bg-[#F8FAF9] hover:text-[#0D2F2D] active:translate-y-px focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#14B8A6]"
+        className="inline-flex w-11 shrink-0 items-center justify-center border-l border-[#C9DAD3] bg-white text-[#64748B] transition duration-200 hover:bg-[#F8FAF9] hover:text-[#0D2F2D] active:translate-y-px focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#14B8A6] 2xl:w-10"
       >
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -2034,7 +2035,7 @@ function OverlayHeader({
 }
 
 function OverlayFooter({ children }: { children: React.ReactNode }) {
-  return <footer className="flex shrink-0 flex-col gap-2 border-t border-[#DCE5E1] bg-[#FBFCFA] p-4 sm:flex-row sm:justify-end">{children}</footer>;
+  return <footer className="flex shrink-0 flex-col gap-2 border-t border-[#DCE5E1] bg-[#FBFCFA] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:pb-4">{children}</footer>;
 }
 
 function OverlayTabs({
@@ -2047,13 +2048,13 @@ function OverlayTabs({
   onChange: (key: string) => void;
 }) {
   return (
-    <div className="flex max-w-full overflow-x-auto rounded-md border border-[#DCE5E1] bg-[#F8FAF9] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="grid w-full max-w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAF9] p-1 sm:flex sm:w-auto sm:overflow-x-auto sm:[-ms-overflow-style:none] sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
       {items.map((item) => (
         <button
           key={item.key}
           type="button"
           onClick={() => onChange(item.key)}
-          className={`min-h-9 shrink-0 rounded px-3 text-xs font-bold transition ${
+          className={`min-h-11 min-w-0 rounded px-3 text-xs font-bold transition sm:min-h-9 sm:shrink-0 ${
             active === item.key ? "bg-[#0D2F2D] text-white shadow-sm" : "text-[#64748B] hover:bg-white hover:text-[#0D2F2D]"
           }`}
         >
@@ -2132,6 +2133,7 @@ function LisaAssistant({
   onViewOpen,
   open,
   selectedWorksite,
+  suppressed = false,
 }: {
   activeView: ViewKey;
   counts: { ready: number; attention: number; blocked: number; total: number };
@@ -2142,6 +2144,7 @@ function LisaAssistant({
   onViewOpen: (view: ViewKey) => void;
   open: boolean;
   selectedWorksite: Worksite;
+  suppressed?: boolean;
 }) {
   const [messages, setMessages] = useState<LisaMessage[]>(() => [{
     id: 1,
@@ -2354,20 +2357,22 @@ function LisaAssistant({
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
+  if (suppressed) return null;
+
   if (!open && !renderPanel) {
     return (
-      <div className="fixed bottom-4 left-4 z-[70] sm:bottom-5 sm:left-5">
+      <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-[70] sm:bottom-5 sm:left-5">
         <button
           type="button"
           onClick={onToggle}
-          className="group relative inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#20B7C9] text-[#062321] shadow-[0_18px_45px_rgba(8,47,73,0.35)] ring-4 ring-[#0D2F2D] transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-[#B7F5F7]"
+          className="group relative inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#20B7C9] text-[#062321] shadow-[0_14px_34px_rgba(8,47,73,0.32)] ring-[3px] ring-[#0D2F2D] transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-[#B7F5F7] sm:h-16 sm:w-16 sm:shadow-[0_18px_45px_rgba(8,47,73,0.35)] sm:ring-4"
           aria-label="Άνοιγμα βοηθού Lisa"
         >
           <Image
             src="/fleetlever/assistant/lisa-avatar-clean.png"
             alt=""
             fill
-            sizes="64px"
+            sizes="(max-width: 639px) 56px, 64px"
             className="object-cover object-center"
             unoptimized
           />
@@ -2380,14 +2385,14 @@ function LisaAssistant({
   }
 
   return (
-    <div className="fixed bottom-3 left-3 z-[70] sm:bottom-4 sm:left-4">
+    <div className="fixed inset-x-0 bottom-0 z-[70] p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:inset-auto sm:bottom-4 sm:left-4 sm:p-0">
       <section
         ref={panelRef}
         data-lisa-panel
         role="dialog"
         aria-modal="true"
         aria-label="Βοηθός Lisa"
-        className={`flex max-h-[min(720px,calc(100vh-2rem))] min-h-[560px] w-[min(500px,calc(100vw-2rem))] origin-bottom-left flex-col overflow-hidden rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#102A27] shadow-[0_24px_70px_rgba(15,23,42,0.28)] transition duration-200 ease-out ${
+        className={`flex h-[min(680px,calc(100dvh-0.75rem))] max-h-[calc(100dvh-0.75rem)] min-h-0 w-full origin-bottom-left flex-col overflow-hidden rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#102A27] shadow-[0_24px_70px_rgba(15,23,42,0.28)] transition duration-200 ease-out sm:h-auto sm:max-h-[min(720px,calc(100dvh-2rem))] sm:min-h-[560px] sm:w-[min(500px,calc(100vw-2rem))] ${
           panelVisible && open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-[0.98] opacity-0"
         }`}
       >
@@ -2415,7 +2420,7 @@ function LisaAssistant({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/75 transition hover:bg-white/10 hover:text-white"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/75 transition hover:bg-white/10 hover:text-white sm:h-9 sm:w-9"
             aria-label="Κλείσιμο βοηθού Lisa"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -2551,12 +2556,14 @@ export function ConstructionPrototype({
   const [lisaOpen, setLisaOpen] = useState(false);
   const [notifications, setNotifications] = useState<OperationalNotification[]>(allowDemoConsoleData ? initialNotifications : []);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [version, setVersion] = useState(0);
   const [browserHydrated, setBrowserHydrated] = useState(false);
   const [serverHydrated, setServerHydrated] = useState(false);
   const [serverHydrationRevision, setServerHydrationRevision] = useState(0);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchBoxRef = useRef<HTMLDivElement | null>(null);
   const serverSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const serverSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serverSnapshotSignatureRef = useRef<string | null>(null);
@@ -2700,7 +2707,9 @@ export function ConstructionPrototype({
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
-      if (!searchBoxRef.current?.contains(event.target as Node)) setSearchOpen(false);
+      const target = event.target as Node;
+      if (!searchBoxRef.current?.contains(target)) setSearchOpen(false);
+      if (!mobileSearchBoxRef.current?.contains(target)) setMobileSearchOpen(false);
       if (!(event.target instanceof Element) || !event.target.closest("[data-toolbar-menu]")) {
         setAddMenuOpen(false);
         setNotificationOpen(false);
@@ -2711,6 +2720,7 @@ export function ConstructionPrototype({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       setSearchOpen(false);
+      setMobileSearchOpen(false);
       setAddMenuOpen(false);
       setNotificationOpen(false);
       setUserMenuOpen(false);
@@ -2754,6 +2764,7 @@ export function ConstructionPrototype({
     setMobileNavOpen(false);
     setSearchTerm("");
     setSearchOpen(false);
+    setMobileSearchOpen(false);
     setDrawerAction(null);
     setSelectedMachineId(machine.id);
     setDrawerMode(mode);
@@ -2766,6 +2777,7 @@ export function ConstructionPrototype({
     setMobileNavOpen(false);
     setSearchTerm("");
     setSearchOpen(false);
+    setMobileSearchOpen(false);
     setDrawerOpen(false);
     setSelectedMachineId(machine.id);
     setDrawerAction(action);
@@ -2777,6 +2789,7 @@ export function ConstructionPrototype({
     setMobileNavOpen(false);
     setSearchTerm("");
     setSearchOpen(false);
+    setMobileSearchOpen(false);
     setDrawerOpen(false);
     setDrawerAction(null);
   }
@@ -2794,6 +2807,7 @@ export function ConstructionPrototype({
     setDrawerAction(null);
     setSearchTerm("");
     setSearchOpen(false);
+    setMobileSearchOpen(false);
   }
 
   function refreshConsole(message: string) {
@@ -3378,6 +3392,7 @@ export function ConstructionPrototype({
               tone: item.result === "Έτοιμο για δουλειά" ? "ready" as const : item.result === "Θέλει προσοχή" ? "attention" as const : "neutral" as const,
               onSelect: () => {
                 setSearchOpen(false);
+                setMobileSearchOpen(false);
                 showView("history");
               },
             })),
@@ -3385,6 +3400,7 @@ export function ConstructionPrototype({
       ].filter((group) => group.results.length)
     : [];
   const globalSearchResultCount = globalSearchGroups.reduce((total, group) => total + group.results.length, 0);
+  const lisaSuppressed = !lisaCodexUiEnabled || drawerOpen || mobileNavOpen || Boolean(addModalType) || Boolean(drawerAction) || releaseModalOpen;
 
   if (!serverHydrated) {
     return (
@@ -3432,7 +3448,7 @@ export function ConstructionPrototype({
                 key={item.key}
                 type="button"
                 onClick={() => showView(item.key)}
-                className={`flex min-h-10 w-full items-center gap-3 rounded-md border-l-2 px-3 text-left text-[13px] font-semibold transition ${
+                className={`flex min-h-11 w-full items-center gap-3 rounded-md border-l-2 px-3 text-left text-[13px] font-semibold transition xl:min-h-10 ${
                   activeView === item.key
                     ? "border-[#8be4df] bg-white/12 text-white"
                     : "border-transparent text-white/78 hover:bg-white/10 hover:text-white"
@@ -3445,10 +3461,16 @@ export function ConstructionPrototype({
           </nav>
         </aside>
 
-        <div
-          aria-hidden="true"
-          className={`fixed inset-0 z-[65] hidden bg-[#0D2F2D]/10 backdrop-blur-[1px] transition-opacity duration-200 sm:block ${
-            lisaOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        <button
+          type="button"
+          aria-label="Κλείσιμο βοηθού Lisa"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setLisaOpen(false);
+          }}
+          className={`fixed inset-0 z-[65] bg-[#0D2F2D]/10 backdrop-blur-[1px] transition-opacity duration-200 ${
+            lisaOpen && !lisaSuppressed ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         />
 
@@ -3473,20 +3495,21 @@ export function ConstructionPrototype({
           }}
           open={lisaOpen}
           selectedWorksite={selectedWorksite}
+          suppressed={lisaSuppressed}
         />
 
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-30 border-b border-[#cad9cf] bg-[#f8fbf4]/95 backdrop-blur">
-            <div className="flex h-16 items-center gap-2 px-4 sm:gap-3 xl:px-6">
+            <div className="flex h-16 items-center gap-1.5 px-3 sm:gap-3 sm:px-4 xl:px-6">
               <button
                 type="button"
                 onClick={() => setMobileNavOpen((open) => !open)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#E2E8F0] text-[#1F2933] xl:hidden"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] xl:hidden"
                 aria-label="Άνοιγμα πλοήγησης"
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
-              <div ref={searchBoxRef} className="relative min-w-0 flex-1">
+              <div ref={searchBoxRef} className="relative hidden min-w-0 flex-1 sm:block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64748B]" aria-hidden="true" />
                 <input
                   type="search"
@@ -3514,6 +3537,19 @@ export function ConstructionPrototype({
                   />
                 ) : null}
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileSearchOpen(true);
+                  setAddMenuOpen(false);
+                  setNotificationOpen(false);
+                  setUserMenuOpen(false);
+                }}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] sm:hidden"
+                aria-label="Αναζήτηση στο FleetLever"
+              >
+                <Search className="h-5 w-5" aria-hidden="true" />
+              </button>
               {isMunicipalConsole ? <PortalReturnLink className="hidden shrink-0 md:inline-flex" /> : null}
               {trialInfo ? (
                 <div className="hidden h-9 shrink-0 items-center rounded-md border border-[#B8D5CC] bg-[#F1FAF6] px-3 text-[11px] font-black uppercase text-[#116149] lg:inline-flex" title={`Trial ends ${new Date(trialInfo.endsAt).toLocaleDateString("en-GB")}`}>
@@ -3528,7 +3564,7 @@ export function ConstructionPrototype({
                     setNotificationOpen(false);
                     setUserMenuOpen(false);
                   }}
-                  className="inline-flex h-9 w-9 items-center justify-center gap-2 rounded-md border border-[#E2E8F0] bg-white px-0 text-[13px] font-semibold text-[#1F2933] md:w-auto md:px-3"
+                  className="inline-flex h-11 w-11 items-center justify-center gap-2 rounded-md border border-[#E2E8F0] bg-white px-0 text-[13px] font-semibold text-[#1F2933] sm:h-9 sm:w-9 md:w-auto md:px-3"
                   aria-label="Προσθήκη"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
@@ -3573,7 +3609,7 @@ export function ConstructionPrototype({
                     setAddMenuOpen(false);
                     setUserMenuOpen(false);
                   }}
-                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933]"
+                  className="relative inline-flex h-11 w-11 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] sm:h-9 sm:w-9"
                   aria-label="Ειδοποιήσεις"
                 >
                   <Bell className="h-4 w-4" aria-hidden="true" />
@@ -3630,7 +3666,7 @@ export function ConstructionPrototype({
                     setAddMenuOpen(false);
                     setNotificationOpen(false);
                   }}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933]"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] sm:h-9 sm:w-9"
                   aria-label="Μενού χρήστη"
                 >
                   <CircleUserRound className="h-5 w-5" aria-hidden="true" />
@@ -3669,6 +3705,46 @@ export function ConstructionPrototype({
               </div>
             </div>
           </header>
+          {mobileSearchOpen ? (
+            <div ref={mobileSearchBoxRef} className="fixed inset-0 z-[80] flex min-h-0 flex-col bg-[#F8FAF9] sm:hidden">
+              <div className="flex shrink-0 items-center gap-2 border-b border-[#DCE5E1] bg-white px-3 py-2.5">
+                <Search className="h-5 w-5 shrink-0 text-[#64748B]" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Όχημα, έγγραφο, υπεύθυνος..."
+                  className="h-11 min-w-0 flex-1 rounded-md border border-[#CBD9D4] bg-[#F8FAFC] px-3 text-base text-[#1F2933] outline-none focus:border-[#0D2F2D] focus:bg-white focus:ring-2 focus:ring-[#0D2F2D]/10"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen(false)}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#D7E2DC] bg-white text-[#64748B]"
+                  aria-label="Κλείσιμο αναζήτησης"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {normalizedGlobalSearch.length >= 2 ? (
+                  <GlobalSearchViewer
+                    groups={globalSearchGroups}
+                    mobileInline
+                    query={searchTerm}
+                    resultCount={globalSearchResultCount}
+                    onClear={() => setSearchTerm("")}
+                  />
+                ) : (
+                  <div className="px-5 py-8">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Καθολική αναζήτηση</p>
+                    <p className="mt-2 text-lg font-semibold text-[#0D2F2D]">Βρες γρήγορα ό,τι χρειάζεσαι.</p>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-[#64748B]">Γράψε τουλάχιστον δύο χαρακτήρες για οχήματα, υπηρεσίες, έγγραφα, εκκρεμότητες και υπευθύνους.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
           {branding.banner ? (
             <div
               className="relative h-20 overflow-hidden border-b border-[#CAD9CF] bg-[#123C36] bg-cover bg-center px-4 text-white sm:h-24 xl:px-6"
@@ -3684,7 +3760,7 @@ export function ConstructionPrototype({
             </div>
           ) : null}
 
-          <div className="p-4 xl:p-6">
+          <div className="p-3 pb-24 sm:p-4 sm:pb-24 xl:p-6 xl:pb-6">
             {activeView === "tomorrow" ? (
               <TomorrowPlanner
                 counts={counts}
@@ -3931,11 +4007,11 @@ function TomorrowPlanner({
               : `${selectedWorksite.name} · ${selectedDateLabel} · ${counts.total} οχήματα · ${counts.blocked} θέματα πριν τις 17:00`
           }
           actions={(
-            <>
+            <div className="grid w-full gap-2 sm:grid-cols-2 xl:flex xl:w-auto xl:items-center">
               <select
                 value={worksiteId}
                 onChange={(event) => onWorksiteChange(event.target.value)}
-                className="h-9 min-w-64 rounded-md border border-[#DDE7E3] bg-white px-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A]"
+                className="h-11 w-full min-w-0 rounded-md border border-[#DDE7E3] bg-white px-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A] sm:min-w-64 xl:h-9 xl:w-auto"
                 aria-label={isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας"}
               >
                 {worksites.map((worksite) => (
@@ -3944,7 +4020,7 @@ function TomorrowPlanner({
                   </option>
                 ))}
               </select>
-              <div ref={customDateRef} className="relative inline-flex rounded-md border border-[#DDE7E3] bg-white p-1">
+              <div ref={customDateRef} className="relative grid w-full grid-cols-3 rounded-md border border-[#DDE7E3] bg-white p-1 sm:inline-flex sm:w-auto">
                 {(["Σήμερα", "Αύριο", "Προσαρμογή"] as const).map((mode) => (
                   <button
                     key={mode}
@@ -3953,7 +4029,7 @@ function TomorrowPlanner({
                       onDateModeChange(mode);
                       setCustomDateOpen(mode === "Προσαρμογή");
                     }}
-                    className={`min-h-7 rounded px-3 text-[13px] font-semibold ${
+                    className={`min-h-11 min-w-0 rounded px-2 text-[12px] font-semibold sm:min-h-9 sm:px-3 sm:text-[13px] ${
                       dateMode === mode ? "bg-[#0F172A] text-white" : "text-[#6B7280] hover:text-[#111827]"
                     }`}
                   >
@@ -4004,12 +4080,12 @@ function TomorrowPlanner({
                   }
                   if (blockedMachines[0]) onMachineOpen(blockedMachines[0], "why");
                 }}
-                className={`inline-flex min-h-9 items-center gap-2 rounded-md px-4 text-[13px] font-bold transition duration-200 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6] focus-visible:ring-offset-2 ${releaseButtonClass}`}
+                className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-[13px] font-bold transition duration-200 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6] focus-visible:ring-offset-2 sm:col-span-2 xl:min-h-9 xl:w-auto ${releaseButtonClass}`}
               >
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                 {isReadyForRelease ? `Κλείδωμα ${counts.ready} έτοιμων` : `Επίλυση ${counts.blocked} θεμάτων`}
               </button>
-            </>
+            </div>
           )}
         />
         <div className="border-t border-[#E5E7EB] px-5 py-2.5">
@@ -4029,10 +4105,10 @@ function TomorrowPlanner({
                 value={machineListQuery}
                 onChange={(event) => setMachineListQuery(event.target.value)}
                 placeholder="Αναζήτηση οχήματος ή προβλήματος"
-                className="h-9 w-full rounded-md border border-[#E5E7EB] bg-white pl-9 pr-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A] lg:w-72"
+                className="h-11 w-full rounded-md border border-[#E5E7EB] bg-white pl-9 pr-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A] lg:h-9 lg:w-72"
               />
             </div>
-            <div className="flex max-w-full overflow-x-auto rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 sm:flex sm:w-auto">
               {([
                 ["all", "Όλα", "neutral", counts.total],
                 ["blocked", "Ανοιχτά", "blocked", counts.blocked],
@@ -4053,7 +4129,18 @@ function TomorrowPlanner({
             )}
           />
         </div>
-        <div className="max-w-full overflow-x-auto">
+        <div className="grid gap-3 bg-[#F8FAFC] p-3 lg:hidden">
+          {pagedMachines.length ? (
+            pagedMachines.map((machine) => (
+              <RequiredMachineMobileCard key={machine.id} machine={machine} onMachineOpen={onMachineOpen} />
+            ))
+          ) : (
+            <div className="rounded-md border border-dashed border-[#CBD5E1] bg-white px-4 py-8 text-center text-[13px] font-semibold text-[#64748B]">
+              Δεν υπάρχουν οχήματα σε αυτή την κατηγορία.
+            </div>
+          )}
+        </div>
+        <div className="hidden max-w-full overflow-x-auto lg:block">
           <table className="w-full min-w-[880px] table-fixed text-left text-[13px]">
                 <colgroup>
                   <col className="w-[160px]" />
@@ -4097,12 +4184,12 @@ function TomorrowPlanner({
                 <p className="text-[13px] font-semibold text-[#64748B]">
                   Σελίδα {safeMachinePage} από {totalMachinePages}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex w-full gap-2 sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setMachinePage((page) => Math.max(1, page - 1))}
                     disabled={safeMachinePage === 1}
-                    className="min-h-8 rounded-md border border-[#E5E7EB] bg-white px-3 text-[13px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="min-h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white px-3 text-[13px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-8 sm:flex-none"
                   >
                     Προηγούμενη
                   </button>
@@ -4110,7 +4197,7 @@ function TomorrowPlanner({
                     type="button"
                     onClick={() => setMachinePage((page) => Math.min(totalMachinePages, page + 1))}
                     disabled={safeMachinePage === totalMachinePages}
-                    className="min-h-8 rounded-md border border-[#E5E7EB] bg-white px-3 text-[13px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="min-h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white px-3 text-[13px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-8 sm:flex-none"
                   >
                     Επόμενη
                   </button>
@@ -4128,13 +4215,77 @@ function MorningChangesSummary({ onHistoryOpen }: { onHistoryOpen: () => void })
       <button
         type="button"
         onClick={onHistoryOpen}
-        className="inline-flex shrink-0 items-center gap-2 text-[12px] font-bold text-[#475569] transition hover:text-[#0F172A]"
+        className="inline-flex min-h-11 shrink-0 items-center gap-2 text-[12px] font-bold text-[#475569] transition hover:text-[#0F172A] sm:min-h-0"
       >
         <History className="h-4 w-4" aria-hidden="true" />
         3 αλλαγές από χθες
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
+  );
+}
+
+function RequiredMachineMobileCard({
+  machine,
+  onMachineOpen,
+}: {
+  machine: Machine;
+  onMachineOpen: (machine: Machine, mode?: DrawerMode) => void;
+}) {
+  const isBlocked = machine.state === "blocked";
+  const isAttention = machine.state === "at_risk";
+  const action = isBlocked ? "Επίλυση θέματος" : isAttention ? "Έλεγχος οχήματος" : "Άνοιγμα φακέλου";
+  const railTone = isBlocked ? "border-l-[#DC2626]" : isAttention ? "border-l-[#D97706]" : "border-l-[#16A34A]";
+
+  return (
+    <article className={`rounded-md border border-[#E2E8F0] border-l-4 bg-white p-4 shadow-sm ${railTone}`}>
+      <button
+        type="button"
+        onClick={() => onMachineOpen(machine, isBlocked ? "why" : "passport")}
+        className="flex min-h-11 w-full items-start justify-between gap-3 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block text-base font-black text-[#111827]">{machine.code}</span>
+          <span className="mt-1 block text-xs font-semibold leading-5 text-[#64748B]">{machine.name}</span>
+        </span>
+        <StatusPill state={machine.state} />
+      </button>
+
+      <div className="mt-3 border-t border-[#E2E8F0] pt-3">
+        <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Θέμα</p>
+        <p className={`mt-1 text-sm font-bold leading-5 ${isBlocked ? "text-[#991B1B]" : "text-[#1F2937]"}`}>{machine.reason}</p>
+      </div>
+
+      <div className="mt-3 rounded-md bg-[#F8FAFC] p-3">
+        <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Επόμενη ενέργεια</p>
+        <p className="mt-1 text-sm font-semibold leading-5 text-[#1F2937]">{machine.nextAction === "-" ? "Καμία ενέργεια" : machine.nextAction}</p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#E2E8F0] pt-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Υπεύθυνος</p>
+          <p className="mt-1 text-sm font-bold text-[#0D2F2D]">{machine.owner}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Προθεσμία</p>
+          <p className="mt-1 text-sm font-bold text-[#0D2F2D]">{machine.eta === "-" ? "Δεν απαιτείται" : machine.eta}</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onMachineOpen(machine, isBlocked ? "why" : "passport")}
+        className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md px-4 text-sm font-black transition active:translate-y-px ${
+          isBlocked
+            ? "bg-[#FDE7E7] text-[#991B1B] hover:bg-[#FBD1D1]"
+            : isAttention
+              ? "bg-[#FFF4D8] text-[#92400E] hover:bg-[#FDE68A]"
+              : "bg-[#EAF7EF] text-[#166534] hover:bg-[#DCFCE7]"
+        }`}
+      >
+        {action}
+      </button>
+    </article>
   );
 }
 
@@ -5830,7 +5981,7 @@ function MachineInventoryCard({
         </p>
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-3">
           <p className="text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
-          <button type="button" onClick={onOpen} className="min-h-8 rounded-md border border-[#BDD3CF] bg-[#F4FAF8] px-3 text-xs font-bold text-[#0D4A46] transition hover:bg-[#E8F4F1]">
+          <button type="button" onClick={onOpen} className="min-h-11 rounded-md border border-[#BDD3CF] bg-[#F4FAF8] px-3 text-xs font-bold text-[#0D4A46] transition hover:bg-[#E8F4F1] lg:min-h-8">
             {action}
           </button>
         </div>
@@ -5933,9 +6084,9 @@ function StaffCard({
             />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-black text-[#0D2F2D]">{person.name}</p>
-            <p className="mt-0.5 truncate text-xs font-black uppercase tracking-wide text-[#008C95]">{person.role}</p>
-            <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{person.team} · {person.shift}</p>
+            <p className="text-base font-black leading-5 text-[#0D2F2D]">{person.name}</p>
+            <p className="mt-0.5 line-clamp-2 text-xs font-black uppercase leading-4 tracking-wide text-[#008C95]">{person.role}</p>
+            <p className="mt-1 line-clamp-2 text-xs font-semibold leading-4 text-[#64748B]">{person.team} · {person.shift}</p>
           </div>
         </div>
         <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-black uppercase ${staffStatusClasses(person.status)}`}>
@@ -5949,7 +6100,7 @@ function StaffCard({
         </span>
       </div>
 
-      <p className="mt-3 truncate text-xs font-semibold leading-relaxed text-[#475569]">{person.note}</p>
+      <p className="mt-3 line-clamp-2 text-xs font-semibold leading-relaxed text-[#475569]">{person.note}</p>
       {person.replacement ? (
         <p className="mt-3 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-2 py-1.5 text-xs font-bold leading-relaxed text-[#92400E]">
           Επόμενη κίνηση: {person.replacement}
@@ -6180,18 +6331,25 @@ type GlobalSearchGroup = {
 
 function GlobalSearchViewer({
   groups,
+  mobileInline = false,
   onClear,
   query,
   resultCount,
 }: {
   groups: GlobalSearchGroup[];
+  mobileInline?: boolean;
   onClear: () => void;
   query: string;
   resultCount: number;
 }) {
   return (
-    <div data-global-search-panel className="fleet-popover-enter fixed left-4 right-4 top-16 z-[80] max-h-[72vh] overflow-y-auto rounded-lg border border-[#D7E2DC] bg-white shadow-[0_18px_50px_rgba(15,47,45,0.16)] md:absolute md:left-0 md:right-0 md:top-11">
-      <div className="flex items-center justify-between gap-3 border-b border-[#DCE5E1] px-4 py-3">
+    <div
+      data-global-search-panel
+      className={mobileInline
+        ? "min-h-full bg-white"
+        : "fleet-popover-enter fixed left-4 right-4 top-16 z-[80] max-h-[72vh] overflow-y-auto rounded-lg border border-[#D7E2DC] bg-white shadow-[0_18px_50px_rgba(15,47,45,0.16)] md:absolute md:left-0 md:right-0 md:top-11"}
+    >
+      <div className={`flex items-center justify-between gap-3 border-b border-[#DCE5E1] px-4 py-3 ${mobileInline ? "[&>button]:hidden" : ""}`}>
         <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Αναζήτηση στο FleetLever</p>
           <p className="mt-1 truncate text-sm font-semibold text-[#64748B]">
@@ -6384,7 +6542,7 @@ function ActionQueueView({
           title="Τι πρέπει να λυθεί σήμερα"
           description={`${blockingActionCount} σταματούν τη βάρδια · ${reviewActionCount} θέλει έλεγχο · ${owners} υπεύθυνοι`}
           actions={(
-            <div className="flex max-w-full overflow-x-auto rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 sm:flex sm:w-auto">
             {filterItems.map((item) => (
               <ActionQueueFilterChip
                 key={item.key}
@@ -6454,7 +6612,7 @@ function ActionQueueFilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-8 shrink-0 items-center gap-2 rounded px-3 text-[12px] font-bold whitespace-nowrap transition duration-200 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6] focus-visible:ring-offset-2 ${
+      className={`inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded px-2 text-[12px] font-bold whitespace-nowrap transition duration-200 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6] focus-visible:ring-offset-2 sm:min-h-8 sm:shrink-0 sm:px-3 ${
         active ? "bg-[#0D2F2D] text-white" : "text-[#64748B] hover:bg-[#F5F8F7] hover:text-[#0D2F2D]"
       }`}
     >
@@ -6580,7 +6738,7 @@ function DocumentsView({
           title="Εκκρεμότητες πριν από τη βάρδια"
           description="Πρώτα εμφανίζονται όσα χρειάζονται ενέργεια."
           actions={(
-            <div className="flex max-w-full overflow-x-auto rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 sm:flex sm:w-auto">
               {filterItems.map((item) => (
                 <DocumentFilterChip
                   key={item.key}
@@ -6773,6 +6931,88 @@ function WorkshopJobCardContent({ machine, service }: { machine: Machine; servic
   );
 }
 
+function WorkshopMobileJobCard({
+  machine,
+  onMachineOpen,
+  onStatusChange,
+  service,
+}: {
+  machine: Machine;
+  onMachineOpen: (machine: Machine) => void;
+  onStatusChange: (status: ServiceBlocker["status"]) => void;
+  service: ServiceBlocker;
+}) {
+  const railTone = service.status === "Λύθηκε" ? "border-l-[#16A34A]" : service.status === "Ανοιχτό" ? "border-l-[#EF4444]" : "border-l-[#D97706]";
+
+  return (
+    <article className={`rounded-md border border-[#E2E8F0] border-l-4 bg-white p-3 shadow-sm ${railTone}`}>
+      <div className="flex gap-3">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-[#E2E8F0]">
+          <Image
+            src={machinePhotoPlaceholder(machine)}
+            alt={`${machine.code} ${machine.type}`}
+            fill
+            sizes="80px"
+            className="object-cover"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-black text-[#0D2F2D]">{machine.code}</p>
+              <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-4 text-[#64748B]">{machine.name}</p>
+            </div>
+            <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-black uppercase ${workshopStatusClasses(service.status)}`}>
+              {service.status}
+            </span>
+          </div>
+          <p className="mt-2 text-sm font-bold leading-5 text-[#111827]">{service.issue}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-[#F8FAFC] p-3 text-xs">
+        <div>
+          <p className="font-black uppercase tracking-wide text-[#64748B]">Υπεύθυνος</p>
+          <p className="mt-1 font-bold text-[#1F2933]">{service.owner}</p>
+        </div>
+        <div>
+          <p className="font-black uppercase tracking-wide text-[#64748B]">Προθεσμία</p>
+          <p className="mt-1 font-bold text-[#1F2933]">{service.due}</p>
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs font-semibold leading-5 text-[#64748B]">{workshopPartsLabel(service)}</p>
+      {service.blocksRelease && service.status !== "Λύθηκε" ? (
+        <p className="mt-2 text-xs font-black uppercase text-[#B91C1C]">Μπλοκάρει την επόμενη βάρδια</p>
+      ) : null}
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <label className="min-w-0">
+          <span className="sr-only">Αλλαγή σταδίου</span>
+          <select
+            value={service.status}
+            onChange={(event) => onStatusChange(event.target.value as ServiceBlocker["status"])}
+            className="h-11 w-full rounded-md border border-[#CBD9D4] bg-white px-3 text-sm font-bold text-[#0D2F2D] outline-none focus:border-[#008C95]"
+          >
+            <option value="Ανοιχτό">Εκκρεμεί</option>
+            <option value="Σε εξέλιξη">Σε εξέλιξη</option>
+            <option value="Σε αναμονή">Σε αναμονή</option>
+            <option value="Λύθηκε">Ολοκληρώθηκε</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => onMachineOpen(machine)}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#CBD9D4] bg-white px-4 text-sm font-black text-[#0D2F2D]"
+        >
+          Λεπτομέρειες
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+    </article>
+  );
+}
+
 function WorkshopView({
   customFields,
   machinesList,
@@ -6791,6 +7031,7 @@ function WorkshopView({
   const [draggedJobId, setDraggedJobId] = useState<string | null>(null);
   const [dropStatus, setDropStatus] = useState<ServiceBlocker["status"] | null>(null);
   const [jobModalOpen, setJobModalOpen] = useState(false);
+  const [mobileLaneIndex, setMobileLaneIndex] = useState(0);
   const [pointerDrag, setPointerDrag] = useState<WorkshopDragState | null>(null);
   const suppressNextCardClickRef = useRef(false);
 
@@ -6841,6 +7082,8 @@ function WorkshopView({
   const releaseBlockers = serviceJobs.filter(({ service }) => service.blocksRelease && service.status !== "Λύθηκε").length;
   const workingNow = serviceJobs.filter(({ service }) => service.status === "Σε εξέλιξη").length;
   const cleared = serviceJobs.filter(({ service }) => service.status === "Λύθηκε").length;
+  const activeMobileLane = laneItems[mobileLaneIndex] ?? laneItems[0];
+  const activeMobileJobs = serviceJobs.filter(({ service }) => activeMobileLane.statuses.includes(service.status));
 
   useEffect(() => {
     if (!pointerDrag) return;
@@ -6948,13 +7191,13 @@ function WorkshopView({
         <PanelHeader
           eyebrow="Ροή εργασιών"
           title="Εργασίες ανά στάδιο"
-          description="Σύρε μια εργασία για να αλλάξεις στάδιο ή άνοιξέ την για λεπτομέρειες."
+          description="Παρακολούθησε τι εκκρεμεί, τι δουλεύεται και τι έχει καθαρίσει για τη βάρδια."
           actions={(
             <>
             <button
               type="button"
               onClick={() => setJobModalOpen(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#092321]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#092321] sm:min-h-10"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               Νέα εργασία
@@ -6966,7 +7209,46 @@ function WorkshopView({
           )}
         />
 
-        <div className={`grid select-none gap-4 bg-[#F8FAFC] p-4 xl:grid-cols-3 ${pointerDrag ? "cursor-grabbing" : ""}`}>
+        <div className="bg-[#F8FAFC] p-3 lg:hidden">
+          <div className="grid grid-cols-3 gap-1 rounded-md border border-[#DCE5E1] bg-white p-1">
+            {laneItems.map((lane, index) => {
+              const count = serviceJobs.filter(({ service }) => lane.statuses.includes(service.status)).length;
+              return (
+                <button
+                  key={lane.title}
+                  type="button"
+                  onClick={() => setMobileLaneIndex(index)}
+                  className={`min-h-11 rounded px-2 text-[11px] font-black leading-4 transition ${
+                    mobileLaneIndex === index ? "bg-[#0D2F2D] text-white shadow-sm" : "text-[#64748B]"
+                  }`}
+                >
+                  <span className="block">{lane.title}</span>
+                  <span className={`mt-0.5 block tabular-nums ${mobileLaneIndex === index ? "text-white/70" : "text-[#94A3B8]"}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 grid gap-3">
+            {activeMobileJobs.length ? (
+              activeMobileJobs.map(({ machine, service }) => (
+                <WorkshopMobileJobCard
+                  key={workshopJobId(machine, service)}
+                  machine={machine}
+                  service={service}
+                  onMachineOpen={onMachineOpen}
+                  onStatusChange={(status) => onServiceStatusChange(machine.id, service.issue, status)}
+                />
+              ))
+            ) : (
+              <div className="rounded-md border border-dashed border-[#CBD5E1] bg-white px-4 py-8 text-center text-sm font-bold text-[#64748B]">
+                Δεν υπάρχουν εργασίες σε αυτό το στάδιο.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={`hidden select-none gap-4 bg-[#F8FAFC] p-4 lg:grid lg:grid-cols-3 ${pointerDrag ? "cursor-grabbing" : ""}`}>
           {laneItems.map((lane) => {
             const laneJobs = serviceJobs.filter(({ service }) => lane.statuses.includes(service.status));
             const isDropTarget = dropStatus === lane.dropStatus;
@@ -7116,7 +7398,7 @@ function WorkshopJobModal({
 
   return (
     <div
-      className="fleet-overlay-backdrop fixed inset-0 z-[70] flex items-center justify-center bg-[#0D2F2D]/45 p-2 backdrop-blur-[1px] sm:p-4 lg:p-6"
+      className="fleet-overlay-backdrop fixed inset-0 z-[70] flex items-end justify-center bg-[#0D2F2D]/45 p-2 backdrop-blur-[1px] sm:items-center sm:p-4 lg:p-6"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -7125,7 +7407,7 @@ function WorkshopJobModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="workshop-job-title"
-        className="fleet-dialog-enter flex max-h-[calc(100dvh-2rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-lg border border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)]"
+        className="fleet-dialog-enter flex max-h-[calc(100dvh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-lg border border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)] sm:max-h-[calc(100dvh-2rem)]"
       >
         <OverlayHeader
           eyebrow="Εργασία συνεργείου"
@@ -7138,8 +7420,8 @@ function WorkshopJobModal({
           <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto p-5 sm:p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3">
             {selectedMachine ? (
-              <>
-                <div className="relative h-40 overflow-hidden rounded-md bg-[#E2E8F0]">
+              <div className="flex items-center gap-3 sm:block">
+                <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-md bg-[#E2E8F0] sm:h-40 sm:w-full">
                   <Image
                     src={machinePhotoPlaceholder(selectedMachine)}
                     alt={`${selectedMachine.code} ${selectedMachine.type}`}
@@ -7148,14 +7430,14 @@ function WorkshopJobModal({
                     className="object-cover"
                   />
                 </div>
-                <div className="mt-3">
-                  <p className="text-xl font-bold text-[#111827]">{selectedMachine.code}</p>
+                <div className="min-w-0 sm:mt-3">
+                  <p className="text-lg font-bold text-[#111827] sm:text-xl">{selectedMachine.code}</p>
                   <p className="mt-1 text-sm font-bold text-[#475569]">{selectedMachine.name}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#64748B]">
+                  <p className="mt-1 line-clamp-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B] sm:text-xs">
                     {selectedMachine.type} · {machineWorksite(selectedMachine).name}
                   </p>
                 </div>
-              </>
+              </div>
             ) : null}
           </div>
 
@@ -7188,7 +7470,6 @@ function WorkshopJobModal({
                 onChange={(event) => setIssue(event.target.value)}
                 placeholder="π.χ. έλεγχος φρένων, επισκευή διαρροής λαδιού, αλλαγή ελαστικού"
                 className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] px-3 text-sm font-semibold text-[#111827] outline-none focus:border-[#0D2F2D]"
-                autoFocus
               />
             </div>
 
@@ -7587,7 +7868,7 @@ function ViewHeader({
             aria-expanded={hasExportActions ? exportMenuOpen : undefined}
             aria-label={exportLabel}
             title={exportLabel}
-            className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-md border border-[#D7E2DC] bg-white px-0 text-sm font-bold text-[#1F2933] transition hover:border-[#91AAA5] hover:bg-[#F8FAFC] md:w-auto md:px-3"
+            className="inline-flex h-11 w-11 items-center justify-center gap-2 rounded-md border border-[#D7E2DC] bg-white px-0 text-sm font-bold text-[#1F2933] transition hover:border-[#91AAA5] hover:bg-[#F8FAFC] md:h-10 md:w-auto md:px-3"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             <span className="hidden md:inline">{exportLabel}</span>
@@ -7602,7 +7883,7 @@ function ViewHeader({
                     action.onClick();
                     setExportMenuOpen(false);
                   }}
-                  className="flex min-h-10 w-full items-center justify-between rounded-md px-3 text-left text-sm font-bold text-[#1F2933] transition hover:bg-[#F3F7F5]"
+                  className="flex min-h-11 w-full items-center justify-between rounded-md px-3 text-left text-sm font-bold text-[#1F2933] transition hover:bg-[#F3F7F5] md:min-h-10"
                 >
                   <span>{action.label}</span>
                   <Download className="h-4 w-4 text-[#008C95]" aria-hidden="true" />

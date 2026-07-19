@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Noto_Sans_Mono } from "next/font/google";
 import { CommercialAnalytics } from "@/components/fleetlever/commercial-analytics";
 import { getFleetLeverEdition } from "@/lib/fleetlever/edition";
 import "./globals.css";
-
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
-  subsets: ["greek", "latin"],
-});
-
-const notoMono = Noto_Sans_Mono({
-  variable: "--font-noto-mono",
-  subsets: ["greek", "latin"],
-});
 
 const edition = getFleetLeverEdition();
 const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever-site-production.up.railway.app");
@@ -104,7 +93,7 @@ export default function RootLayout({
   return (
     <html
       lang={edition === "site" ? "en" : "el"}
-      className={`${notoSans.variable} ${notoMono.variable} h-full scroll-smooth antialiased`}
+      className="h-full scroll-smooth antialiased"
     >
       <body className="min-h-full flex flex-col">
         {children}

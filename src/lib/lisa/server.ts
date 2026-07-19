@@ -20,7 +20,7 @@ export function lisaBridgeHeaders() {
 }
 
 export function lisaEnabled() {
-  return process.env.FLEETLEVER_LISA_ENABLED === "true";
+  return process.env.FLEETLEVER_LISA_CODEX_ENABLED === "true" && process.env.FLEETLEVER_LISA_ENABLED === "true";
 }
 
 export function noStoreJson(body: unknown, status = 200) {

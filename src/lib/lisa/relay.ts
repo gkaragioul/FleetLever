@@ -15,7 +15,7 @@ const relayPollIntervalMs = 300;
 const relayStreamTimeoutMs = 95_000;
 
 export function lisaRelayEnabled() {
-  return process.env.FLEETLEVER_LISA_RELAY_ENABLED === "true";
+  return process.env.FLEETLEVER_LISA_CODEX_ENABLED === "true" && process.env.FLEETLEVER_LISA_RELAY_ENABLED === "true";
 }
 
 export function lisaRelayCompanionId() {
