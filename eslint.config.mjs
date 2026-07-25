@@ -11,6 +11,10 @@ const eslintConfig = defineConfig([
     ".next/**",
     ".next-*/**",
     ".vercel/**",
+    // Local worktrees and archived snapshots carry their own checkout of the app; linting
+    // them buries real findings under tens of thousands of duplicate problems.
+    ".worktrees/**",
+    ".archives/**",
     "out/**",
     "build/**",
     "docs/**",

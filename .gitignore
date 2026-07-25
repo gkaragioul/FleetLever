@@ -22,6 +22,7 @@
 # production
 /build
 /.worktrees/
+/.archives/
 
 # misc
 .DS_Store
