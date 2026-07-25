@@ -40,7 +40,7 @@
     "test:account-ui": "node scripts/verify-account-lisa-ui.mjs",
     "test:customization": "node scripts/verify-customization-contract.mjs && node --test scripts/test-console-snapshot.mjs",
     "test:customization-ui": "node scripts/verify-customization-ui.mjs",
-    "test:security": "node --test scripts/test-request-origin.mjs scripts/test-upload-policy.mjs scripts/test-db-connection-security.mjs && node scripts/verify-security-contract.mjs",
+    "test:security": "node --test scripts/test-request-origin.mjs scripts/test-upload-policy.mjs scripts/test-db-connection-security.mjs scripts/test-server-action-auth.mjs && node scripts/verify-security-contract.mjs",
     "test:db-security": "node scripts/verify-runtime-db-security.mjs",
     "test:production-boundaries": "node scripts/verify-production-boundaries.mjs"
   },

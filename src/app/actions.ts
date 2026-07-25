@@ -11,6 +11,7 @@ import {
 } from "@/lib/fleetlever";
 import { getFleetLeverData, runTenantMutation } from "@/lib/db/fleetlever-data";
 import type { TenantContext } from "@/lib/db/queries";
+import { getFleetLeverAccessSession } from "@/lib/auth/access";
 import { setActiveTenantContext } from "@/lib/db/tenant-context";
 import { requireObjectStorageForProduction, uploadObject } from "@/lib/storage/object-storage";
 
@@ -146,6 +147,44 @@ function requireDatabase() {
   return null;
 }
 
+/**
+ * Server actions are POST endpoints in their own right: the page-level session checks do not
+ * cover them, so every action has to establish access on its own before touching tenant data.
+ */
+async function requireMutationAccess(): Promise<ActionResult | null> {
+  const session = await getFleetLeverAccessSession().catch(() => null);
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Δεν έχεις πρόσβαση σε αυτή την ενέργεια. Συνδέσου ξανά.",
+    };
+  }
+
+  if (session.kind === "account" && !session.account.trial.active) {
+    return {
+      ok: false,
+      message: "Η πρόσβαση στο FleetLever έχει λήξει.",
+    };
+  }
+
+  return null;
+}
+
+/** For actions that reach outside a single tenant and so must not be available to tenant users. */
+async function requireSuperAdminAccess(): Promise<ActionResult | null> {
+  const session = await getFleetLeverAccessSession().catch(() => null);
+
+  if (session?.kind !== "super_admin") {
+    return {
+      ok: false,
+      message: "Η ενέργεια απαιτεί λογαριασμό διαχειριστή.",
+    };
+  }
+
+  return null;
+}
+
 async function writeAudit(
   client: { query: (sql: string, values?: unknown[]) => Promise<unknown> },
   context: TenantContext,
@@ -202,6 +241,9 @@ async function syncAssetIssueStatus(client: PoolClient, assetId: string) {
 }
 
 export async function createAsset(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -263,6 +305,9 @@ export async function createAsset(formData: FormData): Promise<ActionResult> {
 }
 
 export async function updateAsset(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -332,6 +377,9 @@ export async function updateAsset(formData: FormData): Promise<ActionResult> {
 }
 
 export async function archiveAsset(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -356,6 +404,9 @@ export async function archiveAsset(formData: FormData): Promise<ActionResult> {
 }
 
 export async function createDocument(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -528,6 +579,9 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
 }
 
 export async function approveDocument(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -552,6 +606,9 @@ export async function approveDocument(formData: FormData): Promise<ActionResult>
 }
 
 export async function updateDocument(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -744,6 +801,9 @@ export async function updateDocument(formData: FormData): Promise<ActionResult> 
 }
 
 export async function archiveDocument(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -760,6 +820,9 @@ export async function archiveDocument(formData: FormData): Promise<ActionResult>
 }
 
 export async function renewDocument(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -788,6 +851,9 @@ export async function renewDocument(formData: FormData): Promise<ActionResult> {
 }
 
 export async function createMaintenanceTask(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -832,6 +898,9 @@ export async function createMaintenanceTask(formData: FormData): Promise<ActionR
 }
 
 export async function assignMaintenanceTask(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -856,6 +925,9 @@ export async function assignMaintenanceTask(formData: FormData): Promise<ActionR
 }
 
 export async function updateMaintenanceTask(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -886,6 +958,9 @@ export async function updateMaintenanceTask(formData: FormData): Promise<ActionR
 }
 
 export async function completeMaintenanceTask(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -944,6 +1019,9 @@ export async function completeMaintenanceTask(formData: FormData): Promise<Actio
 }
 
 export async function createIssue(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -995,6 +1073,9 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
 }
 
 export async function updateIssue(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1047,6 +1128,9 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
 }
 
 export async function resolveIssue(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1078,6 +1162,9 @@ export async function resolveIssue(formData: FormData): Promise<ActionResult> {
 }
 
 export async function createOperator(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1118,6 +1205,9 @@ export async function createOperator(formData: FormData): Promise<ActionResult> 
 }
 
 export async function updateOperator(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1156,6 +1246,9 @@ export async function updateOperator(formData: FormData): Promise<ActionResult> 
 }
 
 export async function archiveOperator(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1173,6 +1266,9 @@ export async function archiveOperator(formData: FormData): Promise<ActionResult>
 }
 
 export async function createComplianceRule(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1220,6 +1316,9 @@ export async function createComplianceRule(formData: FormData): Promise<ActionRe
 }
 
 export async function importFleetRows(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1425,6 +1524,9 @@ export async function importFleetRows(formData: FormData): Promise<ActionResult>
 }
 
 export async function recordReport(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1461,6 +1563,10 @@ export async function recordReport(formData: FormData): Promise<ActionResult> {
 }
 
 export async function switchWorkspace(formData: FormData): Promise<ActionResult> {
+  // This rewrites the active tenant cookies, so it must never be reachable by a tenant user.
+  const denied = await requireSuperAdminAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
@@ -1613,6 +1719,9 @@ function buildCopilotResponse(question: string, data: FleetLeverData) {
 }
 
 export async function askCopilot(formData: FormData): Promise<ActionResult> {
+  const denied = await requireMutationAccess();
+  if (denied) return denied;
+
   const missingDb = requireDatabase();
   if (missingDb) return missingDb;
 
