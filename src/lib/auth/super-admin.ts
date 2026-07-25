@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { allowsLocalDevelopmentAccess, isHostedDeployment } from "@/lib/auth/super-admin-core.mjs";
 
 const sessionCookieName = "fleetlever_super_admin_session";
 const sessionMaxAgeSeconds = 60 * 60 * 12;
@@ -13,20 +14,12 @@ export type SuperAdminSession = {
   expiresAt: number;
 };
 
-function allowsLocalDevelopmentAccess() {
-  return process.env.NODE_ENV !== "production";
-}
-
 function localDevelopmentSession(): SuperAdminSession {
   return {
     role: "super_admin",
     username: "localhost",
     expiresAt: Date.now() + sessionMaxAgeSeconds * 1000,
   };
-}
-
-function isHostedDeployment() {
-  return Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL || process.env.RENDER || process.env.FLY_APP_NAME);
 }
 
 function sessionSecret() {
