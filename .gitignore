@@ -24,6 +24,17 @@
 /.worktrees/
 /.archives/
 
+# local scratch output
+/reports/
+/tmp/
+/.fleetlever-*.log
+
+# local agent tooling
+/.agents/
+/skills-lock.json
+/.codegraph/
+/.fleetlever/
+
 # misc
 .DS_Store
 *.pem

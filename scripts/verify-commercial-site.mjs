@@ -14,7 +14,6 @@ const files = {
   shell: await source("src/components/fleetlever/commercial-site-shell.tsx"),
   configurableWorkspace: await source("src/components/fleetlever/configurable-workspace-strip.tsx"),
   configurableWorkspaceStyles: await source("src/components/fleetlever/configurable-workspace-strip.module.css"),
-  demoLauncher: await source("src/components/fleetlever/public-demo-launcher.tsx"),
   demoWorkspace: await source("src/components/fleetlever/public-demo-workspace.tsx"),
   demoStore: await source("src/lib/commercial/demo-session-store.ts"),
   demoSessionApi: await source("src/app/api/commercial/demo-sessions/route.ts"),
@@ -147,15 +146,6 @@ requireTokens("configurableWorkspaceStyles", [
 if (files.shell.includes("PublicDemoLauncher")) {
   failures.push("shell still launches the retired embedded public demo");
 }
-
-requireTokens("demoLauncher", [
-  "Your 10-hour FleetLever workspace",
-  "Create demo workspace",
-  "Copy share link",
-  "Open full screen",
-  "backdrop-blur",
-  'role="dialog"',
-]);
 
 requireTokens("demoWorkspace", [
   "Demo workspace",
@@ -333,8 +323,6 @@ const englishCommercialFiles = [
   "pricing",
   "shell",
   "lanes",
-  "preMorning",
-  "passport",
   "inventoryStrip",
   "serviceStrip",
   "industrySwitchboard",
@@ -347,6 +335,10 @@ const englishCommercialFiles = [
 ];
 
 for (const fileName of englishCommercialFiles) {
+  if (typeof files[fileName] !== "string") {
+    failures.push(`${fileName} is listed for the English check but never loaded`);
+    continue;
+  }
   if (/[Ͱ-Ͽἀ-῿]/u.test(files[fileName])) {
     failures.push(`${fileName} still contains Greek copy`);
   }
