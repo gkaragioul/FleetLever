@@ -15,7 +15,7 @@ function sanitizeFileName(value: string) {
 
 function storageSlug(value: string) {
   return value
-    .toLocaleLowerCase("el-GR")
+    .toLocaleLowerCase("en-GB")
     .replace(/[^a-z0-9α-ωάέήίόύώϊϋΐΰ]+/giu, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80) || "upload";

@@ -7,23 +7,23 @@ const edition = getFleetLeverEdition();
 const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever-site-production.up.railway.app");
 
 const metadataCopy = {
-  en: {
+  site: {
     title: "FleetLever | Prevent expensive fleet downtime",
     description:
       "FleetLever controls whether vehicles and equipment are ready for their next job, rental or assignment before release.",
     ogDescription: "Know what can go out next. And what cannot.",
     twitterDescription: "Find fleet and equipment blockers before dispatch.",
   },
-  el: {
-    title: "FleetLever | Πρόληψη ακριβών καθυστερήσεων στα έργα",
+  console: {
+    title: "FleetLever | Prevent costly delays on site",
     description:
-      "Το FleetLever είναι ο έλεγχος readiness που χρησιμοποιούν οι κατασκευαστικές εταιρείες πριν στείλουν μηχανήματα στην αυριανή δουλειά.",
-    ogDescription: "Προλάβετε ακριβές καθυστερήσεις στα έργα πριν ξεκινήσει η αυριανή δουλειά.",
-    twitterDescription: "Μάθετε τι θα σταματήσει την αυριανή δουλειά πριν συμβεί.",
+      "FleetLever is the readiness check construction companies run before sending machines to tomorrow's job.",
+    ogDescription: "Catch costly site delays before tomorrow's work begins.",
+    twitterDescription: "Know what will stop tomorrow's work before it happens.",
   },
 } as const;
 
-const meta = edition === "site" ? metadataCopy.en : metadataCopy.el;
+const meta = edition === "site" ? metadataCopy.site : metadataCopy.console;
 const siteOpenGraph = { locale: "en_GB" } as const;
 
 export const metadata: Metadata = {
@@ -92,7 +92,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang={edition === "site" ? "en" : "el"}
+      lang="en"
       className="h-full scroll-smooth antialiased"
     >
       <body className="min-h-full flex flex-col">

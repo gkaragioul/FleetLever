@@ -189,7 +189,7 @@ export const assets: Asset[] = [
 export const documents: FleetDocument[] = [
   {
     id: "doc-cr04-lift",
-    title: "CR-04 πιστοποιητικό ανύψωσης",
+    title: "CR-04 lifting certificate",
     category: "Lifting certificate",
     assetId: "asset-cr04",
     issuedAt: "2025-06-03",
@@ -199,7 +199,7 @@ export const documents: FleetDocument[] = [
   },
   {
     id: "doc-b12-kteo",
-    title: "B-12 έλεγχος KTEO",
+    title: "B-12 KTEO inspection",
     category: "KTEO",
     assetId: "asset-b12",
     issuedAt: "2025-05-20",
@@ -209,7 +209,7 @@ export const documents: FleetDocument[] = [
   },
   {
     id: "doc-b12-ins",
-    title: "B-12 ασφαλιστήριο",
+    title: "B-12 insurance policy",
     category: "Insurance",
     assetId: "asset-b12",
     issuedAt: "2026-01-14",
@@ -219,7 +219,7 @@ export const documents: FleetDocument[] = [
   },
   {
     id: "doc-fl02-inspection",
-    title: "FL-02 περιοδικός έλεγχος",
+    title: "FL-02 periodic inspection",
     category: "Periodic inspection",
     assetId: "asset-fl02",
     issuedAt: "2025-12-01",
@@ -229,7 +229,7 @@ export const documents: FleetDocument[] = [
   },
   {
     id: "doc-v07-ins",
-    title: "V-07 ασφαλιστήριο",
+    title: "V-07 insurance policy",
     category: "Insurance",
     assetId: "asset-v07",
     issuedAt: "2026-03-02",
@@ -239,7 +239,7 @@ export const documents: FleetDocument[] = [
   },
   {
     id: "doc-nikos-license",
-    title: "Άδεια χειριστή Νίκου Παπαδάκη",
+    title: "Operator licence for Nikos Papadakis",
     category: "Operator license",
     operator: "Nikos Papadakis",
     issuedAt: "2023-08-11",
@@ -253,7 +253,7 @@ export const maintenanceTasks: MaintenanceTask[] = [
   {
     id: "mnt-fl02",
     assetId: "asset-fl02",
-    title: "Έλεγχος υδραυλικών λαδιών και φρένων",
+    title: "Hydraulic oil and brake check",
     dueAt: "2026-05-24",
     status: "overdue",
     owner: "Giorgos Rallis",
@@ -262,7 +262,7 @@ export const maintenanceTasks: MaintenanceTask[] = [
   {
     id: "mnt-cr04",
     assetId: "asset-cr04",
-    title: "Προετοιμασία ελέγχου μπούμας",
+    title: "Boom inspection preparation",
     dueAt: "2026-06-01",
     status: "scheduled",
     owner: "Nikos Papadakis",
@@ -270,7 +270,7 @@ export const maintenanceTasks: MaintenanceTask[] = [
   {
     id: "mnt-v07",
     assetId: "asset-v07",
-    title: "Service 10.000 χλμ.",
+    title: "10,000 km service",
     dueAt: "2026-06-22",
     status: "scheduled",
     owner: "Maria Sotiropoulou",
@@ -282,7 +282,7 @@ export const issues: Issue[] = [
   {
     id: "iss-ex01",
     assetId: "asset-ex01",
-    title: "Πτώση υδραυλικής πίεσης υπό φορτίο",
+    title: "Hydraulic pressure drop under load",
     severity: "critical",
     status: "in progress",
     blocking: true,
@@ -292,7 +292,7 @@ export const issues: Issue[] = [
   {
     id: "iss-b12",
     assetId: "asset-b12",
-    title: "Ληγμένο KTEO, δεν μπορεί να μπει σε διαδρομή Σαββατοκύριακου",
+    title: "Expired KTEO, cannot be scheduled for a weekend route",
     severity: "high",
     status: "triaged",
     blocking: true,
@@ -302,7 +302,7 @@ export const issues: Issue[] = [
   {
     id: "iss-cr04",
     assetId: "asset-cr04",
-    title: "Λείπει ενημερωμένη φωτογραφία από τα outriggers",
+    title: "Missing an up-to-date photo of the outriggers",
     severity: "medium",
     status: "open",
     blocking: false,
@@ -371,8 +371,8 @@ export const fallbackFleetData: FleetLeverData = {
   },
   organization: {
     id: "demo-local",
-    name: "Demo ΑΕ",
-    locale: "el-GR",
+    name: "Demo Ltd",
+    locale: "en-GB",
     timezone: "Europe/Athens",
     currency: "EUR",
   },
@@ -492,7 +492,7 @@ export function getAttentionItems() {
 }
 
 export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("el-GR", {
+  return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -500,7 +500,7 @@ export function formatDate(date: string) {
 }
 
 export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("el-GR", {
+  return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,

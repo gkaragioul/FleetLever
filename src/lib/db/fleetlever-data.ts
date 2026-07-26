@@ -234,10 +234,10 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     type: row.asset_type,
     plate: row.plate_number ?? undefined,
     serial: row.serial_number ?? undefined,
-    location: row.location_name ?? "Χωρίς τοποθεσία",
+    location: row.location_name ?? "No location",
     department: row.department ?? row.asset_type,
     operatorId: row.assigned_operator_id ?? undefined,
-    operator: row.operator_name ?? "Χωρίς ανάθεση",
+    operator: row.operator_name ?? "Unassigned",
     status: row.status as AssetStatus,
     ownership: row.ownership_type,
     hours: numberOrUndefined(row.current_hours),
@@ -267,7 +267,7 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     title: row.title,
     dueAt: dateString(row.due_at) ?? new Date().toISOString().slice(0, 10),
     status: taskStatus(row.status),
-    owner: row.owner_name ?? "Χωρίς ανάθεση",
+    owner: row.owner_name ?? "Unassigned",
     cost: row.cost_cents === null ? undefined : Math.round(Number(row.cost_cents) / 100),
   }));
 
@@ -278,14 +278,14 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     severity: row.severity,
     status: issueStatus(row.status),
     blocking: Boolean(row.blocking_asset),
-    assignee: row.assignee_name ?? "Χωρίς ανάθεση",
+    assignee: row.assignee_name ?? "Unassigned",
     openedAt: dateString(row.created_at) ?? new Date().toISOString().slice(0, 10),
   }));
 
   const operators: Operator[] = operatorResult.rows.map((row) => ({
     id: row.id,
     name: row.full_name,
-    role: row.role_title ?? "Χειριστής",
+    role: row.role_title ?? "Operator",
     phone: row.phone ?? "",
     licenseCategories: row.license_categories ?? [],
     licenseExpiresAt: dateString(row.license_expires_at) ?? new Date().toISOString().slice(0, 10),
@@ -316,7 +316,7 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
     session: {
       organizationId: context.organizationId,
       profileId: context.profileId,
-      profileName: session?.full_name ?? "Χρήστης",
+      profileName: session?.full_name ?? "User",
       role: session?.role ?? "member",
     },
     location: {

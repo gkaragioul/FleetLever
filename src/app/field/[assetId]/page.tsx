@@ -11,13 +11,13 @@ export const dynamic = "force-dynamic";
 
 const categoryLabels: Record<string, string> = {
   KTEO: "KTEO",
-  Insurance: "Ασφάλεια",
-  Permit: "Άδεια",
-  "Lifting certificate": "Πιστοποιητικό ανύψωσης",
-  "Periodic inspection": "Περιοδικός έλεγχος",
-  "Operator license": "Άδεια χειριστή",
-  "Maintenance invoice": "Τιμολόγιο συντήρησης",
-  "Safety document": "Έγγραφο ασφαλείας",
+  Insurance: "Insurance",
+  Permit: "Permit",
+  "Lifting certificate": "Lifting certificate",
+  "Periodic inspection": "Periodic inspection",
+  "Operator license": "Operator licence",
+  "Maintenance invoice": "Maintenance invoice",
+  "Safety document": "Safety document",
 };
 
 const documentCategories = Object.keys(categoryLabels);
@@ -75,9 +75,9 @@ export default async function FieldAssetPage({
   const missing = template?.requiredCategories.filter((category) => !presentCategories.has(category)) ?? [];
   const savedMessage =
     query.saved === "issue"
-      ? "Η βλάβη καταχωρήθηκε."
+      ? "The issue was logged."
       : query.saved === "document"
-        ? "Το έγγραφο ανέβηκε και μπήκε σε έλεγχο."
+        ? "The document was uploaded and sent for review."
         : "";
 
   return (
@@ -87,7 +87,7 @@ export default async function FieldAssetPage({
           <Link
             href="/"
             className="rounded-md transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-            aria-label="Μετάβαση στο Κέντρο στόλου"
+            aria-label="Go to the fleet console"
           >
             <FleetLeverLogo />
           </Link>
@@ -111,7 +111,7 @@ export default async function FieldAssetPage({
               <p className="mt-2 text-sm text-slate-600">{asset.plate ?? asset.serial} · {asset.location}</p>
             </div>
             <span className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${pillClass(asset.status)}`}>
-              {asset.status === "ready" ? "έτοιμο" : asset.status === "blocked" ? "μη διαθέσιμο" : "προσοχή"}
+              {asset.status === "ready" ? "ready" : asset.status === "blocked" ? "unavailable" : "attention"}
             </span>
           </div>
         </section>
@@ -120,21 +120,21 @@ export default async function FieldAssetPage({
           <section className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
             <div className="flex items-center gap-2">
               <FileUp size={18} className="text-[#11685f]" />
-              <h2 className="text-lg font-semibold">Ανέβασμα εγγράφου</h2>
+              <h2 className="text-lg font-semibold">Upload document</h2>
             </div>
             <form action={submitDocument} className="mt-4 grid gap-3">
               <input type="hidden" name="assetId" value={asset.id} />
               <label className="grid gap-1.5 text-sm font-medium">
-                Τίτλος
+                Title
                 <input
                   name="title"
                   required
-                  placeholder={`${asset.code} νέο έγγραφο`}
+                  placeholder={`${asset.code} new document`}
                   className="h-11 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 outline-none focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
                 />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Κατηγορία
+                Category
                 <select
                   name="category"
                   required
@@ -147,7 +147,7 @@ export default async function FieldAssetPage({
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Λήξη
+                Expiry
                 <input
                   name="expiresAt"
                   type="date"
@@ -155,7 +155,7 @@ export default async function FieldAssetPage({
                 />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Αρχείο
+                File
                 <input
                   name="file"
                   type="file"
@@ -163,7 +163,7 @@ export default async function FieldAssetPage({
                 />
               </label>
               <button type="submit" className="mt-1 h-11 rounded-md bg-[#11685f] px-4 text-sm font-semibold text-white">
-                Ανέβασμα
+                Upload
               </button>
             </form>
           </section>
@@ -171,34 +171,34 @@ export default async function FieldAssetPage({
           <section className="rounded-lg border border-[#d9e2dc] bg-[#fbfaf6] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
             <div className="flex items-center gap-2">
               <AlertTriangle size={18} className="text-[#b23838]" />
-              <h2 className="text-lg font-semibold">Αναφορά βλάβης</h2>
+              <h2 className="text-lg font-semibold">Report an issue</h2>
             </div>
             <form action={submitIssue} className="mt-4 grid gap-3">
               <input type="hidden" name="assetId" value={asset.id} />
               <label className="grid gap-1.5 text-sm font-medium">
-                Τίτλος
+                Title
                 <input
                   name="title"
                   required
-                  placeholder="Τι πρόβλημα υπάρχει;"
+                  placeholder="What is the problem?"
                   className="h-11 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 outline-none focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
                 />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Σοβαρότητα
+                Severity
                 <select
                   name="severity"
                   defaultValue="medium"
                   className="h-11 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 outline-none focus:border-[#8fd5c6] focus:ring-1 focus:ring-[#8fd5c6]"
                 >
-                  <option value="low">Χαμηλή</option>
-                  <option value="medium">Μεσαία</option>
-                  <option value="high">Υψηλή</option>
-                  <option value="critical">Κρίσιμη</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Περιγραφή
+                Description
                 <textarea
                   name="description"
                   rows={4}
@@ -207,10 +207,10 @@ export default async function FieldAssetPage({
               </label>
               <label className="inline-flex items-center gap-2 text-sm font-medium">
                 <input name="blocking" type="checkbox" className="h-4 w-4 rounded border-[#d9e2dc]" />
-                Μπλοκάρει ανάθεση
+                Blocks assignment
               </label>
               <button type="submit" className="mt-1 h-11 rounded-md bg-[#11685f] px-4 text-sm font-semibold text-white">
-                Καταχώριση βλάβης
+                Log issue
               </button>
             </form>
           </section>
@@ -220,24 +220,24 @@ export default async function FieldAssetPage({
           <div>
             <div className="flex items-center gap-2">
               <Truck size={18} className="text-[#11685f]" />
-              <h2 className="text-lg font-semibold">Λείπουν</h2>
+              <h2 className="text-lg font-semibold">Missing</h2>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {missing.length ? missing.map((category) => (
                 <span key={category} className="rounded-full border border-[#d9e2dc] bg-[#f7faf4] px-2.5 py-1 text-xs font-semibold text-slate-600">
                   {categoryLabels[category] ?? category}
                 </span>
-              )) : <span className="text-sm text-emerald-700">Δεν λείπουν απαιτούμενα έγγραφα.</span>}
+              )) : <span className="text-sm text-emerald-700">No required documents are missing.</span>}
             </div>
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Τρέχοντα records</h2>
+            <h2 className="text-lg font-semibold">Current records</h2>
             <div className="mt-3 space-y-2">
               {assetDocuments.slice(0, 4).map((document) => (
                 <div key={document.id} className="flex items-center justify-between gap-3 rounded-md border border-[#d9e2dc] bg-[#fdfbf7] px-3 py-2">
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{document.title}</span>
-                    <span className="text-xs text-slate-500">{document.expiresAt ? formatDate(document.expiresAt) : "Χωρίς λήξη"}</span>
+                    <span className="text-xs text-slate-500">{document.expiresAt ? formatDate(document.expiresAt) : "No expiry"}</span>
                   </span>
                   <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${pillClass(documentStatus(document))}`}>
                     {documentStatus(document)}

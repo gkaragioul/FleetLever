@@ -1067,10 +1067,10 @@ function formatDueLabel(dueIso: string) {
   const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
   const sameDay = (left: Date, right: Date) => left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
-  const time = new Intl.DateTimeFormat("el-GR", { hour: "2-digit", minute: "2-digit" }).format(date);
+  const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
   if (sameDay(date, today)) return `Σήμερα, ${time}`;
   if (sameDay(date, tomorrow)) return `Αύριο, ${time}`;
-  return new Intl.DateTimeFormat("el-GR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 function isDueOverdue(dueIso: string) {
