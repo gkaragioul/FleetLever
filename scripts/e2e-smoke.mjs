@@ -3,6 +3,11 @@ import net from "node:net";
 import process from "node:process";
 import { chromium } from "playwright";
 
+// The standalone server takes its host and port from the environment and ignores CLI flags,
+// and running it through npm adds a shell hop that breaks both spawn and kill on Windows.
+// Launching node directly keeps this cross-platform and lets the port actually take effect.
+const standaloneServer = ".next/standalone/server.js";
+
 const APP_PATH = process.env.E2E_APP_PATH ?? "/console";
 const NAV_LABELS = [
   "Tomorrow's Work",
@@ -52,8 +57,8 @@ async function startServer() {
 
   const port = await getFreePort();
   const url = `http://127.0.0.1:${port}`;
-  const child = spawn("npm", ["run", "start", "--", "--hostname", "127.0.0.1", "--port", String(port)], {
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
+  const child = spawn(process.execPath, [standaloneServer], {
+    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", HOSTNAME: "127.0.0.1", PORT: String(port) },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
