@@ -3,10 +3,27 @@ import net from "node:net";
 import process from "node:process";
 import { chromium } from "playwright";
 
+import { encodeSession } from "../src/lib/auth/super-admin-core.mjs";
+
 // The standalone server takes its host and port from the environment and ignores CLI flags,
 // and running it through npm adds a shell hop that breaks both spawn and kill on Windows.
 // Launching node directly keeps this cross-platform and lets the port actually take effect.
 const standaloneServer = ".next/standalone/server.js";
+
+// The console requires a session. Signing in through /login would need a database and a seeded
+// account, so mint a super admin session instead: it is cookie-only, and using the app's own
+// encoder means this breaks loudly if the session format ever changes.
+const smokeSessionSecret = "fleetlever-e2e-smoke-session-secret-value";
+const sessionCookieName = "fleetlever_super_admin_session";
+
+function smokeSessionCookie(url) {
+  const value = encodeSession(
+    { role: "super_admin", username: "e2e-smoke", expiresAt: Date.now() + 60 * 60 * 1000 },
+    smokeSessionSecret,
+  );
+
+  return { name: sessionCookieName, value, url };
+}
 
 const APP_PATH = process.env.E2E_APP_PATH ?? "/console";
 const NAV_LABELS = [
@@ -58,7 +75,13 @@ async function startServer() {
   const port = await getFreePort();
   const url = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, [standaloneServer], {
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", HOSTNAME: "127.0.0.1", PORT: String(port) },
+    env: {
+      ...process.env,
+      NEXT_TELEMETRY_DISABLED: "1",
+      HOSTNAME: "127.0.0.1",
+      PORT: String(port),
+      FLEETLEVER_SESSION_SECRET: smokeSessionSecret,
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -175,7 +198,9 @@ async function main() {
   const failures = [];
 
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await context.addCookies([smokeSessionCookie(server.url)]);
+    const page = await context.newPage();
     const flushConsoleErrors = await assertNoConsoleErrors(page, failures);
 
     await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "networkidle" });
