@@ -27,13 +27,14 @@ function smokeSessionCookie(url) {
 
 const APP_PATH = process.env.E2E_APP_PATH ?? "/console";
 const NAV_LABELS = [
-  "Tomorrow's Work",
-  "Worksites",
-  "Action Queue",
-  "Machines",
-  "Documents",
+  "Tomorrow's shift",
+  "Work packages",
+  "What's missing",
+  "Vehicles",
+  "Documents & checks",
   "Workshop",
-  "Release History",
+  "Staff",
+  "Shift history",
   "Settings",
 ];
 
@@ -109,10 +110,21 @@ async function openNav(page, label) {
   await page.waitForTimeout(120);
 }
 
+// Without DATABASE_URL the console-state endpoint answers 503 by design, and the browser logs
+// the failed fetch. That is the app reporting its own configuration correctly, not a defect, so
+// tolerate exactly that one and only when there is no database. Everything else still fails.
+const expectedWithoutDatabase = /Failed to load resource.*503/i;
+
+function isExpectedConsoleError(text) {
+  return !process.env.DATABASE_URL && expectedWithoutDatabase.test(text);
+}
+
 async function assertNoConsoleErrors(page, failures) {
   const consoleErrors = [];
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() === "error" && !isExpectedConsoleError(message.text())) {
+      consoleErrors.push(message.text());
+    }
   });
   page.on("pageerror", (error) => consoleErrors.push(error.message));
 
@@ -146,32 +158,31 @@ async function exerciseNavigation(page) {
 }
 
 async function exerciseGlobalSearch(page) {
-  const search = page.getByPlaceholder(/Search machine, worksite/i);
+  const search = page.getByPlaceholder(/Search vehicle, service, document, owner/i);
   await search.fill("CR-");
   await page.getByText(/Search FleetLever/i).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: /CR-04[\s\S]*Liebherr LTM 1040 Crane/ }).first().click();
-  await assertVisibleHeading(page, "Machines");
+  await page.getByRole("button", { name: /CR-04[\s\S]*Liebherr LTM 1040/ }).first().click();
+  await assertVisibleHeading(page, "Vehicles");
   await page.getByRole("heading", { name: /CR-04/i }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByText(/This machine will stop/i).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByText(/This vehicle will stop/i).waitFor({ state: "visible", timeout: 5000 });
 
-  await openNav(page, "Worksites");
+  await openNav(page, "Work packages");
   const searchValue = await search.inputValue();
   if (searchValue) {
     throw new Error(`Search was not cleared after navigation: ${searchValue}`);
   }
-  await page.getByRole("heading", { name: "Worksites" }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("heading", { name: "Work packages" }).waitFor({ state: "visible", timeout: 5000 });
 }
 
 async function exerciseWorkshop(page) {
   await openNav(page, "Workshop");
-  await page.getByRole("button", { name: /New service job/ }).click();
-  await page.getByRole("heading", { name: "New service job" }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByLabel("Job").fill(`QA steering check ${Date.now()}`);
-  await page.getByRole("button", { name: /Add to board/ }).click();
-  await page.getByText(/QA steering check/).waitFor({ state: "visible", timeout: 5000 });
-
+  await page.getByRole("button", { name: /^New job$/ }).click();
+  await page.getByRole("heading", { name: "New workshop job" }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("textbox", { name: "Job", exact: true }).fill(`QA steering check ${Date.now()}`);
+  await page.getByRole("button", { name: /Add to the board/ }).click();
   const card = page.getByRole("button", { name: /QA steering check/ }).first();
-  const doingLane = page.locator('[data-workshop-drop-status="In Progress"]').first();
+  await card.waitFor({ state: "visible", timeout: 5000 });
+  const doingLane = page.locator('[data-workshop-drop-status="In progress"]').first();
   const cardBox = await card.boundingBox();
   const laneBox = await doingLane.boundingBox();
   if (!cardBox || !laneBox) throw new Error("Workshop drag target was not measurable.");
@@ -186,10 +197,10 @@ async function exerciseWorkshop(page) {
 }
 
 async function exerciseReleaseHistory(page) {
-  await openNav(page, "Release History");
-  await page.getByRole("button", { name: /View packet/ }).first().click();
-  await page.getByRole("heading", { name: /CR-04 release decision/i }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("button", { name: "Close" }).click();
+  await openNav(page, "Shift history");
+  await page.getByRole("button", { name: /Decision details/ }).first().click();
+  await page.getByRole("heading", { name: /Decision for/i }).waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).first().click();
 }
 
 async function main() {
@@ -203,7 +214,10 @@ async function main() {
     const page = await context.newPage();
     const flushConsoleErrors = await assertNoConsoleErrors(page, failures);
 
-    await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "networkidle" });
+    // The console polls its state endpoint, so the network never goes idle. Wait for the
+    // navigation to actually render instead.
+    await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: NAV_LABELS[0], exact: true }).first().waitFor({ timeout: 30_000 });
     await exerciseNavigation(page);
     await exerciseGlobalSearch(page);
     await exerciseWorkshop(page);

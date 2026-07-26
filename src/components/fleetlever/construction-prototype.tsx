@@ -63,27 +63,27 @@ type PassportTab = "overview" | "documents" | "service" | "issues" | "photos" | 
 
 type Certificate = {
   name: string;
-  status: "Σε ισχύ" | "Λήγει σύντομα" | "Κρίσιμο" | "Έληξε" | "Λείπει";
+  status: "Valid" | "Expiring soon" | "Critical" | "Expired" | "Missing";
   expiry: string;
   daysLeft: string;
   owner: string;
   action: string;
   due?: string;
-  assignmentStatus?: "Χωρίς ανάθεση" | "Ανατέθηκε" | "Έγινε αποδεκτό" | "Εκπρόθεσμο";
+  assignmentStatus?: "Unassigned" | "Assigned" | "Accepted" | "Overdue";
   assignedAt?: string;
   customFields?: Record<string, CustomFieldValue>;
 };
 
 type ServiceBlocker = {
   issue: string;
-  severity: "Χαμηλή" | "Μεσαία" | "Υψηλή" | "Κρίσιμο";
+  severity: "Low" | "Medium" | "High" | "Critical";
   blocksRelease: boolean;
   owner: string;
   due: string;
-  status: "Ανοιχτό" | "Σε εξέλιξη" | "Σε αναμονή" | "Λύθηκε";
+  status: "Open" | "In progress" | "On hold" | "Resolved";
   parts?: string;
-  partsStatus?: "Δεν χρειάζεται" | "Χρειάζεται" | "Παραγγέλθηκε" | "Σε αναμονή" | "Παραλήφθηκε";
-  assignmentStatus?: "Χωρίς ανάθεση" | "Ανατέθηκε" | "Έγινε αποδεκτό" | "Εκπρόθεσμο";
+  partsStatus?: "Not needed" | "Needed" | "Ordered" | "On hold" | "Received";
+  assignmentStatus?: "Unassigned" | "Assigned" | "Accepted" | "Overdue";
   assignedAt?: string;
   customFields?: Record<string, CustomFieldValue>;
 };
@@ -96,7 +96,7 @@ type Machine = {
   manufacturer: string;
   model: string;
   serial: string;
-  ownership: "Ιδιόκτητο" | "Ενοικιαζόμενο";
+  ownership: "Owned" | "Rented";
   worksiteId: string;
   state: MachineState;
   reason: string;
@@ -131,10 +131,10 @@ type ReleaseRecord = {
   reason: string;
   action: string;
   user: string;
-  override: "Ναι" | "Όχι";
+  override: "Yes" | "No";
 };
 
-type AddItemType = "Όχημα" | "Υπηρεσία πόλης" | "Πακέτο εργασίας" | "Έλεγχος / έγγραφο" | "Θέμα συνεργείου" | "Αρχείο";
+type AddItemType = "Vehicle" | "City service" | "Work package" | "Check / document" | "Workshop issue" | "File";
 
 type Toast = {
   id: number;
@@ -237,11 +237,11 @@ const allowDemoConsoleData = process.env.NEXT_PUBLIC_FLEETLEVER_ALLOW_DEMO_CONSO
 const lisaCodexUiEnabled = process.env.NEXT_PUBLIC_FLEETLEVER_LISA_CODEX_ENABLED === "true";
 
 const standaloneTeamMembers: TeamMember[] = [
-  { name: "Δημήτρης", role: "Υπεύθυνος στόλου" },
-  { name: "Μαρία", role: "Συμμόρφωση & έγγραφα" },
-  { name: "Κώστας", role: "Υπεύθυνος συνεργείου" },
-  { name: "Εξωτερικό συνεργείο", role: "Τεχνική υποστήριξη" },
-  { name: "Γιώργος", role: "Διευθυντής λειτουργίας" },
+  { name: "David", role: "Fleet manager" },
+  { name: "Maria", role: "Compliance & documents" },
+  { name: "Chris", role: "Workshop manager" },
+  { name: "External workshop", role: "Technical support" },
+  { name: "George", role: "Operations director" },
 ];
 
 const teamMembers = standaloneTeamMembers;
@@ -249,145 +249,145 @@ const teamMembers = standaloneTeamMembers;
 const baseStaffMembers: StaffMember[] = [
   {
     id: "staff-dimitris",
-    name: "Δημήτρης",
-    role: "Γραφείο Κίνησης",
-    team: "Συντονισμός βάρδιας",
+    name: "David",
+    role: "Traffic office",
+    team: "Shift coordination",
     status: "assigned",
     photo: "/fleetlever/staff/dimitris.jpg",
-    shift: "Αύριο 06:30-14:30",
-    assignedTo: "Πρωινή αποκομιδή απορριμμάτων",
-    phone: "εσωτ. 204",
-    note: "Κλείνει οδηγούς και πλήρωμα για τα απορριμματοφόρα.",
+    shift: "Tomorrow 06:30-14:30",
+    assignedTo: "Morning waste collection",
+    phone: "ext. 204",
+    note: "Books drivers and crew for the refuse trucks.",
   },
   {
     id: "staff-kostas",
-    name: "Κώστας",
-    role: "Συνεργείο δήμου",
-    team: "Συνεργείο",
+    name: "Chris",
+    role: "Council workshop",
+    team: "Workshop",
     status: "assigned",
     photo: "/fleetlever/staff/kostas.jpg",
-    shift: "Σήμερα έως 18:00",
-    assignedTo: "ΗΛ-02 · έλεγχος φορτιστή",
-    phone: "εσωτ. 218",
-    note: "Πρέπει να ενημερώσει πριν κλειδώσει η αυριανή βάρδια.",
+    shift: "Today until 18:00",
+    assignedTo: "EL-02 · charger check",
+    phone: "ext. 218",
+    note: "Must report back before tomorrow's shift locks.",
   },
   {
     id: "staff-maria",
-    name: "Μαρία",
-    role: "Έγγραφα και έλεγχοι",
-    team: "Διοικητικός έλεγχος",
+    name: "Maria",
+    role: "Documents and checks",
+    team: "Administrative control",
     status: "available",
     photo: "/fleetlever/staff/maria.jpg",
-    shift: "Αύριο 07:00-15:00",
-    assignedTo: "Έγγραφα & έλεγχοι",
-    phone: "εσωτ. 231",
-    note: "Διαθέσιμη για ΚΤΕΟ, άδειες οδηγών και φακέλους οχημάτων.",
+    shift: "Tomorrow 07:00-15:00",
+    assignedTo: "Documents & checks",
+    phone: "ext. 231",
+    note: "Available for roadworthiness tests, driver licences and vehicle files.",
   },
   {
     id: "staff-giorgos",
-    name: "Γιώργος",
-    role: "Υπεύθυνος Καθαριότητας",
-    team: "Καθαριότητα",
+    name: "George",
+    role: "Cleansing supervisor",
+    team: "Cleansing",
     status: "available",
     photo: "/fleetlever/staff/giorgos.jpg",
-    shift: "Αύριο 06:00-14:00",
-    assignedTo: "Πρωινό σημείωμα",
-    phone: "εσωτ. 209",
-    note: "Μπορεί να εγκρίνει αλλαγές πληρώματος ή εξαίρεση.",
+    shift: "Tomorrow 06:00-14:00",
+    assignedTo: "Morning note",
+    phone: "ext. 209",
+    note: "Can approve crew changes or an exception.",
   },
   {
     id: "staff-nikos",
-    name: "Νίκος",
-    role: "Οδηγός απορριμματοφόρου",
-    team: "Αποκομιδή",
+    name: "Nick",
+    role: "Refuse truck driver",
+    team: "Collection",
     status: "missing",
     photo: "/fleetlever/staff/nikos.jpg",
-    shift: "Αύριο 06:30-14:30",
-    assignedTo: "ΑΠ-01",
-    phone: "δεν απάντησε",
-    note: "Δεν έχει επιβεβαιώσει παρουσία για την πρωινή βάρδια.",
-    replacement: "Δημήτρης να βρει διαθέσιμο οδηγό έως 17:00",
+    shift: "Tomorrow 06:30-14:30",
+    assignedTo: "RT-01",
+    phone: "no reply",
+    note: "Has not confirmed attendance for the morning shift.",
+    replacement: "David to find an available driver by 17:00",
   },
   {
     id: "staff-eleni",
-    name: "Ελένη",
-    role: "Συνοδός απορριμματοφόρου",
-    team: "Αποκομιδή",
+    name: "Helen",
+    role: "Refuse truck loader",
+    team: "Collection",
     status: "leave",
     photo: "/fleetlever/staff/eleni.jpg",
-    shift: "Αύριο",
-    assignedTo: "ΑΠ-02",
-    phone: "δηλωμένη άδεια",
-    note: "Άδεια καταχωρημένη. Θέλει αντικατάσταση μόνο αν ανοίξει δεύτερη διαδρομή.",
-    replacement: "Κάλυψη από διαθέσιμο εργάτη καθαριότητας",
+    shift: "Tomorrow",
+    assignedTo: "RT-02",
+    phone: "booked leave",
+    note: "Leave is recorded. Cover is only needed if a second route opens.",
+    replacement: "Cover from an available cleansing operative",
   },
   {
     id: "staff-petros",
-    name: "Πέτρος",
-    role: "Χειριστής γερανοφόρου",
-    team: "Ογκώδη και κλαδέματα",
+    name: "Peter",
+    role: "Grab lorry operator",
+    team: "Bulky waste and pruning",
     status: "sick",
     photo: "/fleetlever/staff/petros.jpg",
-    shift: "Αύριο 06:30-14:30",
-    assignedTo: "ΓΕ-92",
-    phone: "ενημέρωσε πρωί",
-    note: "Αναρρωτική για αύριο. Η αρπάγη χρειάζεται δεύτερο χειριστή.",
-    replacement: "Γιώργος να εγκρίνει αλλαγή σειράς ογκωδών",
+    shift: "Tomorrow 06:30-14:30",
+    assignedTo: "GL-92",
+    phone: "reported this morning",
+    note: "Off sick tomorrow. The grab needs a second operator.",
+    replacement: "George to approve a change to the bulky waste order",
   },
 ];
 
 const standaloneStaffMembers: StaffMember[] = [
   {
     ...baseStaffMembers[0],
-    role: "Υπεύθυνος στόλου",
-    team: "Συντονισμός λειτουργίας",
-    assignedTo: "Επέκταση γραμμής Μετρό",
-    note: "Κλειδώνει χειριστές, οχήματα και επόμενες ενέργειες πριν από την πρωινή εκκίνηση.",
+    role: "Fleet manager",
+    team: "Operations coordination",
+    assignedTo: "Metro line extension",
+    note: "Locks operators, vehicles and next actions before the morning start.",
   },
   {
     ...baseStaffMembers[1],
-    role: "Υπεύθυνος συνεργείου",
-    team: "Τεχνική υποστήριξη",
-    assignedTo: "LD-03 · έλεγχος υδραυλικών",
-    note: "Ενημερώνει την ομάδα λειτουργίας μόλις ολοκληρωθεί ο τεχνικός έλεγχος.",
+    role: "Workshop manager",
+    team: "Technical support",
+    assignedTo: "LD-03 · hydraulics check",
+    note: "Updates the operations team as soon as the inspection is done.",
   },
   {
     ...baseStaffMembers[2],
-    role: "Συμμόρφωση & έγγραφα",
-    team: "Διοικητικός έλεγχος",
-    assignedTo: "Πιστοποιητικά στόλου",
-    note: "Παρακολουθεί λήξεις, ανανεώσεις και αποδεικτικά ανά όχημα.",
+    role: "Compliance & documents",
+    team: "Administrative control",
+    assignedTo: "Fleet certificates",
+    note: "Tracks expiries, renewals and proof per vehicle.",
   },
   {
     ...baseStaffMembers[3],
-    role: "Διευθυντής λειτουργίας",
-    team: "Λειτουργία έργων",
-    assignedTo: "Πρωινή αναφορά",
-    note: "Εγκρίνει αλλαγές χειριστών και εξαιρέσεις πριν κλειδώσει η βάρδια.",
+    role: "Operations director",
+    team: "Project operations",
+    assignedTo: "Morning report",
+    note: "Approves operator changes and exceptions before the shift locks.",
   },
   {
     ...baseStaffMembers[4],
-    role: "Χειριστής γερανού",
-    team: "Ανυψώσεις",
+    role: "Crane operator",
+    team: "Lifting",
     assignedTo: "CR-04",
-    note: "Δεν έχει επιβεβαιώσει διαθεσιμότητα για την πρωινή εκκίνηση.",
-    replacement: "Ο Δημήτρης να βρει διαθέσιμο χειριστή έως τις 17:00",
+    note: "Has not confirmed availability for the morning start.",
+    replacement: "David to find an available operator by 17:00",
   },
   {
     ...baseStaffMembers[5],
-    role: "Οδηγός φορτηγού",
-    team: "Μεταφορές",
+    role: "Lorry driver",
+    team: "Haulage",
     assignedTo: "TR-08",
-    note: "Η άδεια έχει καταχωρηθεί. Χρειάζεται κάλυψη μόνο αν ανοίξει δεύτερη διαδρομή.",
-    replacement: "Κάλυψη από διαθέσιμο οδηγό μεταφορών",
+    note: "The leave is recorded. Cover is only needed if a second route opens.",
+    replacement: "Cover from an available haulage driver",
   },
   {
     ...baseStaffMembers[6],
-    role: "Χειριστής φορτωτή",
-    team: "Χωματουργικά",
+    role: "Loader operator",
+    team: "Earthworks",
     assignedTo: "LD-03",
-    note: "Αναρρωτική άδεια για αύριο. Το έργο χρειάζεται δεύτερο πιστοποιημένο χειριστή.",
-    replacement: "Ο Γιώργος να εγκρίνει αλλαγή χειριστή",
+    note: "Off sick tomorrow. The project needs a second certified operator.",
+    replacement: "George to approve an operator change",
   },
 ];
 
@@ -396,23 +396,23 @@ const staffMembers = standaloneStaffMembers;
 const standaloneSeedWorksites: Worksite[] = [
   {
     id: "metro-extension",
-    name: "Επέκταση γραμμής Μετρό",
-    location: "Φρέαρ Βεΐκου · Ζώνη ανύψωσης",
-    date: "Αύριο, 07:00",
+    name: "Metro line extension",
+    location: "Veikou shaft · Lifting zone",
+    date: "Tomorrow, 07:00",
     requiredMachineIds: ["cr04", "ex12", "tr08", "ld03", "gn02"],
   },
   {
     id: "port-expansion",
-    name: "Επέκταση λιμενικής εγκατάστασης",
-    location: "Προβλήτα Γ · Ζώνη φόρτωσης",
-    date: "Αύριο, 06:30",
+    name: "Port facility extension",
+    location: "Pier C · Loading zone",
+    date: "Tomorrow, 06:30",
     requiredMachineIds: ["cr04", "ld03", "gn02"],
   },
   {
     id: "road-project",
-    name: "Οδικό έργο Α12",
-    location: "Κόμβος 12 · Ανατολικό μέτωπο",
-    date: "Αύριο, 08:00",
+    name: "A12 road project",
+    location: "Junction 12 · East face",
+    date: "Tomorrow, 08:00",
     requiredMachineIds: ["ex12", "tr08", "gn02"],
   },
 ];
@@ -422,317 +422,317 @@ const standaloneSeedMachines: Machine[] = [
     id: "cr04",
     code: "CR-04",
     name: "Liebherr LTM 1040",
-    type: "Αυτοκινούμενος γερανός",
+    type: "Mobile crane",
     manufacturer: "Liebherr",
     model: "LTM 1040",
     serial: "LTM-1040-123",
-    ownership: "Ιδιόκτητο",
+    ownership: "Owned",
     worksiteId: "metro-extension",
     state: "blocked",
-    reason: "Έχει λήξει το πιστοποιητικό ανύψωσης",
-    owner: "Δημήτρης",
-    nextAction: "Κλείσιμο επιθεώρησης και ανέβασμα νέου πιστοποιητικού",
-    eta: "Σήμερα, 17:00",
-    lastUpdated: "Σήμερα, 07:05",
+    reason: "The lifting certificate has expired",
+    owner: "David",
+    nextAction: "Close the inspection and upload a new certificate",
+    eta: "Today, 17:00",
+    lastUpdated: "Today, 07:05",
     activeBlockers: "2",
-    documents: "18 αρχεία",
+    documents: "18 files",
     certificates: [
       {
-        name: "Πιστοποιητικό ανύψωσης",
-        status: "Έληξε",
-        expiry: "28 Μαΐου 2026",
+        name: "Lifting certificate",
+        status: "Expired",
+        expiry: "28 May 2026",
         daysLeft: "-4",
-        owner: "Δημήτρης",
-        action: "Ανέβασμα ανανεωμένου πιστοποιητικού",
+        owner: "David",
+        action: "Upload the renewed certificate",
       },
       {
-        name: "Περιοδικός έλεγχος",
-        status: "Λείπει",
-        expiry: "Απαιτείται πριν από τη βάρδια",
+        name: "Periodic inspection",
+        status: "Missing",
+        expiry: "Required before the shift",
         daysLeft: "-",
-        owner: "Μαρία",
-        action: "Κλείσιμο τεχνικού ελέγχου",
+        owner: "Maria",
+        action: "Close the inspection",
       },
       {
-        name: "Ασφάλιση",
-        status: "Σε ισχύ",
-        expiry: "12 Σεπτεμβρίου 2026",
+        name: "Insurance",
+        status: "Valid",
+        expiry: "12 September 2026",
         daysLeft: "103",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
+        owner: "Maria",
+        action: "No action",
       },
     ],
     service: [
       {
-        issue: "Εκκρεμεί έλεγχος υδραυλικού κυκλώματος",
-        severity: "Υψηλή",
+        issue: "Hydraulic circuit check outstanding",
+        severity: "High",
         blocksRelease: true,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-        partsStatus: "Δεν χρειάζεται",
+        owner: "Chris",
+        due: "Today",
+        status: "Open",
+        partsStatus: "Not needed",
       },
       {
-        issue: "Λίπανση σημείων μπούμας",
-        severity: "Μεσαία",
+        issue: "Greasing of boom points",
+        severity: "Medium",
         blocksRelease: false,
-        owner: "Κώστας",
-        due: "Αύριο πρωί",
-        status: "Ανοιχτό",
-        partsStatus: "Δεν χρειάζεται",
+        owner: "Chris",
+        due: "Tomorrow morning",
+        status: "Open",
+        partsStatus: "Not needed",
       },
     ],
     issues: [
-      { title: "Λείπει περιοδικός έλεγχος", severity: "Κρίσιμο", owner: "Μαρία", status: "Ανοιχτό" },
-      { title: "Εκκρεμεί υδραυλικός έλεγχος", severity: "Υψηλό", owner: "Κώστας", status: "Ανοιχτό" },
+      { title: "Periodic inspection missing", severity: "Critical", owner: "Maria", status: "Open" },
+      { title: "Hydraulic check outstanding", severity: "High", owner: "Chris", status: "Open" },
     ],
-    photos: [{ title: "Κατάσταση μπούμας", category: "Έλεγχος", date: "30 Μαΐου" }],
+    photos: [{ title: "Boom condition", category: "Check", date: "30 May" }],
   },
   {
     id: "ex12",
     code: "EX-12",
     name: "CAT 330",
-    type: "Ερπυστριοφόρος εκσκαφέας",
+    type: "Tracked excavator",
     manufacturer: "CAT",
     model: "330",
     serial: "CAT-330-77",
-    ownership: "Ιδιόκτητο",
+    ownership: "Owned",
     worksiteId: "metro-extension",
     state: "ready",
-    reason: "Έχει χειριστή, έγγραφα και ολοκληρωμένο service",
-    owner: "Κώστας",
+    reason: "Has an operator, documents and a completed service",
+    owner: "Chris",
     nextAction: "-",
     eta: "-",
-    lastUpdated: "Σήμερα, 06:50",
+    lastUpdated: "Today, 06:50",
     activeBlockers: "0",
-    documents: "14 αρχεία",
+    documents: "14 files",
     certificates: [
       {
-        name: "Πιστοποιητικό επιθεώρησης",
-        status: "Σε ισχύ",
-        expiry: "21 Αυγούστου 2026",
+        name: "Inspection certificate",
+        status: "Valid",
+        expiry: "21 August 2026",
         daysLeft: "81",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
+        owner: "Maria",
+        action: "No action",
       },
     ],
     service: [
       {
-        issue: "Το προγραμματισμένο service ολοκληρώθηκε",
-        severity: "Χαμηλή",
+        issue: "The scheduled service is complete",
+        severity: "Low",
         blocksRelease: false,
-        owner: "Κώστας",
-        due: "Ολοκληρώθηκε",
-        status: "Λύθηκε",
-        partsStatus: "Παραλήφθηκε",
+        owner: "Chris",
+        due: "Completed",
+        status: "Resolved",
+        partsStatus: "Received",
       },
       {
-        issue: "Έλεγχος φθοράς δοντιών κάδου",
-        severity: "Μεσαία",
+        issue: "Bucket tooth wear check",
+        severity: "Medium",
         blocksRelease: false,
-        owner: "Κώστας",
-        due: "Αύριο μεσημέρι",
-        status: "Ανοιχτό",
-        partsStatus: "Δεν χρειάζεται",
+        owner: "Chris",
+        due: "Tomorrow midday",
+        status: "Open",
+        partsStatus: "Not needed",
       },
     ],
     issues: [],
-    photos: [{ title: "Ολοκλήρωση service", category: "Service", date: "1 Ιουνίου" }],
+    photos: [{ title: "Complete the service", category: "Service", date: "1 June" }],
   },
   {
     id: "tr08",
     code: "TR-08",
     name: "Mercedes Arocs",
-    type: "Ανατρεπόμενο φορτηγό",
+    type: "Tipper lorry",
     manufacturer: "Mercedes-Benz",
     model: "Arocs 3345",
     serial: "TRK-9081",
-    ownership: "Ενοικιαζόμενο",
+    ownership: "Rented",
     worksiteId: "metro-extension",
     state: "at_risk",
-    reason: "Ο τεχνικός έλεγχος λήγει σε 3 ημέρες",
-    owner: "Μαρία",
-    nextAction: "Ανανέωση τεχνικού ελέγχου",
-    eta: "Σε 3 ημέρες",
-    lastUpdated: "Σήμερα, 06:35",
+    reason: "The roadworthiness test expires in 3 days",
+    owner: "Maria",
+    nextAction: "Renew roadworthiness test",
+    eta: "In 3 days",
+    lastUpdated: "Today, 06:35",
     activeBlockers: "0",
-    documents: "11 αρχεία",
+    documents: "11 files",
     certificates: [
       {
-        name: "Τεχνικός έλεγχος οχήματος",
-        status: "Κρίσιμο",
-        expiry: "4 Ιουνίου 2026",
+        name: "Vehicle roadworthiness test",
+        status: "Critical",
+        expiry: "4 June 2026",
         daysLeft: "3",
-        owner: "Μαρία",
-        action: "Ανανέωση τεχνικού ελέγχου",
+        owner: "Maria",
+        action: "Renew roadworthiness test",
       },
     ],
     service: [
       {
-        issue: "Δοκιμή πίεσης φρένων",
-        severity: "Μεσαία",
+        issue: "Brake pressure test",
+        severity: "Medium",
         blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-        partsStatus: "Δεν χρειάζεται",
+        owner: "Chris",
+        due: "Today",
+        status: "Open",
+        partsStatus: "Not needed",
       },
     ],
-    issues: [{ title: "Ο τεχνικός έλεγχος λήγει σύντομα", severity: "Μεσαίο", owner: "Μαρία", status: "Ανοιχτό" }],
-    photos: [{ title: "Παράδοση μίσθωσης", category: "Παράδοση", date: "27 Μαΐου" }],
+    issues: [{ title: "The roadworthiness test expires soon", severity: "Medium", owner: "Maria", status: "Open" }],
+    photos: [{ title: "Hire handover", category: "Handover", date: "27 May" }],
   },
   {
     id: "ld03",
     code: "LD-03",
     name: "Volvo L90",
-    type: "Τροχοφόρος φορτωτής",
+    type: "Wheeled loader",
     manufacturer: "Volvo",
     model: "L90",
     serial: "V-L90-445",
-    ownership: "Ιδιόκτητο",
+    ownership: "Owned",
     worksiteId: "metro-extension",
     state: "blocked",
-    reason: "Ο έλεγχος υδραυλικής διαρροής δεν έχει ολοκληρωθεί",
-    owner: "Κώστας",
-    nextAction: "Ολοκλήρωση υδραυλικού ελέγχου",
-    eta: "Αύριο μεσημέρι",
-    lastUpdated: "Σήμερα, 06:20",
+    reason: "The hydraulic leak check is not finished",
+    owner: "Chris",
+    nextAction: "Complete the hydraulic check",
+    eta: "Tomorrow midday",
+    lastUpdated: "Today, 06:20",
     activeBlockers: "1",
-    documents: "10 αρχεία",
+    documents: "10 files",
     certificates: [
       {
-        name: "Πιστοποιητικό ασφαλούς λειτουργίας",
-        status: "Σε ισχύ",
-        expiry: "18 Οκτωβρίου 2026",
+        name: "Safe operation certificate",
+        status: "Valid",
+        expiry: "18 October 2026",
         daysLeft: "139",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
+        owner: "Maria",
+        action: "No action",
       },
     ],
     service: [
       {
-        issue: "Έλεγχος υδραυλικής διαρροής",
-        severity: "Υψηλή",
+        issue: "Hydraulic leak check",
+        severity: "High",
         blocksRelease: true,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Σε εξέλιξη",
-        parts: "Υδραυλικός σωλήνας υψηλής πίεσης",
-        partsStatus: "Σε αναμονή",
+        owner: "Chris",
+        due: "Today",
+        status: "In progress",
+        parts: "High pressure hydraulic hose",
+        partsStatus: "On hold",
       },
       {
-        issue: "Έλεγχος πλευρικού τοιχώματος ελαστικών",
-        severity: "Μεσαία",
+        issue: "Tyre sidewall check",
+        severity: "Medium",
         blocksRelease: false,
-        owner: "Κώστας",
-        due: "Αύριο πρωί",
-        status: "Ανοιχτό",
-        partsStatus: "Δεν χρειάζεται",
+        owner: "Chris",
+        due: "Tomorrow morning",
+        status: "Open",
+        partsStatus: "Not needed",
       },
     ],
-    issues: [{ title: "Αναφέρθηκε υδραυλική διαρροή", severity: "Υψηλό", owner: "Κώστας", status: "Ανοιχτό" }],
-    photos: [{ title: "Υδραυλικός σωλήνας", category: "Κατάσταση", date: "1 Ιουνίου" }],
+    issues: [{ title: "A hydraulic leak was reported", severity: "High", owner: "Chris", status: "Open" }],
+    photos: [{ title: "Hydraulic hose", category: "Status", date: "1 June" }],
   },
   {
     id: "gn02",
     code: "GN-02",
     name: "Atlas Copco QAS",
-    type: "Ηλεκτροπαραγωγό ζεύγος",
+    type: "Generator set",
     manufacturer: "Atlas Copco",
     model: "QAS 150",
     serial: "GEN-221",
-    ownership: "Ιδιόκτητο",
+    ownership: "Owned",
     worksiteId: "metro-extension",
     state: "ready",
-    reason: "Έτοιμο, με καύσιμο και ενεργό πιστοποιητικό ασφαλείας",
-    owner: "Κώστας",
+    reason: "Ready, fuelled and with a valid safety certificate",
+    owner: "Chris",
     nextAction: "-",
     eta: "-",
-    lastUpdated: "Σήμερα, 06:10",
+    lastUpdated: "Today, 06:10",
     activeBlockers: "0",
-    documents: "9 αρχεία",
+    documents: "9 files",
     certificates: [
       {
-        name: "Πιστοποιητικό ηλεκτρικής ασφάλειας",
-        status: "Σε ισχύ",
-        expiry: "3 Δεκεμβρίου 2026",
+        name: "Electrical safety certificate",
+        status: "Valid",
+        expiry: "3 December 2026",
         daysLeft: "185",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
+        owner: "Maria",
+        action: "No action",
       },
     ],
     service: [
       {
-        issue: "Έλεγχος πόλων μπαταρίας",
-        severity: "Χαμηλή",
+        issue: "Battery terminal check",
+        severity: "Low",
         blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-        partsStatus: "Δεν χρειάζεται",
+        owner: "Chris",
+        due: "Today",
+        status: "Open",
+        partsStatus: "Not needed",
       },
     ],
     issues: [],
-    photos: [{ title: "Πρωινός έλεγχος", category: "Έλεγχος", date: "31 Μαΐου" }],
+    photos: [{ title: "Morning check", category: "Check", date: "31 May" }],
   },
 ];
 
 const standaloneSeedReleaseHistory: ReleaseRecord[] = [
   {
     id: "release-cr04-2026-06-01",
-    date: "1 Ιουνίου",
-    worksite: "Επέκταση γραμμής Μετρό",
+    date: "1 June",
+    worksite: "Metro line extension",
     machine: "CR-04",
-    result: "Δεν βγαίνει στη βάρδια",
-    reason: "Έληξε το πιστοποιητικό ανύψωσης",
-    action: "Ανατέθηκε τεχνική επιθεώρηση",
-    user: "Γιώργος",
-    override: "Όχι",
+    result: "Not going out on shift",
+    reason: "The lifting certificate expired",
+    action: "Technical inspection assigned",
+    user: "George",
+    override: "No",
   },
   {
     id: "release-ex12-2026-06-01",
-    date: "1 Ιουνίου",
-    worksite: "Επέκταση γραμμής Μετρό",
+    date: "1 June",
+    worksite: "Metro line extension",
     machine: "EX-12",
-    result: "Έτοιμο για βάρδια",
-    reason: "Δεν βρέθηκε blocker",
-    action: "Κλειδώθηκε για το έργο",
-    user: "Δημήτρης",
-    override: "Όχι",
+    result: "Ready for the shift",
+    reason: "No blocker found",
+    action: "Locked for the project",
+    user: "David",
+    override: "No",
   },
   {
     id: "release-tr08-2026-06-01",
-    date: "1 Ιουνίου",
-    worksite: "Οδικό έργο Α12",
+    date: "1 June",
+    worksite: "A12 road project",
     machine: "TR-08",
-    result: "Θέλει προσοχή",
-    reason: "Ο τεχνικός έλεγχος λήγει σύντομα",
-    action: "Ανατέθηκε ανανέωση",
-    user: "Μαρία",
-    override: "Όχι",
+    result: "Needs attention",
+    reason: "The roadworthiness test expires soon",
+    action: "Renewal assigned",
+    user: "Maria",
+    override: "No",
   },
 ];
 
 const standaloneInitialNotifications: OperationalNotification[] = [
   {
     id: 1,
-    title: "Το CR-04 χρειάζεται νέο πιστοποιητικό ανύψωσης",
-    detail: "Ο Δημήτρης έχει την ανανέωση και την τεχνική επιθεώρηση.",
-    createdAt: "Σήμερα, 07:05",
+    title: "CR-04 needs a new lifting certificate",
+    detail: "David has the renewal and the technical inspection.",
+    createdAt: "Today, 07:05",
     read: false,
   },
   {
     id: 2,
-    title: "Το LD-03 περιμένει υδραυλικό έλεγχο",
-    detail: "Το συνεργείο πρέπει να κλείσει τη διαρροή πριν από την εκκίνηση.",
-    createdAt: "Σήμερα, 07:10",
+    title: "LD-03 is waiting on a hydraulic check",
+    detail: "The workshop must close the leak before the start.",
+    createdAt: "Today, 07:10",
     read: false,
   },
   {
     id: 3,
-    title: "Ο πρωινός έλεγχος είναι έτοιμος",
-    detail: "2 έτοιμα, 1 για έλεγχο και 2 μπλοκαρισμένα στο κύριο έργο.",
-    createdAt: "Σήμερα, 07:30",
+    title: "The morning check is ready",
+    detail: "2 ready, 1 for review and 2 blocked on the main project.",
+    createdAt: "Today, 07:30",
     read: false,
   },
 ];
@@ -744,30 +744,30 @@ const initialNotifications = standaloneInitialNotifications;
 
 const emptyWorksite: Worksite = {
   id: "no-worksite",
-  name: "Δεν έχει επιλεγεί πακέτο εργασίας",
-  location: "Προσθέστε οχήματα και εργασίες για να ξεκινήσει ο έλεγχος ετοιμότητας",
-  date: "Δεν έχει προγραμματιστεί",
+  name: "No work package selected",
+  location: "Add vehicles and jobs to start the readiness check",
+  date: "Not scheduled",
   requiredMachineIds: [],
 };
 
 const emptyMachine: Machine = {
   id: "no-machine",
   code: "-",
-  name: "Δεν έχει επιλεγεί όχημα",
-  type: "Όχημα στόλου",
+  name: "No vehicle selected",
+  type: "Fleet vehicle",
   manufacturer: "FleetLever",
-  model: "Δεν έχει οριστεί",
-  serial: "Δεν έχει οριστεί",
-  ownership: "Ιδιόκτητο",
+  model: "Not set",
+  serial: "Not set",
+  ownership: "Owned",
   worksiteId: emptyWorksite.id,
   state: "ready",
-  reason: "Δεν έχουν φορτωθεί στοιχεία οχήματος",
-  owner: "Χωρίς ανάθεση",
+  reason: "No vehicle details loaded",
+  owner: "Unassigned",
   nextAction: "-",
   eta: "-",
-  lastUpdated: "Δεν έχει συγχρονιστεί",
+  lastUpdated: "Not synced",
   activeBlockers: "0",
-  documents: "0 αρχεία",
+  documents: "0 files",
   certificates: [],
   service: [],
   issues: [],
@@ -1004,32 +1004,32 @@ function restoreInitialConsoleSnapshot() {
 }
 
 function todayDecisionDate() {
-  return "Σήμερα";
+  return "Today";
 }
 
 const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { key: "tomorrow", label: "Αυριανή βάρδια", icon: CalendarDays },
-  { key: "worksites", label: "Πακέτα εργασίας", icon: Building2 },
-  { key: "blockers", label: "Τι λείπει", icon: ShieldAlert },
-  { key: "machines", label: "Οχήματα", icon: Building2 },
-  { key: "certificates", label: "Έγγραφα & έλεγχοι", icon: BadgeCheck },
-  { key: "service", label: "Συνεργείο", icon: Wrench },
-  { key: "staff", label: "Προσωπικό", icon: CircleUserRound },
-  { key: "history", label: "Ιστορικό βαρδιών", icon: History },
-  { key: "settings", label: "Ρυθμίσεις", icon: Settings },
+  { key: "tomorrow", label: "Tomorrow's shift", icon: CalendarDays },
+  { key: "worksites", label: "Work packages", icon: Building2 },
+  { key: "blockers", label: "What's missing", icon: ShieldAlert },
+  { key: "machines", label: "Vehicles", icon: Building2 },
+  { key: "certificates", label: "Documents & checks", icon: BadgeCheck },
+  { key: "service", label: "Workshop", icon: Wrench },
+  { key: "staff", label: "Staff", icon: CircleUserRound },
+  { key: "history", label: "Shift history", icon: History },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 const passportTabs: Array<{ key: PassportTab; label: string }> = [
-  { key: "overview", label: "Σύνοψη" },
-  { key: "documents", label: "Έγγραφα" },
-  { key: "service", label: "Συνεργείο" },
-  { key: "issues", label: "Θέματα" },
-  { key: "photos", label: "Φωτογραφίες" },
-  { key: "history", label: "Ιστορικό αποφάσεων" },
+  { key: "overview", label: "Summary" },
+  { key: "documents", label: "Documents" },
+  { key: "service", label: "Workshop" },
+  { key: "issues", label: "Issues" },
+  { key: "photos", label: "Photos" },
+  { key: "history", label: "Decision history" },
 ];
 
-const assignmentChannels: Array<{ label: "Μέσα στην εφαρμογή" | "SMS"; icon: React.ComponentType<{ className?: string }> }> = [
-  { label: "Μέσα στην εφαρμογή", icon: Bell },
+const assignmentChannels: Array<{ label: "In the app" | "SMS"; icon: React.ComponentType<{ className?: string }> }> = [
+  { label: "In the app", icon: Bell },
   { label: "SMS", icon: Smartphone },
 ];
 
@@ -1060,7 +1060,7 @@ function buildDueIso(dateValue: string, timeValue: string) {
 }
 
 function formatDueLabel(dueIso: string) {
-  if (!dueIso) return "Χωρίς προθεσμία";
+  if (!dueIso) return "No due date";
   const date = new Date(dueIso);
   if (Number.isNaN(date.getTime())) return dueIso;
   const today = new Date();
@@ -1068,8 +1068,8 @@ function formatDueLabel(dueIso: string) {
   tomorrow.setDate(today.getDate() + 1);
   const sameDay = (left: Date, right: Date) => left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
   const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
-  if (sameDay(date, today)) return `Σήμερα, ${time}`;
-  if (sameDay(date, tomorrow)) return `Αύριο, ${time}`;
+  if (sameDay(date, today)) return `Today, ${time}`;
+  if (sameDay(date, tomorrow)) return `Tomorrow, ${time}`;
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
@@ -1273,7 +1273,7 @@ function downloadXlsxFile<T>(filename: string, rows: T[], columns: Array<ExportC
 </Relationships>`,
     "xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <sheets><sheet name="Προσωπικό" sheetId="1" r:id="rId1"/></sheets>
+  <sheets><sheet name="Staff" sheetId="1" r:id="rId1"/></sheets>
 </workbook>`,
     "xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
@@ -1317,7 +1317,7 @@ async function uploadConsoleFile(
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(payload?.error ?? "Το ανέβασμα απέτυχε.");
+    throw new Error(payload?.error ?? "The upload failed.");
   }
 
   return response.json();
@@ -1356,14 +1356,14 @@ function worksiteMatchesQuery(worksite: Worksite, query: string) {
 
 function formatPlannerDate(value: string) {
   const [year, month, day] = value.split("-");
-  if (!year || !month || !day) return "Προσαρμοσμένη ημερομηνία";
+  if (!year || !month || !day) return "Custom date";
   return `${day}/${month}/${year}`;
 }
 
 function externalStatus(state: MachineState) {
-  if (state === "ready") return "ΕΤΟΙΜΟ";
-  if (state === "at_risk") return "ΘΕΛΕΙ ΕΛΕΓΧΟ";
-  return "ΜΠΛΟΚΑΡΙΣΜΕΝΟ";
+  if (state === "ready") return "READY";
+  if (state === "at_risk") return "NEEDS REVIEW";
+  return "BLOCKED";
 }
 
 function statusClasses(state: MachineState) {
@@ -1373,8 +1373,8 @@ function statusClasses(state: MachineState) {
 }
 
 function certificateClasses(status: Certificate["status"]) {
-  if (status === "Σε ισχύ") return "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803D]";
-  if (status === "Λήγει σύντομα" || status === "Κρίσιμο") return "border-[#fde68a] bg-[#fffbeb] text-[#B45309]";
+  if (status === "Valid") return "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803D]";
+  if (status === "Expiring soon" || status === "Critical") return "border-[#fde68a] bg-[#fffbeb] text-[#B45309]";
   return "border-[#fecaca] bg-[#fef2f2] text-[#B91C1C]";
 }
 
@@ -1562,7 +1562,7 @@ function OverlayHeader({
         </h2>
         {description ? <div className="mt-1.5 text-[13px] leading-5 text-[#64748B]">{description}</div> : null}
       </div>
-      <OverlayCloseButton label="Κλείσιμο" onClick={onClose} />
+      <OverlayCloseButton label="Close" onClick={onClose} />
     </header>
   );
 }
@@ -1682,7 +1682,7 @@ function LisaAssistant({
   const [messages, setMessages] = useState<LisaMessage[]>(() => [{
     id: 1,
     role: "lisa",
-    text: "Η Lisa συνδέεται με τον ασφαλή τοπικό βοηθό…",
+    text: "Lisa is connecting to the secure local assistant…",
   }]);
   const [draft, setDraft] = useState("");
   const [connectionStatus, setConnectionStatus] = useState<LisaConnectionStatus>("checking");
@@ -1694,10 +1694,10 @@ function LisaAssistant({
   const [renderPanel, setRenderPanel] = useState(open);
   const [panelVisible, setPanelVisible] = useState(open);
   const quickOptions = [
-    "Τι χρειάζεται προσοχή τώρα;",
-    "Πού προσθέτω προσαρμοσμένο πεδίο;",
-    "Πώς ανεβάζω απόδειξη;",
-    "Πώς λειτουργεί το συνεργείο;",
+    "What needs attention now?",
+    "Where do I add a custom field?",
+    "How do I upload proof?",
+    "How does the workshop work?",
   ];
 
   function navigationActionForResponse(text: string) {
@@ -1708,7 +1708,7 @@ function LisaAssistant({
     return {
       text: cleanText(text.replace(match[0], "")),
       action: {
-        label: "Άνοιγμα σχετικής σελίδας",
+        label: "Open the related page",
         tone: "neutral" as const,
         view,
       },
@@ -1728,7 +1728,7 @@ function LisaAssistant({
     setMessages((current) => [
       ...current.slice(-8),
       userMessage,
-      { id: answerId, role: "lisa", text: "Σκέφτομαι…" },
+      { id: answerId, role: "lisa", text: "Thinking…" },
     ]);
     setDraft("");
     setResponding(true);
@@ -1759,7 +1759,7 @@ function LisaAssistant({
         const error = await response.json().catch(() => ({ status: "unavailable" }));
         const status = (error.status ?? "unavailable") as LisaConnectionStatus;
         setConnectionStatus(status);
-        throw new Error(error.detail ?? "Η Lisa δεν είναι διαθέσιμη αυτή τη στιγμή.");
+        throw new Error(error.detail ?? "Lisa is not available right now.");
       }
 
       setConnectionStatus("connected");
@@ -1786,16 +1786,16 @@ function LisaAssistant({
               message.id === answerId ? { id: answerId, role: "lisa", ...normalized } : message
             )));
           }
-          if (event === "error") throw new Error(data.detail ?? "Η Lisa δεν μπόρεσε να απαντήσει.");
+          if (event === "error") throw new Error(data.detail ?? "Lisa could not answer.");
         }
       }
 
-      if (!answerText) throw new Error("Η Lisa δεν επέστρεψε απάντηση.");
+      if (!answerText) throw new Error("Lisa returned no answer.");
     } catch (error) {
       if (controller.signal.aborted) return;
       setMessages((current) => current.map((message) => (
         message.id === answerId
-          ? { id: answerId, role: "lisa", text: error instanceof Error ? error.message : "Η Lisa δεν είναι διαθέσιμη αυτή τη στιγμή." }
+          ? { id: answerId, role: "lisa", text: error instanceof Error ? error.message : "Lisa is not available right now." }
           : message
       )));
     } finally {
@@ -1833,8 +1833,8 @@ function LisaAssistant({
         setMessages((current) => current.map((message, index) => index === 0 ? {
           ...message,
           text: ok && status === "connected"
-            ? "Είμαι συνδεδεμένη. Ρώτησέ με για το FleetLever ή για τα εξουσιοδοτημένα δεδομένα της τρέχουσας σελίδας."
-            : "Ο ασφαλής τοπικός βοηθός δεν είναι συνδεδεμένος. Η Lisa δεν θα εμφανίσει έτοιμες απαντήσεις ως τεχνητή νοημοσύνη.",
+            ? "I'm connected. Ask me about FleetLever or about the authorised data on this page."
+            : "The secure local assistant is not connected. Lisa will not present canned replies as artificial intelligence.",
         } : message));
       })
       .catch(() => {
@@ -1899,7 +1899,7 @@ function LisaAssistant({
           type="button"
           onClick={onToggle}
           className="group relative inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#20B7C9] text-[#062321] shadow-[0_14px_34px_rgba(8,47,73,0.32)] ring-[3px] ring-[#0D2F2D] transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-[#B7F5F7] sm:h-16 sm:w-16 sm:shadow-[0_18px_45px_rgba(8,47,73,0.35)] sm:ring-4"
-          aria-label="Άνοιγμα βοηθού Lisa"
+          aria-label="Open the Lisa assistant"
         >
           <Image
             src="/fleetlever/assistant/lisa-avatar-clean.png"
@@ -1910,7 +1910,7 @@ function LisaAssistant({
             unoptimized
           />
           <span className="pointer-events-none absolute left-16 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded-full bg-[#102A27] px-3 py-1.5 text-xs font-bold text-white shadow-xl group-hover:block">
-            Ρώτα τη Lisa
+            Ask Lisa
           </span>
         </button>
       </div>
@@ -1924,7 +1924,7 @@ function LisaAssistant({
         data-lisa-panel
         role="dialog"
         aria-modal="true"
-        aria-label="Βοηθός Lisa"
+        aria-label="Lisa assistant"
         className={`flex h-[min(680px,calc(100dvh-0.75rem))] max-h-[calc(100dvh-0.75rem)] min-h-0 w-full origin-bottom-left flex-col overflow-hidden rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#102A27] shadow-[0_24px_70px_rgba(15,23,42,0.28)] transition duration-200 ease-out sm:h-auto sm:max-h-[min(720px,calc(100dvh-2rem))] sm:min-h-[560px] sm:w-[min(500px,calc(100vw-2rem))] ${
           panelVisible && open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-[0.98] opacity-0"
         }`}
@@ -1942,19 +1942,19 @@ function LisaAssistant({
               />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-wide text-[#8BE4DF]">Βοηθός FleetLever</p>
+              <p className="text-[11px] font-black uppercase tracking-wide text-[#8BE4DF]">FleetLever assistant</p>
               <div className="mt-1 flex items-center gap-2">
                 <h2 className="text-xl font-black text-white">Lisa</h2>
                 <span className={`h-2 w-2 rounded-full ${connectionStatus === "connected" ? "bg-[#5EE49B]" : connectionStatus === "checking" || connectionStatus === "busy" ? "bg-[#FBBF24]" : "bg-[#F87171]"}`} aria-hidden="true" />
               </div>
-              <p className="mt-1 max-w-sm text-sm font-semibold leading-5 text-white/72">Προτείνει και σας οδηγεί. Δεν εκτελεί αλλαγές.</p>
+              <p className="mt-1 max-w-sm text-sm font-semibold leading-5 text-white/72">It suggests and guides. It does not make changes.</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/75 transition hover:bg-white/10 hover:text-white sm:h-9 sm:w-9"
-            aria-label="Κλείσιμο βοηθού Lisa"
+            aria-label="Close the Lisa assistant"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -2017,7 +2017,7 @@ function LisaAssistant({
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Ρώτα τη Lisa..."
+              placeholder="Ask Lisa..."
               disabled={connectionStatus !== "connected" || responding}
               className="h-12 min-w-0 flex-1 rounded-sm border border-[#D9E2EC] bg-white px-4 text-sm font-semibold text-[#102A27] outline-none placeholder:text-[#94A3B8] focus:border-[#20B7C9]"
             />
@@ -2025,13 +2025,13 @@ function LisaAssistant({
               type="submit"
               disabled={connectionStatus !== "connected" || responding || !draft.trim()}
               className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm bg-[#0D2F2D] text-white transition hover:bg-[#123C38]"
-              aria-label="Αποστολή μηνύματος στη Lisa"
+              aria-label="Send a message to Lisa"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
             </button>
           </form>
           <p className="text-[10px] font-semibold leading-4 text-[#7B8983]">
-            {connectionStatus === "connected" ? "Συνδεδεμένη με τον τοπικό Codex βοηθό · Οι αλλαγές γίνονται μόνο από εσάς." : "Η Lisa παραμένει ανενεργή μέχρι να συνδεθεί ο ασφαλής τοπικός βοηθός."}
+            {connectionStatus === "connected" ? "Connected to the local Codex assistant · Only you make changes." : "Lisa stays inactive until the secure local assistant connects."}
           </p>
         </div>
       </section>
@@ -2073,7 +2073,7 @@ export function ConstructionPrototype({
   const [assetColumnLayout, setAssetColumnLayout] = useState<AssetColumnLayout[]>(defaultAssetColumnLayout);
   const [activeView, setActiveView] = useState<ViewKey>("tomorrow");
   const [worksiteId, setWorksiteId] = useState(worksites[0]?.id ?? emptyWorksite.id);
-  const [dateMode, setDateMode] = useState<"Σήμερα" | "Αύριο" | "Προσαρμογή">("Αύριο");
+  const [dateMode, setDateMode] = useState<"Today" | "Tomorrow" | "Customise">("Tomorrow");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMachineId, setSelectedMachineId] = useState(machines[0]?.id ?? emptyMachine.id);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -2152,7 +2152,7 @@ export function ConstructionPrototype({
           serverSnapshotSignatureRef.current = nextSignature;
         });
       void serverSaveQueueRef.current.catch(() => {
-        emitConsoleToast("Αποθηκεύτηκε τοπικά. Ο συγχρονισμός με τον server θα ξαναδοκιμάσει στην επόμενη αλλαγή.");
+        emitConsoleToast("Saved locally. Syncing to the server will retry on the next change.");
       });
     }, 180);
   }, [assetColumnLayout, branding, browserHydrated, clientName, customFieldDefinitions, notifications, serverHydrated, version]);
@@ -2209,7 +2209,7 @@ export function ConstructionPrototype({
       } catch {
         if (!cancelled) {
           serverSnapshotSignatureRef.current = hydrationFallbackSignatureRef.current;
-          emitConsoleToast("Η κατάσταση του FleetLever server δεν είναι διαθέσιμη.");
+          emitConsoleToast("The FleetLever server status is unavailable.");
         }
       } finally {
         if (!cancelled) setServerHydrationRevision((current) => current + 1);
@@ -2348,7 +2348,7 @@ export function ConstructionPrototype({
     emitConsoleToast(message);
   }
 
-  function recordDecision(machine: Machine, result: string, reason: string, action: string, user: string, override: "Ναι" | "Όχι" = "Όχι") {
+  function recordDecision(machine: Machine, result: string, reason: string, action: string, user: string, override: "Yes" | "No" = "No") {
     releaseHistory.unshift({
       id: createReleaseRecordId(),
       date: todayDecisionDate(),
@@ -2361,7 +2361,7 @@ export function ConstructionPrototype({
       override,
     });
     void recordConsoleAction({
-      action: result === "Έγκριση με εξαίρεση" ? "console.override_released" : "console.release_decision",
+      action: result === "Approved by exception" ? "console.override_released" : "console.release_decision",
       detail: `${machine.code}: ${reason} · ${action}`,
       metadata: {
         action,
@@ -2384,7 +2384,7 @@ export function ConstructionPrototype({
         id: Date.now(),
         title,
         detail,
-        createdAt: "Μόλις τώρα",
+        createdAt: "Just now",
         read: false,
       },
       ...current,
@@ -2398,22 +2398,22 @@ export function ConstructionPrototype({
   }
 
   function syncMachineReleaseState(machine: Machine) {
-    const activeCertificates = machine.certificates.filter((certificate) => ["Έληξε", "Λείπει", "Κρίσιμο"].includes(certificate.status));
-    const activeServices = machine.service.filter((service) => service.blocksRelease && service.status !== "Λύθηκε");
+    const activeCertificates = machine.certificates.filter((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status));
+    const activeServices = machine.service.filter((service) => service.blocksRelease && service.status !== "Resolved");
     const activeCertificate = activeCertificates[0];
     const activeService = activeServices[0];
-    const activeIssueCount = machine.issues.filter((issue) => issue.status !== "Λύθηκε").length;
+    const activeIssueCount = machine.issues.filter((issue) => issue.status !== "Resolved").length;
     const activeBlockerCount = activeCertificates.length + activeServices.length;
 
     machine.activeBlockers = String(activeBlockerCount);
-    machine.lastUpdated = "Μόλις τώρα";
+    machine.lastUpdated = "Just now";
 
     if (activeCertificate) {
       machine.state = "blocked";
-      machine.reason = activeCertificate.status === "Λείπει" ? `Λείπει ${activeCertificate.name}` : `${activeCertificate.name} ${activeCertificate.status.toLowerCase()}`;
+      machine.reason = activeCertificate.status === "Missing" ? `Missing ${activeCertificate.name}` : `${activeCertificate.name} ${activeCertificate.status.toLowerCase()}`;
       machine.owner = activeCertificate.owner;
       machine.nextAction = activeCertificate.action;
-      machine.eta = activeCertificate.daysLeft.startsWith("-") ? "Σήμερα" : activeCertificate.expiry;
+      machine.eta = activeCertificate.daysLeft.startsWith("-") ? "Today" : activeCertificate.expiry;
       return;
     }
 
@@ -2421,23 +2421,23 @@ export function ConstructionPrototype({
       machine.state = "blocked";
       machine.reason = activeService.issue;
       machine.owner = activeService.owner;
-      machine.nextAction = "Ολοκλήρωση εργασίας συνεργείου";
+      machine.nextAction = "Complete workshop job";
       machine.eta = activeService.due;
       return;
     }
 
     if (activeIssueCount) {
-      const nextIssue = machine.issues.find((issue) => issue.status !== "Λύθηκε");
+      const nextIssue = machine.issues.find((issue) => issue.status !== "Resolved");
       machine.state = "at_risk";
-      machine.reason = nextIssue?.title ?? "Θέλει έλεγχο";
+      machine.reason = nextIssue?.title ?? "Needs review";
       machine.owner = nextIssue?.owner ?? machine.owner;
-      machine.nextAction = "Έλεγχος ανοιχτού θέματος";
-      machine.eta = "Σήμερα";
+      machine.nextAction = "Open issue review";
+      machine.eta = "Today";
       return;
     }
 
     machine.state = "ready";
-    machine.reason = "Δεν βρέθηκε εκκρεμότητα";
+    machine.reason = "No open item found";
     machine.nextAction = "-";
     machine.eta = "-";
   }
@@ -2448,19 +2448,19 @@ export function ConstructionPrototype({
     blockerId?: string,
     dueIso?: string,
     note?: string,
-    assignmentStatus: NonNullable<Certificate["assignmentStatus"]> = "Ανατέθηκε",
-    channels: string[] = ["Μέσα στην εφαρμογή"],
+    assignmentStatus: NonNullable<Certificate["assignmentStatus"]> = "Assigned",
+    channels: string[] = ["In the app"],
   ) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
-    const assignedAt = "Μόλις τώρα";
+    const assignedAt = "Just now";
     const assignmentDue = formatDueLabel(dueIso ?? "");
-    const computedStatus: NonNullable<Certificate["assignmentStatus"]> = isDueOverdue(dueIso ?? "") ? "Εκπρόθεσμο" : assignmentStatus;
+    const computedStatus: NonNullable<Certificate["assignmentStatus"]> = isDueOverdue(dueIso ?? "") ? "Overdue" : assignmentStatus;
     const assignedBlocker = blockerId ? blockerCardsForMachine(machine).find((blocker) => blocker.id === blockerId) : undefined;
-    const assignmentSummary = assignedBlocker?.summary ?? "Ανοιχτές εκκρεμότητες";
+    const assignmentSummary = assignedBlocker?.summary ?? "Open items";
     machine.owner = owner;
     machine.certificates = machine.certificates.map((certificate) =>
-      blockerId === `certificate:${certificate.name}` || (!blockerId && (certificate.status === "Έληξε" || certificate.status === "Λείπει" || certificate.status === "Κρίσιμο"))
+      blockerId === `certificate:${certificate.name}` || (!blockerId && (certificate.status === "Expired" || certificate.status === "Missing" || certificate.status === "Critical"))
         ? {
             ...certificate,
             owner,
@@ -2471,15 +2471,15 @@ export function ConstructionPrototype({
         : certificate,
     );
     machine.service = machine.service.map((service) =>
-      blockerId === `service:${service.issue}` || (!blockerId && service.blocksRelease && service.status !== "Λύθηκε")
+      blockerId === `service:${service.issue}` || (!blockerId && service.blocksRelease && service.status !== "Resolved")
         ? { ...service, owner, due: assignmentDue, assignmentStatus: computedStatus, assignedAt }
         : service,
     );
     machine.issues = machine.issues.map((issue) => (blockerId ? issue : { ...issue, owner }));
-    machine.lastUpdated = "Μόλις τώρα";
-    recordDecision(machine, "Ανατέθηκε υπεύθυνος", assignmentSummary, `${owner} αναλαμβάνει την επόμενη ενέργεια · Προθεσμία ${assignmentDue}${note ? ` · ${note}` : ""}`, "FleetLever", "Όχι");
-    addOperationalNotification(`${machine.code}: ${computedStatus.toLowerCase()} στον/στην ${owner}`, `${assignmentSummary} · Προθεσμία ${assignmentDue} · ${channels.join(", ")}${note ? ` · ${note}` : ""}`);
-    refreshConsole(`${machine.code}: ${blockerId ? "η εκκρεμότητα" : "οι ανοιχτές εκκρεμότητες"} ${computedStatus.toLowerCase()} στον/στην ${owner}.`);
+    machine.lastUpdated = "Just now";
+    recordDecision(machine, "An owner was assigned", assignmentSummary, `${owner} takes the next action · Due ${assignmentDue}${note ? ` · ${note}` : ""}`, "FleetLever", "No");
+    addOperationalNotification(`${machine.code}: ${computedStatus.toLowerCase()} to ${owner}`, `${assignmentSummary} · Due ${assignmentDue} · ${channels.join(", ")}${note ? ` · ${note}` : ""}`);
+    refreshConsole(`${machine.code}: ${blockerId ? "the open item" : "the open items"} ${computedStatus.toLowerCase()} to ${owner}.`);
   }
 
   function updateMachineCustomField(machineId: string, fieldId: string, value: unknown) {
@@ -2490,8 +2490,8 @@ export function ConstructionPrototype({
       ...(machine.customFields ?? {}),
       [fieldId]: normalizedCustomFieldValue(field, value),
     };
-    machine.lastUpdated = "Μόλις τώρα";
-    refreshConsole(`${machine.code}: ενημερώθηκε το πεδίο ${field.name}.`);
+    machine.lastUpdated = "Just now";
+    refreshConsole(`${machine.code}: updated field ${field.name}.`);
   }
 
   function updateWorksiteCustomField(worksiteId: string, fieldId: string, value: unknown) {
@@ -2502,7 +2502,7 @@ export function ConstructionPrototype({
       ...(worksite.customFields ?? {}),
       [fieldId]: normalizedCustomFieldValue(field, value),
     };
-    refreshConsole(`${worksite.name}: ενημερώθηκε το πεδίο ${field.name}.`);
+    refreshConsole(`${worksite.name}: updated field ${field.name}.`);
   }
 
   function updateCertificateCustomField(machineId: string, certificateName: string, fieldId: string, value: unknown) {
@@ -2514,8 +2514,8 @@ export function ConstructionPrototype({
       ...(certificate.customFields ?? {}),
       [fieldId]: normalizedCustomFieldValue(field, value),
     };
-    machine.lastUpdated = "Μόλις τώρα";
-    refreshConsole(`${machine.code}: ενημερώθηκε το πεδίο ${field.name}.`);
+    machine.lastUpdated = "Just now";
+    refreshConsole(`${machine.code}: updated field ${field.name}.`);
   }
 
   function updateServiceCustomField(machineId: string, issue: string, fieldId: string, value: unknown) {
@@ -2527,8 +2527,8 @@ export function ConstructionPrototype({
       ...(service.customFields ?? {}),
       [fieldId]: normalizedCustomFieldValue(field, value),
     };
-    machine.lastUpdated = "Μόλις τώρα";
-    refreshConsole(`${machine.code}: ενημερώθηκε το πεδίο ${field.name}.`);
+    machine.lastUpdated = "Just now";
+    refreshConsole(`${machine.code}: updated field ${field.name}.`);
   }
 
   function updateStaffCustomField(personId: string, fieldId: string, value: unknown) {
@@ -2539,7 +2539,7 @@ export function ConstructionPrototype({
       ...(person.customFields ?? {}),
       [fieldId]: normalizedCustomFieldValue(field, value),
     };
-    refreshConsole(`${person.name}: ενημερώθηκε το πεδίο ${field.name}.`);
+    refreshConsole(`${person.name}: updated field ${field.name}.`);
   }
 
   function completeBlocker(machineId: string, blockerId: string, note: string) {
@@ -2550,26 +2550,26 @@ export function ConstructionPrototype({
       const certificateName = blockerId.replace("certificate:", "");
       machine.certificates = machine.certificates.map((certificate) =>
         certificate.name === certificateName
-          ? { ...certificate, status: "Σε ισχύ", expiry: "Ανανεώθηκε σήμερα", daysLeft: "365", action: "Καμία ενέργεια" }
+          ? { ...certificate, status: "Valid", expiry: "Renewed today", daysLeft: "365", action: "No action" }
           : certificate,
       );
       machine.issues = machine.issues.map((issue) =>
-        issue.title.toLowerCase().includes(certificateName.toLowerCase().replace("certificate", "").trim()) ? { ...issue, status: "Λύθηκε" } : issue,
+        issue.title.toLowerCase().includes(certificateName.toLowerCase().replace("certificate", "").trim()) ? { ...issue, status: "Resolved" } : issue,
       );
     }
 
     if (blockerId.startsWith("service:")) {
       const serviceIssue = blockerId.replace("service:", "");
       machine.service = machine.service.map((service) =>
-        service.issue === serviceIssue ? { ...service, blocksRelease: false, status: "Λύθηκε", due: "Ολοκληρώθηκε" } : service,
+        service.issue === serviceIssue ? { ...service, blocksRelease: false, status: "Resolved", due: "Completed" } : service,
       );
-      machine.issues = machine.issues.map((issue) => (issue.title === serviceIssue ? { ...issue, status: "Λύθηκε" } : issue));
+      machine.issues = machine.issues.map((issue) => (issue.title === serviceIssue ? { ...issue, status: "Resolved" } : issue));
     }
 
     syncMachineReleaseState(machine);
-    recordDecision(machine, machine.state === "ready" ? "Έτοιμο για δουλειά" : "Η ενέργεια ολοκληρώθηκε", machine.reason, note || "Η ενέργεια του υπευθύνου ολοκληρώθηκε", "FleetLever", "Όχι");
-    addOperationalNotification(`${machine.code}: ολοκληρώθηκε εκκρεμότητα`, `${machine.reason} · ${note || "Η ενέργεια ολοκληρώθηκε"}`);
-    refreshConsole(`${machine.code}: η ενέργεια ολοκληρώθηκε.`);
+    recordDecision(machine, machine.state === "ready" ? "Ready for work" : "The action was completed", machine.reason, note || "The owner's action is complete", "FleetLever", "No");
+    addOperationalNotification(`${machine.code}: item completed`, `${machine.reason} · ${note || "The action was completed"}`);
+    refreshConsole(`${machine.code}: the action was completed.`);
   }
 
   function updateServiceStatus(machineId: string, issue: string, status: ServiceBlocker["status"]) {
@@ -2577,7 +2577,7 @@ export function ConstructionPrototype({
     if (!machine) return;
     const service = machine.service.find((item) => item.issue === issue);
     if (!service) return;
-    const nextDue = status === "Λύθηκε" ? "Ολοκληρώθηκε" : status === "Σε αναμονή" ? "Αναμονή ανταλλακτικών" : service.due === "Ολοκληρώθηκε" || service.due === "Αναμονή ανταλλακτικών" ? "Σήμερα" : service.due;
+    const nextDue = status === "Resolved" ? "Completed" : status === "On hold" ? "Awaiting parts" : service.due === "Completed" || service.due === "Awaiting parts" ? "Today" : service.due;
 
     machine.service = machine.service.map((item) =>
       item.issue === issue
@@ -2585,19 +2585,19 @@ export function ConstructionPrototype({
             ...item,
             status,
             due: nextDue,
-            blocksRelease: status === "Λύθηκε" ? false : item.blocksRelease,
+            blocksRelease: status === "Resolved" ? false : item.blocksRelease,
           }
         : item,
     );
 
-    if (status === "Λύθηκε") {
-      machine.issues = machine.issues.map((item) => (item.title === issue || item.title.toLowerCase().includes(issue.toLowerCase()) ? { ...item, status: "Λύθηκε" } : item));
+    if (status === "Resolved") {
+      machine.issues = machine.issues.map((item) => (item.title === issue || item.title.toLowerCase().includes(issue.toLowerCase()) ? { ...item, status: "Resolved" } : item));
     }
 
     syncMachineReleaseState(machine);
-    recordDecision(machine, status === "Λύθηκε" ? "Το συνεργείο καθάρισε" : "Το συνεργείο ενημερώθηκε", issue, `Η εργασία συνεργείου σημειώθηκε ως ${status.toLowerCase()}`, "Συνεργείο", "Όχι");
-    addOperationalNotification(`${machine.code}: εργασία συνεργείου ${status.toLowerCase()}`, `${issue} · ${machineWorksite(machine).name}`);
-    refreshConsole(`${machine.code}: η εργασία συνεργείου σημειώθηκε ως ${status.toLowerCase()}.`);
+    recordDecision(machine, status === "Resolved" ? "The workshop cleared it" : "The workshop was updated", issue, `The workshop job was marked ${status.toLowerCase()}`, "Workshop", "No");
+    addOperationalNotification(`${machine.code}: workshop job ${status.toLowerCase()}`, `${issue} · ${machineWorksite(machine).name}`);
+    refreshConsole(`${machine.code}: the workshop job was marked ${status.toLowerCase()}.`);
   }
 
   function addWorkshopJob(draft: WorkshopJobDraft) {
@@ -2608,123 +2608,123 @@ export function ConstructionPrototype({
     const existingJob = machine.service.find((service) => service.issue.toLowerCase() === issue.toLowerCase());
 
     if (existingJob) {
-      emitConsoleToast(`${machine.code}: αυτή η εργασία συνεργείου υπάρχει ήδη.`);
+      emitConsoleToast(`${machine.code}: this workshop job already exists.`);
       return;
     }
 
     machine.service = [
       {
         issue,
-        severity: draft.blocksRelease ? "Υψηλή" : "Μεσαία",
+        severity: draft.blocksRelease ? "High" : "Medium",
         blocksRelease: draft.blocksRelease,
         owner: draft.owner,
         due: draft.due,
-        status: draft.partsStatus === "Σε αναμονή" ? "Σε αναμονή" : "Ανοιχτό",
+        status: draft.partsStatus === "On hold" ? "On hold" : "Open",
         parts: draft.parts.trim(),
         partsStatus: draft.partsStatus,
-        assignmentStatus: "Ανατέθηκε",
-        assignedAt: "Μόλις τώρα",
+        assignmentStatus: "Assigned",
+        assignedAt: "Just now",
       },
       ...machine.service,
     ];
     machine.issues = [
       {
         title: issue,
-        severity: draft.blocksRelease ? "Υψηλή" : "Μεσαία",
+        severity: draft.blocksRelease ? "High" : "Medium",
         owner: draft.owner,
-        status: "Ανοιχτό",
+        status: "Open",
       },
       ...machine.issues,
     ];
-    machine.nextAction = "Ολοκλήρωση εργασίας συνεργείου";
+    machine.nextAction = "Complete workshop job";
     machine.owner = draft.owner;
     machine.eta = draft.due;
     syncMachineReleaseState(machine);
-    const partsNote = draft.parts.trim() ? ` · Ανταλλακτικά: ${draft.partsStatus} · ${draft.parts.trim()}` : ` · Ανταλλακτικά: ${draft.partsStatus}`;
-    recordDecision(machine, "Προστέθηκε εργασία συνεργείου", issue, `${draft.blocksRelease ? "Σταματά την αυριανή βάρδια" : "Παρακολούθηση εργασίας"} · ${draft.owner} · ${draft.due}${partsNote}`, draft.owner, "Όχι");
-    addOperationalNotification(`${machine.code}: προστέθηκε εργασία συνεργείου`, `${issue} · ${draft.owner} · ${draft.due}${partsNote}`);
-    refreshConsole(`${machine.code}: προστέθηκε εργασία συνεργείου.`);
+    const partsNote = draft.parts.trim() ? ` · Parts: ${draft.partsStatus} · ${draft.parts.trim()}` : ` · Parts: ${draft.partsStatus}`;
+    recordDecision(machine, "Workshop job added", issue, `${draft.blocksRelease ? "Stops tomorrow's shift" : "Track the job"} · ${draft.owner} · ${draft.due}${partsNote}`, draft.owner, "No");
+    addOperationalNotification(`${machine.code}: workshop job added`, `${issue} · ${draft.owner} · ${draft.due}${partsNote}`);
+    refreshConsole(`${machine.code}: workshop job added.`);
   }
 
   function uploadDocument(machineId: string, blockerId: string, documentName: string, expiryDate: string) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
     const currentCount = Number.parseInt(machine.documents, 10) || 0;
-    machine.documents = `${currentCount + 1} αρχεία`;
+    machine.documents = `${currentCount + 1} files`;
     machine.certificates = machine.certificates.map((certificate) =>
       blockerId === `certificate:${certificate.name}`
-        ? { ...certificate, status: "Σε ισχύ", expiry: expiryDate || "Ανέβηκε σήμερα", daysLeft: "365", action: "Καμία ενέργεια" }
+        ? { ...certificate, status: "Valid", expiry: expiryDate || "Uploaded today", daysLeft: "365", action: "No action" }
         : certificate,
     );
-    machine.photos.push({ title: documentName || "Ανέβηκε απόδειξη", category: "Έγγραφα & έλεγχοι", date: "Σήμερα" });
+    machine.photos.push({ title: documentName || "Proof uploaded", category: "Documents & checks", date: "Today" });
     syncMachineReleaseState(machine);
-    recordDecision(machine, machine.state === "ready" ? "Έτοιμο για δουλειά" : "Ανέβηκε απόδειξη", documentName || "Ανέβηκε απόδειξη", `${expiryDate || "Ανέβηκε σήμερα"} · Ο φάκελος οχήματος ενημερώθηκε`, "FleetLever", "Όχι");
-    addOperationalNotification(`${machine.code}: ανέβηκε απόδειξη`, `${documentName || "Απόδειξη"} ενημερώθηκε στις Έγγραφα & έλεγχοι και στον Φάκελο Μηχανήματος.`);
-    refreshConsole(`${machine.code}: ${documentName || "απόδειξη"} ανέβηκε και συγχρονίστηκε.`);
+    recordDecision(machine, machine.state === "ready" ? "Ready for work" : "Proof uploaded", documentName || "Proof uploaded", `${expiryDate || "Uploaded today"} · The vehicle file was updated`, "FleetLever", "No");
+    addOperationalNotification(`${machine.code}: proof uploaded`, `${documentName || "Proof"} was updated in Documents & checks and in the vehicle file.`);
+    refreshConsole(`${machine.code}: ${documentName || "proof"} uploaded and synced.`);
   }
 
   function releaseWithOverride(machineId: string, reason: string, approver: string, acceptedUntil: string) {
     const machine = machines.find((item) => item.id === machineId);
     if (!machine) return;
-    recordDecision(machine, "Έγκριση με εξαίρεση", machine.reason, `${reason} · Εγκρίθηκε από ${approver} · Ισχύει μέχρι ${acceptedUntil}`, approver, "Ναι");
+    recordDecision(machine, "Approved by exception", machine.reason, `${reason} · Approved by ${approver} · Valid until ${acceptedUntil}`, approver, "Yes");
     machine.state = "at_risk";
-    machine.reason = "Έγκριση με εξαίρεση";
-    machine.nextAction = `Κλείσιμο αιτίας εξαίρεσης: ${reason}`;
-    machine.eta = acceptedUntil || "Σήμερα";
-    machine.lastUpdated = "Μόλις τώρα";
-    refreshConsole(`${machine.code}: εγκρίθηκε με εξαίρεση και καταγράφηκε.`);
+    machine.reason = "Approved by exception";
+    machine.nextAction = `Close exception reason: ${reason}`;
+    machine.eta = acceptedUntil || "Today";
+    machine.lastUpdated = "Just now";
+    refreshConsole(`${machine.code}: approved by exception and recorded.`);
   }
 
   function releaseReadyMachines(releaseMachines: Machine[]) {
     const readyMachines = releaseMachines.filter((machine) => machine.state === "ready");
     readyMachines.forEach((machine) => {
-      recordDecision(machine, "Έτοιμο για βάρδια", "Δεν βρέθηκε εκκρεμότητα", `Κλειδώθηκε για ${selectedWorksite.name}`, "Δημήτρης", "Όχι");
+      recordDecision(machine, "Ready for the shift", "No open item found", `Locked for ${selectedWorksite.name}`, "David", "No");
     });
-    addOperationalNotification(`Ενημερώθηκε η βάρδια για ${selectedWorksite.name}`, `${readyMachines.length} έτοιμα οχήματα κλειδώθηκαν. Το πρωινό σημείωμα ενημερώθηκε.`);
+    addOperationalNotification(`Shift updated for ${selectedWorksite.name}`, `${readyMachines.length} ready vehicles were locked. The morning note was updated.`);
     setReleaseModalOpen(false);
-    refreshConsole(`${readyMachines.length} έτοιμα οχήματα κλειδώθηκαν για ${selectedWorksite.name}.`);
+    refreshConsole(`${readyMachines.length} ready vehicles were locked for ${selectedWorksite.name}.`);
   }
 
   function addConsoleItem(type: AddItemType, name: string) {
     const cleanName = name.trim();
     if (!cleanName) return;
-    if (type === "Υπηρεσία πόλης" || type === "Πακέτο εργασίας") {
+    if (type === "City service" || type === "Work package") {
       const id = `worksite-${Date.now()}`;
       worksites.push({
         id,
         name: cleanName,
-        location: "Νέο πακέτο εργασίας",
-        date: "Αύριο, 07:00",
+        location: "New work package",
+        date: "Tomorrow, 07:00",
         requiredMachineIds: [],
       });
       setWorksiteId(id);
       setActiveView("tomorrow");
-      addOperationalNotification(`Προστέθηκε ${cleanName}`, "Η νέα υπηρεσία είναι έτοιμη για ανάθεση οχημάτων.");
-      refreshConsole(`${cleanName} προστέθηκε ως υπηρεσία.`);
-    } else if (type === "Όχημα") {
+      addOperationalNotification(`Added ${cleanName}`, "The new service is ready for vehicles to be assigned.");
+      refreshConsole(`${cleanName} was added as a service.`);
+    } else if (type === "Vehicle") {
       const id = `machine-${Date.now()}`;
       const code = `M-${String(machines.length + 1).padStart(2, "0")}`;
       const newMachine: Machine = {
         id,
         code,
         name: cleanName,
-        type: "Όχημα",
+        type: "Vehicle",
         manufacturer: "FleetLever",
-        model: "Νέο",
+        model: "New",
         serial: `SN-${Date.now()}`,
-        ownership: "Ιδιόκτητο",
+        ownership: "Owned",
         worksiteId,
         state: "at_risk",
-        reason: "Το νέο όχημα θέλει έλεγχο",
-        owner: "Δημήτρης",
-        nextAction: "Συμπλήρωση φακέλου οχήματος",
-        eta: "Σήμερα",
-        lastUpdated: "Μόλις τώρα",
+        reason: "The new vehicle needs a review",
+        owner: "David",
+        nextAction: "Complete the vehicle file",
+        eta: "Today",
+        lastUpdated: "Just now",
         activeBlockers: "0",
-        documents: "0 αρχεία",
+        documents: "0 files",
         certificates: [],
         service: [],
-        issues: [{ title: "Ο φάκελος οχήματος δεν έχει συμπληρωθεί", severity: "Μεσαία", owner: "Δημήτρης", status: "Ανοιχτό" }],
+        issues: [{ title: "The vehicle file is incomplete", severity: "Medium", owner: "David", status: "Open" }],
         photos: [],
       };
       machines.push(newMachine);
@@ -2732,35 +2732,35 @@ export function ConstructionPrototype({
       setSelectedMachineId(id);
       setDrawerMode("passport");
       setDrawerOpen(true);
-      recordDecision(newMachine, "Θέλει προσοχή", "Το νέο όχημα θέλει έλεγχο", "Το όχημα προστέθηκε και ο φάκελος άνοιξε", "FleetLever", "Όχι");
-      addOperationalNotification(`${code}: προστέθηκε στο ${selectedWorksite.name}`, "Συμπλήρωσε τον φάκελο οχήματος πριν κλειδώσει η βάρδια.");
-      refreshConsole(`${cleanName} προστέθηκε στο ${selectedWorksite.name}.`);
-    } else if (type === "Έλεγχος / έγγραφο") {
+      recordDecision(newMachine, "Needs attention", "The new vehicle needs a review", "The vehicle was added and its file opened", "FleetLever", "No");
+      addOperationalNotification(`${code}: added to ${selectedWorksite.name}`, "Complete the vehicle file before the shift locks.");
+      refreshConsole(`${cleanName} was added to ${selectedWorksite.name}.`);
+    } else if (type === "Check / document") {
       const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
       if (!targetMachine) return;
-      targetMachine.certificates.push({ name: cleanName, status: "Λήγει σύντομα", expiry: "30 Ιουνίου 2026", daysLeft: "29", owner: "Μαρία", action: "Έλεγχος εγγράφου" });
+      targetMachine.certificates.push({ name: cleanName, status: "Expiring soon", expiry: "30 June 2026", daysLeft: "29", owner: "Maria", action: "Document review" });
       targetMachine.state = targetMachine.state === "ready" ? "at_risk" : targetMachine.state;
-      targetMachine.reason = targetMachine.state === "at_risk" ? "Το έγγραφο θέλει έλεγχο" : targetMachine.reason;
-      targetMachine.lastUpdated = "Μόλις τώρα";
-      recordDecision(targetMachine, "Προστέθηκε έγγραφο", cleanName, "Το έγγραφο προστέθηκε για έλεγχο", "Μαρία", "Όχι");
-      addOperationalNotification(`${targetMachine.code}: προστέθηκε έγγραφο`, `${cleanName} θέλει έλεγχο.`);
-      refreshConsole(`${cleanName} προστέθηκε στο ${targetMachine.code}.`);
-    } else if (type === "Θέμα συνεργείου") {
+      targetMachine.reason = targetMachine.state === "at_risk" ? "The document needs review" : targetMachine.reason;
+      targetMachine.lastUpdated = "Just now";
+      recordDecision(targetMachine, "Document added", cleanName, "The document was added for review", "Maria", "No");
+      addOperationalNotification(`${targetMachine.code}: document added`, `${cleanName} needs review.`);
+      refreshConsole(`${cleanName} was added to ${targetMachine.code}.`);
+    } else if (type === "Workshop issue") {
       const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
       if (!targetMachine) return;
-      targetMachine.service.push({ issue: cleanName, severity: "Υψηλή", blocksRelease: true, owner: "Κώστας", due: "Σήμερα", status: "Ανοιχτό" });
-      targetMachine.issues.push({ title: cleanName, severity: "Υψηλή", owner: "Κώστας", status: "Ανοιχτό" });
+      targetMachine.service.push({ issue: cleanName, severity: "High", blocksRelease: true, owner: "Chris", due: "Today", status: "Open" });
+      targetMachine.issues.push({ title: cleanName, severity: "High", owner: "Chris", status: "Open" });
       syncMachineReleaseState(targetMachine);
-      recordDecision(targetMachine, "Προστέθηκε εργασία συνεργείου", cleanName, "Η εκκρεμότητα συνεργείου προστέθηκε από την κονσόλα", "Κώστας", "Όχι");
-      addOperationalNotification(`${targetMachine.code}: προστέθηκε εργασία συνεργείου`, `${cleanName} μπορεί να σταματήσει την αυριανή βάρδια.`);
-      refreshConsole(`${cleanName} προστέθηκε ως εκκρεμότητα για το ${targetMachine.code}.`);
+      recordDecision(targetMachine, "Workshop job added", cleanName, "The workshop item was added from the console", "Chris", "No");
+      addOperationalNotification(`${targetMachine.code}: workshop job added`, `${cleanName} may stop tomorrow's shift.`);
+      refreshConsole(`${cleanName} was added as an open item for ${targetMachine.code}.`);
     } else {
       const targetMachine = machines.find((machine) => machine.id === selectedMachineId);
-      const documentBlocker = targetMachine?.certificates.find((certificate) => ["Έληξε", "Λείπει", "Κρίσιμο"].includes(certificate.status));
+      const documentBlocker = targetMachine?.certificates.find((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status));
       if (targetMachine && documentBlocker) {
-        uploadDocument(selectedMachineId, `certificate:${documentBlocker.name}`, cleanName, "Ανέβηκε σήμερα");
+        uploadDocument(selectedMachineId, `certificate:${documentBlocker.name}`, cleanName, "Uploaded today");
       } else {
-        refreshConsole("Δεν έχει επιλεγεί εκκρεμότητα εγγράφου.");
+        refreshConsole("No document item selected.");
       }
     }
     setAddModalType(null);
@@ -2770,7 +2770,7 @@ export function ConstructionPrototype({
   const globalSearchGroups: GlobalSearchGroup[] = normalizedGlobalSearch.length >= 2
     ? [
         {
-          title: "Οχήματα",
+          title: "Vehicles",
           results: machines
             .filter((machine) =>
               valuesMatchSearch(normalizedGlobalSearch, [
@@ -2798,7 +2798,7 @@ export function ConstructionPrototype({
             })),
         },
         {
-          title: "Πακέτα εργασίας",
+          title: "Work packages",
           results: worksites
             .filter((worksite) => {
               const siteMachines = machinesForWorksite(worksite);
@@ -2817,8 +2817,8 @@ export function ConstructionPrototype({
                 id: `worksite:${worksite.id}`,
                 title: worksite.name,
                 subtitle: worksite.location,
-                meta: `${siteCounts.ready}/${siteCounts.total} έτοιμα · ${siteCounts.blocked} μπλοκαρισμένα`,
-                label: siteCounts.blocked ? "Μπλοκαρισμένα" : siteCounts.attention ? "Για έλεγχο" : "Έτοιμα",
+                meta: `${siteCounts.ready}/${siteCounts.total} ready · ${siteCounts.blocked} blocked`,
+                label: siteCounts.blocked ? "Blocked" : siteCounts.attention ? "For review" : "Ready",
                 tone: siteCounts.blocked ? "blocked" as const : siteCounts.attention ? "attention" as const : "ready" as const,
                 onSelect: () => {
                   openWorksiteFromSearch(worksite);
@@ -2827,7 +2827,7 @@ export function ConstructionPrototype({
             }),
         },
         {
-          title: "Έγγραφα & έλεγχοι",
+          title: "Documents & checks",
           results: machines
             .flatMap((machine) => machine.certificates.map((certificate) => ({ certificate, machine })))
             .filter(({ certificate, machine }) =>
@@ -2849,14 +2849,14 @@ export function ConstructionPrototype({
               subtitle: `${machine.code} · ${certificate.action}`,
               meta: `${certificate.owner} · ${certificate.expiry}`,
               label: certificate.status,
-              tone: certificate.status === "Σε ισχύ" ? "ready" as const : certificate.status === "Κρίσιμο" || certificate.status === "Λήγει σύντομα" ? "attention" as const : "blocked" as const,
+              tone: certificate.status === "Valid" ? "ready" as const : certificate.status === "Critical" || certificate.status === "Expiring soon" ? "attention" as const : "blocked" as const,
               onSelect: () => {
                 openMachineFromSearch(machine, "certificates", "passport", "documents");
               },
             })),
         },
         {
-          title: "Λίστα εκκρεμοτήτων",
+          title: "Open item list",
           results: actionQueueRows(machines)
             .filter((row) =>
               valuesMatchSearch(normalizedGlobalSearch, [
@@ -2876,7 +2876,7 @@ export function ConstructionPrototype({
               title: row.actionLabel,
               subtitle: `${row.machine.code} · ${row.nextStep}`,
               meta: `${row.blocker.summary} · ${row.owner} · ${row.due}`,
-              label: row.priority === "blocking" ? "Μπλοκάρει" : "Για έλεγχο",
+              label: row.priority === "blocking" ? "Blocks" : "For review",
               tone: row.priority === "blocking" ? "blocked" as const : "attention" as const,
               onSelect: () => {
                 openActionFromSearch(row.machine, row.action);
@@ -2884,7 +2884,7 @@ export function ConstructionPrototype({
             })),
         },
         {
-          title: "Εργασίες συνεργείου",
+          title: "Workshop jobs",
           results: machines
             .flatMap((machine) => machine.service.map((service) => ({ machine, service })))
             .filter(({ machine, service }) =>
@@ -2904,15 +2904,15 @@ export function ConstructionPrototype({
               title: service.issue,
               subtitle: `${machine.code} · ${machineWorksite(machine).name}`,
               meta: `${service.owner} · ${service.due}`,
-              label: service.blocksRelease ? "Μπορεί να μπλοκάρει" : service.status,
-              tone: service.blocksRelease ? "blocked" as const : service.status === "Λύθηκε" ? "ready" as const : "attention" as const,
+              label: service.blocksRelease ? "May block" : service.status,
+              tone: service.blocksRelease ? "blocked" as const : service.status === "Resolved" ? "ready" as const : "attention" as const,
               onSelect: () => {
                 openMachineFromSearch(machine, "service", "passport", "service");
               },
             })),
         },
         {
-          title: "Ιστορικό αποφάσεων",
+          title: "Decision history",
           results: releaseHistory
             .filter((item) => valuesMatchSearch(normalizedGlobalSearch, [item.date, item.worksite, item.machine, item.result, item.reason, item.action, item.user]))
             .slice(0, 3)
@@ -2922,7 +2922,7 @@ export function ConstructionPrototype({
               subtitle: item.reason,
               meta: `${item.date} · ${item.user}`,
               label: "Decision",
-              tone: item.result === "Έτοιμο για δουλειά" ? "ready" as const : item.result === "Θέλει προσοχή" ? "attention" as const : "neutral" as const,
+              tone: item.result === "Ready for work" ? "ready" as const : item.result === "Needs attention" ? "attention" as const : "neutral" as const,
               onSelect: () => {
                 setSearchOpen(false);
                 setMobileSearchOpen(false);
@@ -2968,7 +2968,7 @@ export function ConstructionPrototype({
               ) : (
                 <div>
                   <FleetLeverLogo inverse />
-                  <p className="mt-2 text-[11px] font-bold uppercase text-white/60">Κέντρο ετοιμότητας στόλου</p>
+                  <p className="mt-2 text-[11px] font-bold uppercase text-white/60">Fleet readiness centre</p>
                 </div>
               )}
             </div>
@@ -2994,7 +2994,7 @@ export function ConstructionPrototype({
 
         <button
           type="button"
-          aria-label="Κλείσιμο βοηθού Lisa"
+          aria-label="Close the Lisa assistant"
           onPointerDown={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -3036,7 +3036,7 @@ export function ConstructionPrototype({
                 type="button"
                 onClick={() => setMobileNavOpen((open) => !open)}
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] xl:hidden"
-                aria-label="Άνοιγμα πλοήγησης"
+                aria-label="Open navigation"
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -3053,7 +3053,7 @@ export function ConstructionPrototype({
                   onKeyDown={(event) => {
                     if (event.key === "Escape") setSearchOpen(false);
                   }}
-                  placeholder="Αναζήτηση οχήματος, υπηρεσίας, εγγράφου, υπευθύνου...  ⌘K"
+                  placeholder="Search vehicle, service, document, owner...  ⌘K"
                   className="h-9 w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] pl-9 pr-3 text-[13px] text-[#1F2933] outline-none transition placeholder:text-[#64748B] focus:border-[#0D2F2D] focus:bg-white focus:ring-2 focus:ring-[#0D2F2D]/10"
                 />
                 {searchOpen && normalizedGlobalSearch.length >= 2 ? (
@@ -3077,7 +3077,7 @@ export function ConstructionPrototype({
                   setUserMenuOpen(false);
                 }}
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] sm:hidden"
-                aria-label="Αναζήτηση στο FleetLever"
+                aria-label="Search FleetLever"
               >
                 <Search className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -3095,10 +3095,10 @@ export function ConstructionPrototype({
                     setUserMenuOpen(false);
                   }}
                   className="inline-flex h-11 w-11 items-center justify-center gap-2 rounded-md border border-[#E2E8F0] bg-white px-0 text-[13px] font-semibold text-[#1F2933] sm:h-9 sm:w-9 md:w-auto md:px-3"
-                  aria-label="Προσθήκη"
+                  aria-label="Add"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
-                  <span className="hidden md:inline">Προσθήκη</span>
+                  <span className="hidden md:inline">Add</span>
                   <ChevronDown className="hidden h-4 w-4 text-[#64748B] md:block" aria-hidden="true" />
                 </button>
                 {addMenuOpen ? (
@@ -3107,15 +3107,15 @@ export function ConstructionPrototype({
                     className="w-auto md:w-72"
                   >
                     {([
-                      ["Όχημα", Truck, "Νέα καταχώριση στόλου"],
+                      ["Vehicle", Truck, "New fleet record"],
                       [
-                        "Πακέτο εργασίας",
+                        "Work package",
                         Building2,
-                        "Νέα εργασία ή έργο",
+                        "New job or project",
                       ],
-                      ["Έλεγχος / έγγραφο", FileText, "Νέα απαίτηση ή απόδειξη"],
-                      ["Θέμα συνεργείου", Wrench, "Νέα εργασία συντήρησης"],
-                      ["Αρχείο", Archive, "Νέα εγγραφή αρχείου"],
+                      ["Check / document", FileText, "New requirement or proof"],
+                      ["Workshop issue", Wrench, "New maintenance job"],
+                      ["File", Archive, "New file record"],
                     ] as Array<[AddItemType, typeof Truck, string]>).map(([item, Icon, detail]) => (
                       <ToolbarMenuItem
                         key={item}
@@ -3140,7 +3140,7 @@ export function ConstructionPrototype({
                     setUserMenuOpen(false);
                   }}
                   className="relative inline-flex h-11 w-11 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] sm:h-9 sm:w-9"
-                  aria-label="Ειδοποιήσεις"
+                  aria-label="Notifications"
                 >
                   <Bell className="h-4 w-4" aria-hidden="true" />
                   {unreadNotifications ? (
@@ -3157,8 +3157,8 @@ export function ConstructionPrototype({
                   >
                     <div className="flex items-center justify-between gap-3 border-b border-[#DCE5E1] px-4 py-3">
                       <div>
-                        <p className="text-[11px] font-bold uppercase text-[#008C95]">Ειδοποιήσεις</p>
-                        <p className="mt-1 text-sm font-semibold text-[#64748B]">{unreadNotifications} δεν έχουν ελεγχθεί</p>
+                        <p className="text-[11px] font-bold uppercase text-[#008C95]">Notifications</p>
+                        <p className="mt-1 text-sm font-semibold text-[#64748B]">{unreadNotifications} not reviewed</p>
                       </div>
                       <Bell className="h-4 w-4 text-[#64748B]" aria-hidden="true" />
                     </div>
@@ -3178,11 +3178,11 @@ export function ConstructionPrototype({
                         onClick={() => {
                           setNotifications((current) => current.map((item) => ({ ...item, read: true })));
                           setNotificationOpen(false);
-                          refreshConsole("Οι ειδοποιήσεις σημειώθηκαν ως ελεγμένες.");
+                          refreshConsole("Notifications marked as reviewed.");
                         }}
                         className="min-h-9 w-full rounded-md px-3 text-sm font-bold text-[#0D2F2D] transition hover:bg-[#F3F7F5]"
                       >
-                        Σήμανση όλων ως ελεγμένων
+                        Mark all as reviewed
                       </button>
                     </div>
                   </ToolbarPopover>
@@ -3197,32 +3197,32 @@ export function ConstructionPrototype({
                     setNotificationOpen(false);
                   }}
                   className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[#E2E8F0] bg-white text-[#1F2933] sm:h-9 sm:w-9"
-                  aria-label="Μενού χρήστη"
+                  aria-label="User menu"
                 >
                   <CircleUserRound className="h-5 w-5" aria-hidden="true" />
                 </button>
                 {userMenuOpen ? (
                   <ToolbarPopover className="w-60">
                     <div className="border-b border-[#DCE5E1] px-3 py-2.5">
-                      <p className="text-sm font-bold text-[#0D2F2D]">{trialInfo?.userName ?? "Γιώργος"}</p>
+                      <p className="text-sm font-bold text-[#0D2F2D]">{trialInfo?.userName ?? "George"}</p>
                       <p className="mt-0.5 text-[11px] font-semibold text-[#64748B]">
-                        Διαχειριστής στόλου
+                        Fleet manager
                       </p>
                     </div>
                     <div className="pt-1">
                       <ToolbarMenuItem
                         icon={<CircleUserRound className="h-4 w-4" aria-hidden="true" />}
-                        label="Προφίλ"
-                        detail="Στοιχεία και προτιμήσεις"
+                        label="Profile"
+                        detail="Details and preferences"
                         onClick={() => {
                           setUserMenuOpen(false);
-                          refreshConsole("Το προφίλ άνοιξε.");
+                          refreshConsole("The profile opened.");
                         }}
                       />
                       <ToolbarMenuItem
                         icon={<LogOut className="h-4 w-4" aria-hidden="true" />}
-                        label="Αποσύνδεση"
-                        detail="Κλείσιμο της τρέχουσας σύνδεσης"
+                        label="Sign out"
+                        detail="End the current session"
                         tone="danger"
                         onClick={() => {
                           setUserMenuOpen(false);
@@ -3243,7 +3243,7 @@ export function ConstructionPrototype({
                   type="search"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Όχημα, έγγραφο, υπεύθυνος..."
+                  placeholder="Vehicle, document, owner..."
                   className="h-11 min-w-0 flex-1 rounded-md border border-[#CBD9D4] bg-[#F8FAFC] px-3 text-base text-[#1F2933] outline-none focus:border-[#0D2F2D] focus:bg-white focus:ring-2 focus:ring-[#0D2F2D]/10"
                   autoFocus
                 />
@@ -3251,7 +3251,7 @@ export function ConstructionPrototype({
                   type="button"
                   onClick={() => setMobileSearchOpen(false)}
                   className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#D7E2DC] bg-white text-[#64748B]"
-                  aria-label="Κλείσιμο αναζήτησης"
+                  aria-label="Close search"
                 >
                   <X className="h-5 w-5" aria-hidden="true" />
                 </button>
@@ -3267,9 +3267,9 @@ export function ConstructionPrototype({
                   />
                 ) : (
                   <div className="px-5 py-8">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Καθολική αναζήτηση</p>
-                    <p className="mt-2 text-lg font-semibold text-[#0D2F2D]">Βρες γρήγορα ό,τι χρειάζεσαι.</p>
-                    <p className="mt-2 text-sm font-semibold leading-6 text-[#64748B]">Γράψε τουλάχιστον δύο χαρακτήρες για οχήματα, υπηρεσίες, έγγραφα, εκκρεμότητες και υπευθύνους.</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Global search</p>
+                    <p className="mt-2 text-lg font-semibold text-[#0D2F2D]">Find what you need quickly.</p>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-[#64748B]">Type at least two characters to search vehicles, services, documents, open items and owners.</p>
                   </div>
                 )}
               </div>
@@ -3315,7 +3315,7 @@ export function ConstructionPrototype({
                 onOpenPlanner={(worksite) => {
                   setWorksiteId(worksite.id);
                   showView("tomorrow");
-                  emitConsoleToast(`${worksite.name}: άνοιξε στην αυριανή βάρδια.`);
+                  emitConsoleToast(`${worksite.name}: opened in tomorrow's shift.`);
                 }}
               />
             ) : null}
@@ -3394,7 +3394,7 @@ export function ConstructionPrototype({
       {mobileNavOpen ? (
         <button
           type="button"
-          aria-label="Κλείσιμο πλοήγησης"
+          aria-label="Close navigation"
           className="fleet-overlay-backdrop fixed inset-0 z-30 bg-[#0D2F2D]/25 backdrop-blur-[1px] xl:hidden"
           onClick={() => setMobileNavOpen(false)}
         />
@@ -3405,7 +3405,7 @@ export function ConstructionPrototype({
           machines={allPlannedMachines}
           onClose={() => setReleaseModalOpen(false)}
           onReleaseReady={() => releaseReadyMachines(allPlannedMachines)}
-          onReviewBlocked={() => emitConsoleToast("Τα μπλοκαρισμένα οχήματα φαίνονται στη λίστα ελέγχου βάρδιας.")}
+          onReviewBlocked={() => emitConsoleToast("Blocked vehicles appear in the shift check list.")}
         />
       ) : null}
       {drawerAction ? (
@@ -3456,8 +3456,8 @@ function TomorrowPlanner({
 }: {
   allMachines: Machine[];
   counts: { ready: number; attention: number; blocked: number; total: number };
-  dateMode: "Σήμερα" | "Αύριο" | "Προσαρμογή";
-  onDateModeChange: (mode: "Σήμερα" | "Αύριο" | "Προσαρμογή") => void;
+  dateMode: "Today" | "Tomorrow" | "Customise";
+  onDateModeChange: (mode: "Today" | "Tomorrow" | "Customise") => void;
   onHistoryOpen: () => void;
   onMachineOpen: (machine: Machine, mode?: DrawerMode) => void;
   onRelease: () => void;
@@ -3489,25 +3489,25 @@ function TomorrowPlanner({
   const releaseButtonClass = isReadyForRelease
     ? "bg-[#0F172A] text-white shadow-sm hover:bg-[#1F2937]"
     : "bg-[#0D4B47] text-white shadow-sm hover:bg-[#123F3C]";
-  const selectedDateLabel = dateMode === "Προσαρμογή" ? formatPlannerDate(customDate) : dateMode;
+  const selectedDateLabel = dateMode === "Customise" ? formatPlannerDate(customDate) : dateMode;
   const listHeading =
     machineListFilter === "blocked"
-      ? "Θέματα για την αυριανή βάρδια"
+      ? "Issues for tomorrow's shift"
       : machineListFilter === "at_risk"
-        ? "Οχήματα για έλεγχο"
+        ? "Vehicles for review"
         : machineListFilter === "ready"
-          ? "Έτοιμα οχήματα"
-          : "Όλα τα οχήματα";
+          ? "Ready vehicles"
+          : "All vehicles";
   const listDescription =
     machineListFilter === "blocked"
-      ? "Πρώτα εμφανίζονται όσα χρειάζονται ενέργεια."
+      ? "Items needing action are shown first."
       : machineListFilter === "at_risk"
         ? counts.attention
-          ? `${counts.attention} οχήματα περιμένουν έλεγχο.`
-          : "Δεν υπάρχουν οχήματα που περιμένουν έλεγχο."
+          ? `${counts.attention} vehicles are waiting for review.`
+          : "No vehicles are waiting for review."
         : machineListFilter === "ready"
-          ? `${counts.ready} οχήματα είναι έτοιμα για τη διαδρομή.`
-          : `${counts.total} οχήματα έχουν δηλωθεί στη βάρδια.`;
+          ? `${counts.ready} vehicles are ready for the route.`
+          : `${counts.total} vehicles are booked on the shift.`;
 
   useEffect(() => {
     if (!customDateOpen) return;
@@ -3524,17 +3524,17 @@ function TomorrowPlanner({
 
   return (
     <ConsolePage>
-      <ViewHeader title="Αυριανή βάρδια" description="Έλεγχος πριν βγουν τα οχήματα στον δρόμο." showActions={false} />
+      <ViewHeader title="Tomorrow's shift" description="The check before vehicles go out on the road." showActions={false} />
 
       <Surface className={`min-w-0 overflow-visible border-l-4 p-0 ${releaseTone}`}>
         <PanelHeader
-          eyebrow="Έλεγχος πριν την έξοδο"
+          eyebrow="Pre-departure check"
           wrapActions
-          title={isReadyForRelease ? "Η πρωινή αποκομιδή μπορεί να ξεκινήσει" : "Η πρωινή αποκομιδή δεν μπορεί να κλείσει"}
+          title={isReadyForRelease ? "The morning collection can start" : "The morning collection cannot be closed"}
           description={
             isReadyForRelease
-              ? `${selectedWorksite.name} · ${selectedDateLabel} · ${counts.total} οχήματα · όλα έτοιμα`
-              : `${selectedWorksite.name} · ${selectedDateLabel} · ${counts.total} οχήματα · ${counts.blocked} θέματα πριν τις 17:00`
+              ? `${selectedWorksite.name} · ${selectedDateLabel} · ${counts.total} vehicles · all ready`
+              : `${selectedWorksite.name} · ${selectedDateLabel} · ${counts.total} vehicles · ${counts.blocked} issues before 17:00`
           }
           actions={(
             <div className="grid w-full gap-2 sm:grid-cols-2 xl:flex xl:w-auto xl:items-center">
@@ -3542,7 +3542,7 @@ function TomorrowPlanner({
                 value={worksiteId}
                 onChange={(event) => onWorksiteChange(event.target.value)}
                 className="h-11 w-full min-w-0 rounded-md border border-[#DDE7E3] bg-white px-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A] sm:min-w-64 xl:h-9 xl:w-auto"
-                aria-label={"Πακέτο εργασίας"}
+                aria-label={"Work package"}
               >
                 {worksites.map((worksite) => (
                   <option key={worksite.id} value={worksite.id}>
@@ -3551,13 +3551,13 @@ function TomorrowPlanner({
                 ))}
               </select>
               <div ref={customDateRef} className="relative grid w-full grid-cols-3 rounded-md border border-[#DDE7E3] bg-white p-1 sm:inline-flex sm:w-auto">
-                {(["Σήμερα", "Αύριο", "Προσαρμογή"] as const).map((mode) => (
+                {(["Today", "Tomorrow", "Customise"] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => {
                       onDateModeChange(mode);
-                      setCustomDateOpen(mode === "Προσαρμογή");
+                      setCustomDateOpen(mode === "Customise");
                     }}
                     className={`min-h-11 min-w-0 rounded px-2 text-[12px] font-semibold sm:min-h-9 sm:px-3 sm:text-[13px] ${
                       dateMode === mode ? "bg-[#0F172A] text-white" : "text-[#6B7280] hover:text-[#111827]"
@@ -3568,14 +3568,14 @@ function TomorrowPlanner({
                 ))}
                 {customDateOpen ? (
                   <div className="fleet-popover-enter absolute right-0 top-12 z-50 w-72 rounded-lg border border-[#D7E2DC] bg-white p-4 shadow-[0_18px_50px_rgba(15,47,45,0.16)]">
-                    <p className="text-[11px] font-bold uppercase text-[#008C95]">Ημερομηνία βάρδιας</p>
-                    <p className="mt-1 text-sm font-semibold text-[#64748B]">Διάλεξε την ημέρα που θέλεις να ελέγξεις.</p>
+                    <p className="text-[11px] font-bold uppercase text-[#008C95]">Shift date</p>
+                    <p className="mt-1 text-sm font-semibold text-[#64748B]">Choose the day you want to check.</p>
                     <input
                       type="date"
                       value={customDate}
                       onChange={(event) => {
                         setCustomDate(event.target.value);
-                        onDateModeChange("Προσαρμογή");
+                        onDateModeChange("Customise");
                       }}
                       className={overlayFieldClass}
                     />
@@ -3583,19 +3583,19 @@ function TomorrowPlanner({
                       <button
                         type="button"
                         onClick={() => {
-                          onDateModeChange("Αύριο");
+                          onDateModeChange("Tomorrow");
                           setCustomDateOpen(false);
                         }}
                         className="min-h-9 rounded-md border border-[#CBD9D4] bg-white px-3 text-[13px] font-bold text-[#374151] transition hover:bg-[#F8FAF9]"
                       >
-                        Άκυρο
+                        Cancel
                       </button>
                       <button
                         type="button"
                         onClick={() => setCustomDateOpen(false)}
                         className="min-h-9 rounded-md bg-[#0D2F2D] px-3 text-[13px] font-bold text-white transition hover:bg-[#123C38]"
                       >
-                        Εφαρμογή
+                        Apply
                       </button>
                     </div>
                   </div>
@@ -3613,7 +3613,7 @@ function TomorrowPlanner({
                 className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-[13px] font-bold transition duration-200 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6] focus-visible:ring-offset-2 sm:col-span-2 xl:min-h-9 xl:w-auto ${releaseButtonClass}`}
               >
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-                {isReadyForRelease ? `Κλείδωμα ${counts.ready} έτοιμων` : `Επίλυση ${counts.blocked} θεμάτων`}
+                {isReadyForRelease ? `Lock ${counts.ready} ready` : `Resolve ${counts.blocked} issues`}
               </button>
             </div>
           )}
@@ -3623,7 +3623,7 @@ function TomorrowPlanner({
         </div>
         <div className="border-t border-[#E5E7EB]">
           <PanelHeader
-            eyebrow="Λίστα βάρδιας"
+            eyebrow="Shift list"
             title={listHeading}
             description={listDescription}
             actions={(
@@ -3634,16 +3634,16 @@ function TomorrowPlanner({
                 type="search"
                 value={machineListQuery}
                 onChange={(event) => setMachineListQuery(event.target.value)}
-                placeholder="Αναζήτηση οχήματος ή προβλήματος"
+                placeholder="Search vehicle or problem"
                 className="h-11 w-full rounded-md border border-[#E5E7EB] bg-white pl-9 pr-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A] lg:h-9 lg:w-72"
               />
             </div>
             <div className="grid w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 sm:flex sm:w-auto">
               {([
-                ["all", "Όλα", "neutral", counts.total],
-                ["blocked", "Ανοιχτά", "blocked", counts.blocked],
-                ["at_risk", "Για έλεγχο", "attention", counts.attention],
-                ["ready", "Έτοιμα", "ready", counts.ready],
+                ["all", "All", "neutral", counts.total],
+                ["blocked", "Open", "blocked", counts.blocked],
+                ["at_risk", "For review", "attention", counts.attention],
+                ["ready", "Ready", "ready", counts.ready],
               ] as Array<["all" | MachineState, string, "neutral" | "blocked" | "attention" | "ready", number]>).map(([value, label, tone, count]) => (
                 <ActionQueueFilterChip
                   key={value}
@@ -3666,7 +3666,7 @@ function TomorrowPlanner({
             ))
           ) : (
             <div className="rounded-md border border-dashed border-[#CBD5E1] bg-white px-4 py-8 text-center text-[13px] font-semibold text-[#64748B]">
-              Δεν υπάρχουν οχήματα σε αυτή την κατηγορία.
+              There are no vehicles in this category.
             </div>
           )}
         </div>
@@ -3681,8 +3681,8 @@ function TomorrowPlanner({
                 </colgroup>
                 <thead className="bg-[#F9FAFB] text-[11px] font-bold uppercase tracking-wide text-[#6B7280]">
                   <tr>
-                    {["Όχημα", "Θέμα", "Επόμενη ενέργεια", "Υπεύθυνος", "Ενέργεια"].map((heading) => {
-                      const isAction = heading === "Ενέργεια";
+                    {["Vehicle", "Issue", "Next action", "Owner", "Action"].map((heading) => {
+                      const isAction = heading === "Action";
                       return (
                         <th
                           key={heading}
@@ -3702,7 +3702,7 @@ function TomorrowPlanner({
                   ) : (
                     <tr>
                       <td colSpan={5} className="px-5 py-10 text-center text-[13px] font-semibold text-[#64748B]">
-                        Δεν υπάρχουν οχήματα σε αυτή την κατηγορία.
+                        There are no vehicles in this category.
                       </td>
                     </tr>
                   )}
@@ -3712,7 +3712,7 @@ function TomorrowPlanner({
             {totalMachinePages > 1 ? (
               <div className="flex flex-col gap-3 border-t border-[#E5E7EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-[13px] font-semibold text-[#64748B]">
-                  Σελίδα {safeMachinePage} από {totalMachinePages}
+                  Page {safeMachinePage} of {totalMachinePages}
                 </p>
                 <div className="flex w-full gap-2 sm:w-auto">
                   <button
@@ -3721,7 +3721,7 @@ function TomorrowPlanner({
                     disabled={safeMachinePage === 1}
                     className="min-h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white px-3 text-[13px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-8 sm:flex-none"
                   >
-                    Προηγούμενη
+                    Previous
                   </button>
                   <button
                     type="button"
@@ -3729,7 +3729,7 @@ function TomorrowPlanner({
                     disabled={safeMachinePage === totalMachinePages}
                     className="min-h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white px-3 text-[13px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-8 sm:flex-none"
                   >
-                    Επόμενη
+                    Next
                   </button>
                 </div>
               </div>
@@ -3748,7 +3748,7 @@ function MorningChangesSummary({ onHistoryOpen }: { onHistoryOpen: () => void })
         className="inline-flex min-h-11 shrink-0 items-center gap-2 text-[12px] font-bold text-[#475569] transition hover:text-[#0F172A] sm:min-h-0"
       >
         <History className="h-4 w-4" aria-hidden="true" />
-        3 αλλαγές από χθες
+        3 changes since yesterday
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
@@ -3764,7 +3764,7 @@ function RequiredMachineMobileCard({
 }) {
   const isBlocked = machine.state === "blocked";
   const isAttention = machine.state === "at_risk";
-  const action = isBlocked ? "Επίλυση θέματος" : isAttention ? "Έλεγχος οχήματος" : "Άνοιγμα φακέλου";
+  const action = isBlocked ? "Resolve issue" : isAttention ? "Vehicle check" : "Open the file";
   const railTone = isBlocked ? "border-l-[#DC2626]" : isAttention ? "border-l-[#D97706]" : "border-l-[#16A34A]";
 
   return (
@@ -3782,23 +3782,23 @@ function RequiredMachineMobileCard({
       </button>
 
       <div className="mt-3 border-t border-[#E2E8F0] pt-3">
-        <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Θέμα</p>
+        <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Issue</p>
         <p className={`mt-1 text-sm font-bold leading-5 ${isBlocked ? "text-[#991B1B]" : "text-[#1F2937]"}`}>{machine.reason}</p>
       </div>
 
       <div className="mt-3 rounded-md bg-[#F8FAFC] p-3">
-        <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Επόμενη ενέργεια</p>
-        <p className="mt-1 text-sm font-semibold leading-5 text-[#1F2937]">{machine.nextAction === "-" ? "Καμία ενέργεια" : machine.nextAction}</p>
+        <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Next action</p>
+        <p className="mt-1 text-sm font-semibold leading-5 text-[#1F2937]">{machine.nextAction === "-" ? "No action" : machine.nextAction}</p>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#E2E8F0] pt-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Υπεύθυνος</p>
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Owner</p>
           <p className="mt-1 text-sm font-bold text-[#0D2F2D]">{machine.owner}</p>
         </div>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Προθεσμία</p>
-          <p className="mt-1 text-sm font-bold text-[#0D2F2D]">{machine.eta === "-" ? "Δεν απαιτείται" : machine.eta}</p>
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#64748B]">Due</p>
+          <p className="mt-1 text-sm font-bold text-[#0D2F2D]">{machine.eta === "-" ? "Not required" : machine.eta}</p>
         </div>
       </div>
 
@@ -3828,10 +3828,10 @@ function RequiredMachineTableRow({
 }) {
   const isBlocked = machine.state === "blocked";
   const isAttention = machine.state === "at_risk";
-  const statusLabel = machine.state === "ready" ? "Βγαίνει" : isAttention ? "Για έλεγχο" : "Δεν βγαίνει";
+  const statusLabel = machine.state === "ready" ? "Going out" : isAttention ? "For review" : "Not going out";
   const statusText = isBlocked ? "text-[#B91C1C]" : isAttention ? "text-[#B45309]" : "text-[#15803D]";
   const railTone = isBlocked ? "border-l-[#DC2626]" : isAttention ? "border-l-[#D97706]" : "border-l-transparent";
-  const action = isBlocked ? "Επίλυση" : isAttention ? "Έλεγχος" : "Φάκελος";
+  const action = isBlocked ? "Resolve" : isAttention ? "Check" : "File";
 
   return (
     <tr className="border-b border-[#E5E7EB] bg-white last:border-0">
@@ -3843,7 +3843,7 @@ function RequiredMachineTableRow({
         </button>
       </td>
       <td className={`px-4 py-3 font-bold ${isBlocked ? "text-[#991B1B]" : "text-[#374151]"}`}>{machine.reason}</td>
-      <td className="px-4 py-3 font-semibold text-[#1F2937]">{machine.nextAction === "-" ? "Καμία ενέργεια" : machine.nextAction}</td>
+      <td className="px-4 py-3 font-semibold text-[#1F2937]">{machine.nextAction === "-" ? "No action" : machine.nextAction}</td>
       <td className="px-4 py-3 text-[#374151]">
         <span className="block font-semibold">{machine.owner}</span>
         <span className="mt-1 block text-[11px] font-semibold text-[#64748B]">{machine.eta}</span>
@@ -3868,7 +3868,7 @@ function RequiredMachineTableRow({
 }
 
 function MachineStatusBadge({ state }: { state: MachineState }) {
-  const label = state === "ready" ? "Έτοιμα" : state === "at_risk" ? "Θέλει έλεγχο" : "Μπλοκαρισμένα";
+  const label = state === "ready" ? "Ready" : state === "at_risk" ? "Needs review" : "Blocked";
   return (
     <span className={`inline-flex min-w-[104px] items-center justify-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase whitespace-nowrap ${statusClasses(state)}`}>
       {label}
@@ -3921,7 +3921,7 @@ function DetailDrawer({
         className="fleet-drawer-enter flex h-full w-full max-w-[560px] flex-col overflow-hidden border-l border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)]"
       >
         <OverlayHeader
-          eyebrow={mode === "why" ? "Έλεγχος αυριανής βάρδιας" : "Φάκελος οχήματος"}
+          eyebrow={mode === "why" ? "Tomorrow's shift check" : "Vehicle file"}
           title={`${machine.code} · ${machine.name}`}
           titleId="vehicle-drawer-title"
           description={`${machineWorksite(machine).name} · ${externalStatus(machine.state)}`}
@@ -3931,8 +3931,8 @@ function DetailDrawer({
           <OverlayTabs
             active={mode}
             items={[
-              { key: "why", label: "Έλεγχος εξόδου" },
-              { key: "passport", label: "Φάκελος οχήματος" },
+              { key: "why", label: "Departure check" },
+              { key: "passport", label: "Vehicle file" },
             ]}
             onChange={(key) => onModeChange(key as DrawerMode)}
           />
@@ -3986,42 +3986,42 @@ function blockerStatusClasses(status: string) {
 
 function blockerCardsForMachine(machine: Machine): BlockerCard[] {
   const certificateCards: BlockerCard[] = machine.certificates
-    .filter((certificate) => ["Έληξε", "Λείπει", "Κρίσιμο"].includes(certificate.status))
+    .filter((certificate) => ["Expired", "Missing", "Critical"].includes(certificate.status))
     .map((certificate) => ({
       id: `certificate:${certificate.name}`,
       kind: "certificate",
-      title: certificate.status === "Λείπει" ? "Εκκρεμότητα εγγράφου" : "Εκκρεμότητα πιστοποιητικού",
+      title: certificate.status === "Missing" ? "Document item" : "Certificate item",
       status: certificate.status,
       summary:
-        certificate.status === "Λείπει"
-          ? `Λείπει: ${certificate.name}.`
-          : `${certificate.name} ${certificate.status.toLowerCase()}${certificate.expiry !== "Απαιτείται" ? ` στις ${certificate.expiry}` : ""}.`,
-      primaryAction: "Ανέβασμα στον φάκελο",
+        certificate.status === "Missing"
+          ? `Missing: ${certificate.name}.`
+          : `${certificate.name} ${certificate.status.toLowerCase()}${certificate.expiry !== "Required" ? ` on ${certificate.expiry}` : ""}.`,
+      primaryAction: "Upload to the file",
       lines: [
-        [certificate.status === "Λείπει" ? "Απαιτούμενο έγγραφο" : "Έγγραφο", certificate.name],
-        [certificate.status === "Λείπει" ? "Κατάσταση" : "Λήξη", certificate.expiry],
-        ["Υπεύθυνος", certificate.owner],
-        ["Ανάθεση", certificate.assignmentStatus ?? "Χωρίς ανάθεση"],
-        ["Προθεσμία", certificate.due ?? "Δεν έχει οριστεί"],
-        ["Επόμενο βήμα", certificate.action],
+        [certificate.status === "Missing" ? "Required document" : "Document", certificate.name],
+        [certificate.status === "Missing" ? "Status" : "Expiry", certificate.expiry],
+        ["Owner", certificate.owner],
+        ["Assignment", certificate.assignmentStatus ?? "Unassigned"],
+        ["Due", certificate.due ?? "Not set"],
+        ["Next step", certificate.action],
       ],
     }));
 
   const serviceCards: BlockerCard[] = machine.service
-    .filter((service) => service.blocksRelease && service.status !== "Λύθηκε")
+    .filter((service) => service.blocksRelease && service.status !== "Resolved")
     .map((service) => ({
       id: `service:${service.issue}`,
       kind: "service",
-      title: "Θέμα συνεργείου",
-      status: service.due === "Σήμερα" ? "Λήγει σήμερα" : service.status,
+      title: "Workshop issue",
+      status: service.due === "Today" ? "Expires today" : service.status,
       summary: service.issue,
-      primaryAction: "Ολοκλήρωση εργασίας",
+      primaryAction: "Complete job",
       lines: [
-        ["Εργασία", service.issue],
-        ["Υπεύθυνος", service.owner],
-        ["Ανάθεση", service.assignmentStatus ?? "Χωρίς ανάθεση"],
-        ["Προθεσμία", service.due],
-        ["Επόμενο βήμα", "Ολοκλήρωση εργασίας συνεργείου"],
+        ["Job", service.issue],
+        ["Owner", service.owner],
+        ["Assignment", service.assignmentStatus ?? "Unassigned"],
+        ["Due", service.due],
+        ["Next step", "Complete workshop job"],
       ],
     }));
 
@@ -4050,7 +4050,7 @@ function WhyBlocked({
       <div className="p-5">
         <StatusPill state={machine.state} />
         <p className="mt-4 text-sm leading-6 text-[#1F2933]">
-          Το {machine.code} μπορεί να κλειδώσει για αύριο. {machine.reason}.
+          {machine.code} can be locked for tomorrow. {machine.reason}.
         </p>
       </div>
     );
@@ -4061,7 +4061,7 @@ function WhyBlocked({
       <StatusPill state={machine.state} />
       <div className="mt-5 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-4">
         <p className="text-sm font-bold text-[#B91C1C]">
-          Αυτό το όχημα θα σταματήσει το {machineWorksite(machine).name} αύριο επειδή:
+          This vehicle will stop {machineWorksite(machine).name} tomorrow because:
         </p>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[#1F2933]">
           {blockerCards.length ? blockerCards.map((card) => <li key={card.summary}>{card.summary}</li>) : <li>{machine.reason}.</li>}
@@ -4090,7 +4090,7 @@ function WhyBlocked({
                 onClick={() => onAssignOwner(card.id)}
                 className="min-h-10 rounded-md border border-[#CBD9D4] bg-white px-3 text-xs font-bold text-[#0D2F2D] transition hover:bg-[#F8FAF9]"
               >
-                Ανάθεση
+                Assignment
               </button>
               <button
                 type="button"
@@ -4105,10 +4105,10 @@ function WhyBlocked({
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <button type="button" onClick={onOpenPassport} className="min-h-11 rounded-md border border-[#CBD9D4] bg-white px-3 text-sm font-bold text-[#0D2F2D] transition hover:bg-[#F8FAF9]">
-          Άνοιγμα φακέλου οχήματος
+          Open the vehicle file
         </button>
         <button type="button" onClick={onReleaseOverride} className="min-h-11 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 text-sm font-bold text-[#92400e] transition hover:bg-[#FEF3C7]">
-          Έγκριση με εξαίρεση
+          Approved by exception
         </button>
       </div>
     </div>
@@ -4138,18 +4138,18 @@ function MachinePassport({
         <StatusPill state={machine.state} />
         <button type="button" onClick={onExportPassport} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[#CBD9D4] bg-white px-3 text-sm font-bold text-[#0D2F2D] transition hover:bg-[#F8FAF9]">
           <Download className="h-4 w-4" aria-hidden="true" />
-          Εξαγωγή φακέλου
+          Export the file
         </button>
       </div>
-      <p className="mt-4 text-sm leading-6 text-[#64748B]">Ό,τι χρειάζεται για να φανεί αν αυτό το όχημα μπορεί να βγει αύριο.</p>
+      <p className="mt-4 text-sm leading-6 text-[#64748B]">Everything needed to show whether this vehicle can go out tomorrow.</p>
       <div className="mt-4 grid grid-cols-2 gap-2">
         {[
-          ["Τύπος", machine.type],
-          ["Πινακίδα/σειριακό", machine.serial],
-          ["Τρέχουσα υπηρεσία", machineWorksite(machine).name],
-          ["Υπεύθυνος ανάθεσης", machine.owner],
-          ["Τελευταία ενημέρωση", machine.lastUpdated],
-          ["Ιδιοκτησία", machine.ownership],
+          ["Type", machine.type],
+          ["Plate/serial", machine.serial],
+          ["Current service", machineWorksite(machine).name],
+          ["Assignment owner", machine.owner],
+          ["Last updated", machine.lastUpdated],
+          ["Ownership", machine.ownership],
         ].map(([label, value]) => (
           <div key={label} className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
             <p className="text-xs font-bold uppercase text-[#64748B]">{label}</p>
@@ -4192,9 +4192,9 @@ function MachinePassport({
         {passportTab === "overview" ? <PassportOverview machine={machine} /> : null}
         {passportTab === "documents" ? <PassportDocuments machine={machine} onUploadDocument={onUploadDocument} /> : null}
         {passportTab === "service" ? <ServiceCards machine={machine} /> : null}
-        {passportTab === "issues" ? <SimpleRows rows={machine.issues.map((issue) => [issue.title, issue.severity, issue.status])} empty="Δεν υπάρχουν ανοιχτά θέματα." /> : null}
-        {passportTab === "photos" ? <SimpleRows rows={machine.photos.map((photo) => [photo.title, photo.category, photo.date])} empty="Δεν έχουν ανέβει φωτογραφίες." /> : null}
-        {passportTab === "history" ? <SimpleRows rows={releaseHistory.filter((item) => item.machine === machine.code).map((item) => [item.date, item.result, item.reason])} empty="Δεν υπάρχει ακόμη ιστορικό αποφάσεων." /> : null}
+        {passportTab === "issues" ? <SimpleRows rows={machine.issues.map((issue) => [issue.title, issue.severity, issue.status])} empty="There are no open issues." /> : null}
+        {passportTab === "photos" ? <SimpleRows rows={machine.photos.map((photo) => [photo.title, photo.category, photo.date])} empty="No photos have been uploaded." /> : null}
+        {passportTab === "history" ? <SimpleRows rows={releaseHistory.filter((item) => item.machine === machine.code).map((item) => [item.date, item.result, item.reason])} empty="There is no decision history yet." /> : null}
       </div>
     </div>
   );
@@ -4202,19 +4202,19 @@ function MachinePassport({
 
 function PassportDocuments({ machine, onUploadDocument }: { machine: Machine; onUploadDocument: (blockerId?: string) => void }) {
   const identityDocuments = [
-    ["Άδεια οχήματος", "Ταυτότητα", "Σε ισχύ"],
-    ["Φάκελος ασφάλισης", "Ασφάλεια", "Σε ισχύ"],
-    ["Ανάθεση οδηγού / χειριστή", "Υπηρεσία", "Ενημερώθηκε σήμερα"],
+    ["Vehicle licence", "Identity", "Valid"],
+    ["Insurance file", "Insurance", "Valid"],
+    ["Driver / operator assignment", "Service", "Updated today"],
   ];
 
   return (
     <div className="space-y-4">
       <section>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Αρχεία ταυτότητας</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Identity files</p>
         <SimpleRows rows={identityDocuments} />
       </section>
       <section>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Έγγραφα βάρδιας</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Shift documents</p>
         <CertificateCards machine={machine} onUploadDocument={onUploadDocument} />
       </section>
     </div>
@@ -4225,11 +4225,11 @@ function PassportOverview({ machine }: { machine: Machine }) {
   return (
     <div className="space-y-3">
       {[
-        ["Τρέχουσα κατάσταση βάρδιας", externalStatus(machine.state)],
-        ["Ανοιχτές εκκρεμότητες", machine.activeBlockers],
-        ["Επόμενες λήξεις", machine.certificates.find((certificate) => certificate.status !== "Σε ισχύ")?.expiry ?? "Καμία"],
-        ["Τελευταία εργασία συνεργείου", machine.service[0]?.issue ?? "Δεν υπάρχει ανοιχτή εκκρεμότητα συνεργείου"],
-        ["Τελευταία απόφαση βάρδιας", machine.reason],
+        ["Current shift status", externalStatus(machine.state)],
+        ["Open items", machine.activeBlockers],
+        ["Upcoming expiries", machine.certificates.find((certificate) => certificate.status !== "Valid")?.expiry ?? "None"],
+        ["Last workshop job", machine.service[0]?.issue ?? "No open workshop item"],
+        ["Last shift decision", machine.reason],
       ].map(([label, value]) => (
         <div key={label} className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
           <p className="text-xs font-bold uppercase text-[#64748B]">{label}</p>
@@ -4249,17 +4249,17 @@ function CertificateCards({ machine, onUploadDocument }: { machine: Machine; onU
             <h3 className="text-sm font-bold text-[#0D2F2D]">{certificate.name}</h3>
             <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${certificateClasses(certificate.status)}`}>{certificate.status}</span>
           </div>
-          <p className="mt-2 text-sm text-[#64748B]">Λήξη: {certificate.expiry}</p>
+          <p className="mt-2 text-sm text-[#64748B]">Expiry: {certificate.expiry}</p>
           <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={() => downloadTextFile(`${machine.code}-${certificate.name}.txt`, `${machine.code}\n${certificate.name}\n${certificate.status}`)}
               className="rounded-md border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#0D2F2D]"
             >
-              Λήψη
+              Download
             </button>
             <button type="button" onClick={() => onUploadDocument(blockerIdForCertificate(certificate))} className="rounded-md border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#0D2F2D]">
-              Ανέβασμα στον φάκελο
+              Upload to the file
             </button>
           </div>
         </div>
@@ -4269,17 +4269,17 @@ function CertificateCards({ machine, onUploadDocument }: { machine: Machine; onU
 }
 
 function ServiceCards({ machine }: { machine: Machine }) {
-  if (!machine.service.length) return <p className="text-sm font-semibold text-[#64748B]">Δεν υπάρχουν εκκρεμότητες συνεργείου.</p>;
+  if (!machine.service.length) return <p className="text-sm font-semibold text-[#64748B]">There are no workshop items.</p>;
   return (
     <div className="space-y-3">
       {machine.service.map((item) => (
         <div key={item.issue} className="rounded-lg border border-[#E2E8F0] p-3">
           <h3 className="text-sm font-bold text-[#0D2F2D]">{item.issue}</h3>
           <p className="mt-2 text-sm text-[#64748B]">
-            Σοβαρότητα: {item.severity} · Μπλοκάρει βάρδια: {item.blocksRelease ? "Ναι" : "Όχι"}
+            Severity: {item.severity} · Blocks the shift: {item.blocksRelease ? "Yes" : "No"}
           </p>
           <p className="mt-1 text-sm text-[#64748B]">
-            Υπεύθυνος: {item.owner} · Προθεσμία: {item.due} · Κατάσταση: {item.status}
+            Owner: {item.owner} · Due: {item.due} · Status: {item.status}
           </p>
         </div>
       ))}
@@ -4287,7 +4287,7 @@ function ServiceCards({ machine }: { machine: Machine }) {
   );
 }
 
-function SimpleRows({ empty = "Δεν υπάρχουν εγγραφές.", rows }: { empty?: string; rows: string[][] }) {
+function SimpleRows({ empty = "There are no records.", rows }: { empty?: string; rows: string[][] }) {
   if (!rows.length) return <p className="text-sm font-semibold text-[#64748B]">{empty}</p>;
   return (
     <div className="space-y-2">
@@ -4325,18 +4325,18 @@ function DrawerActionModal({
   const initialBlockerId = action.type === "upload-document" ? actionBlockerId ?? certificateBlockers[0]?.id ?? blockers[0]?.id ?? "" : actionBlockerId ?? blockers[0]?.id ?? "";
   const [blockerId, setBlockerId] = useState(initialBlockerId);
   const [owner, setOwner] = useState(machine.owner);
-  const [assignmentStatus, setAssignmentStatus] = useState<NonNullable<Certificate["assignmentStatus"]>>("Ανατέθηκε");
+  const [assignmentStatus, setAssignmentStatus] = useState<NonNullable<Certificate["assignmentStatus"]>>("Assigned");
   const initialDue = duePresetDate("today-1700");
   const [dueDate, setDueDate] = useState(localDateInputValue(initialDue));
   const [dueTime, setDueTime] = useState(localTimeInputValue(initialDue));
-  const [notifyChannels, setNotifyChannels] = useState<string[]>(["Μέσα στην εφαρμογή"]);
+  const [notifyChannels, setNotifyChannels] = useState<string[]>(["In the app"]);
   const [note, setNote] = useState("");
   const [documentName, setDocumentName] = useState(certificateBlockers.find((blocker) => blocker.id === initialBlockerId)?.summary ?? "");
-  const [expiryDate, setExpiryDate] = useState("30 Ιουνίου 2026");
+  const [expiryDate, setExpiryDate] = useState("30 June 2026");
   const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
-  const [approver, setApprover] = useState("Γιώργος");
-  const [acceptedUntil, setAcceptedUntil] = useState("Σήμερα, 18:00");
+  const [approver, setApprover] = useState("George");
+  const [acceptedUntil, setAcceptedUntil] = useState("Today, 18:00");
   const [overrideReason, setOverrideReason] = useState("");
   const [confirmation, setConfirmation] = useState("");
 
@@ -4356,43 +4356,43 @@ function DrawerActionModal({
   const canSubmitAssign = owner.trim().length > 1 && Boolean(dueIso) && notifyChannels.length > 0;
   const canSubmitComplete = Boolean(blockerId);
   const canSubmitUpload = Boolean(blockerId && documentName.trim()) && !isUploadingEvidence;
-  const canSubmitOverride = overrideReason.trim().length >= 8 && approver.trim().length > 1 && acceptedUntil.trim().length > 1 && confirmation === "ΕΓΚΡΙΣΗ";
+  const canSubmitOverride = overrideReason.trim().length >= 8 && approver.trim().length > 1 && acceptedUntil.trim().length > 1 && confirmation === "APPROVE";
   const uploadSource = action.type === "upload-document" ? action.source ?? "passport" : undefined;
   const uploadTitle =
     uploadSource === "action-queue"
-      ? "Επίλυση με ανέβασμα απόδειξης"
+      ? "Resolve by uploading proof"
       : uploadSource === "documents"
-        ? "Ανέβασμα απόδειξης"
-        : "Ανέβασμα στον φάκελο";
+        ? "Upload proof"
+        : "Upload to the file";
   const uploadDescription =
     uploadSource === "action-queue"
-      ? "Ανέβασε την απόδειξη που καθαρίζει αυτή την ενέργεια βάρδιας. Το έγγραφο και ο φάκελος οχήματος ενημερώνονται μαζί."
+      ? "Upload the proof that clears this shift action. The document and the vehicle file are updated together."
       : uploadSource === "documents"
-        ? "Πρόσθεσε ή ανανέωσε απόδειξη στον έλεγχο εγγράφων. Οι αντίστοιχες ενέργειες βάρδιας και ο φάκελος οχήματος ενημερώνονται μαζί."
-        : "Σύνδεσε απόδειξη με αυτόν τον φάκελο οχήματος. Το έγγραφο και η ενέργεια βάρδιας ενημερώνονται από το ίδιο ανέβασμα.";
+        ? "Add or renew proof in the document review. The matching shift actions and the vehicle file are updated together."
+        : "Link proof to this vehicle file. The document and the shift action are updated from the same upload.";
   const uploadSubmitLabel =
     uploadSource === "action-queue"
-      ? "Ανέβασμα και επίλυση"
+      ? "Upload and resolve"
       : uploadSource === "documents"
-        ? "Ανέβασμα απόδειξης"
-        : "Ανέβασμα στον φάκελο";
+        ? "Upload proof"
+        : "Upload to the file";
 
   const title =
     action.type === "assign-owner"
-      ? "Ανάθεση υπευθύνου"
+      ? "Assign an owner"
       : action.type === "complete-action"
-        ? "Ολοκλήρωση εκκρεμότητας"
+        ? "Complete the open item"
         : action.type === "upload-document"
           ? uploadTitle
-          : "Έγκριση με εξαίρεση";
+          : "Approved by exception";
   const description =
     action.type === "assign-owner"
-      ? "Διάλεξε ποιος αναλαμβάνει την εκκρεμότητα και πότε λήγει η επόμενη ενέργεια."
+      ? "Choose who takes the item and when the next action is due."
       : action.type === "complete-action"
-        ? "Κλείσε μία εκκρεμότητα τη φορά, ώστε η κατάσταση της βάρδιας να παραμένει σαφής."
+        ? "Close one item at a time so the shift status stays clear."
         : action.type === "upload-document"
           ? uploadDescription
-          : "Οι εξαιρέσεις χρειάζονται έγκριση, ημερομηνία λήξης, αιτιολογία και πληκτρολογημένη επιβεβαίωση.";
+          : "Exceptions need an approver, an end date, a reason and a typed confirmation.";
 
   return (
     <div
@@ -4417,7 +4417,7 @@ function DrawerActionModal({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
           {action.type !== "override" ? (
             <label className="block">
-              <span className="text-xs font-bold uppercase text-[#64748B]">Εκκρεμότητα</span>
+              <span className="text-xs font-bold uppercase text-[#64748B]">Open item</span>
               <select
                 value={blockerId}
                 onChange={(event) => {
@@ -4446,7 +4446,7 @@ function DrawerActionModal({
           {action.type === "assign-owner" ? (
             <>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Υπεύθυνος</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Owner</span>
                 <select
                   value={owner}
                   onChange={(event) => setOwner(event.target.value)}
@@ -4460,13 +4460,13 @@ function DrawerActionModal({
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Κατάσταση ανάθεσης</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Assignment status</span>
                 <select
                   value={assignmentStatus}
                   onChange={(event) => setAssignmentStatus(event.target.value as NonNullable<Certificate["assignmentStatus"]>)}
                   className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
                 >
-                  {["Ανατέθηκε", "Έγινε αποδεκτό", "Εκπρόθεσμο"].map((status) => (
+                  {["Assigned", "Accepted", "Overdue"].map((status) => (
                     <option key={status} value={status}>
                       {status}
                     </option>
@@ -4474,7 +4474,7 @@ function DrawerActionModal({
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Προθεσμία</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Due</span>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   <input
                     type="date"
@@ -4490,12 +4490,12 @@ function DrawerActionModal({
                   />
                 </div>
                 <div className={`mt-2 rounded-md border p-3 text-sm font-bold ${dueOverdue ? "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]" : "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]"}`}>
-                  Προθεσμία: {dueLabel}
-                  {dueOverdue ? " · θα σημειωθεί ως εκπρόθεσμο" : ""}
+                  Due: {dueLabel}
+                  {dueOverdue ? " · will be marked overdue" : ""}
                 </div>
               </label>
               <div>
-                <span className="text-xs font-bold uppercase text-[#64748B]">Ειδοποίηση</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Notification</span>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {assignmentChannels.map((channel) => {
                     const selected = notifyChannels.includes(channel.label);
@@ -4515,14 +4515,14 @@ function DrawerActionModal({
                     );
                   })}
                 </div>
-                <p className="mt-2 text-xs font-semibold text-[#64748B]">Η ανάθεση καταγράφεται και αποστέλλεται από τα επιλεγμένα κανάλια.</p>
+                <p className="mt-2 text-xs font-semibold text-[#64748B]">The assignment is recorded and sent through the selected channels.</p>
               </div>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Σημείωση</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Note</span>
                 <textarea
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
-                  placeholder="Προαιρετικό σχόλιο για τον υπεύθυνο"
+                  placeholder="Optional note for the owner"
                   className="mt-2 min-h-20 w-full rounded-md border border-[#E2E8F0] p-3 text-sm outline-none focus:border-[#0D2F2D]"
                 />
               </label>
@@ -4531,11 +4531,11 @@ function DrawerActionModal({
 
           {action.type === "complete-action" ? (
             <label className="block">
-              <span className="text-xs font-bold uppercase text-[#64748B]">Σημείωση ολοκλήρωσης</span>
+              <span className="text-xs font-bold uppercase text-[#64748B]">Completion note</span>
               <textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Τι ολοκληρώθηκε;"
+                placeholder="What was completed?"
                 className="mt-2 min-h-24 w-full rounded-md border border-[#E2E8F0] p-3 text-sm outline-none focus:border-[#0D2F2D]"
               />
             </label>
@@ -4544,19 +4544,19 @@ function DrawerActionModal({
           {action.type === "upload-document" ? (
             <>
               <div className="rounded-md border border-[#CFFAFE] bg-[#ECFEFF] p-3">
-                <p className="text-sm font-bold text-[#0F766E]">Ένα ανέβασμα ενημερώνει τα έγγραφα, τον φάκελο οχήματος, τις εκκρεμότητες και το ιστορικό αποφάσεων.</p>
+                <p className="text-sm font-bold text-[#0F766E]">One upload updates the documents, the vehicle file, the open items and the decision history.</p>
               </div>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Όνομα απόδειξης</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Proof name</span>
                 <input
                   value={documentName}
                   onChange={(event) => setDocumentName(event.target.value)}
-                  placeholder="Ανανεωμένο πιστοποιητικό ανύψωσης"
+                  placeholder="Renewed lifting certificate"
                   className="mt-2 min-h-11 w-full rounded-md border border-[#E2E8F0] px-3 text-sm font-semibold text-[#1F2933] outline-none focus:border-[#0D2F2D]"
                 />
               </label>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Νέα λήξη / ισχύς</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">New expiry / validity</span>
                 <input
                   value={expiryDate}
                   onChange={(event) => setExpiryDate(event.target.value)}
@@ -4565,10 +4565,10 @@ function DrawerActionModal({
               </label>
 	              <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-3 text-sm font-bold text-[#0D2F2D]">
 	                <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
-	                {selectedEvidenceFile ? selectedEvidenceFile.name : "Επιλογή αρχείου απόδειξης"}
+	                {selectedEvidenceFile ? selectedEvidenceFile.name : "Choose a proof file"}
 	                <input
 	                  type="file"
-	                  aria-label="Επιλογή αρχείου απόδειξης"
+	                  aria-label="Choose a proof file"
 	                  className="sr-only"
 	                  onChange={(event) => setSelectedEvidenceFile(event.target.files?.[0] ?? null)}
 	                />
@@ -4579,20 +4579,20 @@ function DrawerActionModal({
           {action.type === "override" ? (
             <>
               <div className="rounded-md border border-[#FECACA] bg-[#FEF2F2] p-3">
-                <p className="text-sm font-bold text-[#B91C1C]">Αυτό εγκρίνει μπλοκαρισμένο όχημα με ιστορικό απόφασης. Χρησιμοποίησέ το μόνο όταν η υπηρεσία αποδέχεται το ρίσκο.</p>
+                <p className="text-sm font-bold text-[#B91C1C]">This approves a blocked vehicle with a decision record. Use it only when the service accepts the risk.</p>
               </div>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Αιτιολογία εξαίρεσης</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Exception reason</span>
                 <textarea
                   value={overrideReason}
                   onChange={(event) => setOverrideReason(event.target.value)}
-                  placeholder="Γιατί εγκρίνεται ενώ υπάρχουν ανοιχτές εκκρεμότητες;"
+                  placeholder="Why approve while items are still open?"
                   className="mt-2 min-h-24 w-full rounded-md border border-[#E2E8F0] p-3 text-sm outline-none focus:border-[#0D2F2D]"
                 />
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-xs font-bold uppercase text-[#64748B]">Εγκρίθηκε από</span>
+                  <span className="text-xs font-bold uppercase text-[#64748B]">Approved by</span>
                   <input
                     value={approver}
                     onChange={(event) => setApprover(event.target.value)}
@@ -4600,7 +4600,7 @@ function DrawerActionModal({
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-bold uppercase text-[#64748B]">Ισχύει έως</span>
+                  <span className="text-xs font-bold uppercase text-[#64748B]">Valid until</span>
                   <input
                     value={acceptedUntil}
                     onChange={(event) => setAcceptedUntil(event.target.value)}
@@ -4609,7 +4609,7 @@ function DrawerActionModal({
                 </label>
               </div>
               <label className="block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">Γράψε ΕΓΚΡΙΣΗ για επιβεβαίωση</span>
+                <span className="text-xs font-bold uppercase text-[#64748B]">Type APPROVE to confirm</span>
                 <input
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
@@ -4621,26 +4621,26 @@ function DrawerActionModal({
         </div>
         <OverlayFooter>
           <button type="button" onClick={onClose} className={overlaySecondaryActionClass}>
-            Άκυρο
+            Cancel
           </button>
           {action.type === "assign-owner" ? (
             <button
               type="button"
               disabled={!canSubmitAssign}
-              onClick={() => onAssign(owner.trim(), blockerId || undefined, dueIso, note.trim(), dueOverdue ? "Εκπρόθεσμο" : assignmentStatus, notifyChannels)}
+              onClick={() => onAssign(owner.trim(), blockerId || undefined, dueIso, note.trim(), dueOverdue ? "Overdue" : assignmentStatus, notifyChannels)}
               className={overlayPrimaryActionClass}
             >
-              Ανάθεση υπευθύνου
+              Assign an owner
             </button>
           ) : null}
           {action.type === "complete-action" ? (
             <button
               type="button"
               disabled={!canSubmitComplete}
-              onClick={() => onComplete(blockerId, note.trim() || "Η ενέργεια ολοκληρώθηκε")}
+              onClick={() => onComplete(blockerId, note.trim() || "The action was completed")}
               className={`${overlayPrimaryActionClass} bg-[#166534] hover:bg-[#14532D]`}
             >
-              Ολοκλήρωση
+              Complete
             </button>
           ) : null}
           {action.type === "upload-document" ? (
@@ -4652,21 +4652,21 @@ function DrawerActionModal({
 	                  setIsUploadingEvidence(true);
 	                  if (selectedEvidenceFile) {
 	                    await uploadConsoleFile(selectedEvidenceFile, "evidence", machine, {
-	                      documentCategory: selectedBlocker?.kind === "certificate" ? selectedBlocker.title : "Έγγραφο ασφάλειας",
+	                      documentCategory: selectedBlocker?.kind === "certificate" ? selectedBlocker.title : "Safety document",
 	                      documentTitle: documentName.trim(),
 	                      expiresAt: dateInputFromLabel(expiryDate.trim()),
 	                    });
 	                  }
 	                  onUpload(blockerId, documentName.trim(), expiryDate.trim());
 	                } catch (error) {
-	                  emitConsoleToast(error instanceof Error ? error.message : "Το ανέβασμα απέτυχε.");
+	                  emitConsoleToast(error instanceof Error ? error.message : "The upload failed.");
 	                } finally {
 	                  setIsUploadingEvidence(false);
 	                }
 	              }}
 	              className={overlayPrimaryActionClass}
 	            >
-	              {isUploadingEvidence ? "Ανεβαίνει..." : uploadSubmitLabel}
+	              {isUploadingEvidence ? "Uploading..." : uploadSubmitLabel}
 	            </button>
           ) : null}
           {action.type === "override" ? (
@@ -4676,7 +4676,7 @@ function DrawerActionModal({
               onClick={() => onOverride(overrideReason.trim(), approver.trim(), acceptedUntil.trim())}
               className={`${overlayPrimaryActionClass} bg-[#B45309] hover:bg-[#92400E]`}
             >
-              Έγκριση με εξαίρεση
+              Approved by exception
             </button>
           ) : null}
         </OverlayFooter>
@@ -4722,24 +4722,24 @@ function ReleaseModal({
         className="fleet-dialog-enter flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)]"
       >
         <OverlayHeader
-          eyebrow="Κλείδωμα βάρδιας"
-          title="Έλεγχος πριν το κλείδωμα"
+          eyebrow="Lock the shift"
+          title="Check before locking"
           titleId="release-review-title"
-          description="Επιβεβαίωσε ποια οχήματα ξεκινούν και ποια παραμένουν εκτός βάρδιας."
+          description="Confirm which vehicles start and which stay off shift."
           onClose={onClose}
         />
         <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           <div className="grid grid-cols-3 overflow-hidden rounded-md border border-[#DCE5E1]">
             <div className="bg-[#F0FDF4] px-4 py-3 text-[#15803D]">
-              <p className="text-[11px] font-bold uppercase">Έτοιμα</p>
+              <p className="text-[11px] font-bold uppercase">Ready</p>
               <p className="mt-1 text-xl font-bold tabular-nums">{ready}</p>
             </div>
             <div className="border-x border-[#DCE5E1] bg-[#FFFBEB] px-4 py-3 text-[#B45309]">
-              <p className="text-[11px] font-bold uppercase">Για έλεγχο</p>
+              <p className="text-[11px] font-bold uppercase">For review</p>
               <p className="mt-1 text-xl font-bold tabular-nums">{attention}</p>
             </div>
             <div className="bg-[#FEF2F2] px-4 py-3 text-[#B91C1C]">
-              <p className="text-[11px] font-bold uppercase">Δεν ξεκινούν</p>
+              <p className="text-[11px] font-bold uppercase">Not starting</p>
               <p className="mt-1 text-xl font-bold tabular-nums">{blocked}</p>
             </div>
           </div>
@@ -4747,7 +4747,7 @@ function ReleaseModal({
             <table className="min-w-[720px] w-full text-left text-sm">
               <thead className="bg-[#F8FAFC] text-xs font-bold uppercase text-[#64748B]">
                 <tr>
-                  {["Όχημα", "Αποτέλεσμα", "Αιτία", "Απαιτούμενη ενέργεια"].map((heading) => (
+                  {["Vehicle", "Outcome", "Reason", "Required action"].map((heading) => (
                     <th key={heading} className="border-b border-[#E2E8F0] px-4 py-3">
                       {heading}
                     </th>
@@ -4769,13 +4769,13 @@ function ReleaseModal({
             </table>
           </div>
           <div className="mt-5 border-l-4 border-[#D97706] bg-[#FFFBEB] px-4 py-3">
-            <p className="text-sm font-bold text-[#92400E]">Οι εξαιρέσεις εγκρίνονται ανά όχημα.</p>
-            <p className="mt-1 text-sm leading-5 text-[#92400E]">Απαιτούν αιτιολογία, υπεύθυνο έγκρισης και χρόνο λήξης πριν καταγραφούν στο ιστορικό.</p>
+            <p className="text-sm font-bold text-[#92400E]">Exceptions are approved per vehicle.</p>
+            <p className="mt-1 text-sm leading-5 text-[#92400E]">They need a reason, an approver and an end time before they are written to the history.</p>
           </div>
         </div>
         <OverlayFooter>
           <button type="button" onClick={onClose} className={overlaySecondaryActionClass}>
-            Άκυρο
+            Cancel
           </button>
           <button
             type="button"
@@ -4785,10 +4785,10 @@ function ReleaseModal({
             }}
             className={overlaySecondaryActionClass}
           >
-            Έλεγχος οχημάτων που δεν ξεκινούν
+            Check vehicles that are not starting
           </button>
           <button type="button" onClick={onReleaseReady} className={`${overlayPrimaryActionClass} bg-[#166534] hover:bg-[#14532D]`}>
-            Κλείδωμα {ready} έτοιμων
+            Lock {ready} ready
           </button>
         </OverlayFooter>
       </section>
@@ -4807,15 +4807,15 @@ function AddItemModal({
 }) {
   const [name, setName] = useState("");
   const placeholder =
-    type === "Όχημα"
-      ? "π.χ. ΑΦ-30 νέο απορριμματοφόρο"
-      : type === "Πακέτο εργασίας"
-        ? "π.χ. Επέκταση λιμενικής εγκατάστασης"
-        : type === "Έλεγχος / έγγραφο"
-          ? "π.χ. ΚΤΕΟ ή ανάθεση οδηγού"
-          : type === "Θέμα συνεργείου"
-            ? "π.χ. Περιμένει ανταλλακτικό"
-            : "π.χ. Έγγραφο ασφάλισης";
+    type === "Vehicle"
+      ? "e.g. RT-30 new refuse truck"
+      : type === "Work package"
+        ? "e.g. Port facility extension"
+        : type === "Check / document"
+          ? "e.g. roadworthiness test or driver assignment"
+          : type === "Workshop issue"
+            ? "e.g. Waiting on a part"
+            : "e.g. Insurance document";
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -4840,9 +4840,9 @@ function AddItemModal({
       >
         <OverlayHeader
           eyebrow={type}
-          title="Νέα καταχώριση"
+          title="New record"
           titleId="add-item-title"
-          description="Συμπλήρωσε το βασικό όνομα. Οι υπόλοιπες πληροφορίες μπορούν να προστεθούν μετά."
+          description="Enter the basic name. The rest can be added later."
           onClose={onClose}
         />
         <form
@@ -4854,7 +4854,7 @@ function AddItemModal({
         >
           <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
             <label className={overlayLabelClass} htmlFor="add-item-name">
-              Όνομα καταχώρισης
+              Record name
             </label>
             <input
               id="add-item-name"
@@ -4867,10 +4867,10 @@ function AddItemModal({
           </div>
           <OverlayFooter>
             <button type="button" onClick={onClose} className={overlaySecondaryActionClass}>
-              Άκυρο
+              Cancel
             </button>
             <button type="submit" disabled={!name.trim()} className={overlayPrimaryActionClass}>
-              Προσθήκη
+              Add
             </button>
           </OverlayFooter>
         </form>
@@ -4905,26 +4905,26 @@ function WorksitesView({
   return (
     <ConsolePage>
       <ViewHeader
-        title="Πακέτα εργασίας"
-        description="Ποιες εργασίες ξεκινούν αύριο και τι χρειάζεται ενέργεια σήμερα."
+        title="Work packages"
+        description="Which jobs start tomorrow and what needs action today."
         showActions={false}
       />
       <Surface className="overflow-hidden p-0">
         <PanelHeader
-          eyebrow="Ετοιμότητα υπηρεσιών"
-          title="Τι χρειάζεται προσοχή πριν κλείσει η βάρδια"
+          eyebrow="Service readiness"
+          title="What needs attention before the shift closes"
           actions={(
             <>
-            <MetricChip tone="blocked">{blockedSites} δεν ξεκινούν</MetricChip>
-            <MetricChip tone="attention">{reviewSites} για έλεγχο</MetricChip>
-            <MetricChip tone="ready">{readySites} έτοιμες</MetricChip>
+            <MetricChip tone="blocked">{blockedSites} not starting</MetricChip>
+            <MetricChip tone="attention">{reviewSites} for review</MetricChip>
+            <MetricChip tone="ready">{readySites} ready</MetricChip>
             </>
           )}
         />
         <div className="grid gap-3 bg-[#F8FAFC] p-4 xl:grid-cols-3">
           {sortedRows.map(({ counts, mainBlocker, worksite }) => {
             const state: MachineState = counts.blocked ? "blocked" : counts.attention ? "at_risk" : "ready";
-            const stateLabel = state === "ready" ? "Έτοιμη" : state === "at_risk" ? "Για έλεγχο" : "Δεν ξεκινά";
+            const stateLabel = state === "ready" ? "Ready" : state === "at_risk" ? "For review" : "Not starting";
             const readyWidth = counts.total ? (counts.ready / counts.total) * 100 : 0;
             return (
               <button
@@ -4944,7 +4944,7 @@ function WorksitesView({
                 </div>
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-xs font-bold text-[#475569]">
-                    <span>Έτοιμα οχήματα</span>
+                    <span>Ready vehicles</span>
                     <span>{counts.ready}/{counts.total}</span>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E5E7EB]">
@@ -4953,12 +4953,12 @@ function WorksitesView({
                 </div>
                 <div className="mt-4 flex-1">
                   <p className="text-sm font-bold leading-5 text-[#1F2933]">
-                    {mainBlocker ? `${mainBlocker.code}: ${mainBlocker.reason}` : "Δεν χρειάζεται ενέργεια"}
+                    {mainBlocker ? `${mainBlocker.code}: ${mainBlocker.reason}` : "No action needed"}
                   </p>
                   {mainBlocker ? <p className="mt-1 text-xs font-semibold text-[#64748B]">{mainBlocker.owner} · {mainBlocker.nextAction}</p> : null}
                 </div>
                 <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#0D5D59]">
-                  Άνοιγμα υπηρεσίας <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
+                  Open service <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
                 </span>
               </button>
             );
@@ -4967,7 +4967,7 @@ function WorksitesView({
       </Surface>
       <CustomDataSection
         fields={customFields}
-        title="Πεδία εργασιών και αναθέσεων"
+        title="Job and assignment fields"
         records={sortedRows.map(({ worksite }) => ({
           id: worksite.id,
           label: worksite.name,
@@ -5007,7 +5007,7 @@ function WorksiteReleaseReview({
     id: machine.id,
     code: machine.code,
     owner: machine.owner,
-    action: machine.nextAction === "-" ? "Καμία ενέργεια" : machine.nextAction,
+    action: machine.nextAction === "-" ? "No action" : machine.nextAction,
     eta: machine.eta,
     reason: machine.reason,
     state: machine.state,
@@ -5029,7 +5029,7 @@ function WorksiteReleaseReview({
         className="fleet-drawer-enter flex h-full w-full max-w-[560px] flex-col overflow-hidden border-l border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)]"
       >
         <OverlayHeader
-          eyebrow="Έλεγχος ετοιμότητας υπηρεσίας"
+          eyebrow="Service readiness check"
           title={worksite.name}
           titleId="service-review-title"
           description={`${worksite.date} · ${worksite.location}`}
@@ -5038,34 +5038,34 @@ function WorksiteReleaseReview({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           <div className={`rounded-lg border p-4 ${canRelease ? "border-[#BBF7D0] bg-[#F0FDF4]" : "border-[#FECACA] bg-[#FEF2F2]"}`}>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Έλεγχος αυριανής βάρδιας</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">Tomorrow&apos;s shift check</p>
             <p className={`mt-2 text-lg font-bold ${canRelease ? "text-[#15803D]" : "text-[#B91C1C]"}`}>
-              {canRelease ? "Θα ξεκινήσει" : "Δεν θα ξεκινήσει"}
+              {canRelease ? "Will start" : "Will not start"}
             </p>
             <p className="mt-1 text-sm font-semibold text-[#475569]">
-              {canRelease ? "Δεν υπάρχουν οχήματα που σταματούν αυτή την υπηρεσία." : `${counts.blocked} εκκρεμότητες πρέπει να κλείσουν πριν ξεκινήσει η υπηρεσία.`}
+              {canRelease ? "No vehicles are stopping this service." : `${counts.blocked} open items must be closed before the service can start.`}
             </p>
           </div>
 
           <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-lg border border-[#E5E7EB] text-sm font-bold">
             <div className="bg-[#F0FDF4] px-3 py-3 text-[#15803D]">
-              <p className="text-[11px] uppercase">Έτοιμα</p>
+              <p className="text-[11px] uppercase">Ready</p>
               <p className="mt-1 text-xl">{counts.ready}</p>
             </div>
             <div className="border-x border-[#E5E7EB] bg-[#FFFBEB] px-3 py-3 text-[#B45309]">
-              <p className="text-[11px] uppercase">Έλεγχος</p>
+              <p className="text-[11px] uppercase">Check</p>
               <p className="mt-1 text-xl">{counts.attention}</p>
             </div>
             <div className="bg-[#FEF2F2] px-3 py-3 text-[#B91C1C]">
-              <p className="text-[11px] uppercase">Δεν ξεκινούν</p>
+              <p className="text-[11px] uppercase">Not starting</p>
               <p className="mt-1 text-xl">{counts.blocked}</p>
             </div>
           </div>
 
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-bold text-[#111827]">Ενέργειες υπευθύνων</h3>
-              <span className="rounded-full bg-[#F1F5F9] px-2 py-1 text-xs font-bold text-[#64748B]">{ownerActions.length} ανοιχτές</span>
+              <h3 className="text-sm font-bold text-[#111827]">Owner actions</h3>
+              <span className="rounded-full bg-[#F1F5F9] px-2 py-1 text-xs font-bold text-[#64748B]">{ownerActions.length} open</span>
             </div>
             <div className="mt-3 overflow-hidden rounded-md border border-[#DCE5E1] bg-white divide-y divide-[#E2E8F0]">
               {ownerActions.length ? (
@@ -5081,20 +5081,20 @@ function WorksiteReleaseReview({
                       </div>
                       <span className="shrink-0 rounded-md border border-[#DCE5E1] bg-white px-2 py-1 text-xs font-bold text-[#475569]">{item.eta}</span>
                     </div>
-                    <p className="mt-3 text-xs font-bold uppercase text-[#64748B]">Υπεύθυνος</p>
+                    <p className="mt-3 text-xs font-bold uppercase text-[#64748B]">Owner</p>
                     <p className="mt-1 text-sm font-semibold text-[#1F2933]">
                       {item.owner} · {item.action}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm font-semibold text-[#15803D]">Δεν χρειάζεται ενέργεια υπευθύνου πριν κλειδώσει η βάρδια.</div>
+                <div className="rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm font-semibold text-[#15803D]">No owner action is needed before the shift locks.</div>
               )}
             </div>
           </div>
 
           <div className="mt-5">
-            <h3 className="text-sm font-bold text-[#111827]">Απαιτούμενα οχήματα</h3>
+            <h3 className="text-sm font-bold text-[#111827]">Required vehicles</h3>
             <div className="mt-3 overflow-hidden rounded-lg border border-[#E5E7EB]">
               {list.map((machine) => (
                 <div key={machine.id} className="grid grid-cols-[80px_1fr_auto] items-center gap-3 border-b border-[#E5E7EB] px-3 py-3 text-sm last:border-0">
@@ -5109,10 +5109,10 @@ function WorksiteReleaseReview({
 
         <OverlayFooter>
           <button type="button" onClick={onClose} className={overlaySecondaryActionClass}>
-            Κλείσιμο
+            Close
           </button>
           <button type="button" onClick={onOpenPlanner} className={overlayPrimaryActionClass}>
-            Άνοιγμα αυριανής βάρδιας
+            Open tomorrow&apos;s shift
           </button>
         </OverlayFooter>
       </aside>
@@ -5184,9 +5184,9 @@ function MachinesView({
     });
     try {
       await uploadConsoleFile(file, "machine-photo", machine);
-      emitConsoleToast(`${machine.code}: η φωτογραφία ανέβηκε.`);
+      emitConsoleToast(`${machine.code}: the photo was uploaded.`);
     } catch (error) {
-      emitConsoleToast(error instanceof Error ? error.message : `${machine.code}: το ανέβασμα φωτογραφίας απέτυχε.`);
+      emitConsoleToast(error instanceof Error ? error.message : `${machine.code}: the photo upload failed.`);
     }
   }
 
@@ -5247,9 +5247,9 @@ function MachinesView({
   return (
     <ConsolePage>
       <ViewHeader
-        title="Οχήματα"
-        description="Κατάσταση, εκκρεμότητες και φάκελος κάθε οχήματος."
-        exportLabel="Εξαγωγή λίστας οχημάτων"
+        title="Vehicles"
+        description="Status, open items and file for every vehicle."
+        exportLabel="Export vehicle list"
         exportActions={[
           { label: "CSV", onClick: () => exportMachines("csv") },
           { label: "XLSX", onClick: () => exportMachines("xlsx") },
@@ -5257,22 +5257,22 @@ function MachinesView({
       />
       <Surface className="overflow-hidden p-0">
         <PanelHeader
-          eyebrow="Κατάσταση στόλου"
-          title="Οχήματα ανά κατάσταση"
-          description="Πρώτα εμφανίζονται όσα σταματούν ή χρειάζονται έλεγχο."
+          eyebrow="Fleet status"
+          title="Vehicles by status"
+          description="Vehicles that are stopping or need review are shown first."
           actions={(
             <>
-              <MetricChip tone="blocked">{grouped.blocked.length} δεν βγαίνουν</MetricChip>
-              <MetricChip tone="attention">{grouped.at_risk.length} για έλεγχο</MetricChip>
-              <MetricChip tone="ready">{grouped.ready.length} έτοιμα</MetricChip>
+              <MetricChip tone="blocked">{grouped.blocked.length} not going out</MetricChip>
+              <MetricChip tone="attention">{grouped.at_risk.length} for review</MetricChip>
+              <MetricChip tone="ready">{grouped.ready.length} ready</MetricChip>
             </>
           )}
         />
         <div className="grid gap-4 bg-[#F8FAFC] p-4 xl:grid-cols-3">
         {[
-          ["Μπλοκαρισμένα", grouped.blocked, "blocked"],
-          ["Θέλουν έλεγχο", grouped.at_risk, "at_risk"],
-          ["Έτοιμα", grouped.ready, "ready"],
+          ["Blocked", grouped.blocked, "blocked"],
+          ["Need review", grouped.at_risk, "at_risk"],
+          ["Ready", grouped.ready, "ready"],
         ].map(([label, list, state]) => (
           <section key={label as string} className={`min-w-0 overflow-hidden rounded-md border border-[#E2E8F0] border-t-2 bg-white ${columnToneClasses(state as MachineState)}`}>
             <div className={`flex items-center justify-between gap-3 border-b border-[#E5E7EB] px-4 py-3 ${columnHeaderClasses(state as MachineState)}`}>
@@ -5405,10 +5405,10 @@ function CustomDataSection({
   return (
     <Surface className="overflow-hidden p-0">
       <PanelHeader
-        eyebrow="Προσαρμοσμένα δεδομένα"
+        eyebrow="Custom data"
         title={title}
-        description="Τα πεδία ορίζονται από τις Ρυθμίσεις και αποθηκεύονται μαζί με κάθε εγγραφή."
-        actions={<MetricChip tone="info">{visibleFields.length} {visibleFields.length === 1 ? "πεδίο" : "πεδία"}</MetricChip>}
+        description="Fields are defined in Settings and saved with every record."
+        actions={<MetricChip tone="info">{visibleFields.length} {visibleFields.length === 1 ? "field" : "fields"}</MetricChip>}
       />
       <div className="max-h-[520px] divide-y divide-[#E2E8F0] overflow-y-auto">
         {records.map((record) => (
@@ -5450,7 +5450,7 @@ function MachineInventoryCard({
   photoUrl: string;
 }) {
   const uploadId = `machine-photo-${machine.id}`;
-  const action = machine.state === "blocked" ? "Επίλυση" : machine.state === "at_risk" ? "Έλεγχος" : "Φάκελος";
+  const action = machine.state === "blocked" ? "Resolve" : machine.state === "at_risk" ? "Check" : "File";
   const tone = machineCardTone(machine.state);
 
   return (
@@ -5480,13 +5480,13 @@ function MachineInventoryCard({
           className="absolute bottom-3 right-3 inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-md border border-white/60 bg-white/90 px-3 text-xs font-bold text-[#0D2F2D] shadow-sm backdrop-blur transition hover:bg-white"
         >
           <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-          Φωτογραφία
+          Photo
         </label>
         <input
           id={uploadId}
           type="file"
           accept="image/*"
-          aria-label={`Φωτογραφία for ${machine.code}`}
+          aria-label={`Photo for ${machine.code}`}
           className="sr-only"
           onChange={(event) => onPhotoUpload(event.target.files?.[0])}
         />
@@ -5501,7 +5501,7 @@ function MachineInventoryCard({
         </div>
         <p className="mt-3 text-sm font-bold text-[#1F2933]">{machine.reason}</p>
         <p className="mt-1 text-xs font-semibold text-[#64748B]">
-          {machine.owner} · {machine.nextAction === "-" ? "Καμία ενέργεια" : machine.nextAction}
+          {machine.owner} · {machine.nextAction === "-" ? "No action" : machine.nextAction}
         </p>
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-3">
           <p className="text-xs font-semibold text-[#64748B]">{machineWorksite(machine).name}</p>
@@ -5552,11 +5552,11 @@ function machineCardTone(state: MachineState) {
 }
 
 function staffStatusLabel(status: StaffStatus) {
-  if (status === "available") return "Διαθέσιμος";
-  if (status === "assigned") return "Σε ανάθεση";
-  if (status === "missing") return "Λείπει";
-  if (status === "leave") return "Άδεια";
-  return "Ασθένεια";
+  if (status === "available") return "Available";
+  if (status === "assigned") return "Being assigned";
+  if (status === "missing") return "Missing";
+  if (status === "leave") return "Leave";
+  return "Sick";
 }
 
 function staffStatusClasses(status: StaffStatus) {
@@ -5620,14 +5620,14 @@ function StaffCard({
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
         <span className="rounded-sm border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1.5 text-[#1F2933]">
-          Ανάθεση: {person.assignedTo}
+          Assignment: {person.assignedTo}
         </span>
       </div>
 
       <p className="mt-3 line-clamp-2 text-xs font-semibold leading-relaxed text-[#475569]">{person.note}</p>
       {person.replacement ? (
         <p className="mt-3 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-2 py-1.5 text-xs font-bold leading-relaxed text-[#92400E]">
-          Επόμενη κίνηση: {person.replacement}
+          Next move: {person.replacement}
         </p>
       ) : null}
     </div>
@@ -5647,15 +5647,15 @@ function StaffView({
   const [draggedStaffId, setDraggedStaffId] = useState<string | null>(null);
   const staffExportColumns: Array<ExportColumn<StaffMember>> = [
     { header: "ID", value: (person) => person.id },
-    { header: "Όνομα", value: (person) => person.name },
-    { header: "Ρόλος", value: (person) => person.role },
-    { header: "Ομάδα", value: (person) => person.team },
-    { header: "Κατάσταση", value: (person) => staffStatusLabel(person.status) },
-    { header: "Βάρδια", value: (person) => person.shift },
-    { header: "Ανάθεση", value: (person) => person.assignedTo },
-    { header: "Επαφή", value: (person) => person.phone },
-    { header: "Σημείωση", value: (person) => person.note },
-    { header: "Επόμενη κίνηση", value: (person) => person.replacement ?? "" },
+    { header: "Name", value: (person) => person.name },
+    { header: "Role", value: (person) => person.role },
+    { header: "Team", value: (person) => person.team },
+    { header: "Status", value: (person) => staffStatusLabel(person.status) },
+    { header: "Shift", value: (person) => person.shift },
+    { header: "Assignment", value: (person) => person.assignedTo },
+    { header: "Contact", value: (person) => person.phone },
+    { header: "Note", value: (person) => person.note },
+    { header: "Next move", value: (person) => person.replacement ?? "" },
     ...customFields
       .filter((field) => field.visibility.export && !field.archived)
       .sort((left, right) => left.order - right.order)
@@ -5671,9 +5671,9 @@ function StaffView({
   const unavailable = boardStaff.filter((person) => person.status === "leave" || person.status === "sick").length;
   const coverageGaps = boardStaff.filter((person) => person.status === "missing" || person.status === "sick" || person.status === "leave");
   const columns: Array<{ title: string; subtitle: string; statuses: StaffStatus[]; status: StaffStatus }> = [
-    { title: "Διαθέσιμοι", subtitle: "Μπορούν να καλύψουν αλλαγές", statuses: ["available"], status: "available" },
-    { title: "Σε ανάθεση", subtitle: "Ήδη κρατημένοι σε δουλειά", statuses: ["assigned"], status: "assigned" },
-    { title: "Λείπουν", subtitle: "Θέλουν αντικατάσταση", statuses: ["missing", "sick", "leave"], status: "missing" },
+    { title: "Available", subtitle: "Can cover changes", statuses: ["available"], status: "available" },
+    { title: "Being assigned", subtitle: "Already committed to work", statuses: ["assigned"], status: "assigned" },
+    { title: "Missing", subtitle: "Need cover", statuses: ["missing", "sick", "leave"], status: "missing" },
   ];
 
   function moveStaffToLane(nextStatus: StaffStatus) {
@@ -5717,9 +5717,9 @@ function StaffView({
   return (
     <ConsolePage>
       <ViewHeader
-        title="Προσωπικό"
-        description="Διαθεσιμότητα, αναθέσεις και κενά της αυριανής βάρδιας."
-        exportLabel="Εξαγωγή λίστας προσωπικού"
+        title="Staff"
+        description="Availability, assignments and gaps for tomorrow's shift."
+        exportLabel="Export staff list"
         exportActions={[
           { label: "CSV", onClick: () => exportStaff("csv") },
           { label: "XLSX", onClick: () => exportStaff("xlsx") },
@@ -5728,14 +5728,14 @@ function StaffView({
 
       <Surface className="overflow-hidden p-0">
         <PanelHeader
-          eyebrow="Κάλυψη αυριανής βάρδιας"
-          title="Κενά που χρειάζονται αντικατάσταση"
+          eyebrow="Tomorrow's shift cover"
+          title="Gaps that need cover"
           actions={(
             <>
-            <MetricChip tone="ready">{available} διαθέσιμοι</MetricChip>
-            <MetricChip tone="info">{assigned} σε ανάθεση</MetricChip>
-            <MetricChip tone="blocked">{missing} λείπουν</MetricChip>
-            <MetricChip tone="attention">{unavailable} άδεια ή ασθένεια</MetricChip>
+            <MetricChip tone="ready">{available} available</MetricChip>
+            <MetricChip tone="info">{assigned} being assigned</MetricChip>
+            <MetricChip tone="blocked">{missing} missing</MetricChip>
+            <MetricChip tone="attention">{unavailable} on leave or sick</MetricChip>
             </>
           )}
         />
@@ -5767,8 +5767,8 @@ function StaffView({
           ))}
         </div>
         <div className="border-y border-[#E2E8F0] px-5 py-4">
-          <h2 className="text-lg font-semibold text-[#0D2F2D]">Διαθεσιμότητα προσωπικού</h2>
-          <p className="mt-1 text-[13px] text-[#64748B]">Μετακίνησε ένα άτομο για να ενημερώσεις την κατάσταση της βάρδιας.</p>
+          <h2 className="text-lg font-semibold text-[#0D2F2D]">Staff availability</h2>
+          <p className="mt-1 text-[13px] text-[#64748B]">Move a person to update the shift status.</p>
         </div>
         <div className="grid gap-4 bg-[#F8FAFC] p-4 xl:grid-cols-3">
         {columns.map((column) => {
@@ -5800,7 +5800,7 @@ function StaffView({
                   />
                 ))}
                 <div className="rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC]/70 px-3 py-2 text-center text-xs font-bold text-[#64748B]">
-                  Σύρε άτομο εδώ
+                  Drag a person here
                 </div>
               </div>
             </section>
@@ -5810,7 +5810,7 @@ function StaffView({
       </Surface>
       <CustomDataSection
         fields={customFields}
-        title="Πεδία προσωπικού και χειριστών"
+        title="Staff and operator fields"
         records={boardStaff.map((person) => ({
           id: person.id,
           label: person.name,
@@ -5875,12 +5875,12 @@ function GlobalSearchViewer({
     >
       <div className={`flex items-center justify-between gap-3 border-b border-[#DCE5E1] px-4 py-3 ${mobileInline ? "[&>button]:hidden" : ""}`}>
         <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Αναζήτηση στο FleetLever</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">Search FleetLever</p>
           <p className="mt-1 truncate text-sm font-semibold text-[#64748B]">
-            {resultCount ? `${resultCount} αποτελέσματα για "${query}"` : `Κανένα αποτέλεσμα για "${query}"`}
+            {resultCount ? `${resultCount} results for "${query}"` : `No results for "${query}"`}
           </p>
         </div>
-        <OverlayCloseButton label="Καθαρισμός αναζήτησης" onClick={onClear} />
+        <OverlayCloseButton label="Clear search" onClick={onClear} />
       </div>
       {groups.length ? (
         <div className="grid gap-4 p-4 xl:grid-cols-2">
@@ -5900,7 +5900,7 @@ function GlobalSearchViewer({
         </div>
       ) : (
         <div className="p-5 text-sm font-semibold text-[#64748B]">
-          Δεν βρέθηκαν οχήματα, υπηρεσίες, έγγραφα, εκκρεμότητες, εργασίες συνεργείου ή αποφάσεις.
+          No vehicles, services, documents, open items, workshop jobs or decisions were found.
         </div>
       )}
     </div>
@@ -5958,20 +5958,20 @@ function blockerIdForCertificate(certificate: Certificate) {
 }
 
 function documentActionForCertificate(certificate: Certificate): Exclude<DrawerAction, null> {
-  if (certificate.status === "Κρίσιμο" || certificate.status === "Λήγει σύντομα") return { type: "assign-owner", blockerId: blockerIdForCertificate(certificate) };
+  if (certificate.status === "Critical" || certificate.status === "Expiring soon") return { type: "assign-owner", blockerId: blockerIdForCertificate(certificate) };
   return { type: "upload-document", blockerId: blockerIdForCertificate(certificate), source: "documents" };
 }
 
 function documentCommandLabel(certificate: Certificate) {
-  if (certificate.status === "Κρίσιμο" || certificate.status === "Λήγει σύντομα") return "Ανάθεση";
-  if (certificate.status === "Σε ισχύ") return "Προβολή";
-  return "Ανέβασμα";
+  if (certificate.status === "Critical" || certificate.status === "Expiring soon") return "Assignment";
+  if (certificate.status === "Valid") return "View";
+  return "Upload";
 }
 
 function actionLabelForQueueRow(machine: Machine, blocker: BlockerCard) {
-  if (machine.state === "at_risk") return "Ανάθεση υπευθύνου";
-  if (blocker.kind === "certificate") return "Ανέβασμα εγγράφου";
-  return "Ολοκλήρωση εργασίας";
+  if (machine.state === "at_risk") return "Assign an owner";
+  if (blocker.kind === "certificate") return "Upload document";
+  return "Complete job";
 }
 
 function blockerLineValue(blocker: BlockerCard, label: string) {
@@ -5988,14 +5988,14 @@ function actionQueueRows(machinesList: Machine[]): ActionQueueRow[] {
         {
           id: `issue:${machine.reason}`,
           kind: "certificate",
-          title: "Θέμα για έλεγχο",
+          title: "Issue for review",
           status: externalStatus(machine.state),
           summary: machine.reason,
-          primaryAction: "Για έλεγχο",
+          primaryAction: "For review",
           lines: [
-            ["Υπεύθυνος", machine.owner],
-            ["Προθεσμία", machine.eta],
-            ["Επόμενο βήμα", machine.nextAction === "-" ? "Έλεγχος κατάστασης οχήματος" : machine.nextAction],
+            ["Owner", machine.owner],
+            ["Due", machine.eta],
+            ["Next step", machine.nextAction === "-" ? "Vehicle status check" : machine.nextAction],
           ],
         },
       ];
@@ -6007,11 +6007,11 @@ function actionQueueRows(machinesList: Machine[]): ActionQueueRow[] {
         action: actionForQueueRow(machine, blocker),
         actionLabel: actionLabelForQueueRow(machine, blocker),
         blocker,
-        due: blockerLineValue(blocker, "Προθεσμία") ?? machine.eta,
-        impact: machine.state === "blocked" ? `Σταματά το ${machineWorksite(machine).name}` : `Έλεγχος πριν το ${machineWorksite(machine).name}`,
+        due: blockerLineValue(blocker, "Due") ?? machine.eta,
+        impact: machine.state === "blocked" ? `Stops ${machineWorksite(machine).name}` : `Check before ${machineWorksite(machine).name}`,
         machine,
-        nextStep: blockerLineValue(blocker, "Επόμενο βήμα") ?? machine.nextAction,
-        owner: blockerLineValue(blocker, "Υπεύθυνος") ?? machine.owner,
+        nextStep: blockerLineValue(blocker, "Next step") ?? machine.nextAction,
+        owner: blockerLineValue(blocker, "Owner") ?? machine.owner,
         priority: machine.state === "blocked" ? "blocking" as const : "review" as const,
       }));
     })
@@ -6046,25 +6046,25 @@ function ActionQueueView({
   const certificateActions = rows.filter((row) => row.blocker.kind === "certificate").length;
   const serviceActions = rows.filter((row) => row.blocker.kind === "service").length;
   const filterItems: Array<{ key: QueueFilter; label: string; tone: "blocked" | "attention" | "neutral"; value: number }> = [
-    { key: "all", label: "Όλα", tone: "neutral", value: rows.length },
-    { key: "blocking", label: "Σταματούν", tone: "blocked", value: blockingActionCount },
-    { key: "review", label: "Για έλεγχο", tone: "attention", value: reviewActionCount },
-    { key: "documents", label: "Έγγραφα", tone: "neutral", value: certificateActions },
-    { key: "workshop", label: "Συνεργείο", tone: "neutral", value: serviceActions },
+    { key: "all", label: "All", tone: "neutral", value: rows.length },
+    { key: "blocking", label: "Stopping", tone: "blocked", value: blockingActionCount },
+    { key: "review", label: "For review", tone: "attention", value: reviewActionCount },
+    { key: "documents", label: "Documents", tone: "neutral", value: certificateActions },
+    { key: "workshop", label: "Workshop", tone: "neutral", value: serviceActions },
   ];
 
   return (
     <ConsolePage>
       <ViewHeader
-        title="Εκκρεμότητες βάρδιας"
-        description="Ό,τι πρέπει να λυθεί πριν κλείσει η αυριανή βάρδια."
+        title="Shift open items"
+        description="Everything that must be resolved before tomorrow's shift closes."
         showActions={false}
       />
       <Surface className="overflow-hidden">
         <PanelHeader
-          eyebrow="Σειρά προτεραιότητας"
-          title="Τι πρέπει να λυθεί σήμερα"
-          description={`${blockingActionCount} σταματούν τη βάρδια · ${reviewActionCount} θέλει έλεγχο · ${owners} υπεύθυνοι`}
+          eyebrow="Priority order"
+          title="What must be resolved today"
+          description={`${blockingActionCount} stopping the shift · ${reviewActionCount} for review · ${owners} owners`}
           actions={(
             <div className="grid w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 sm:flex sm:w-auto">
             {filterItems.map((item) => (
@@ -6085,11 +6085,11 @@ function ActionQueueView({
           filteredRows.length ? (
             <>
               <div className="hidden border-b border-l-4 border-b-[#E2E8F0] border-l-transparent bg-[#F8FAF9] px-5 py-2.5 text-[11px] font-bold uppercase tracking-wide text-[#64748B] 2xl:grid 2xl:grid-cols-[170px_minmax(320px,1fr)_140px_140px_184px] 2xl:gap-4">
-                <span>Όχημα</span>
-                <span>Εκκρεμότητα</span>
-                <span>Υπεύθυνος</span>
-                <span>Προθεσμία</span>
-                <span>Ενέργεια</span>
+                <span>Vehicle</span>
+                <span>Open item</span>
+                <span>Owner</span>
+                <span>Due</span>
+                <span>Action</span>
               </div>
               <div className="divide-y divide-[#E2E8F0]">
                 {filteredRows.map((row, index) => (
@@ -6105,12 +6105,12 @@ function ActionQueueView({
             </>
           ) : (
             <div className="m-5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">
-              Καμία ενέργεια δεν ταιριάζει με αυτό το φίλτρο.
+              No action matches this filter.
             </div>
           )
         ) : (
           <div className="m-5 rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] p-4 text-sm font-bold text-[#15803D]">
-            Δεν υπάρχουν ανοιχτές εκκρεμότητες. Η βάρδια είναι έτοιμη για τελικό έλεγχο.
+            There are no open items. The shift is ready for a final check.
           </div>
         )}
       </Surface>
@@ -6161,10 +6161,10 @@ function ActionQueueRowItem({
   const railTone = row.priority === "blocking" ? "border-l-[#DC2626]" : "border-l-[#D97706]";
   const actionPresentation =
     row.action.type === "complete-action"
-      ? { Icon: BadgeCheck, label: "Ολοκλήρωση" }
+      ? { Icon: BadgeCheck, label: "Complete" }
       : row.action.type === "upload-document"
-        ? { Icon: Upload, label: "Ανέβασμα" }
-        : { Icon: CircleUserRound, label: "Ανάθεση" };
+        ? { Icon: Upload, label: "Upload" }
+        : { Icon: CircleUserRound, label: "Assignment" };
   const PrimaryActionIcon = actionPresentation.Icon;
 
   return (
@@ -6172,17 +6172,17 @@ function ActionQueueRowItem({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-base font-bold text-[#0D2F2D]">{row.machine.code}</p>
-          {featured ? <span className="text-[11px] font-bold text-[#B91C1C]">Επόμενο</span> : null}
+          {featured ? <span className="text-[11px] font-bold text-[#B91C1C]">Next</span> : null}
         </div>
         <p className="mt-1 text-xs font-semibold text-[#64748B]">{machineWorksite(row.machine).name}</p>
         <p className={`mt-2 text-[11px] font-bold ${row.priority === "blocking" ? "text-[#B91C1C]" : "text-[#B45309]"}`}>
-          {row.priority === "blocking" ? "Σταματά τη βάρδια" : "Θέλει έλεγχο"}
+          {row.priority === "blocking" ? "Stops the shift" : "Needs review"}
         </p>
       </div>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-bold uppercase tracking-wide text-[#008C95]">
-            {row.blocker.kind === "certificate" ? "Έγγραφα & έλεγχοι" : "Συνεργείο"}
+            {row.blocker.kind === "certificate" ? "Documents & checks" : "Workshop"}
           </span>
           <span className="text-[11px] font-semibold text-[#64748B]">· {row.blocker.status}</span>
         </div>
@@ -6191,17 +6191,17 @@ function ActionQueueRowItem({
       </div>
       <div className="grid grid-cols-2 gap-4 2xl:contents">
         <div>
-          <p className="text-[11px] font-bold uppercase text-[#64748B] 2xl:hidden">Υπεύθυνος</p>
+          <p className="text-[11px] font-bold uppercase text-[#64748B] 2xl:hidden">Owner</p>
           <p className="mt-1 font-bold text-[#0D2F2D] 2xl:mt-0">{row.owner}</p>
         </div>
         <div>
-          <p className="text-[11px] font-bold uppercase text-[#64748B] 2xl:hidden">Προθεσμία</p>
+          <p className="text-[11px] font-bold uppercase text-[#64748B] 2xl:hidden">Due</p>
           <p className="mt-1 font-semibold text-[#1F2933] 2xl:mt-0">{row.due}</p>
         </div>
       </div>
       <div className="flex w-full justify-stretch 2xl:justify-end">
         <SplitRowAction
-          detailsLabel={`Λεπτομέρειες για ${row.machine.code}`}
+          detailsLabel={`Details for ${row.machine.code}`}
           icon={<PrimaryActionIcon className="h-4 w-4 shrink-0" aria-hidden="true" />}
           label={actionPresentation.label}
           onDetails={() => onMachineOpen(row.machine, "why")}
@@ -6227,40 +6227,40 @@ function DocumentsView({
 }) {
   const [filter, setFilter] = useState<DocumentFilter>("needs-action");
   const allCertificates = machinesList.flatMap((machine) => machine.certificates.map((certificate) => ({ certificate, machine })));
-  const priorityCertificates = allCertificates.filter(({ certificate }) => certificate.status !== "Σε ισχύ");
+  const priorityCertificates = allCertificates.filter(({ certificate }) => certificate.status !== "Valid");
   const filterItems: Array<{ key: DocumentFilter; label: string; tone: "ready" | "attention" | "blocked" | "neutral"; value: number }> = [
-    ["needs-action", "Θέλουν ενέργεια", "neutral", priorityCertificates.length],
-    ["expired", "Έληξε", "blocked", allCertificates.filter(({ certificate }) => certificate.status === "Έληξε").length],
-    ["missing", "Λείπει", "blocked", allCertificates.filter(({ certificate }) => certificate.status === "Λείπει").length],
-    ["critical", "Κρίσιμο", "attention", allCertificates.filter(({ certificate }) => certificate.status === "Κρίσιμο" || certificate.status === "Λήγει σύντομα").length],
-    ["valid", "Σε ισχύ", "ready", allCertificates.filter(({ certificate }) => certificate.status === "Σε ισχύ").length],
+    ["needs-action", "Need action", "neutral", priorityCertificates.length],
+    ["expired", "Expired", "blocked", allCertificates.filter(({ certificate }) => certificate.status === "Expired").length],
+    ["missing", "Missing", "blocked", allCertificates.filter(({ certificate }) => certificate.status === "Missing").length],
+    ["critical", "Critical", "attention", allCertificates.filter(({ certificate }) => certificate.status === "Critical" || certificate.status === "Expiring soon").length],
+    ["valid", "Valid", "ready", allCertificates.filter(({ certificate }) => certificate.status === "Valid").length],
   ].map(([key, label, tone, value]) => ({ key, label, tone, value })) as Array<{ key: DocumentFilter; label: string; tone: "ready" | "attention" | "blocked" | "neutral"; value: number }>;
   const visibleCertificates = allCertificates.filter(({ certificate }) => {
     const matchesFilter =
       filter === "needs-action"
-        ? certificate.status !== "Σε ισχύ"
+        ? certificate.status !== "Valid"
         : filter === "critical"
-          ? certificate.status === "Κρίσιμο" || certificate.status === "Λήγει σύντομα"
+          ? certificate.status === "Critical" || certificate.status === "Expiring soon"
           : filter === "expired"
-            ? certificate.status === "Έληξε"
+            ? certificate.status === "Expired"
             : filter === "missing"
-              ? certificate.status === "Λείπει"
-              : certificate.status === "Σε ισχύ";
+              ? certificate.status === "Missing"
+              : certificate.status === "Valid";
     return matchesFilter;
   });
 
   return (
     <ConsolePage>
       <ViewHeader
-        title="Έγγραφα & έλεγχοι"
-        description="Τι λείπει, τι λήγει και ποιος πρέπει να ενεργήσει."
-        exportLabel="Εξαγωγή αναφοράς"
+        title="Documents & checks"
+        description="What is missing, what is expiring and who must act."
+        exportLabel="Export report"
       />
       <Surface className="overflow-hidden">
         <PanelHeader
-          eyebrow="Προτεραιότητες εγγράφων"
-          title="Εκκρεμότητες πριν από τη βάρδια"
-          description="Πρώτα εμφανίζονται όσα χρειάζονται ενέργεια."
+          eyebrow="Document priorities"
+          title="Open items before the shift"
+          description="Items needing action are shown first."
           actions={(
             <div className="grid w-full grid-cols-2 gap-1 rounded-md border border-[#DCE5E1] bg-[#F8FAFC] p-1 sm:flex sm:w-auto">
               {filterItems.map((item) => (
@@ -6280,15 +6280,15 @@ function DocumentsView({
         {visibleCertificates.length ? (
           <>
             <div className="hidden border-b border-l-4 border-b-[#E2E8F0] border-l-transparent bg-[#F8FAF9] px-5 py-2.5 text-[11px] font-bold uppercase text-[#64748B] 2xl:grid 2xl:grid-cols-[190px_minmax(260px,1.1fr)_minmax(220px,0.9fr)_140px_184px] 2xl:gap-4">
-              <span>Όχημα</span>
-              <span>Έγγραφο</span>
-              <span>Στη βάρδια</span>
-              <span>Υπεύθυνος / λήξη</span>
-              <span>Ενέργεια</span>
+              <span>Vehicle</span>
+              <span>Document</span>
+              <span>On shift</span>
+              <span>Owner / due</span>
+              <span>Action</span>
             </div>
             <div className="divide-y divide-[#E2E8F0]">
             {visibleCertificates.map(({ certificate, machine }) => {
-            const blocksRelease = machine.state === "blocked" && ["Έληξε", "Λείπει"].includes(certificate.status);
+            const blocksRelease = machine.state === "blocked" && ["Expired", "Missing"].includes(certificate.status);
             const primaryLabel = documentCommandLabel(certificate);
             const primaryAction = documentActionForCertificate(certificate);
             return (
@@ -6305,30 +6305,30 @@ function DocumentsView({
                   <p className="mt-1 text-sm font-semibold text-[#64748B]">{certificate.action}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Στη βάρδια</p>
-                  <p className={`mt-1 text-sm font-bold ${blocksRelease ? "text-[#B91C1C]" : certificate.status === "Σε ισχύ" ? "text-[#15803D]" : "text-[#B45309]"}`}>
-                    {blocksRelease ? `Σταματά το ${machineWorksite(machine).name}` : certificate.status === "Σε ισχύ" ? "Η απόδειξη έγινε δεκτή" : `Έλεγχος πριν το ${machineWorksite(machine).name}`}
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">On shift</p>
+                  <p className={`mt-1 text-sm font-bold ${blocksRelease ? "text-[#B91C1C]" : certificate.status === "Valid" ? "text-[#15803D]" : "text-[#B45309]"}`}>
+                    {blocksRelease ? `Stops ${machineWorksite(machine).name}` : certificate.status === "Valid" ? "The proof was accepted" : `Check before ${machineWorksite(machine).name}`}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Υπεύθυνος</p>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Owner</p>
                   <p className="mt-1 font-bold text-[#0D2F2D]">{certificate.owner}</p>
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Λήξη</p>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Expiry</p>
                   <p className="mt-1 font-semibold text-[#1F2933]">{certificate.expiry}</p>
                 </div>
                 <div className="flex w-full justify-stretch 2xl:justify-end">
                   <SplitRowAction
-                    detailsLabel={`Φάκελος οχήματος ${machine.code}`}
-                    icon={certificate.status === "Κρίσιμο" || certificate.status === "Λήγει σύντομα"
+                    detailsLabel={`Vehicle file ${machine.code}`}
+                    icon={certificate.status === "Critical" || certificate.status === "Expiring soon"
                       ? <CircleUserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
-                      : certificate.status === "Σε ισχύ"
+                      : certificate.status === "Valid"
                         ? <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
                         : <Upload className="h-4 w-4 shrink-0" aria-hidden="true" />}
                     label={primaryLabel}
                     onDetails={() => onMachineOpen(machine)}
                     onPrimary={() => {
-                      if (certificate.status === "Σε ισχύ") {
-                        emitConsoleToast(`${machine.code}: άνοιξε η προεπισκόπηση για ${certificate.name}.`);
+                      if (certificate.status === "Valid") {
+                        emitConsoleToast(`${machine.code}: the preview opened for ${certificate.name}.`);
                         return;
                       }
                       onActionStart(machine, primaryAction);
@@ -6342,13 +6342,13 @@ function DocumentsView({
           </>
         ) : (
           <div className="m-5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">
-            Κανένα έγγραφο δεν ταιριάζει με αυτό το φίλτρο.
+            No document matches this filter.
           </div>
         )}
       </Surface>
       <CustomDataSection
         fields={customFields}
-        title="Πεδία εγγράφων και αποδεικτικών"
+        title="Document and proof fields"
         records={allCertificates.map(({ certificate, machine }) => ({
           id: `${machine.id}::${certificate.name}`,
           label: certificate.name,
@@ -6383,24 +6383,24 @@ function DocumentFilterChip({
 }
 
 function workshopStatusClasses(status: ServiceBlocker["status"]) {
-  if (status === "Λύθηκε") return "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]";
-  if (status === "Σε εξέλιξη") return "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]";
-  if (status === "Σε αναμονή") return "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]";
+  if (status === "Resolved") return "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]";
+  if (status === "In progress") return "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]";
+  if (status === "On hold") return "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]";
   return "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]";
 }
 
 function workshopPartsLabel(service: ServiceBlocker) {
-  if (service.parts) return `${service.partsStatus ?? "Χρειάζεται"} · ${service.parts}`;
-  if (service.status === "Λύθηκε") return "Δεν χρειάζονται ανταλλακτικά";
-  if (service.status === "Σε αναμονή") return "Εκκρεμούν ανταλλακτικά";
-  if (service.issue.toLowerCase().includes("leak")) return "Έλεγχος κιτ στεγανοποίησης";
-  return "Δεν έχουν δηλωθεί ανταλλακτικά";
+  if (service.parts) return `${service.partsStatus ?? "Needed"} · ${service.parts}`;
+  if (service.status === "Resolved") return "No parts needed";
+  if (service.status === "On hold") return "Parts outstanding";
+  if (service.issue.toLowerCase().includes("leak")) return "Seal kit check";
+  return "No parts recorded";
 }
 
 function workshopSortScore(service: ServiceBlocker) {
-  const statusScore = service.status === "Ανοιχτό" ? 0 : service.status === "Σε εξέλιξη" ? 1 : service.status === "Σε αναμονή" ? 2 : 4;
+  const statusScore = service.status === "Open" ? 0 : service.status === "In progress" ? 1 : service.status === "On hold" ? 2 : 4;
   const releaseScore = service.blocksRelease ? -10 : 0;
-  const dueScore = service.due === "Σήμερα" ? -3 : service.due.includes("Αύριο") ? -1 : 0;
+  const dueScore = service.due === "Today" ? -3 : service.due.includes("Tomorrow") ? -1 : 0;
   return releaseScore + statusScore + dueScore;
 }
 
@@ -6445,8 +6445,8 @@ function WorkshopJobCardContent({ machine, service }: { machine: Machine; servic
           {machineWorksite(machine).name} · {service.owner} · {service.due}
         </p>
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-xs font-bold">
-          {service.blocksRelease && service.status !== "Λύθηκε" ? (
-            <span className="rounded-full border border-[#FECACA] bg-white px-2.5 py-1 uppercase text-[#B91C1C]">Μπλοκάρει βάρδια</span>
+          {service.blocksRelease && service.status !== "Resolved" ? (
+            <span className="rounded-full border border-[#FECACA] bg-white px-2.5 py-1 uppercase text-[#B91C1C]">Blocks the shift</span>
           ) : null}
           <span className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1 text-[#475569]">{workshopPartsLabel(service)}</span>
         </div>
@@ -6466,7 +6466,7 @@ function WorkshopMobileJobCard({
   onStatusChange: (status: ServiceBlocker["status"]) => void;
   service: ServiceBlocker;
 }) {
-  const railTone = service.status === "Λύθηκε" ? "border-l-[#16A34A]" : service.status === "Ανοιχτό" ? "border-l-[#EF4444]" : "border-l-[#D97706]";
+  const railTone = service.status === "Resolved" ? "border-l-[#16A34A]" : service.status === "Open" ? "border-l-[#EF4444]" : "border-l-[#D97706]";
 
   return (
     <article className={`rounded-md border border-[#E2E8F0] border-l-4 bg-white p-3 shadow-sm ${railTone}`}>
@@ -6496,32 +6496,32 @@ function WorkshopMobileJobCard({
 
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-[#F8FAFC] p-3 text-xs">
         <div>
-          <p className="font-black uppercase tracking-wide text-[#64748B]">Υπεύθυνος</p>
+          <p className="font-black uppercase tracking-wide text-[#64748B]">Owner</p>
           <p className="mt-1 font-bold text-[#1F2933]">{service.owner}</p>
         </div>
         <div>
-          <p className="font-black uppercase tracking-wide text-[#64748B]">Προθεσμία</p>
+          <p className="font-black uppercase tracking-wide text-[#64748B]">Due</p>
           <p className="mt-1 font-bold text-[#1F2933]">{service.due}</p>
         </div>
       </div>
 
       <p className="mt-3 text-xs font-semibold leading-5 text-[#64748B]">{workshopPartsLabel(service)}</p>
-      {service.blocksRelease && service.status !== "Λύθηκε" ? (
-        <p className="mt-2 text-xs font-black uppercase text-[#B91C1C]">Μπλοκάρει την επόμενη βάρδια</p>
+      {service.blocksRelease && service.status !== "Resolved" ? (
+        <p className="mt-2 text-xs font-black uppercase text-[#B91C1C]">Blocks the next shift</p>
       ) : null}
 
       <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <label className="min-w-0">
-          <span className="sr-only">Αλλαγή σταδίου</span>
+          <span className="sr-only">Change stage</span>
           <select
             value={service.status}
             onChange={(event) => onStatusChange(event.target.value as ServiceBlocker["status"])}
             className="h-11 w-full rounded-md border border-[#CBD9D4] bg-white px-3 text-sm font-bold text-[#0D2F2D] outline-none focus:border-[#008C95]"
           >
-            <option value="Ανοιχτό">Εκκρεμεί</option>
-            <option value="Σε εξέλιξη">Σε εξέλιξη</option>
-            <option value="Σε αναμονή">Σε αναμονή</option>
-            <option value="Λύθηκε">Ολοκληρώθηκε</option>
+            <option value="Open">Pending</option>
+            <option value="In progress">In progress</option>
+            <option value="On hold">On hold</option>
+            <option value="Resolved">Completed</option>
           </select>
         </label>
         <button
@@ -6529,7 +6529,7 @@ function WorkshopMobileJobCard({
           onClick={() => onMachineOpen(machine)}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#CBD9D4] bg-white px-4 text-sm font-black text-[#0D2F2D]"
         >
-          Λεπτομέρειες
+          Details
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
@@ -6573,39 +6573,39 @@ function WorkshopView({
     accentClass: string;
   }> = [
     {
-      statuses: ["Ανοιχτό"],
-      dropStatus: "Ανοιχτό",
-      title: "Εκκρεμεί",
-      subtitle: "Δεν ξεκίνησε",
+      statuses: ["Open"],
+      dropStatus: "Open",
+      title: "Pending",
+      subtitle: "Not started",
       headerClass: "bg-[#FFF7F7]",
       dotClass: "bg-[#EF4444]",
       countClass: "bg-[#FEF2F2] text-[#B91C1C]",
       accentClass: "bg-[#EF4444]",
     },
     {
-      statuses: ["Σε εξέλιξη", "Σε αναμονή"],
-      dropStatus: "Σε εξέλιξη",
-      title: "Σε εξέλιξη",
-      subtitle: "Στο συνεργείο",
+      statuses: ["In progress", "On hold"],
+      dropStatus: "In progress",
+      title: "In progress",
+      subtitle: "In the workshop",
       headerClass: "bg-[#FFFBEB]",
       dotClass: "bg-[#D97706]",
       countClass: "bg-[#FFFBEB] text-[#B45309]",
       accentClass: "bg-[#D97706]",
     },
     {
-      statuses: ["Λύθηκε"],
-      dropStatus: "Λύθηκε",
-      title: "Ολοκληρώθηκε",
-      subtitle: "Καθάρισε για τη βάρδια",
+      statuses: ["Resolved"],
+      dropStatus: "Resolved",
+      title: "Completed",
+      subtitle: "Cleared for the shift",
       headerClass: "bg-[#F0FDF4]",
       dotClass: "bg-[#16A34A]",
       countClass: "bg-[#F0FDF4] text-[#15803D]",
       accentClass: "bg-[#16A34A]",
     },
   ];
-  const releaseBlockers = serviceJobs.filter(({ service }) => service.blocksRelease && service.status !== "Λύθηκε").length;
-  const workingNow = serviceJobs.filter(({ service }) => service.status === "Σε εξέλιξη").length;
-  const cleared = serviceJobs.filter(({ service }) => service.status === "Λύθηκε").length;
+  const releaseBlockers = serviceJobs.filter(({ service }) => service.blocksRelease && service.status !== "Resolved").length;
+  const workingNow = serviceJobs.filter(({ service }) => service.status === "In progress").length;
+  const cleared = serviceJobs.filter(({ service }) => service.status === "Resolved").length;
   const activeMobileLane = laneItems[mobileLaneIndex] ?? laneItems[0];
   const activeMobileJobs = serviceJobs.filter(({ service }) => activeMobileLane.statuses.includes(service.status));
 
@@ -6642,7 +6642,7 @@ function WorkshopView({
   function laneStatusFromPoint(x: number, y: number) {
     const target = document.elementFromPoint(x, y)?.closest("[data-workshop-drop-status]");
     const status = target?.getAttribute("data-workshop-drop-status");
-    if (status === "Ανοιχτό" || status === "Σε εξέλιξη" || status === "Σε αναμονή" || status === "Λύθηκε") return status;
+    if (status === "Open" || status === "In progress" || status === "On hold" || status === "Resolved") return status;
 
     const lanes = Array.from(document.querySelectorAll<HTMLElement>("[data-workshop-drop-status]"));
     const boundedLane = lanes.find((lane) => {
@@ -6650,7 +6650,7 @@ function WorkshopView({
       return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
     });
     const boundedStatus = boundedLane?.getAttribute("data-workshop-drop-status");
-    return boundedStatus === "Ανοιχτό" || boundedStatus === "Σε εξέλιξη" || boundedStatus === "Σε αναμονή" || boundedStatus === "Λύθηκε" ? boundedStatus : null;
+    return boundedStatus === "Open" || boundedStatus === "In progress" || boundedStatus === "On hold" || boundedStatus === "Resolved" ? boundedStatus : null;
   }
 
   function clearPointerDrag() {
@@ -6710,12 +6710,12 @@ function WorkshopView({
 
   return (
     <ConsolePage className={`select-none ${pointerDrag ? "cursor-grabbing" : ""}`}>
-      <ViewHeader title="Συνεργείο" description="Εργασίες, ανταλλακτικά και ό,τι επηρεάζει την αυριανή βάρδια." showActions={false} />
+      <ViewHeader title="Workshop" description="Jobs, parts and anything affecting tomorrow's shift." showActions={false} />
       <Surface className="overflow-hidden">
         <PanelHeader
-          eyebrow="Ροή εργασιών"
-          title="Εργασίες ανά στάδιο"
-          description="Παρακολούθησε τι εκκρεμεί, τι δουλεύεται και τι έχει καθαρίσει για τη βάρδια."
+          eyebrow="Job flow"
+          title="Jobs by stage"
+          description="Track what is pending, what is being worked on and what has cleared for the shift."
           actions={(
             <>
             <button
@@ -6724,11 +6724,11 @@ function WorkshopView({
               className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0D2F2D] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#092321] sm:min-h-10"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Νέα εργασία
+              New job
             </button>
-            <MetricChip tone="blocked">{releaseBlockers} σταματούν βάρδια</MetricChip>
-            <MetricChip tone="attention">{workingNow} σε εξέλιξη</MetricChip>
-            <MetricChip tone="ready">{cleared} ολοκληρώθηκαν</MetricChip>
+            <MetricChip tone="blocked">{releaseBlockers} stopping the shift</MetricChip>
+            <MetricChip tone="attention">{workingNow} in progress</MetricChip>
+            <MetricChip tone="ready">{cleared} completed</MetricChip>
             </>
           )}
         />
@@ -6766,7 +6766,7 @@ function WorkshopView({
               ))
             ) : (
               <div className="rounded-md border border-dashed border-[#CBD5E1] bg-white px-4 py-8 text-center text-sm font-bold text-[#64748B]">
-                Δεν υπάρχουν εργασίες σε αυτό το στάδιο.
+                There are no jobs at this stage.
               </div>
             )}
           </div>
@@ -6827,14 +6827,14 @@ function WorkshopView({
                         className={`touch-none select-none cursor-grab rounded-md border p-2.5 transition hover:shadow-md active:cursor-grabbing ${
                           draggedJobId === workshopJobId(machine, service) ? "invisible shadow-none" : "shadow-sm"
                         } ${
-                            service.blocksRelease && service.status !== "Λύθηκε" ? "border-[#FECACA] bg-[#FEF2F2]/45" : "border-[#E2E8F0] bg-white"
+                            service.blocksRelease && service.status !== "Resolved" ? "border-[#FECACA] bg-[#FEF2F2]/45" : "border-[#E2E8F0] bg-white"
                         }`}
                       >
                         <WorkshopJobCardContent machine={machine} service={service} />
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">Δεν υπάρχουν εργασίες εδώ.</div>
+                    <div className="rounded-md border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 text-sm font-bold text-[#64748B]">There are no jobs here.</div>
                   )}
                   {pointerDrag ? (
                     <div
@@ -6842,7 +6842,7 @@ function WorkshopView({
                         isDropTarget ? "border-[#008C95] bg-white text-[#008C95]" : "border-[#CBD5E1] bg-[#F8FAFC] text-[#64748B]"
                       }`}
                     >
-                      Άφησε την εργασία εδώ
+                      Drop the job here
                     </div>
                   ) : null}
                 </div>
@@ -6853,7 +6853,7 @@ function WorkshopView({
       </Surface>
       <CustomDataSection
         fields={customFields}
-        title="Πεδία εργασιών συνεργείου"
+        title="Workshop job fields"
         records={serviceJobs.map(({ machine, service }) => ({
           id: workshopJobId(machine, service),
           label: service.issue,
@@ -6869,7 +6869,7 @@ function WorkshopView({
         <div
           data-workshop-lifted-card="true"
           className={`pointer-events-none fixed z-[70] rotate-[-2deg] rounded-md border p-2.5 shadow-[0_28px_70px_rgba(15,23,42,0.32)] ${
-            liftedJob.service.blocksRelease && liftedJob.service.status !== "Λύθηκε" ? "border-[#FCA5A5] bg-[#FEF2F2]" : "border-[#008C95] bg-white"
+            liftedJob.service.blocksRelease && liftedJob.service.status !== "Resolved" ? "border-[#FCA5A5] bg-[#FEF2F2]" : "border-[#008C95] bg-white"
           }`}
           style={{
             left: pointerDrag.x - pointerDrag.offsetX,
@@ -6898,11 +6898,11 @@ function WorkshopJobModal({
 }) {
   const [machineId, setMachineId] = useState(machinesList[0]?.id ?? "");
   const [issue, setIssue] = useState("");
-  const [owner, setOwner] = useState("Συνεργείο");
-  const [due, setDue] = useState("Σήμερα");
+  const [owner, setOwner] = useState("Workshop");
+  const [due, setDue] = useState("Today");
   const [blocksRelease, setBlocksRelease] = useState(true);
   const [parts, setParts] = useState("");
-  const [partsStatus, setPartsStatus] = useState<NonNullable<ServiceBlocker["partsStatus"]>>("Δεν χρειάζεται");
+  const [partsStatus, setPartsStatus] = useState<NonNullable<ServiceBlocker["partsStatus"]>>("Not needed");
   const selectedMachine = machinesList.find((machine) => machine.id === machineId) ?? machinesList[0];
 
   useEffect(() => {
@@ -6934,10 +6934,10 @@ function WorkshopJobModal({
         className="fleet-dialog-enter flex max-h-[calc(100dvh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-lg border border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)] sm:max-h-[calc(100dvh-2rem)]"
       >
         <OverlayHeader
-          eyebrow="Εργασία συνεργείου"
-          title="Νέα εργασία συνεργείου"
+          eyebrow="Workshop job"
+          title="New workshop job"
           titleId="workshop-job-title"
-          description="Διάλεξε όχημα και κατέγραψε τι πρέπει να γίνει πριν από την επόμενη βάρδια."
+          description="Choose a vehicle and record what must happen before the next shift."
           onClose={onClose}
         />
         <form className="flex min-h-0 flex-1 flex-col" onSubmit={submitJob}>
@@ -6968,7 +6968,7 @@ function WorkshopJobModal({
           <div className="min-w-0 space-y-4">
             <div>
               <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-machine">
-                Όχημα
+                Vehicle
               </label>
               <select
                 id="workshop-machine"
@@ -6986,13 +6986,13 @@ function WorkshopJobModal({
 
             <div>
               <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-issue">
-                Εργασία
+                Job
               </label>
               <input
                 id="workshop-issue"
                 value={issue}
                 onChange={(event) => setIssue(event.target.value)}
-                placeholder="π.χ. έλεγχος φρένων, επισκευή διαρροής λαδιού, αλλαγή ελαστικού"
+                placeholder="e.g. brake check, oil leak repair, tyre change"
                 className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] px-3 text-sm font-semibold text-[#111827] outline-none focus:border-[#0D2F2D]"
               />
             </div>
@@ -7000,44 +7000,44 @@ function WorkshopJobModal({
             <div className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
               <div className="flex flex-wrap items-start justify-between gap-3 sm:flex-nowrap">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wide text-[#008C95]">Ανταλλακτικά</p>
-                  <p className="mt-1 text-sm font-bold text-[#0D2F2D]">Τι λείπει για να κλείσει η εργασία;</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#008C95]">Parts</p>
+                  <p className="mt-1 text-sm font-bold text-[#0D2F2D]">What is missing to close this job?</p>
                 </div>
                 <select
                   value={partsStatus}
                   onChange={(event) => {
                     const nextStatus = event.target.value as NonNullable<ServiceBlocker["partsStatus"]>;
                     setPartsStatus(nextStatus);
-                    if (nextStatus === "Δεν χρειάζεται") setParts("");
-                    if (nextStatus === "Σε αναμονή") setDue("Αναμονή ανταλλακτικών");
+                    if (nextStatus === "Not needed") setParts("");
+                    if (nextStatus === "On hold") setDue("Awaiting parts");
                   }}
                   className="h-10 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-xs font-bold text-[#111827] outline-none focus:border-[#0D2F2D] sm:w-44"
-                  aria-label="Κατάσταση ανταλλακτικών"
+                  aria-label="Parts status"
                 >
-                  <option value="Δεν χρειάζεται">Δεν χρειάζεται</option>
-                  <option value="Χρειάζεται">Χρειάζεται</option>
-                  <option value="Παραγγέλθηκε">Παραγγέλθηκε</option>
-                  <option value="Σε αναμονή">Σε αναμονή</option>
-                  <option value="Παραλήφθηκε">Παραλήφθηκε</option>
+                  <option value="Not needed">Not needed</option>
+                  <option value="Needed">Needed</option>
+                  <option value="Ordered">Ordered</option>
+                  <option value="On hold">On hold</option>
+                  <option value="Received">Received</option>
                 </select>
               </div>
               <input
                 value={parts}
                 onChange={(event) => setParts(event.target.value)}
-                placeholder="π.χ. φίλτρο λαδιού, λάστιχο 315/80, βούρτσα σάρωσης"
-                disabled={partsStatus === "Δεν χρειάζεται"}
+                placeholder="e.g. oil filter, 315/80 tyre, sweeper brush"
+                disabled={partsStatus === "Not needed"}
                 className="mt-3 h-11 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-sm font-semibold text-[#111827] outline-none focus:border-[#0D2F2D] disabled:cursor-not-allowed disabled:bg-[#EEF2F6] disabled:text-[#94A3B8]"
-                aria-label="Ανταλλακτικό"
+                aria-label="Part"
               />
               <p className="mt-2 text-xs font-semibold text-[#64748B]">
-                Αν το βάλεις σε αναμονή, η εργασία μένει στον πίνακα μέχρι να δηλωθεί ότι το ανταλλακτικό παραλήφθηκε.
+                If you put it on hold, the job stays on the board until the part is marked as received.
               </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(12rem,0.85fr)]">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-owner">
-                  Υπεύθυνος
+                  Owner
                 </label>
                 <select
                   id="workshop-owner"
@@ -7054,7 +7054,7 @@ function WorkshopJobModal({
               </div>
               <div>
                 <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]" htmlFor="workshop-due">
-                  Προθεσμία
+                  Due
                 </label>
                 <select
                   id="workshop-due"
@@ -7062,10 +7062,10 @@ function WorkshopJobModal({
                   onChange={(event) => setDue(event.target.value)}
                   className="mt-2 h-11 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-sm font-bold text-[#111827] outline-none focus:border-[#0D2F2D]"
                 >
-                  <option value="Σήμερα">Σήμερα</option>
-                  <option value="Αύριο το πρωί">Αύριο το πρωί</option>
-                  <option value="Αύριο μεσημέρι">Αύριο μεσημέρι</option>
-                  <option value="Αναμονή ανταλλακτικών">Αναμονή ανταλλακτικών</option>
+                  <option value="Today">Today</option>
+                  <option value="Tomorrow morning">Tomorrow morning</option>
+                  <option value="Tomorrow midday">Tomorrow midday</option>
+                  <option value="Awaiting parts">Awaiting parts</option>
                 </select>
               </div>
             </div>
@@ -7078,8 +7078,8 @@ function WorkshopJobModal({
                 className="mt-1 h-4 w-4 rounded border-[#CBD5E1] text-[#0D2F2D]"
               />
               <span>
-                <span className="block text-sm font-bold text-[#0D2F2D]">Μπλοκάρει την αυριανή βάρδια</span>
-                <span className="mt-1 block text-xs font-semibold text-[#64748B]">Κλείστο για απλή εργασία συνεργείου που δεν πρέπει να σταματήσει την αυριανή βάρδια.</span>
+                <span className="block text-sm font-bold text-[#0D2F2D]">Blocks tomorrow&apos;s shift</span>
+                <span className="mt-1 block text-xs font-semibold text-[#64748B]">Turn this off for a routine workshop job that should not stop tomorrow&apos;s shift.</span>
               </span>
             </label>
 
@@ -7087,11 +7087,11 @@ function WorkshopJobModal({
           </div>
           <OverlayFooter>
             <button type="button" onClick={onClose} className={overlaySecondaryActionClass}>
-              Άκυρο
+              Cancel
             </button>
             <button type="submit" className={overlayPrimaryActionClass} disabled={!issue.trim() || !selectedMachine}>
               <Wrench className="h-4 w-4" aria-hidden="true" />
-              Προσθήκη στον πίνακα
+              Add to the board
             </button>
           </OverlayFooter>
         </form>
@@ -7105,8 +7105,8 @@ function isReleaseDecisionRecord(record: ReleaseRecord) {
 }
 
 function releaseDecisionState(record: ReleaseRecord): MachineState {
-  if (["Έτοιμο για δουλειά", "Το συνεργείο καθάρισε"].includes(record.result)) return "ready";
-  if (["Δεν απελευθερώνεται"].includes(record.result)) return "blocked";
+  if (["Ready for work", "The workshop cleared it"].includes(record.result)) return "ready";
+  if (["Not released"].includes(record.result)) return "blocked";
   return "at_risk";
 }
 
@@ -7121,40 +7121,40 @@ function releaseEvidencePacketText(record: ReleaseRecord) {
   const counts = countsForMachines(requiredMachines);
   const blockerLines = machine && blockerCardsForMachine(machine).length
     ? blockerCardsForMachine(machine).map((blocker) => `- ${blocker.title}: ${blocker.summary}`).join("\n")
-    : "- Δεν υπάρχει ενεργή εκκρεμότητα για αυτή την απόφαση.";
+    : "- There is no active item for this decision.";
   const documentLines = machine
-    ? machine.certificates.map((certificate) => `- ${certificate.name}: ${certificate.status} · ${certificate.expiry} · υπεύθυνος ${certificate.owner}`).join("\n")
-    : "- Δεν υπάρχει στιγμιότυπο εγγράφων για το όχημα.";
+    ? machine.certificates.map((certificate) => `- ${certificate.name}: ${certificate.status} · ${certificate.expiry} · owner ${certificate.owner}`).join("\n")
+    : "- There is no document snapshot for this vehicle.";
   const serviceLines = machine
-    ? machine.service.map((service) => `- ${service.issue}: ${service.status} · ${service.due} · υπεύθυνος ${service.owner}`).join("\n")
-    : "- Δεν υπάρχει καταγραφή συνεργείου για το όχημα.";
+    ? machine.service.map((service) => `- ${service.issue}: ${service.status} · ${service.due} · owner ${service.owner}`).join("\n")
+    : "- There is no workshop record for this vehicle.";
 
   return [
-    `Πακέτο αποδείξεων ${releaseAuditId(record)}`,
+    `Proof pack ${releaseAuditId(record)}`,
     "",
-    "Συμβάν απόφασης",
-    `Ημερομηνία: ${record.date}`,
-    `${"Πακέτο εργασίας"}: ${record.worksite}`,
-    `Όχημα: ${record.machine}`,
-    `Απόφαση: ${record.result}`,
-    `Αιτία: ${record.reason}`,
-    `Ενέργεια: ${record.action}`,
-    `Χρήστης: ${record.user}`,
-    `Εξαίρεση: ${record.override}`,
+    "Decision event",
+    `Date: ${record.date}`,
+    `${"Work package"}: ${record.worksite}`,
+    `Vehicle: ${record.machine}`,
+    `Decision: ${record.result}`,
+    `Reason: ${record.reason}`,
+    `Action: ${record.action}`,
+    `User: ${record.user}`,
+    `Exception: ${record.override}`,
     "",
-    "Στιγμιότυπο πακέτου εργασίας",
-    `Απαιτούμενα οχήματα: ${counts.total}`,
-    `Έτοιμα: ${counts.ready}`,
-    `Θέλουν έλεγχο: ${counts.attention}`,
-    `Μπλοκαρισμένα: ${counts.blocked}`,
+    "Work package snapshot",
+    `Required vehicles: ${counts.total}`,
+    `Ready: ${counts.ready}`,
+    `Need review: ${counts.attention}`,
+    `Blocked: ${counts.blocked}`,
     "",
-    "Εκκρεμότητες οχήματος",
+    "Vehicle open items",
     blockerLines,
     "",
-    "Στιγμιότυπο εγγράφων",
+    "Document snapshot",
     documentLines,
     "",
-    "Καταγραφή συνεργείου",
+    "Workshop record",
     serviceLines,
   ].join("\n");
 }
@@ -7190,8 +7190,8 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
         className="fleet-drawer-enter flex h-full w-full max-w-2xl flex-col overflow-hidden border-l border-[#D7E2DC] bg-white shadow-[0_24px_70px_rgba(15,47,45,0.24)]"
       >
         <OverlayHeader
-          eyebrow="Πακέτο αποδείξεων"
-          title={`Απόφαση για ${record.machine}`}
+          eyebrow="Proof pack"
+          title={`Decision for ${record.machine}`}
           titleId="evidence-drawer-title"
           description={auditId}
           onClose={onClose}
@@ -7199,20 +7199,20 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <div className={`rounded-lg border p-4 ${statusClasses(state)}`}>
-            <p className="text-xs font-bold uppercase tracking-wide">Συμβάν απόφασης</p>
+            <p className="text-xs font-bold uppercase tracking-wide">Decision event</p>
             <p className="mt-2 text-2xl font-bold">{record.result}</p>
             <p className="mt-2 text-sm font-bold">{record.reason}</p>
-            <p className="mt-1 text-sm font-semibold opacity-85">{record.action} · {record.user} · Εξαίρεση: {record.override}</p>
+            <p className="mt-1 text-sm font-semibold opacity-85">{record.action} · {record.user} · Exception: {record.override}</p>
           </div>
 
           <section className="border-t border-[#DCE5E1] pt-4">
-            <h3 className="text-lg font-bold text-[#0D2F2D]">Στιγμιότυπο πακέτου εργασίας</h3>
+            <h3 className="text-lg font-bold text-[#0D2F2D]">Work package snapshot</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                ["Πακέτο εργασίας", record.worksite],
-                ["Ημερομηνία απόφασης", record.date],
-                ["Απαιτούμενα οχήματα", String(counts.total)],
-                ["Έτοιμα / Έλεγχος / Μπλοκαρισμένα", `${counts.ready} / ${counts.attention} / ${counts.blocked}`],
+                ["Work package", record.worksite],
+                ["Decision date", record.date],
+                ["Required vehicles", String(counts.total)],
+                ["Ready / Review / Blocked", `${counts.ready} / ${counts.attention} / ${counts.blocked}`],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-3">
                   <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748B]">{label}</p>
@@ -7223,9 +7223,9 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
           </section>
 
           <section className="border-t border-[#DCE5E1] pt-4">
-            <h3 className="text-lg font-bold text-[#0D2F2D]">Έγγραφα & έλεγχοι που περιλαμβάνονται</h3>
+            <h3 className="text-lg font-bold text-[#0D2F2D]">Documents & checks included</h3>
             <div className="mt-3 grid gap-2 text-sm font-semibold text-[#1F2933]">
-              {["Ιστορικό απόφασης", "Λίστα ελέγχου οχημάτων", "Εκκρεμότητες", "Σχετικά έγγραφα", "Καταγραφή συνεργείου", "Δήλωση εξαίρεσης όπου χρησιμοποιήθηκε"].map((item) => (
+              {["Decision record", "Vehicle check list", "Open items", "Related documents", "Workshop record", "Exception statement where used"].map((item) => (
                 <div key={item} className="flex items-center gap-2 rounded-md bg-[#F8FAFC] px-3 py-2">
                   <FileText className="h-4 w-4 shrink-0 text-[#008C95]" aria-hidden="true" />
                   {item}
@@ -7235,7 +7235,7 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
           </section>
 
           <section className="border-t border-[#DCE5E1] pt-4">
-            <h3 className="text-lg font-bold text-[#0D2F2D]">Τρέχουσες εκκρεμότητες</h3>
+            <h3 className="text-lg font-bold text-[#0D2F2D]">Current open items</h3>
             {blockers.length ? (
               <div className="mt-3 space-y-2">
                 {blockers.map((blocker) => (
@@ -7249,14 +7249,14 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
                 ))}
               </div>
             ) : (
-              <p className="mt-3 rounded-md border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm font-bold text-[#15803D]">Δεν υπάρχει ενεργή εκκρεμότητα για αυτή την απόφαση.</p>
+              <p className="mt-3 rounded-md border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-sm font-bold text-[#15803D]">There is no active item for this decision.</p>
             )}
           </section>
         </div>
 
         <OverlayFooter>
           <button type="button" onClick={onClose} className={overlaySecondaryActionClass}>
-            Κλείσιμο
+            Close
           </button>
           <button
             type="button"
@@ -7264,7 +7264,7 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
             className={overlayPrimaryActionClass}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
-            Λήψη πακέτου
+            Download pack
           </button>
         </OverlayFooter>
       </aside>
@@ -7283,35 +7283,35 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
   return (
     <ConsolePage>
       <ViewHeader
-        title="Ιστορικό βαρδιών"
-        description="Ποιος αποφάσισε, τι άλλαξε και με ποια στοιχεία."
+        title="Shift history"
+        description="Who decided, what changed and on what evidence."
         showActions={false}
       />
       <Surface className="overflow-hidden">
         <PanelHeader
-          eyebrow="Αρχείο αποφάσεων"
-          title="Αποφάσεις προηγούμενων βαρδιών"
-          description="Κάθε εγγραφή περιλαμβάνει την απόφαση, τον υπεύθυνο και τα σχετικά στοιχεία."
+          eyebrow="Decision archive"
+          title="Decisions from previous shifts"
+          description="Every record includes the decision, the owner and the supporting evidence."
           actions={(
             <>
-            <MetricChip>{visibleHistory.length} αποφάσεις</MetricChip>
+            <MetricChip>{visibleHistory.length} decisions</MetricChip>
             <MetricChip tone="ready">
-              {visibleHistory.filter((item) => item.result === "Έτοιμο για δουλειά" || item.result === "Έγκριση με εξαίρεση").length} εγκρίσεις
+              {visibleHistory.filter((item) => item.result === "Ready for work" || item.result === "Approved by exception").length} approvals
             </MetricChip>
             <MetricChip tone="blocked">
-              {visibleHistory.filter((item) => item.result === "Δεν απελευθερώνεται").length} δεν εγκρίθηκαν
+              {visibleHistory.filter((item) => item.result === "Not released").length} not approved
             </MetricChip>
             <MetricChip tone="attention">
-              {visibleHistory.filter((item) => item.override === "Ναι").length} εξαιρέσεις
+              {visibleHistory.filter((item) => item.override === "Yes").length} exceptions
             </MetricChip>
             </>
           )}
         />
         <div className="hidden border-b border-[#E2E8F0] bg-[#F8FAF9] px-5 py-2.5 text-[11px] font-bold uppercase text-[#64748B] 2xl:grid 2xl:grid-cols-[120px_170px_minmax(0,1fr)_184px] 2xl:gap-4">
-          <span>Ημερομηνία</span>
-          <span>Όχημα</span>
-          <span>Απόφαση</span>
-          <span>Ενέργεια</span>
+          <span>Date</span>
+          <span>Vehicle</span>
+          <span>Decision</span>
+          <span>Action</span>
         </div>
         <div className="divide-y divide-[#E2E8F0]">
           {visibleHistory.length ? (
@@ -7320,7 +7320,7 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
               return (
                 <div key={item.id ?? `${releaseAuditId(item)}-${index}`} className="grid gap-4 px-5 py-3.5 2xl:grid-cols-[120px_170px_minmax(0,1fr)_184px] 2xl:items-center">
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[#64748B]">Ημερομηνία</p>
+                    <p className="text-[11px] font-bold uppercase text-[#64748B]">Date</p>
                     <p className="mt-1 font-bold text-[#0D2F2D]">{item.date}</p>
                   </div>
                   <div>
@@ -7336,9 +7336,9 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
                   </div>
                   <div className="flex w-full justify-stretch 2xl:justify-end">
                     <SplitRowAction
-                      detailsLabel={`Λεπτομέρειες απόφασης ${releaseAuditId(item)}`}
+                      detailsLabel={`Decision details ${releaseAuditId(item)}`}
                       icon={<FileText className="h-4 w-4 shrink-0" aria-hidden="true" />}
-                      label="Άνοιγμα"
+                      label="Open"
                       onDetails={() => setSelectedRecord(item)}
                       onPrimary={() => setSelectedRecord(item)}
                     />
@@ -7347,7 +7347,7 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
               );
             })
           ) : (
-            <div className="p-6 text-sm font-bold text-[#64748B]">Δεν βρέθηκαν αποφάσεις για αυτή την αναζήτηση.</div>
+            <div className="p-6 text-sm font-bold text-[#64748B]">No decisions found for this search.</div>
           )}
         </div>
       </Surface>
@@ -7359,7 +7359,7 @@ function ReleaseHistoryView({ searchTerm }: { searchTerm: string }) {
 function ViewHeader({
   description,
   exportActions = [],
-  exportLabel = "Εξαγωγή αναφοράς",
+  exportLabel = "Export report",
   showActions = true,
   title,
 }: {
