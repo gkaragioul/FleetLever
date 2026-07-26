@@ -16,21 +16,22 @@ import {
   CommercialSiteFooter,
   CommercialSiteHeader,
   requestDemoHref,
+  trialHref,
 } from "@/components/fleetlever/commercial-site-shell";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Start FleetLever with a 30-day paid pilot, then choose a transparent annual operating scope for your fleet.",
+    "Start FleetLever free for 15 days. No card, no installer, no sales call. Then choose a transparent annual operating scope for your fleet.",
   alternates: { canonical: "/pricing" },
   openGraph: { url: "/pricing" },
 };
 
-const pilotIncludes = [
-  "One live release workflow",
-  "Up to 30 critical assets",
-  "Guided setup and basic import",
-  "Weekly reviews and a final evidence report",
+const trialIncludes = [
+  "The full readiness board, not a cut-down demo",
+  "Your own assets, documents and operators",
+  "Blocker owners, deadlines and decision history",
+  "Exports available from day one",
 ] as const;
 
 const plans = [
@@ -140,7 +141,7 @@ const priceDrivers = [
 ] as const;
 
 const commercialTerms = [
-  ["Term", "12 months after the pilot"],
+  ["Trial", "15 days free, no card, no obligation"],
   ["Billing", "Monthly, quarterly or annual"],
   ["VAT", "Listed prices exclude VAT"],
   ["Discounts", "Linked to term, scope or prepayment"],
@@ -148,16 +149,16 @@ const commercialTerms = [
 
 const faqs = [
   [
-    "Is the pilot free?",
-    "No. It is a fixed-scope operational test using your real workflow and data. The fee is credited against the first annual agreement when you continue within 15 days of the final review.",
+    "Is the trial really free?",
+    "Yes. Fifteen days, no card, no obligation and no sales call. You load your own assets and documents and use the full readiness board. If it does not earn its place, do nothing and it ends.",
   ],
   [
     "Do you charge per user?",
     "Plans follow operating scope, active assets and organisational complexity. Contributors can submit evidence without turning every field action into a licensing decision.",
   ],
   [
-    "Can we cancel monthly?",
-    "Monthly billing is available, but the commercial term is 12 months. The 30-day pilot is the shorter decision point before that commitment.",
+    "Do we have to sign a long contract?",
+    "No. There is no minimum term to start and nothing to cancel during the trial. Annual scopes exist because they are cheaper for fleets that have already decided, not because you are locked in before you have.",
   ],
 ] as const;
 
@@ -176,18 +177,18 @@ export default function PricingPage() {
               Start with proof. Scale with the operation.
             </h1>
             <p className="mt-6 max-w-[34rem] text-lg font-medium leading-8 text-[#53635f]">
-              Run FleetLever on one live readiness workflow for 30 days. Choose
-              an annual scope only when the evidence supports it.
+              Run FleetLever free on your own fleet for 15 days. Choose an
+              annual scope only when the evidence supports it.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={requestDemoHref}
-                data-analytics="pricing_hero_demo"
+              <a
+                href={trialHref}
+                data-analytics="pricing_hero_trial"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#103d37] px-5 text-sm font-bold text-white transition duration-200 hover:bg-[#006c74] active:translate-y-px"
               >
-                Request a demo
+                Start free
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              </a>
               <a
                 href="#plans"
                 className="inline-flex min-h-12 items-center justify-center px-4 text-sm font-bold text-[#334641] transition hover:text-[#006c74]"
@@ -202,37 +203,37 @@ export default function PricingPage() {
               <div className="flex min-h-52 flex-col justify-between p-6 sm:p-7">
                 <div>
                   <p className="text-xs font-bold uppercase text-[#9af6f7]">
-                    Founding pilot
+                    Free trial
                   </p>
                   <h2 className="mt-3 text-3xl font-semibold leading-tight">
-                    30 days on your actual fleet
+                    15 days on your actual fleet
                   </h2>
                 </div>
                 <div className="mt-7">
-                  <p className="font-mono text-4xl font-semibold">EUR 1,000</p>
+                  <p className="font-mono text-4xl font-semibold">Free</p>
                   <p className="mt-1 text-sm font-medium text-[#c7d7d2]">
-                    one-time, excluding VAT
+                    no card, no installer, no sales call
                   </p>
                 </div>
               </div>
               <div className="relative min-h-56 overflow-hidden border-t border-white/20 sm:min-h-0 sm:border-l sm:border-t-0">
                 <Image
                   src="/fleetlever/site/tomorrow-readiness-dashboard.png"
-                  alt="FleetLever readiness board used during the 30-day pilot"
+                  alt="FleetLever readiness board used during the 15-day free trial"
                   fill
                   preload
                   sizes="(min-width: 1024px) 38vw, (min-width: 640px) 55vw, 100vw"
                   className="object-cover object-left"
                 />
                 <div className="absolute bottom-4 left-4 bg-white px-3 py-2 text-[11px] font-bold uppercase text-[#103d37] shadow-md">
-                  One live workflow
+                  Your own fleet
                 </div>
               </div>
             </div>
 
             <div className="p-6 sm:p-7">
               <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                {pilotIncludes.map((item) => (
+                {trialIncludes.map((item) => (
                   <p
                     key={item}
                     className="flex gap-3 text-sm font-semibold leading-6 text-[#334641]"
@@ -247,17 +248,17 @@ export default function PricingPage() {
               </div>
               <div className="mt-6 grid gap-5 border-t border-[#c7d3ce] pt-5 sm:grid-cols-[1fr_auto] sm:items-center">
                 <p className="max-w-xl text-sm font-semibold leading-6 text-[#334641]">
-                  The fee is fully credited against the first annual agreement
-                  when you continue within 15 days of the final review.
+                  Nothing to cancel and nothing to return. If FleetLever does
+                  not earn its place in fifteen days, the trial simply ends.
                 </p>
-                <Link
-                  href={requestDemoHref}
-                  data-analytics="pricing_pilot_demo"
+                <a
+                  href={trialHref}
+                  data-analytics="pricing_trial_start"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#0a777e] px-4 text-sm font-bold text-[#006c74] transition duration-200 hover:bg-[#006c74] hover:text-white active:translate-y-px"
                 >
-                  Scope the pilot
+                  Start free
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
+                </a>
               </div>
             </div>
           </article>
@@ -533,21 +534,21 @@ export default function PricingPage() {
           <div>
             <Gauge className="h-7 w-7 text-[#9af6f7]" aria-hidden="true" />
             <h2 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight text-balance sm:text-5xl">
-              Put one live release flow through the pilot.
+              Put one live release flow through the trial.
             </h2>
             <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-[#c7d7d2]">
-              Define the workflow, measure the result, then decide whether an
+              Load your own fleet, measure the result, then decide whether an
               annual deployment earns its place.
             </p>
           </div>
-          <Link
-            href={requestDemoHref}
-            data-analytics="pricing_final_demo"
+          <a
+            href={trialHref}
+            data-analytics="pricing_final_trial"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition duration-200 hover:bg-white active:translate-y-px"
           >
-            Request a demo
+            Start free
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          </a>
         </div>
       </section>
 

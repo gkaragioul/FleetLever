@@ -34,9 +34,9 @@ const productJsonLd = {
     "A readiness and release-control layer for vehicles, equipment, people, evidence and upcoming operations.",
   offers: {
     "@type": "Offer",
-    price: "1000",
+    price: "0",
     priceCurrency: "EUR",
-    description: "30-day founding pilot",
+    description: "15-day free trial, no card required",
   },
 };
 
@@ -92,14 +92,14 @@ export default function LandingPage() {
             <p className="text-sm font-bold uppercase text-[#9af6f7]">Fleet and equipment readiness</p>
             <h1 className="mt-4 text-6xl font-semibold leading-none sm:text-7xl lg:text-8xl">FleetLever</h1>
             <p className="mt-6 max-w-[44rem] text-3xl font-semibold leading-tight text-balance sm:text-4xl">
-              Know what can go out next. And what cannot.
+              Know tonight what can&apos;t go out tomorrow.
             </p>
             <p className="mt-5 max-w-[42rem] text-base font-medium leading-7 text-white sm:text-lg">
-              FleetLever checks every asset before its next job, rental or assignment, then assigns whatever is
-              missing before it causes a delay.
+              FleetLever checks every asset, operator and document against tomorrow&apos;s work, then names the
+              blocker, the owner and the deadline before the yard opens.
             </p>
-            <p className="mt-3 max-w-[42rem] text-sm font-semibold leading-6 text-[#cce5e0] sm:text-base">
-              Add the fields and columns your operation needs without waiting for custom development.
+            <p className="mt-3 max-w-[42rem] text-sm font-semibold leading-6 text-[#9af6f7] sm:text-base">
+              No hardware. No installer. No sales call.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
@@ -107,7 +107,7 @@ export default function LandingPage() {
                 data-analytics="hero_trial"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#73dce3] px-5 text-sm font-bold text-[#0b302c] transition hover:bg-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                Start 15-day trial
+                Start free
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
               <a

@@ -58,7 +58,7 @@ function requireTokens(fileName, tokens) {
 }
 
 requireTokens("landing", [
-  "Know what can go out next. And what cannot.",
+  "Know tonight what can&apos;t go out tomorrow.",
   "Fleet and equipment readiness",
   "ProductScreenshot",
   "ReadinessLanes",
@@ -68,8 +68,8 @@ requireTokens("landing", [
   "IndustrySwitchboard",
   "MultiIndustryHero",
   "ConfigurableWorkspaceStrip",
-  "Add the fields and columns your operation needs",
-  "Start 15-day trial",
+  "No hardware. No installer. No sales call.",
+  "Start free",
   "One board shows what can go out next.",
   "Readiness at cutoff",
   "Failed releases prevented",
@@ -99,7 +99,7 @@ requireTokens("pricing", [
   "Up to 30 active assets",
   "Up to 100 active assets",
   "Additional block of 25 assets",
-  "credited against the first annual agreement",
+  "15 days free, no card, no obligation",
   "Included in every annual plan",
   "What changes the price",
   "Launch",
