@@ -1,8 +1,14 @@
 import "server-only";
 
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { allowsLocalDevelopmentAccess, isHostedDeployment } from "@/lib/auth/super-admin-core.mjs";
+import {
+  allowsLocalDevelopmentAccess,
+  decodeSession,
+  encodeSession,
+  isHostedDeployment,
+  sessionSecret,
+} from "@/lib/auth/super-admin-core.mjs";
 
 const sessionCookieName = "fleetlever_super_admin_session";
 const sessionMaxAgeSeconds = 60 * 60 * 12;
@@ -22,20 +28,6 @@ function localDevelopmentSession(): SuperAdminSession {
   };
 }
 
-function sessionSecret() {
-  const secret = process.env.FLEETLEVER_SESSION_SECRET;
-
-  if (!secret || secret.length < 32) {
-    if (!isHostedDeployment()) {
-      return "fleetlever-local-demo-session-secret-only-for-local-runs";
-    }
-
-    throw new Error("FLEETLEVER_SESSION_SECRET must be set to a random value with at least 32 characters.");
-  }
-
-  return secret;
-}
-
 function configuredUsername() {
   return process.env.FLEETLEVER_SUPER_ADMIN_USERNAME ?? "karagioules";
 }
@@ -48,45 +40,6 @@ function configuredPasswordHash() {
   }
 
   return hash;
-}
-
-function sign(value: string) {
-  return createHmac("sha256", sessionSecret()).update(value).digest("base64url");
-}
-
-function encodeSession(session: SuperAdminSession) {
-  const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
-  return `${payload}.${sign(payload)}`;
-}
-
-function decodeSession(value: string): SuperAdminSession | null {
-  const [payload, signature] = value.split(".");
-  if (!payload || !signature) return null;
-
-  const expected = sign(payload);
-  const receivedBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (receivedBuffer.length !== expectedBuffer.length || !timingSafeEqual(receivedBuffer, expectedBuffer)) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Partial<SuperAdminSession>;
-    if (parsed.role !== "super_admin" || typeof parsed.username !== "string" || typeof parsed.expiresAt !== "number") {
-      return null;
-    }
-
-    if (Date.now() > parsed.expiresAt) return null;
-
-    return {
-      role: "super_admin",
-      username: parsed.username,
-      expiresAt: parsed.expiresAt,
-    };
-  } catch {
-    return null;
-  }
 }
 
 export function createPasswordHash(password: string) {
@@ -121,7 +74,7 @@ export async function createSuperAdminSession(username: string) {
     expiresAt: Date.now() + sessionMaxAgeSeconds * 1000,
   };
 
-  cookieStore.set(sessionCookieName, encodeSession(session), {
+  cookieStore.set(sessionCookieName, encodeSession(session, sessionSecret()), {
     httpOnly: true,
     maxAge: sessionMaxAgeSeconds,
     path: "/",
@@ -137,7 +90,7 @@ export async function getSuperAdminSession() {
 
   const cookieStore = await cookies();
   const cookie = cookieStore.get(sessionCookieName)?.value;
-  return cookie ? decodeSession(cookie) : null;
+  return cookie ? decodeSession(cookie, sessionSecret()) : null;
 }
 
 export async function clearSuperAdminSession() {
