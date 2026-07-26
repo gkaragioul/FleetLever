@@ -94,9 +94,6 @@
   object-position: center;
 }
 
-.drawer[data-industry="municipal"] .image {
-  object-position: 47% center;
-}
 
 .drawer[data-industry="service"] .image {
   object-position: 55% center;

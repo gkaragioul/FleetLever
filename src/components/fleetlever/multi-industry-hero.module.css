@@ -28,15 +28,10 @@
 
 .scene[data-scene="rental"] {
   z-index: 2;
-  left: 23%;
+  left: 35%;
   width: 34%;
 }
 
-.scene[data-scene="municipal"] {
-  z-index: 3;
-  left: 47%;
-  width: 34%;
-}
 
 .scene[data-scene="service"] {
   z-index: 4;
@@ -69,11 +64,6 @@
   animation-duration: 38s;
 }
 
-.scene[data-scene="municipal"] .image {
-  object-position: 50% center;
-  animation-delay: -17s;
-  animation-duration: 35s;
-}
 
 .scene[data-scene="service"] .image {
   object-position: 54% center;
@@ -151,14 +141,10 @@
   }
 
   .scene[data-scene="rental"] {
-    left: 24%;
+    left: 37%;
     width: 39%;
   }
 
-  .scene[data-scene="municipal"] {
-    left: 49%;
-    width: 38%;
-  }
 
   .scene[data-scene="service"] {
     left: 74%;

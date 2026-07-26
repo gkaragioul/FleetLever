@@ -15,12 +15,12 @@ alter table public.maintenance_tasks disable row level security;
 alter table public.issues disable row level security;
 
 insert into public.organizations (id, name, legal_name, timezone, currency, locale, status)
-values ('00000000-0000-4000-8000-000000000001', 'Demo ΑΕ', 'Demo Ανώνυμη Εταιρεία', 'Europe/Athens', 'EUR', 'el-GR', 'trial')
+values ('00000000-0000-4000-8000-000000000001', 'Demo Ltd', 'Demo Limited', 'Europe/London', 'EUR', 'en-GB', 'trial')
 on conflict (id) do nothing;
 
 insert into public.profiles (id, auth_subject, email, full_name, phone)
 values
-  ('00000000-0000-4000-8000-000000000101', 'demo:george', 'george@example.local', 'Γιώργος Καραγκιουλές', '+30 210 0000 000'),
+  ('00000000-0000-4000-8000-000000000101', 'demo:george', 'george@example.local', 'George Fleet', '+44 7700 900000'),
   ('00000000-0000-4000-8000-000000000102', 'demo:office', 'office@example.local', 'Office Team', null),
   ('00000000-0000-4000-8000-000000000103', 'demo:mechanic', 'mechanic@example.local', 'Service Team', null)
 on conflict (id) do nothing;
@@ -34,7 +34,7 @@ on conflict (organization_id, profile_id) do nothing;
 
 insert into public.locations (id, organization_id, name, city, kind)
 values
-  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'Athens Depot', 'Athens', 'depot'),
+  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000001', 'Central Depot', 'London', 'depot'),
   ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000001', 'Aspropyrgos Yard', 'Aspropyrgos', 'yard'),
   ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000001', 'Koropi Project', 'Koropi', 'project')
 on conflict (organization_id, name) do nothing;
@@ -72,12 +72,12 @@ values
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000501', 'Insurance'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000501', 'Lifting certificate'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000501', 'Periodic inspection'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000502', 'KTEO'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000502', 'Roadworthiness'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000502', 'Insurance'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000502', 'Permit'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000503', 'Periodic inspection'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000503', 'Safety document'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000504', 'KTEO'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000504', 'Roadworthiness'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000504', 'Insurance'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000505', 'Insurance'),
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000505', 'Periodic inspection'),
@@ -86,10 +86,10 @@ on conflict (template_id, document_category) do nothing;
 
 insert into public.documents (id, organization_id, title, category, storage_key, file_name, mime_type, issued_at, expires_at, status, review_state, ai_confidence)
 values
-  ('00000000-0000-4000-8000-000000000601', '00000000-0000-4000-8000-000000000001', 'CR-04 πιστοποιητικό ανύψωσης', 'Lifting certificate', 'demo/cr04-lifting.pdf', 'cr04-lifting.pdf', 'application/pdf', '2025-06-03', '2026-06-03', 'critical', 'approved', 0.980),
-  ('00000000-0000-4000-8000-000000000602', '00000000-0000-4000-8000-000000000001', 'B-12 έλεγχος KTEO', 'KTEO', 'demo/b12-kteo.pdf', 'b12-kteo.pdf', 'application/pdf', '2025-05-20', '2026-05-20', 'expired', 'approved', 0.960),
-  ('00000000-0000-4000-8000-000000000603', '00000000-0000-4000-8000-000000000001', 'FL-02 περιοδικός έλεγχος', 'Periodic inspection', 'demo/fl02-inspection.pdf', 'fl02-inspection.pdf', 'application/pdf', '2025-12-01', '2026-06-18', 'warning', 'under_review', 0.740),
-  ('00000000-0000-4000-8000-000000000604', '00000000-0000-4000-8000-000000000001', 'Άδεια χειριστή Νίκου Παπαδάκη', 'Operator license', 'demo/nikos-license.pdf', 'nikos-license.pdf', 'application/pdf', '2023-08-11', '2026-06-10', 'warning', 'approved', 0.910)
+  ('00000000-0000-4000-8000-000000000601', '00000000-0000-4000-8000-000000000001', 'CR-04 lifting certificate', 'Lifting certificate', 'demo/cr04-lifting.pdf', 'cr04-lifting.pdf', 'application/pdf', '2025-06-03', '2026-06-03', 'critical', 'approved', 0.980),
+  ('00000000-0000-4000-8000-000000000602', '00000000-0000-4000-8000-000000000001', 'B-12 roadworthiness test', 'Roadworthiness', 'demo/b12-roadworthiness.pdf', 'b12-roadworthiness.pdf', 'application/pdf', '2025-05-20', '2026-05-20', 'expired', 'approved', 0.960),
+  ('00000000-0000-4000-8000-000000000603', '00000000-0000-4000-8000-000000000001', 'FL-02 periodic inspection', 'Periodic inspection', 'demo/fl02-inspection.pdf', 'fl02-inspection.pdf', 'application/pdf', '2025-12-01', '2026-06-18', 'warning', 'under_review', 0.740),
+  ('00000000-0000-4000-8000-000000000604', '00000000-0000-4000-8000-000000000001', 'Operator licence for Nick Palmer', 'Operator license', 'demo/operator-license.pdf', 'operator-license.pdf', 'application/pdf', '2023-08-11', '2026-06-10', 'warning', 'approved', 0.910)
 on conflict (organization_id, storage_key) do nothing;
 
 insert into public.document_asset_links (organization_id, document_id, asset_id)
@@ -105,14 +105,14 @@ on conflict (document_id, operator_id) do nothing;
 
 insert into public.maintenance_tasks (id, organization_id, asset_id, title, status, due_at, assigned_to_profile_id, cost_cents)
 values
-  ('00000000-0000-4000-8000-000000000701', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000403', 'Έλεγχος υδραυλικών λαδιών και φρένων', 'overdue', '2026-05-24', '00000000-0000-4000-8000-000000000103', 36000),
-  ('00000000-0000-4000-8000-000000000702', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000401', 'Προετοιμασία ελέγχου μπούμας', 'scheduled', '2026-06-01', '00000000-0000-4000-8000-000000000103', null)
+  ('00000000-0000-4000-8000-000000000701', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000403', 'Hydraulic oil and brake check', 'overdue', '2026-05-24', '00000000-0000-4000-8000-000000000103', 36000),
+  ('00000000-0000-4000-8000-000000000702', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000401', 'Boom inspection preparation', 'scheduled', '2026-06-01', '00000000-0000-4000-8000-000000000103', null)
 on conflict (id) do nothing;
 
 insert into public.issues (id, organization_id, asset_id, assigned_to_profile_id, title, severity, status, blocking_asset, created_at)
 values
-  ('00000000-0000-4000-8000-000000000801', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000404', '00000000-0000-4000-8000-000000000103', 'Πτώση υδραυλικής πίεσης υπό φορτίο', 'critical', 'in_progress', true, '2026-05-28 09:00:00+03'),
-  ('00000000-0000-4000-8000-000000000802', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000402', '00000000-0000-4000-8000-000000000102', 'Ληγμένο KTEO, δεν μπορεί να μπει σε διαδρομή Σαββατοκύριακου', 'high', 'triaged', true, '2026-05-27 09:00:00+03')
+  ('00000000-0000-4000-8000-000000000801', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000404', '00000000-0000-4000-8000-000000000103', 'Hydraulic pressure drop under load', 'critical', 'in_progress', true, '2026-05-28 09:00:00+03'),
+  ('00000000-0000-4000-8000-000000000802', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000402', '00000000-0000-4000-8000-000000000102', 'Expired roadworthiness test, cannot be scheduled for a weekend route', 'high', 'triaged', true, '2026-05-27 09:00:00+03')
 on conflict (id) do nothing;
 
 alter table public.profiles enable row level security;

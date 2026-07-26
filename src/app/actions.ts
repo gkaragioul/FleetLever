@@ -32,7 +32,7 @@ function nullableText(formData: FormData, key: string) {
 }
 
 const documentCategories = new Set<DocumentCategory>([
-  "KTEO",
+  "Roadworthiness",
   "Insurance",
   "Permit",
   "Lifting certificate",
@@ -84,7 +84,7 @@ function sanitizeFileName(value: string) {
 function storageSlug(value: string) {
   return value
     .toLocaleLowerCase("en-GB")
-    .replace(/[^a-z0-9α-ωάέήίόύώϊϋΐΰ]+/giu, "-")
+    .replace(/[^a-z0-9]+/giu, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80) || "document";
 }
@@ -1369,10 +1369,10 @@ export async function importFleetRows(formData: FormData): Promise<ActionResult>
       let createdId: string | null = null;
 
       if (importType === "documents_csv") {
-        const title = String(normalized.title ?? normalized.τίτλος ?? "").trim();
-        const category = documentCategory(String(normalized.category ?? normalized.κατηγορία ?? "Insurance").trim());
-        const assetCode = String(normalized.assetCode ?? normalized.asset ?? normalized.πάγιο ?? "").trim();
-        const expiresAt = maybeDate(normalized.expiresAt ?? normalized.expiry ?? normalized.λήξη);
+        const title = String(normalized.title ?? "").trim();
+        const category = documentCategory(String(normalized.category ?? "Insurance").trim());
+        const assetCode = String(normalized.assetCode ?? normalized.asset ?? "").trim();
+        const expiresAt = maybeDate(normalized.expiresAt ?? normalized.expiry);
 
         if (!title) {
           errorMessage = "Document title is missing.";
@@ -1427,9 +1427,9 @@ export async function importFleetRows(formData: FormData): Promise<ActionResult>
           }
         }
       } else {
-        const code = String(normalized.code ?? normalized.internal_code ?? normalized.κωδικός ?? "").trim().toUpperCase();
-        const name = String(normalized.name ?? normalized.όνομα ?? "").trim();
-        const assetType = String(normalized.type ?? normalized.assetType ?? normalized.τύπος ?? "Van").trim();
+        const code = String(normalized.code ?? normalized.internal_code ?? "").trim().toUpperCase();
+        const name = String(normalized.name ?? "").trim();
+        const assetType = String(normalized.type ?? normalized.assetType ?? "Van").trim();
 
         if (!code || !name) {
           errorMessage = "Asset code or name is missing.";
@@ -1456,9 +1456,9 @@ export async function importFleetRows(formData: FormData): Promise<ActionResult>
               name,
               code,
               assetType,
-              String(normalized.plate ?? normalized.πινακίδα ?? "").trim() || null,
-              String(normalized.serial ?? normalized.σειριακό ?? "").trim() || null,
-              String(normalized.department ?? normalized.τμήμα ?? assetType).trim() || assetType,
+              String(normalized.plate ?? "").trim() || null,
+              String(normalized.serial ?? "").trim() || null,
+              String(normalized.department ?? assetType).trim() || assetType,
             ],
           );
 
@@ -1675,7 +1675,7 @@ function buildCopilotResponse(question: string, data: FleetLeverData) {
     };
   }
 
-  if (normalized.includes("document") || normalized.includes("kteo") || normalized.includes("expir")) {
+  if (normalized.includes("document") || normalized.includes("roadworthiness") || normalized.includes("expir")) {
     attentionDocuments.slice(0, 4).forEach((document) =>
       citations.push({
         table: "documents",

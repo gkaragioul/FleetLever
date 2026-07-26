@@ -80,7 +80,7 @@ async function main() {
     const organizationResult = await client.query(
       `
         insert into public.organizations (name, legal_name, timezone, currency, locale, status, settings)
-        values ($1, $2, 'Europe/Athens', 'EUR', 'el-GR', 'active', '{"bootstrap":"developer"}'::jsonb)
+        values ($1, $2, 'Europe/London', 'EUR', 'en-GB', 'active', '{"bootstrap":"developer"}'::jsonb)
         on conflict do nothing
         returning id
       `,
@@ -103,7 +103,7 @@ async function main() {
     const profileResult = await client.query(
       `
         insert into public.profiles (auth_subject, email, full_name, locale, timezone, status)
-        values ($1, $2, $3, 'el-GR', 'Europe/Athens', 'active')
+        values ($1, $2, $3, 'en-GB', 'Europe/London', 'active')
         on conflict (email) do update
           set full_name = excluded.full_name,
               status = 'active',
@@ -133,7 +133,7 @@ async function main() {
     await client.query(
       `
         insert into public.locations (organization_id, name, city, country, kind)
-        values ($1, $2, 'Athens', 'GR', 'yard')
+        values ($1, $2, 'Head office', 'GB', 'yard')
         on conflict (organization_id, name) do nothing
       `,
       [organizationId, locationName],

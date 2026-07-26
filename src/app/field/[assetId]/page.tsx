@@ -10,7 +10,7 @@ import { requireActiveFleetLeverPageSession } from "@/lib/auth/access";
 export const dynamic = "force-dynamic";
 
 const categoryLabels: Record<string, string> = {
-  KTEO: "KTEO",
+  Roadworthiness: "Roadworthiness",
   Insurance: "Insurance",
   Permit: "Permit",
   "Lifting certificate": "Lifting certificate",

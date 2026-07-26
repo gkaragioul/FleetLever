@@ -83,7 +83,6 @@ requireTokens("multiIndustryHero", [
   'data-animation="multi-industry-hero"',
   "/fleetlever/site/hero-photos/site-crew-crane.jpg",
   "/fleetlever/site/industries/equipment-rental.jpg",
-  "/fleetlever/municipal-real/aporrimmatofora-1.jpg",
   "/fleetlever/site/industries/service-fleet.jpg",
 ]);
 
@@ -282,7 +281,6 @@ requireTokens("industrySwitchboard", [
   "The assets change. The release decision does not.",
   "Construction and heavy equipment",
   "Equipment rental",
-  "Municipal and public works",
   "Car rental operations",
   "Aviation, marine and beyond",
   "aircraft, vessel or specialist asset",
@@ -321,7 +319,7 @@ requireTokens("terms", ["Terms of use", "FleetLever"]);
 requireTokens("security", ["Security", "access control", "evidence"]);
 
 requireTokens("layout", [
-  'lang={edition === "site" ? "en" : "el"}',
+  'lang="en"',
   "Prevent expensive fleet downtime",
   'locale: "en_GB"',
 ]);

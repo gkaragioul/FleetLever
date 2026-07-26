@@ -508,7 +508,7 @@ async function verifyWheelSteppedMotion(page, name) {
     {
       selector: '[data-animation="industry-switchboard"]',
       attribute: "data-industry-active",
-      order: ["construction", "rental", "municipal", "car-rental", "beyond"],
+      order: ["construction", "rental", "car-rental", "beyond"],
       loop: true,
     },
   ];
@@ -974,9 +974,9 @@ try {
       await verifyMobileOperationalCompositions(page, "landing mobile");
       const industrySwitchboard = page.locator('[data-animation="industry-switchboard"]');
       await industrySwitchboard.scrollIntoViewIfNeeded();
-      await page.getByRole("button", { name: /Municipal and public works/i }).click();
-      if ((await industrySwitchboard.getAttribute("data-industry-active")) !== "municipal") {
-        failures.push("landing mobile: municipal industry drawer did not open");
+      await page.getByRole("button", { name: /Car rental operations/i }).click();
+      if ((await industrySwitchboard.getAttribute("data-industry-active")) !== "car-rental") {
+        failures.push("landing mobile: car rental industry drawer did not open");
       }
       const menuButton = page.getByRole("button", { name: /menu/i });
       await menuButton.click();

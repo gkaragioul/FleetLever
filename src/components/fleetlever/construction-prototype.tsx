@@ -397,7 +397,7 @@ const standaloneSeedWorksites: Worksite[] = [
   {
     id: "metro-extension",
     name: "Metro line extension",
-    location: "Veikou shaft · Lifting zone",
+    location: "North shaft · Lifting zone",
     date: "Tomorrow, 07:00",
     requiredMachineIds: ["cr04", "ex12", "tr08", "ld03", "gn02"],
   },
@@ -5127,13 +5127,6 @@ function machinePhotoPlaceholder(machine: Machine) {
     tr08: "/fleetlever/machines/tr08-truck.jpg",
     ld03: "/fleetlever/machines/ld03-loader.jpg",
     gn02: "/fleetlever/machines/gn02-generator.jpg",
-    af14: "/fleetlever/municipal-real/aporrimmatofora-2.jpg",
-    af22: "/fleetlever/municipal-real/aporrimmatofora-1.jpg",
-    ar03: "/fleetlever/municipal-real/koutia-2.jpg",
-    grab07: "/fleetlever/municipal-real/geranoforo-2.jpg",
-    sw05: "/fleetlever/municipal-real/electric-4.jpg",
-    ev09: "/fleetlever/municipal-real/electric-4.jpg",
-    bus02: "/fleetlever/municipal-real/bus-post-3-browser.jpg",
   };
 
   return photoMap[machine.id] ?? photoMap.cr04;

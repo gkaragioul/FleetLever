@@ -1,7 +1,7 @@
 export type AssetStatus = "ready" | "attention" | "blocked" | "inactive";
 export type Severity = "low" | "medium" | "high" | "critical";
 export type DocumentCategory =
-  | "KTEO"
+  | "Roadworthiness"
   | "Insurance"
   | "Permit"
   | "Lifting certificate"
@@ -137,7 +137,7 @@ export const assets: Asset[] = [
     type: "Bus",
     plate: "DEM-0002",
     serial: "WDB632-T12",
-    location: "Athens depot",
+    location: "Central depot",
     department: "Tourism transfers",
     operator: "Eleni Mavrou",
     status: "blocked",
@@ -177,7 +177,7 @@ export const assets: Asset[] = [
     type: "Van",
     plate: "DEM-0003",
     serial: "WF0XXXTTG",
-    location: "Thessaloniki branch",
+    location: "North depot",
     department: "Field service",
     operator: "Maria Sotiropoulou",
     status: "ready",
@@ -198,9 +198,9 @@ export const documents: FleetDocument[] = [
     confidence: 0.98,
   },
   {
-    id: "doc-b12-kteo",
-    title: "B-12 KTEO inspection",
-    category: "KTEO",
+    id: "doc-b12-roadworthiness",
+    title: "B-12 roadworthiness test",
+    category: "Roadworthiness",
     assetId: "asset-b12",
     issuedAt: "2025-05-20",
     expiresAt: "2026-05-20",
@@ -292,7 +292,7 @@ export const issues: Issue[] = [
   {
     id: "iss-b12",
     assetId: "asset-b12",
-    title: "Expired KTEO, cannot be scheduled for a weekend route",
+    title: "Expired roadworthiness test, cannot be scheduled for a weekend route",
     severity: "high",
     status: "triaged",
     blocking: true,
@@ -348,7 +348,7 @@ export const complianceTemplates: ComplianceTemplate[] = [
   },
   {
     assetType: "Bus",
-    requiredCategories: ["KTEO", "Insurance", "Permit", "Operator license"],
+    requiredCategories: ["Roadworthiness", "Insurance", "Permit", "Operator license"],
   },
   {
     assetType: "Forklift",
@@ -356,7 +356,7 @@ export const complianceTemplates: ComplianceTemplate[] = [
   },
   {
     assetType: "Van",
-    requiredCategories: ["KTEO", "Insurance"],
+    requiredCategories: ["Roadworthiness", "Insurance"],
   },
   {
     assetType: "Excavator",
@@ -373,7 +373,7 @@ export const fallbackFleetData: FleetLeverData = {
     id: "demo-local",
     name: "Demo Ltd",
     locale: "en-GB",
-    timezone: "Europe/Athens",
+    timezone: "Europe/London",
     currency: "EUR",
   },
   session: {
@@ -383,7 +383,7 @@ export const fallbackFleetData: FleetLeverData = {
     role: "owner",
   },
   location: {
-    name: "Athens Depot",
+    name: "Central Depot",
     assetCount: assets.length,
     operatorCount: operators.length,
   },

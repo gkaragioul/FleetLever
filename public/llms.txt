@@ -1,21 +1,20 @@
 # FleetLever
 
-FleetLever is a Greek-first web application for fleet and equipment operations.
-It helps Greek SMEs track assets, KTEO, certificates, documents, service work,
+FleetLever is a web application for fleet and equipment operations.
+It helps SMEs track assets, roadworthiness tests, certificates, documents, service work,
 issues, operators, assignments, reports, and operational priorities.
 
-Primary language: Greek (el-GR)
-Market: Greece
+Primary language: English (en-GB)
 Category: fleet management software, equipment operations, compliance tracking
-Public site: https://fleetlever.gr
+Public site: https://fleetlever.com
 
 Key pages:
-- /: Product website for the Greek market.
+- /: Product website.
 - /console: Interactive demo console.
 
 Important product terms:
 - FleetLever
-- KTEO
+- Roadworthiness
 - service
 - Copilot
 - Import

@@ -61,7 +61,7 @@ async function queryFleetLeverData(client: Queryable, context: TenantContext): P
       select id, name
       from public.locations
       where organization_id = $1
-      order by case when lower(name) = 'athens depot' then 0 else 1 end, name
+      order by case when lower(name) = 'central depot' then 0 else 1 end, name
       limit 1
     `,
     [context.organizationId],

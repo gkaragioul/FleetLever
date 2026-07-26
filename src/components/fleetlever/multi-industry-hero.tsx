@@ -11,10 +11,6 @@ const INDUSTRY_SCENES = [
     src: "/fleetlever/site/industries/equipment-rental.jpg",
   },
   {
-    id: "municipal",
-    src: "/fleetlever/municipal-real/aporrimmatofora-1.jpg",
-  },
-  {
     id: "service",
     src: "/fleetlever/site/industries/service-fleet.jpg",
   },

@@ -108,7 +108,7 @@ async function main() {
     } else {
       const inserted = await client.query(
         `insert into public.profiles (auth_subject, username, email, full_name, locale, timezone, status, email_verified_at)
-         values ($1, $2::citext, $3::citext, $4, 'en-GB', 'Europe/Athens', 'active', now())
+         values ($1, $2::citext, $3::citext, $4, 'en-GB', 'Europe/London', 'active', now())
          returning id`,
         [`test:${username}`, username, email, fullName],
       );
