@@ -8,10 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const edition = getFleetLeverEdition();
 
-  if (edition === "elliniko") {
-    redirect("/main-page");
-  }
-
   if (edition === "console") {
     const session = await getSuperAdminSession().catch(() => null);
 

@@ -2,11 +2,11 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 
-const editions = new Set(["elliniko", "console", "site"]);
+const editions = new Set(["console", "site"]);
 const [edition, port] = process.argv.slice(2);
 
 if (!editions.has(edition) || !/^\d{2,5}$/.test(port ?? "")) {
-  console.error("Usage: node scripts/dev-edition.mjs <elliniko|console|site> <port>");
+  console.error("Usage: node scripts/dev-edition.mjs <console|site> <port>");
   process.exit(1);
 }
 

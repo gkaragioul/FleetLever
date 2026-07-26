@@ -1,24 +1,20 @@
 # FleetLever
 
-FleetLever is a Greek-first release-control product for equipment-heavy operations. It answers one daily question before machines and crews are committed: what can work tomorrow, what cannot, why, and who must act.
+FleetLever is a release-control product for equipment-heavy operations. It answers one daily question before machines and crews are committed: what can work tomorrow, what cannot, why, and who must act.
 
-Version `0.8.0` ships one codebase in three isolated editions.
+FleetLever ships one codebase in two isolated editions: the commercial site and the customer console.
 
 ## Editions
 
 | Edition | Purpose | Local URL | Railway URL |
 | --- | --- | --- | --- |
-| `elliniko` | Employee portal for the Municipality of Elliniko-Argyroupoli | http://127.0.0.1:3000/main-page | https://fleetlever-elliniko-production.up.railway.app/main-page |
-| `console` | Standalone B2B FleetLever console | http://127.0.0.1:3001/fleet-management | https://fleetlever-app-production.up.railway.app/fleet-management |
-| `site` | Greek FleetLever commercial site | http://127.0.0.1:3002 | https://fleetlever-site-production.up.railway.app |
+| `console` | B2B FleetLever console | http://127.0.0.1:3001/fleet-management | https://fleetlever-app-production.up.railway.app/fleet-management |
+| `site` | FleetLever commercial site | http://127.0.0.1:3002 | https://fleetlever.com |
 
-Elliniko review routes:
+The console contains no marketing routes. The commercial site contains no customer application routes.
 
-- Portal: https://fleetlever-elliniko-production.up.railway.app/main-page
-- Municipal fleet: https://fleetlever-elliniko-production.up.railway.app/fleet-management
-- Civic dispatch: https://fleetlever-elliniko-production.up.railway.app/civic-dispatch
-
-The B2B console contains no municipal portal or civic-dispatch routes. The commercial site contains no customer application routes.
+The Greek public-sector editions — the Elliniko-Argyroupoli employee portal, the municipal fleet
+application, and the civic dispatch application — were discontinued and removed from this codebase.
 
 ## Local Development
 
@@ -31,26 +27,24 @@ npm install
 Start each edition in its own terminal:
 
 ```bash
-npm run dev:elliniko
 npm run dev:console
 npm run dev:site
 ```
 
-Each process uses an independent Next.js build directory, so all three can run together without cache collisions.
+Each process uses an independent Next.js build directory, so both can run together without cache collisions.
 
 ## Runtime Selection
 
 Railway selects the edition with one service variable:
 
 ```bash
-FLEETLEVER_EDITION=elliniko
 FLEETLEVER_EDITION=console
 FLEETLEVER_EDITION=site
 ```
 
 `src/proxy.ts` enforces route boundaries at runtime. `src/lib/fleetlever/edition.ts` contains the edition contract and root route for each deployment.
 
-The marketing edition does not require a database. The Elliniko and B2B console editions use Railway Postgres and Railway object storage. Their tenant IDs are configured independently so operational records do not cross editions.
+The marketing edition does not require a database. The console edition uses Railway Postgres and Railway object storage.
 
 ## Validation
 
@@ -86,9 +80,8 @@ Project: `FleetLever`
 
 Services:
 
-- `fleetlever-app`: standalone B2B console
-- `fleetlever-elliniko`: Elliniko municipal review edition
-- `fleetlever-site`: public Greek commercial site
+- `fleetlever-app`: B2B console
+- `fleetlever-site`: public commercial site
 - `Postgres`: shared database with tenant-scoped row-level security
 - `fleetlever-uploads`: object storage
 
@@ -96,10 +89,8 @@ Services:
 
 ## Product Surfaces
 
-- `src/components/fleetlever/construction-prototype.tsx`: municipal and standalone fleet console profiles
-- `src/app/civic-dispatch/page.tsx`: municipal civic-dispatch application
-- `src/app/main-page/page.tsx`: municipal employee portal
-- `src/app/landing/page.tsx`: Greek commercial landing page
+- `src/components/fleetlever/construction-prototype.tsx`: fleet console
+- `src/app/landing/page.tsx`: commercial landing page
 - `src/app/pricing/page.tsx`: pilot and subscription pricing
 - `src/components/fleetlever/commercial-site-shell.tsx`: shared commercial navigation and footer
 - `src/components/fleetlever/fleetlever-logo.tsx`: FleetLever brand mark

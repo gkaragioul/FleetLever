@@ -41,10 +41,6 @@ function startsWithRoute(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(`${route}/`);
 }
 
-function isMunicipalRoute(pathname: string) {
-  return ["/main-page", "/civic-dispatch", "/external-blockers", "/worker-apps"].some((route) => startsWithRoute(pathname, route));
-}
-
 function isProductRoute(pathname: string) {
   return ["/fleet-management", "/console", "/field", "/login"].some((route) => startsWithRoute(pathname, route))
     || pathname.startsWith("/api/fleetlever/")
@@ -93,15 +89,11 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  if (edition === "site" && (isMunicipalRoute(pathname) || isProductRoute(pathname))) {
+  if (edition === "site" && isProductRoute(pathname)) {
     return notFoundResponse();
   }
 
-  if (edition === "console" && (isMunicipalRoute(pathname) || isMarketingRoute(pathname))) {
-    return notFoundResponse();
-  }
-
-  if (edition === "elliniko" && isMarketingRoute(pathname)) {
+  if (edition === "console" && isMarketingRoute(pathname)) {
     return notFoundResponse();
   }
 
@@ -137,10 +129,6 @@ export const config = {
     "/field/:path*",
     "/api/auth/:path*",
     "/api/fleetlever/:path*",
-    "/main-page/:path*",
-    "/civic-dispatch/:path*",
-    "/external-blockers/:path*",
-    "/worker-apps/:path*",
     "/fleet-management/:path*",
     "/landing/:path*",
     "/pricing/:path*",

@@ -1,20 +1,15 @@
 import process from "node:process";
 
 const matrix = {
-  elliniko: {
-    port: 3000,
-    ok: ["/main-page", "/fleet-management", "/civic-dispatch"],
-    forbidden: [],
-  },
   console: {
     port: 3001,
     ok: ["/", "/fleet-management", "/login"],
-    forbidden: ["/main-page", "/civic-dispatch"],
+    forbidden: ["/main-page", "/civic-dispatch", "/external-blockers", "/worker-apps"],
   },
   site: {
     port: 3002,
     ok: ["/", "/landing", "/pricing"],
-    forbidden: ["/main-page", "/fleet-management", "/civic-dispatch"],
+    forbidden: ["/main-page", "/fleet-management", "/civic-dispatch", "/external-blockers", "/worker-apps"],
   },
 };
 

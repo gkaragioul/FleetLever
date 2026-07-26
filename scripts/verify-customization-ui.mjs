@@ -139,7 +139,7 @@ try {
 
   await page.getByRole("button", { name: "Ρυθμίσεις" }).click();
   await page.getByRole("heading", { name: "Settings" }).waitFor();
-  await page.locator("#brand-logo").setInputFiles(path.join(process.cwd(), "public", "municipal", "elliniko-argyroupoli-mark.png"));
+  await page.locator("#brand-logo").setInputFiles(path.join(process.cwd(), "public", "fleetlever-console-mobile.png"));
   const cropDialog = page.getByRole("dialog", { name: "Crop brand image" });
   await cropDialog.waitFor();
   await cropDialog.locator('input[type="range"]').fill("1.2");

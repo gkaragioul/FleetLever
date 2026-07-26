@@ -14,7 +14,7 @@ export default async function FleetManagementPage() {
   const session = await getFleetLeverAccessSession();
 
   if (!session) {
-    redirect(edition === "elliniko" ? "/main-page?next=/fleet-management" : "/login?next=/fleet-management");
+    redirect("/login?next=/fleet-management");
   }
 
   if (session.kind === "account" && !session.account.trial.active) {

@@ -35,33 +35,6 @@ async function assertNoOverflow(page, label) {
   }
 }
 
-async function verifyCivicDesktop() {
-  const { page, errors } = await createPage({ width: 1440, height: 960 });
-  await gotoApp(page, "/civic-dispatch?verify=lisa-desktop");
-  await page.getByRole("button", { name: "Άνοιγμα βοηθού Lisa" }).click();
-  const panel = page.locator("[data-lisa-panel]");
-  await panel.getByRole("heading", { name: "Lisa" }).waitFor();
-  await panel.getByRole("button", { name: "Χωρίς ανάθεση", exact: true }).click();
-  await panel.getByText("2 αιτήματα χωρίς ανάθεση.", { exact: true }).waitFor();
-  await panel.getByRole("button", { name: "Προβολή χωρίς ανάθεση" }).click();
-  const queueIds = await page.locator("aside").first().getByText(/^REQ-/).allTextContents();
-  if (queueIds.join(",") !== "REQ-258071,REQ-258063") {
-    throw new Error(`Civic unassigned filter returned: ${queueIds.join(",")}`);
-  }
-  await page.getByRole("button", { name: "Άνοιγμα βοηθού Lisa" }).click();
-  await panel.getByRole("button", { name: "Τι προέχει;", exact: true }).click();
-  await page.screenshot({ path: reportPath("civic-dispatch-lisa-desktop.png"), fullPage: true });
-  if ((await page.getByRole("button", { name: "Αποστολή στο πεδίο" }).count()) !== 1) {
-    throw new Error("Civic Lisa changed the selected request stage");
-  }
-  await page.keyboard.press("Escape");
-  await page.waitForTimeout(250);
-  if ((await page.locator("[data-lisa-panel]").count()) !== 0) throw new Error("Civic Lisa did not close with Escape");
-  await assertNoOverflow(page, "Civic desktop");
-  if (errors.length) throw new Error(`Civic desktop errors:\n${errors.join("\n")}`);
-  await page.close();
-}
-
 async function verifyFleetDesktop() {
   const { page, errors } = await createPage({ width: 1440, height: 960 });
   await gotoApp(page, "/fleet-management?verify=lisa-desktop");
@@ -101,11 +74,9 @@ async function verifyMobile(path, screenshotName, label) {
 }
 
 try {
-  await verifyCivicDesktop();
   await verifyFleetDesktop();
-  await verifyMobile("/civic-dispatch?verify=lisa-mobile", "civic-dispatch-lisa-mobile.png", "Civic mobile");
   await verifyMobile("/fleet-management?verify=lisa-mobile", "fleet-management-lisa-unified-mobile.png", "Fleet mobile");
-  console.log("Lisa verification passed for Civic Dispatch and Fleet Management.");
+  console.log("Lisa verification passed for Fleet Management.");
 } finally {
   await browser.close();
 }

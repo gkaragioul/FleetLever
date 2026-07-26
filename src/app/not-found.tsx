@@ -11,9 +11,9 @@ export default function NotFound() {
         action: "Back to FleetLever",
       }
     : {
-        title: "Η σελίδα δεν είναι διαθέσιμη",
-        body: "Η διεύθυνση δεν ανήκει σε αυτή την έκδοση του FleetLever.",
-        action: "Επιστροφή",
+        title: "Page not found",
+        body: "That address is not part of the FleetLever console.",
+        action: "Back to the console",
       };
 
   return (

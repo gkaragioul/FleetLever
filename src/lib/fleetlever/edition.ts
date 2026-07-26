@@ -1,38 +1,21 @@
-export type FleetLeverEdition = "elliniko" | "console" | "site";
+export type FleetLeverEdition = "console" | "site";
 
 export type FleetLeverEditionConfig = {
   edition: FleetLeverEdition;
-  rootPath: "/main-page" | "/fleet-management" | "/";
+  rootPath: "/fleet-management" | "/";
   requiresDatabase: boolean;
-  allowsMunicipalPortal: boolean;
-  allowsCivicDispatch: boolean;
-  brand: "municipal" | "fleetlever";
 };
 
 const editionConfigs: Record<FleetLeverEdition, FleetLeverEditionConfig> = {
-  elliniko: {
-    edition: "elliniko",
-    rootPath: "/main-page",
-    requiresDatabase: true,
-    allowsMunicipalPortal: true,
-    allowsCivicDispatch: true,
-    brand: "municipal",
-  },
   console: {
     edition: "console",
     rootPath: "/fleet-management",
     requiresDatabase: true,
-    allowsMunicipalPortal: false,
-    allowsCivicDispatch: false,
-    brand: "fleetlever",
   },
   site: {
     edition: "site",
     rootPath: "/",
     requiresDatabase: false,
-    allowsMunicipalPortal: false,
-    allowsCivicDispatch: false,
-    brand: "fleetlever",
   },
 };
 
@@ -40,9 +23,9 @@ export function parseFleetLeverEdition(value: string | undefined): FleetLeverEdi
   const normalized = value?.trim().toLowerCase();
 
   if (!normalized) return "console";
-  if (normalized === "elliniko" || normalized === "console" || normalized === "site") return normalized;
+  if (normalized === "console" || normalized === "site") return normalized;
 
-  throw new Error(`Invalid FLEETLEVER_EDITION "${value}". Expected elliniko, console, or site.`);
+  throw new Error(`Invalid FLEETLEVER_EDITION "${value}". Expected console or site.`);
 }
 
 export function getFleetLeverEdition(): FleetLeverEdition {

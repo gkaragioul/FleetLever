@@ -29,7 +29,6 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { MunicipalBrandLockup, PortalReturnLink } from "@/components/fleetlever/municipal-brand";
 import { FleetLeverLogo } from "@/components/fleetlever/fleetlever-logo";
 import { SettingsView } from "@/components/fleetlever/settings-view";
 import {
@@ -233,18 +232,9 @@ type DrawerAction =
   | { type: "override" }
   | null;
 
-const isMunicipalConsole = process.env.NEXT_PUBLIC_FLEETLEVER_EDITION === "elliniko";
-const defaultClientName = isMunicipalConsole ? "FleetLever Δήμος Demo" : "FleetLever Demo";
+const defaultClientName = "FleetLever Demo";
 const allowDemoConsoleData = process.env.NEXT_PUBLIC_FLEETLEVER_ALLOW_DEMO_CONSOLE !== "false";
 const lisaCodexUiEnabled = process.env.NEXT_PUBLIC_FLEETLEVER_LISA_CODEX_ENABLED === "true";
-
-const municipalTeamMembers: TeamMember[] = [
-  { name: "Δημήτρης", role: "Γραφείο Κίνησης" },
-  { name: "Μαρία", role: "Έγγραφα και έλεγχοι" },
-  { name: "Κώστας", role: "Συνεργείο δήμου" },
-  { name: "Εξωτερικό συνεργείο", role: "Επισκευές στόλου" },
-  { name: "Γιώργος", role: "Υπεύθυνος Καθαριότητας" },
-];
 
 const standaloneTeamMembers: TeamMember[] = [
   { name: "Δημήτρης", role: "Υπεύθυνος στόλου" },
@@ -254,9 +244,9 @@ const standaloneTeamMembers: TeamMember[] = [
   { name: "Γιώργος", role: "Διευθυντής λειτουργίας" },
 ];
 
-const teamMembers = isMunicipalConsole ? municipalTeamMembers : standaloneTeamMembers;
+const teamMembers = standaloneTeamMembers;
 
-const municipalStaffMembers: StaffMember[] = [
+const baseStaffMembers: StaffMember[] = [
   {
     id: "staff-dimitris",
     name: "Δημήτρης",
@@ -348,35 +338,35 @@ const municipalStaffMembers: StaffMember[] = [
 
 const standaloneStaffMembers: StaffMember[] = [
   {
-    ...municipalStaffMembers[0],
+    ...baseStaffMembers[0],
     role: "Υπεύθυνος στόλου",
     team: "Συντονισμός λειτουργίας",
     assignedTo: "Επέκταση γραμμής Μετρό",
     note: "Κλειδώνει χειριστές, οχήματα και επόμενες ενέργειες πριν από την πρωινή εκκίνηση.",
   },
   {
-    ...municipalStaffMembers[1],
+    ...baseStaffMembers[1],
     role: "Υπεύθυνος συνεργείου",
     team: "Τεχνική υποστήριξη",
     assignedTo: "LD-03 · έλεγχος υδραυλικών",
     note: "Ενημερώνει την ομάδα λειτουργίας μόλις ολοκληρωθεί ο τεχνικός έλεγχος.",
   },
   {
-    ...municipalStaffMembers[2],
+    ...baseStaffMembers[2],
     role: "Συμμόρφωση & έγγραφα",
     team: "Διοικητικός έλεγχος",
     assignedTo: "Πιστοποιητικά στόλου",
     note: "Παρακολουθεί λήξεις, ανανεώσεις και αποδεικτικά ανά όχημα.",
   },
   {
-    ...municipalStaffMembers[3],
+    ...baseStaffMembers[3],
     role: "Διευθυντής λειτουργίας",
     team: "Λειτουργία έργων",
     assignedTo: "Πρωινή αναφορά",
     note: "Εγκρίνει αλλαγές χειριστών και εξαιρέσεις πριν κλειδώσει η βάρδια.",
   },
   {
-    ...municipalStaffMembers[4],
+    ...baseStaffMembers[4],
     role: "Χειριστής γερανού",
     team: "Ανυψώσεις",
     assignedTo: "CR-04",
@@ -384,7 +374,7 @@ const standaloneStaffMembers: StaffMember[] = [
     replacement: "Ο Δημήτρης να βρει διαθέσιμο χειριστή έως τις 17:00",
   },
   {
-    ...municipalStaffMembers[5],
+    ...baseStaffMembers[5],
     role: "Οδηγός φορτηγού",
     team: "Μεταφορές",
     assignedTo: "TR-08",
@@ -392,7 +382,7 @@ const standaloneStaffMembers: StaffMember[] = [
     replacement: "Κάλυψη από διαθέσιμο οδηγό μεταφορών",
   },
   {
-    ...municipalStaffMembers[6],
+    ...baseStaffMembers[6],
     role: "Χειριστής φορτωτή",
     team: "Χωματουργικά",
     assignedTo: "LD-03",
@@ -401,462 +391,7 @@ const standaloneStaffMembers: StaffMember[] = [
   },
 ];
 
-const staffMembers = isMunicipalConsole ? municipalStaffMembers : standaloneStaffMembers;
-
-const municipalSeedWorksites: Worksite[] = [
-  {
-    id: "morning-waste",
-    name: "Πρωινή αποκομιδή απορριμμάτων",
-    location: "Ελληνικό · Άνω Αργυρούπολη · Κέντρο",
-    date: "Αύριο, 07:00",
-    requiredMachineIds: ["af14", "af22", "ev09", "sw05"],
-  },
-  {
-    id: "bulky-green",
-    name: "Ογκώδη, μπάζα και κλαδέματα",
-    location: "Πάρκα · κοινόχρηστοι χώροι · σημεία δημοτών",
-    date: "Αύριο, 06:30",
-    requiredMachineIds: ["grab07", "ar03", "ev09"],
-  },
-  {
-    id: "municipal-transport",
-    name: "Δημοτική συγκοινωνία και υποστήριξη",
-    location: "Δημαρχείο · στάσεις · σχολικές μετακινήσεις",
-    date: "Αύριο, 08:00",
-    requiredMachineIds: ["bus02", "ev09", "sw05"],
-  },
-];
-
-const municipalSeedMachines: Machine[] = [
-  {
-    id: "af14",
-    code: "ΑΠ-01",
-    name: "Νέο απορριμματοφόρο καθαριότητας 2024",
-    type: "Απορριμματοφόρο Δήμου",
-    manufacturer: "Volvo",
-    model: "Νέος στόλος καθαριότητας 2024",
-    serial: "4 νέα απορριμματοφόρα Δήμου",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "morning-waste",
-    state: "blocked",
-    reason: "Δεν έχει δηλωθεί πλήρωμα για την πρωινή αποκομιδή",
-    owner: "Δημήτρης",
-    nextAction: "Κλείσιμο πληρώματος ή αλλαγή απορριμματοφόρου",
-    eta: "Σήμερα, 17:00",
-    lastUpdated: "1 Ιουνίου 2026, 16:40",
-    activeBlockers: "2",
-    documents: "21 αρχεία",
-    certificates: [
-      {
-        name: "Ανάθεση οδηγού και πληρώματος",
-        status: "Λείπει",
-        expiry: "Απαιτείται πριν τη βάρδια",
-        daysLeft: "-",
-        owner: "Δημήτρης",
-        action: "Δήλωση διαθέσιμου πληρώματος",
-      },
-      {
-        name: "ΚΤΕΟ",
-        status: "Σε ισχύ",
-        expiry: "12 Νοεμβρίου 2026",
-        daysLeft: "164",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-      {
-        name: "Ασφάλεια",
-        status: "Σε ισχύ",
-        expiry: "12 Σεπτεμβρίου 2026",
-        daysLeft: "103",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Έλεγχος πρέσας μετά την τελευταία βάρδια",
-        severity: "Υψηλή",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-      {
-        issue: "Ενημέρωση κάρτας καυσίμου",
-        severity: "Υψηλή",
-        blocksRelease: true,
-        owner: "Δημήτρης",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [
-      { title: "Δεν έχει κλείσει πλήρωμα", severity: "Κρίσιμο", owner: "Δημήτρης", status: "Ανοιχτό" },
-      { title: "Εκκρεμεί κάρτα καυσίμου", severity: "Υψηλή", owner: "Δημήτρης", status: "Ανοιχτό" },
-    ],
-    photos: [
-      { title: "Πρέσα μετά τη βάρδια", category: "Έλεγχος", date: "30 Μαΐου" },
-      { title: "Καθαρισμός καρότσας", category: "Παράδοση", date: "28 Μαΐου" },
-    ],
-  },
-  {
-    id: "af22",
-    code: "ΑΠ-02",
-    name: "Απορριμματοφόρο δεύτερης ζώνης",
-    type: "Απορριμματοφόρο Δήμου",
-    manufacturer: "Volvo",
-    model: "Νέος στόλος καθαριότητας 2024",
-    serial: "Στόλος αποκομιδής Δήμου",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "morning-waste",
-    state: "ready",
-    reason: "Έχει οδηγό, πλήρωμα και διαδρομή αποκομιδής",
-    owner: "Δημήτρης",
-    nextAction: "-",
-    eta: "-",
-    lastUpdated: "1 Ιουνίου 2026, 15:10",
-    activeBlockers: "0",
-    documents: "16 αρχεία",
-    certificates: [
-      {
-        name: "ΚΤΕΟ",
-        status: "Σε ισχύ",
-        expiry: "21 Αυγούστου 2026",
-        daysLeft: "81",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-      {
-        name: "Ανάθεση πληρώματος",
-        status: "Σε ισχύ",
-        expiry: "Αύριο, 06:30",
-        daysLeft: "1",
-        owner: "Δημήτρης",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Η προγραμματισμένη συντήρηση ολοκληρώθηκε",
-        severity: "Χαμηλή",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Ολοκληρώθηκε",
-        status: "Λύθηκε",
-      },
-      {
-        issue: "Έλεγχος υδραυλικών πρέσας",
-        severity: "Μεσαία",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [],
-    photos: [{ title: "Ολοκλήρωση συντήρησης", category: "Συνεργείο", date: "1 Ιουνίου" }],
-  },
-  {
-    id: "ar03",
-    code: "ΚΟ-01",
-    name: "Κουτί αποκομιδής μπαζών και κλαδιών",
-    type: "Κουτί αποκομιδής",
-    manufacturer: "Δήμος Ελληνικού-Αργυρούπολης",
-    model: "Κουτί αποκομιδής 2023",
-    serial: "6 κουτιά αποκομιδής Δήμου",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "bulky-green",
-    state: "ready",
-    reason: "Έτοιμο για μπάζα, κλαδέματα και ογκώδη",
-    owner: "Δημήτρης",
-    nextAction: "-",
-    eta: "-",
-    lastUpdated: "1 Ιουνίου 2026, 14:40",
-    activeBlockers: "0",
-    documents: "8 αρχεία",
-    certificates: [
-      {
-        name: "ΚΤΕΟ",
-        status: "Σε ισχύ",
-        expiry: "17 Οκτωβρίου 2026",
-        daysLeft: "139",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Έλεγχος πίεσης φρένων",
-        severity: "Μεσαία",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [],
-    photos: [{ title: "Κουτί αποκομιδής διαθέσιμο", category: "Διαθεσιμότητα", date: "31 Μαΐου" }],
-  },
-  {
-    id: "grab07",
-    code: "ΓΕ-92",
-    name: "Τετραξωνικό γερανοφόρο καθαριότητας",
-    type: "Γερανοφόρο / ογκώδη",
-    manufacturer: "Iveco",
-    model: "Τετραξωνικό γερανοφόρο",
-    serial: "92ο όχημα στόλου Δήμου",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "bulky-green",
-    state: "at_risk",
-    reason: "Λείπει επιβεβαίωση κουτιού για κλαδέματα και ογκώδη",
-    owner: "Δημήτρης",
-    nextAction: "Επιβεβαίωση διαθέσιμου κουτιού",
-    eta: "Σήμερα, 15:00",
-    lastUpdated: "1 Ιουνίου 2026, 14:25",
-    activeBlockers: "0",
-    documents: "12 αρχεία",
-    certificates: [
-      {
-        name: "Άδεια γερανοφόρου",
-        status: "Σε ισχύ",
-        expiry: "4 Δεκεμβρίου 2026",
-        daysLeft: "186",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Έλεγχος υδραυλικού κυκλώματος γερανοφόρου",
-        severity: "Μεσαία",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-      {
-        issue: "Έλεγχος σταθεροποιητών",
-        severity: "Χαμηλή",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Αύριο μεσημέρι",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [{ title: "Δεν έχει επιβεβαιωθεί κουτί", severity: "Μεσαία", owner: "Δημήτρης", status: "Ανοιχτό" }],
-    photos: [{ title: "Γερανοφόρο έτοιμο για κουτί", category: "Διαθεσιμότητα", date: "27 Μαΐου" }],
-  },
-  {
-    id: "sw05",
-    code: "ΗΛ-02",
-    name: "Ηλεκτρικό όχημα σάρωσης πλατειών",
-    type: "Ηλεκτρικό καθαριότητας",
-    manufacturer: "Δήμος Ελληνικού-Αργυρούπολης",
-    model: "Ηλεκτροκίνητο όχημα καθαριότητας",
-    serial: "3 νέα ηλεκτροκίνητα οχήματα",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "morning-waste",
-    state: "blocked",
-    reason: "Δεν έχει φορτίσει πλήρως μετά τη χθεσινή βάρδια",
-    owner: "Κώστας",
-    nextAction: "Έλεγχος φορτιστή και αλλαγή οχήματος αν χρειαστεί",
-    eta: "Αύριο μεσημέρι",
-    lastUpdated: "1 Ιουνίου 2026, 13:05",
-    activeBlockers: "1",
-    documents: "10 αρχεία",
-    certificates: [
-      {
-        name: "Ασφάλεια",
-        status: "Σε ισχύ",
-        expiry: "18 Οκτωβρίου 2026",
-        daysLeft: "139",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Έλεγχος φορτιστή βάσης",
-        severity: "Υψηλή",
-        blocksRelease: true,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Σε εξέλιξη",
-      },
-      {
-        issue: "Καθαρισμός κάδου εργαλείων",
-        severity: "Μεσαία",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [{ title: "Θέλει φόρτιση πριν τη βάρδια", severity: "Υψηλή", owner: "Κώστας", status: "Ανοιχτό" }],
-    photos: [{ title: "Έλεγχος φόρτισης", category: "Κατάσταση", date: "1 Ιουνίου" }],
-  },
-  {
-    id: "ev09",
-    code: "ΗΛ-01",
-    name: "Ηλεκτρικό όχημα καθαριότητας πλατειών",
-    type: "Ηλεκτρικό καθαριότητας",
-    manufacturer: "Δήμος Ελληνικού-Αργυρούπολης",
-    model: "Ηλεκτροκίνητο όχημα καθαριότητας",
-    serial: "3 νέα ηλεκτροκίνητα οχήματα",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "morning-waste",
-    state: "ready",
-    reason: "Έτοιμο για πλατείες, πάρκα και μικρές παρεμβάσεις",
-    owner: "Κώστας",
-    nextAction: "-",
-    eta: "-",
-    lastUpdated: "1 Ιουνίου 2026, 12:30",
-    activeBlockers: "0",
-    documents: "9 αρχεία",
-    certificates: [
-      {
-        name: "Έλεγχος μπαταρίας",
-        status: "Σε ισχύ",
-        expiry: "3 Δεκεμβρίου 2026",
-        daysLeft: "185",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Έλεγχος φόρτισης μπαταρίας",
-        severity: "Χαμηλή",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [],
-    photos: [{ title: "Έλεγχος κατάστασης", category: "Έλεγχος", date: "31 Μαΐου" }],
-  },
-  {
-    id: "bus02",
-    code: "ΛΕ-01",
-    name: "Ηλεκτρικό λεωφορείο δημοτικής συγκοινωνίας",
-    type: "Δημοτική συγκοινωνία",
-    manufacturer: "Δήμος Ελληνικού-Αργυρούπολης",
-    model: "Ηλεκτρικό λεωφορείο",
-    serial: "5 ηλεκτρικά λεωφορεία",
-    ownership: "Ιδιόκτητο",
-    worksiteId: "municipal-transport",
-    state: "ready",
-    reason: "Έχει οδηγό, ασφάλεια και καθαρό δρομολόγιο",
-    owner: "Δημήτρης",
-    nextAction: "-",
-    eta: "-",
-    lastUpdated: "1 Ιουνίου 2026, 12:05",
-    activeBlockers: "0",
-    documents: "15 αρχεία",
-    certificates: [
-      {
-        name: "ΚΤΕΟ λεωφορείου",
-        status: "Σε ισχύ",
-        expiry: "22 Ιανουαρίου 2027",
-        daysLeft: "235",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-      {
-        name: "Άδεια οδηγού Δ",
-        status: "Σε ισχύ",
-        expiry: "18 Φεβρουαρίου 2027",
-        daysLeft: "262",
-        owner: "Μαρία",
-        action: "Καμία ενέργεια",
-      },
-    ],
-    service: [
-      {
-        issue: "Καθαρισμός εσωτερικού",
-        severity: "Χαμηλή",
-        blocksRelease: false,
-        owner: "Κώστας",
-        due: "Σήμερα",
-        status: "Ανοιχτό",
-      },
-    ],
-    issues: [],
-    photos: [{ title: "Κατάσταση καμπίνας", category: "Έλεγχος", date: "31 Μαΐου" }],
-  },
-];
-
-const municipalSeedReleaseHistory: ReleaseRecord[] = [
-  {
-    id: "release-seed-ap-01-2024-06-01",
-    date: "1 Ιουνίου",
-    worksite: "Πρωινή αποκομιδή απορριμμάτων",
-    machine: "ΑΠ-01",
-    result: "Δεν βγαίνει στη βάρδια",
-    reason: "Δεν έχει κλείσει πλήρωμα",
-    action: "Ανατέθηκε στο Γραφείο Κίνησης",
-    user: "Γιώργος",
-    override: "Όχι",
-  },
-  {
-    id: "release-seed-ap-02-2024-06-01",
-    date: "1 Ιουνίου",
-    worksite: "Πρωινή αποκομιδή απορριμμάτων",
-    machine: "ΑΠ-02",
-    result: "Έτοιμο για βάρδια",
-    reason: "Έχει πλήρωμα και έγγραφα",
-    action: "Κλειδώθηκε για αύριο",
-    user: "Δημήτρης",
-    override: "Όχι",
-  },
-  {
-    id: "release-seed-ge-92-2024-06-01",
-    date: "1 Ιουνίου",
-    worksite: "Ογκώδη, μπάζα και κλαδέματα",
-    machine: "ΓΕ-92",
-    result: "Θέλει προσοχή",
-    reason: "Λείπει επιβεβαίωση κουτιού",
-    action: "Η προειδοποίηση ανατέθηκε",
-    user: "Δημήτρης",
-    override: "Όχι",
-  },
-  {
-    id: "release-seed-il-02-2024-05-31",
-    date: "31 Μαΐου",
-    worksite: "Πρωινή αποκομιδή απορριμμάτων",
-    machine: "ΗΛ-02",
-    result: "Δεν βγαίνει στη βάρδια",
-    reason: "Δεν έχει φορτίσει πλήρως",
-    action: "Γίνεται έλεγχος φορτιστή",
-    user: "Κώστας",
-    override: "Όχι",
-  },
-];
-
-const municipalInitialNotifications: OperationalNotification[] = [
-  {
-    id: 1,
-    title: "Το ΑΠ-01 δεν βγαίνει αύριο χωρίς πλήρωμα",
-    detail: "Το Γραφείο Κίνησης πρέπει να κλείσει οδηγό και εργάτες μέχρι τις 17:00.",
-    createdAt: "Σήμερα, 07:05",
-    read: false,
-  },
-  {
-    id: 2,
-    title: "Το ΗΛ-02 θέλει φόρτιση πριν βγει",
-    detail: "Ο φορτιστής βάσης θέλει έλεγχο. Η πρωινή σάρωση χρειάζεται εναλλακτικό σχέδιο.",
-    createdAt: "Σήμερα, 07:10",
-    read: false,
-  },
-  {
-    id: 3,
-    title: "Το πρωινό σημείωμα είναι έτοιμο",
-    detail: "3 έτοιμα, 1 για έλεγχο, 2 μπλοκαρισμένα για την αυριανή δημοτική βάρδια.",
-    createdAt: "Σήμερα, 07:30",
-    read: false,
-  },
-];
+const staffMembers = standaloneStaffMembers;
 
 const standaloneSeedWorksites: Worksite[] = [
   {
@@ -1202,17 +737,15 @@ const standaloneInitialNotifications: OperationalNotification[] = [
   },
 ];
 
-const seedWorksites = isMunicipalConsole ? municipalSeedWorksites : standaloneSeedWorksites;
-const seedMachines = isMunicipalConsole ? municipalSeedMachines : standaloneSeedMachines;
-const seedReleaseHistory = isMunicipalConsole ? municipalSeedReleaseHistory : standaloneSeedReleaseHistory;
-const initialNotifications = isMunicipalConsole ? municipalInitialNotifications : standaloneInitialNotifications;
+const seedWorksites = standaloneSeedWorksites;
+const seedMachines = standaloneSeedMachines;
+const seedReleaseHistory = standaloneSeedReleaseHistory;
+const initialNotifications = standaloneInitialNotifications;
 
 const emptyWorksite: Worksite = {
   id: "no-worksite",
-  name: isMunicipalConsole ? "Δεν έχει επιλεγεί υπηρεσία πόλης" : "Δεν έχει επιλεγεί πακέτο εργασίας",
-  location: isMunicipalConsole
-    ? "Προσθέστε οχήματα και αυριανές βάρδιες για να ξεκινήσει ο έλεγχος"
-    : "Προσθέστε οχήματα και εργασίες για να ξεκινήσει ο έλεγχος ετοιμότητας",
+  name: "Δεν έχει επιλεγεί πακέτο εργασίας",
+  location: "Προσθέστε οχήματα και εργασίες για να ξεκινήσει ο έλεγχος ετοιμότητας",
   date: "Δεν έχει προγραμματιστεί",
   requiredMachineIds: [],
 };
@@ -1221,7 +754,7 @@ const emptyMachine: Machine = {
   id: "no-machine",
   code: "-",
   name: "Δεν έχει επιλεγεί όχημα",
-  type: isMunicipalConsole ? "Όχημα δήμου" : "Όχημα στόλου",
+  type: "Όχημα στόλου",
   manufacturer: "FleetLever",
   model: "Δεν έχει οριστεί",
   serial: "Δεν έχει οριστεί",
@@ -1245,7 +778,7 @@ const worksites: Worksite[] = allowDemoConsoleData ? cloneConsoleData(seedWorksi
 const machines: Machine[] = allowDemoConsoleData ? cloneConsoleData(seedMachines) : [];
 const releaseHistory: ReleaseRecord[] = allowDemoConsoleData ? cloneConsoleData(seedReleaseHistory) : [];
 
-const defaultConsoleSnapshotKey = isMunicipalConsole ? "fleetlever-elliniko-console-state-v5" : "fleetlever-console-state-v5";
+const defaultConsoleSnapshotKey = "fleetlever-console-state-v5";
 
 function activeConsoleSnapshotKey() {
   return currentDemoSessionStorageKey() ?? defaultConsoleSnapshotKey;
@@ -1476,7 +1009,7 @@ function todayDecisionDate() {
 
 const navItems: Array<{ key: ViewKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: "tomorrow", label: "Αυριανή βάρδια", icon: CalendarDays },
-  { key: "worksites", label: isMunicipalConsole ? "Υπηρεσίες πόλης" : "Πακέτα εργασίας", icon: Building2 },
+  { key: "worksites", label: "Πακέτα εργασίας", icon: Building2 },
   { key: "blockers", label: "Τι λείπει", icon: ShieldAlert },
   { key: "machines", label: "Οχήματα", icon: Building2 },
   { key: "certificates", label: "Έγγραφα & έλεγχοι", icon: BadgeCheck },
@@ -2859,7 +2392,7 @@ export function ConstructionPrototype({
     void recordConsoleAction({
       action: "console.notification",
       detail,
-      metadata: { source: isMunicipalConsole ? "municipal-console" : "fleet-console" },
+      metadata: { source: "fleet-console" },
       title,
     }).catch(() => {});
   }
@@ -3160,7 +2693,7 @@ export function ConstructionPrototype({
       worksites.push({
         id,
         name: cleanName,
-        location: isMunicipalConsole ? "Νέα υπηρεσία πόλης" : "Νέο πακέτο εργασίας",
+        location: "Νέο πακέτο εργασίας",
         date: "Αύριο, 07:00",
         requiredMachineIds: [],
       });
@@ -3265,7 +2798,7 @@ export function ConstructionPrototype({
             })),
         },
         {
-          title: isMunicipalConsole ? "Υπηρεσίες πόλης" : "Πακέτα εργασίας",
+          title: "Πακέτα εργασίας",
           results: worksites
             .filter((worksite) => {
               const siteMachines = machinesForWorksite(worksite);
@@ -3426,9 +2959,7 @@ export function ConstructionPrototype({
         >
           <div className="flex min-h-32 items-center border-b border-white/10 px-5 py-5">
             <div className="min-w-0">
-              {isMunicipalConsole ? (
-                <MunicipalBrandLockup compact inverse />
-              ) : branding.logo ? (
+              {branding.logo ? (
                 <div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={branding.logo.dataUrl} alt={`${clientName} logo`} className="max-h-16 max-w-[13rem] object-contain object-left" />
@@ -3550,7 +3081,6 @@ export function ConstructionPrototype({
               >
                 <Search className="h-5 w-5" aria-hidden="true" />
               </button>
-              {isMunicipalConsole ? <PortalReturnLink className="hidden shrink-0 md:inline-flex" /> : null}
               {trialInfo ? (
                 <div className="hidden h-9 shrink-0 items-center rounded-md border border-[#B8D5CC] bg-[#F1FAF6] px-3 text-[11px] font-black uppercase text-[#116149] lg:inline-flex" title={`Trial ends ${new Date(trialInfo.endsAt).toLocaleDateString("en-GB")}`}>
                   Trial · {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? "day" : "days"} left
@@ -3579,9 +3109,9 @@ export function ConstructionPrototype({
                     {([
                       ["Όχημα", Truck, "Νέα καταχώριση στόλου"],
                       [
-                        isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας",
+                        "Πακέτο εργασίας",
                         Building2,
-                        isMunicipalConsole ? "Νέα δημοτική διαδρομή" : "Νέα εργασία ή έργο",
+                        "Νέα εργασία ή έργο",
                       ],
                       ["Έλεγχος / έγγραφο", FileText, "Νέα απαίτηση ή απόδειξη"],
                       ["Θέμα συνεργείου", Wrench, "Νέα εργασία συντήρησης"],
@@ -3676,7 +3206,7 @@ export function ConstructionPrototype({
                     <div className="border-b border-[#DCE5E1] px-3 py-2.5">
                       <p className="text-sm font-bold text-[#0D2F2D]">{trialInfo?.userName ?? "Γιώργος"}</p>
                       <p className="mt-0.5 text-[11px] font-semibold text-[#64748B]">
-                        {isMunicipalConsole ? "Διαχειριστής δημοτικού στόλου" : "Διαχειριστής στόλου"}
+                        Διαχειριστής στόλου
                       </p>
                     </div>
                     <div className="pt-1">
@@ -4012,7 +3542,7 @@ function TomorrowPlanner({
                 value={worksiteId}
                 onChange={(event) => onWorksiteChange(event.target.value)}
                 className="h-11 w-full min-w-0 rounded-md border border-[#DDE7E3] bg-white px-3 text-[13px] font-semibold text-[#111827] outline-none focus:border-[#0F172A] sm:min-w-64 xl:h-9 xl:w-auto"
-                aria-label={isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας"}
+                aria-label={"Πακέτο εργασίας"}
               >
                 {worksites.map((worksite) => (
                   <option key={worksite.id} value={worksite.id}>
@@ -5279,10 +4809,8 @@ function AddItemModal({
   const placeholder =
     type === "Όχημα"
       ? "π.χ. ΑΦ-30 νέο απορριμματοφόρο"
-      : type === "Υπηρεσία πόλης" || type === "Πακέτο εργασίας"
-        ? isMunicipalConsole
-          ? "π.χ. Αποκομιδή λαϊκής αγοράς"
-          : "π.χ. Επέκταση λιμενικής εγκατάστασης"
+      : type === "Πακέτο εργασίας"
+        ? "π.χ. Επέκταση λιμενικής εγκατάστασης"
         : type === "Έλεγχος / έγγραφο"
           ? "π.χ. ΚΤΕΟ ή ανάθεση οδηγού"
           : type === "Θέμα συνεργείου"
@@ -5377,12 +4905,8 @@ function WorksitesView({
   return (
     <ConsolePage>
       <ViewHeader
-        title={isMunicipalConsole ? "Υπηρεσίες πόλης" : "Πακέτα εργασίας"}
-        description={
-          isMunicipalConsole
-            ? "Ποιες υπηρεσίες ξεκινούν αύριο και ποιες χρειάζονται ενέργεια σήμερα."
-            : "Ποιες εργασίες ξεκινούν αύριο και τι χρειάζεται ενέργεια σήμερα."
-        }
+        title="Πακέτα εργασίας"
+        description="Ποιες εργασίες ξεκινούν αύριο και τι χρειάζεται ενέργεια σήμερα."
         showActions={false}
       />
       <Surface className="overflow-hidden p-0">
@@ -5612,7 +5136,7 @@ function machinePhotoPlaceholder(machine: Machine) {
     bus02: "/fleetlever/municipal-real/bus-post-3-browser.jpg",
   };
 
-  return photoMap[machine.id] ?? (isMunicipalConsole ? photoMap.af14 : photoMap.cr04);
+  return photoMap[machine.id] ?? photoMap.cr04;
 }
 
 function MachinesView({
@@ -7610,7 +7134,7 @@ function releaseEvidencePacketText(record: ReleaseRecord) {
     "",
     "Συμβάν απόφασης",
     `Ημερομηνία: ${record.date}`,
-    `${isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας"}: ${record.worksite}`,
+    `${"Πακέτο εργασίας"}: ${record.worksite}`,
     `Όχημα: ${record.machine}`,
     `Απόφαση: ${record.result}`,
     `Αιτία: ${record.reason}`,
@@ -7685,7 +7209,7 @@ function EvidencePacketDrawer({ record, onClose }: { record: ReleaseRecord; onCl
             <h3 className="text-lg font-bold text-[#0D2F2D]">Στιγμιότυπο πακέτου εργασίας</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                [isMunicipalConsole ? "Υπηρεσία πόλης" : "Πακέτο εργασίας", record.worksite],
+                ["Πακέτο εργασίας", record.worksite],
                 ["Ημερομηνία απόφασης", record.date],
                 ["Απαιτούμενα οχήματα", String(counts.total)],
                 ["Έτοιμα / Έλεγχος / Μπλοκαρισμένα", `${counts.ready} / ${counts.attention} / ${counts.blocked}`],

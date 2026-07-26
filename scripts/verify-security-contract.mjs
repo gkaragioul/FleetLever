@@ -24,7 +24,10 @@ const tenantClient = await readFile("src/lib/db/client.ts", "utf8");
 const consoleState = await readFile("src/lib/db/console-state.ts", "utf8");
 const fleetData = await readFile("src/lib/db/fleetlever-data.ts", "utf8");
 const fieldPage = await readFile("src/app/field/[assetId]/page.tsx", "utf8");
-const demoLogin = await readFile("src/app/api/auth/demo-login/route.ts", "utf8");
+const demoLoginRemoved = await readFile("src/app/api/auth/demo-login/route.ts", "utf8").then(
+  () => false,
+  () => true,
+);
 const accountSecurityMigration = await readFile("db/migrations/0008_security_hardening.sql", "utf8");
 const runtimeFunctionGrants = await readFile("db/migrations/0009_runtime_account_function_grants.sql", "utf8");
 const phaseTwoSecurityMigration = await readFile("db/migrations/0010_auth_security_phase2.sql", "utf8");
@@ -64,10 +67,9 @@ assert.match(
   /getFleetLeverData\(\{\s*organizationId:[\s\S]*profileId:/,
   "Field mode must load data with the authenticated tenant context explicitly.",
 );
-assert.match(
-  demoLogin,
-  /demoLoginAllowed/,
-  "Demo login must be explicitly gated and unavailable in the commercial console by default.",
+assert.ok(
+  demoLoginRemoved,
+  "The demo login route issued a super admin session without credentials and must stay deleted.",
 );
 assert.match(accountSecurityMigration, /drop policy if exists audit_logs_tenant_update/i, "Audit logs must not be mutable.");
 assert.match(accountSecurityMigration, /drop policy if exists audit_logs_tenant_delete/i, "Audit logs must not be deletable.");

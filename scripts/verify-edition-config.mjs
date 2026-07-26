@@ -8,19 +8,17 @@ const runnerPath = path.join(root, "scripts", "dev-edition.mjs");
 const nextConfigPath = path.join(root, "next.config.ts");
 
 const requiredTokens = [
-  '"elliniko"',
   '"console"',
   '"site"',
-  'rootPath: "/main-page"',
   'rootPath: "/fleet-management"',
   'rootPath: "/"',
   "requiresDatabase",
-  "allowsMunicipalPortal",
-  "allowsCivicDispatch",
-  "brand",
   "getFleetLeverEdition",
   "editionConfig",
 ];
+
+// The Greek municipal edition was discontinued; these must not come back.
+const forbiddenTokens = ["elliniko", "/main-page", "allowsMunicipalPortal", "allowsCivicDispatch"];
 
 let source;
 
@@ -38,7 +36,14 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log("PASS edition configuration: elliniko, console, site");
+const resurrected = forbiddenTokens.filter((token) => source.includes(token));
+
+if (resurrected.length > 0) {
+  console.error(`FAIL discontinued edition tokens are back: ${resurrected.join(", ")}`);
+  process.exit(1);
+}
+
+console.log("PASS edition configuration: console, site");
 
 const [runnerSource, nextConfigSource] = await Promise.all([
   readFile(runnerPath, "utf8"),
