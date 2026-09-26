@@ -3226,6 +3226,9 @@ export function ConstructionPrototype({
                         tone="danger"
                         onClick={() => {
                           setUserMenuOpen(false);
+                          // A full page load after sign-out is deliberate: it discards all client-side
+                          // tenant state instead of carrying it into the login page.
+                          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                           void fetch("/api/auth/logout", { method: "POST" }).finally(() => window.location.assign("/login"));
                         }}
                       />
