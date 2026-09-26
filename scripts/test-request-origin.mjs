@@ -21,7 +21,7 @@ test("accepts a matching forwarded production origin", () => {
 test("accepts an explicitly trusted public proxy origin", () => {
   assert.equal(
     originMatches(
-      request("https://fleetlever-app-production.up.railway.app/api/action", {
+      request("https://app.example.com/api/action", {
         origin: "https://fleetlever.com",
       }),
       ["https://fleetlever.com"],
