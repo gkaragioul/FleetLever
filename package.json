@@ -35,7 +35,7 @@
     "test:lisa": "node --test scripts/test-lisa-bridge.mjs scripts/test-lisa-relay.mjs && node scripts/verify-lisa-contract.mjs",
     "test:lisa:db": "node scripts/verify-lisa-relay-db.mjs",
     "test:lisa:live": "node scripts/verify-lisa-relay-live.mjs",
-    "test:auth": "node --test scripts/test-account-auth.mjs",
+    "test:auth": "node --test scripts/test-account-auth.mjs scripts/test-account-linking.mjs",
     "test:account-ui": "node scripts/verify-account-lisa-ui.mjs",
     "test:customization": "node scripts/verify-customization-contract.mjs && node --test scripts/test-console-snapshot.mjs",
     "test:customization-ui": "node scripts/verify-customization-ui.mjs",
@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

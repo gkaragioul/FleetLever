@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 
 const mutationRoutes = [
   "src/app/api/fleetlever/console-state/route.ts",
@@ -105,6 +105,29 @@ assert.match(nextConfig, /default-src 'self'/, "The CSP must define a restrictiv
 assert.match(nextConfig, /object-src 'none'/, "The CSP must block plugin content.");
 assert.match(nextConfig, /base-uri 'self'/, "The CSP must restrict base URL injection.");
 assert.match(nextConfig, /form-action 'self'/, "The CSP must restrict form submissions.");
+// The most recent definition of each account function is the one production runs.
+async function latestFunctionDefinition(functionName) {
+  const files = (await readdir("db/migrations")).filter((file) => file.endsWith(".sql")).sort().reverse();
+  for (const file of files) {
+    const source = await readFile(`db/migrations/${file}`, "utf8");
+    const match = source.match(new RegExp(`create or replace function app_private\\.${functionName}\\([\\s\\S]*?\\n\\$\\$;`, "i"));
+    if (match) return match[0];
+  }
+  return "";
+}
+
+const googleLinking = await latestFunctionDefinition("upsert_google_account");
+assert.match(
+  googleLinking,
+  /email_verified_at is null[\s\S]*delete from app_private\.account_credentials[\s\S]*update public\.auth_sessions[\s\S]*revoked_at = now\(\)/i,
+  "A Google sign-in must strip the password and sessions of a profile whose email was never verified before linking to it.",
+);
+assert.match(
+  await latestFunctionDefinition("consume_password_reset"),
+  /email_verified_at = coalesce\(email_verified_at, now\(\)\)/i,
+  "A completed password reset proves control of the address and must mark it verified.",
+);
+
 assert.match(proxy, /fleetlever_account_session/, "The production proxy must recognize authenticated trial accounts.");
 assert.match(proxy, /hasFleetLeverSessionCookie/, "Protected FleetLever APIs must accept either account or administrator sessions.");
 

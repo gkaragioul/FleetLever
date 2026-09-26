@@ -7,6 +7,9 @@
 - Password hashes live only in `app_private.account_credentials` and use salted `scrypt-v1` hashes.
 - Session and account-action tokens are random opaque values. PostgreSQL stores only SHA-256 token hashes.
 - The runtime role cannot read credential, session, token, OAuth identity, or rate-limit tables directly.
+- A Google sign-in joins an existing profile with the same email only as its proven owner: if that email
+  was never verified, the profile's password and sessions are removed before linking (migration 0013).
+  A completed password reset counts as verification.
 - All tenant data uses forced row-level security and active organization membership checks.
 
 ## Production database contract
