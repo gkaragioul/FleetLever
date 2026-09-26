@@ -64,7 +64,11 @@ After deployment, run `npm run test:production-boundaries`. It verifies both hea
 - Passwords are stored as salted scrypt hashes in the private database schema.
 - Browser sessions use opaque random tokens; only token hashes are stored in Postgres.
 - Session cookies are `HttpOnly`, `Secure` on hosted deployments, and `SameSite=Lax`.
-- Login, signup, password reset, and token consumption are rate limited in Postgres.
+- Login, signup, password reset, and token consumption are rate limited in Postgres, per account and
+  per client address. The address comes from `src/lib/security/client-ip.mjs`, which trusts only the
+  proxies counted in `FLEETLEVER_TRUSTED_PROXY_HOPS` (or the header in `FLEETLEVER_CLIENT_IP_HEADER`).
+- The anonymous commercial endpoints (demo requests, analytics events, demo workspaces) are rate
+  limited per client address and read request bodies under a fixed size cap.
 - Tenant tables enforce row-level security and active membership.
 - Password-reset and verification tokens are hashed, expiring, and single use.
 - Audit logs are append-only to the restricted runtime role.

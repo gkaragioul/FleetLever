@@ -61,6 +61,13 @@ async function main() {
     await client.query(`revoke all on public.oauth_identities from ${roleIdentifier}`);
     await client.query(`revoke all on app_private.account_credentials from ${roleIdentifier}`);
     await client.query(`revoke all on app_private.rate_limit_buckets from ${roleIdentifier}`);
+    // Anonymous intake tables: the app only ever appends to them.
+    for (const table of ["commercial_demo_requests", "commercial_events"]) {
+      const exists = await client.query("select to_regclass($1) is not null as exists", [`public.${table}`]);
+      if (exists.rows[0]?.exists) {
+        await client.query(`revoke select, update, delete on public.${table} from ${roleIdentifier}`);
+      }
+    }
     await client.query(
       `alter default privileges in schema public grant select, insert, update, delete on tables to ${roleIdentifier}`,
     );

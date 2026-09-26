@@ -128,8 +128,14 @@ Security notes:
 - Only expose the production build. Development mode (`npm run dev`, or any `NODE_ENV` other than
   `production`) signs every visitor in as super admin and, when email is not configured, shows
   password-reset links on screen. That is meant for a developer's own machine only.
-- Per-IP sign-in limits read the first `X-Forwarded-For` entry. Put the app behind a proxy that
-  replaces any client-supplied value.
+- Per-client rate limits (sign-in, sign-up, password reset, demo requests, analytics and demo
+  workspaces) take the client address from the proxies you run, never from what the client sends.
+  Set `FLEETLEVER_TRUSTED_PROXY_HOPS` to the number of proxies in front of the app (default `1`:
+  the platform edge; use `2` if another proxy of yours forwards to it), or name a header your
+  platform always overwrites in `FLEETLEVER_CLIENT_IP_HEADER` (for example `x-vercel-forwarded-for`).
+  If the setting is wrong, clients either share one bucket or choose their own, so check it.
+- Public demo workspaces are capped at `FLEETLEVER_DEMO_SESSION_MAX` (default 100, oldest removed
+  first) and 2 MB each.
 - Leave Lisa off (`FLEETLEVER_LISA_CODEX_ENABLED=false`) unless you have read
   [the relay's security boundary](docs/architecture/lisa-outbound-relay.md#security-boundary).
 - Please report vulnerabilities privately to hello@fleetlever.com, not in a public issue.

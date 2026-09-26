@@ -2,12 +2,22 @@ import {
   readDemoSession,
   writeDemoSessionSnapshot,
 } from "@/lib/commercial/demo-session-store";
+import { rateLimitedResponse, takeRateLimit } from "@/lib/auth/rate-limit";
+import { clientRateLimitKey } from "@/lib/security/client-ip.mjs";
+import { BodyTooLargeError, readBodyText } from "@/lib/security/request-body.mjs";
 import { originErrorResponse, originMatches } from "@/lib/security/request-origin.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const maximumSnapshotBytes = 2_000_000;
+const readsPerClientPerMinute = 240;
+const writesPerClientPerMinute = 120;
+
+async function allowed(request: Request, action: "read" | "write") {
+  const limit = action === "read" ? readsPerClientPerMinute : writesPerClientPerMinute;
+  return takeRateLimit(`demo-session-${action}:${clientRateLimitKey(request.headers)}`, limit, 60_000);
+}
 
 function response(body: unknown, status = 200) {
   return Response.json(body, {
@@ -42,9 +52,10 @@ function isConsoleSnapshot(value: unknown) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
+  if (!(await allowed(request, "read"))) return rateLimitedResponse(60);
   const { sessionId } = await params;
   const result = await readDemoSession(sessionId);
   if (result.status !== "active") return lookupError(result.status);
@@ -62,15 +73,18 @@ export async function PUT(
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
   if (!originMatches(request)) return originErrorResponse();
+  if (!(await allowed(request, "write"))) return rateLimitedResponse(60);
   const { sessionId } = await params;
-  const declaredLength = Number(request.headers.get("content-length") ?? "0");
-  if (declaredLength > maximumSnapshotBytes) {
-    return response({ ok: false, error: "Demo workspace state is too large." }, 413);
-  }
 
-  const text = await request.text();
-  if (Buffer.byteLength(text, "utf8") > maximumSnapshotBytes) {
-    return response({ ok: false, error: "Demo workspace state is too large." }, 413);
+  let text: string;
+  try {
+    // Counted while streaming, so an oversized body is dropped before it is held in memory.
+    text = await readBodyText(request, maximumSnapshotBytes);
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) {
+      return response({ ok: false, error: "Demo workspace state is too large." }, 413);
+    }
+    return response({ ok: false, error: "Invalid demo workspace state." }, 400);
   }
 
   let snapshot: unknown;
