@@ -1,15 +1,21 @@
 # FleetLever
 
+> **About this repository.** This is the source code of the FleetLever service
+> ([fleetlever.com](https://fleetlever.com)), released under the [MIT License](LICENSE). It is
+> provided as is, without warranty of any kind. You can run it yourself; [Self-hosting](#self-hosting)
+> lists what that needs. It is built and operated for FleetLever's own Railway and Vercel
+> deployments, and other platforms are not tested.
+
 FleetLever is a release-control product for equipment-heavy operations. It answers one daily question before machines and crews are committed: what can work tomorrow, what cannot, why, and who must act.
 
 FleetLever ships one codebase in two isolated editions: the commercial site and the customer console.
 
 ## Editions
 
-| Edition | Purpose | Local URL | Railway URL |
-| --- | --- | --- | --- |
-| `console` | B2B FleetLever console | http://127.0.0.1:3001/fleet-management | https://fleetlever-app-production.up.railway.app/fleet-management |
-| `site` | FleetLever commercial site | http://127.0.0.1:3002 | https://fleetlever.com |
+| Edition | Purpose | Local URL |
+| --- | --- | --- |
+| `console` | B2B FleetLever console | http://127.0.0.1:3001/fleet-management |
+| `site` | FleetLever commercial site ([fleetlever.com](https://fleetlever.com)) | http://127.0.0.1:3002 |
 
 The console contains no marketing routes. The commercial site contains no customer application routes.
 
@@ -98,3 +104,38 @@ Services:
 ## Persistence
 
 Railway deployments require tenant-scoped Postgres and bucket configuration. The site edition is intentionally stateless. Local application development can fall back to local storage when Railway services are absent; production fails clearly when required persistence is not configured.
+
+## Self-hosting
+
+Every variable is listed in [`.env.example`](.env.example). The console edition needs:
+
+- Node.js 20.19 or later.
+- PostgreSQL with the `pgcrypto` and `citext` extensions available (the first migration creates them).
+- An administrator connection for migrations (`MIGRATION_DATABASE_URL`, run `npm run db:migrate`) and a
+  restricted runtime role for the app (`DATABASE_URL`, created with `npm run db:create-app-role`).
+- `FLEETLEVER_SESSION_SECRET`: at least 32 random characters. It signs administrator sessions, and
+  in production the server rejects a missing or short value.
+- A first organization: run `npm run db:bootstrap-production-tenant`, then set
+  `FLEETLEVER_DEFAULT_ORGANIZATION_ID` and `FLEETLEVER_DEFAULT_PROFILE_ID` to the IDs it prints.
+- An S3-compatible bucket for uploads in production (`FLEETLEVER_BUCKET_NAME` and the `AWS_*` variables).
+- Optional: `RESEND_API_KEY` and `FLEETLEVER_EMAIL_FROM` for verification and password-reset email,
+  `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google sign-in.
+
+Build with `npm ci && npm run build`, then start the standalone server with `npm start`.
+
+Security notes:
+
+- Only expose the production build. Development mode (`npm run dev`, or any `NODE_ENV` other than
+  `production`) signs every visitor in as super admin and, when email is not configured, shows
+  password-reset links on screen. That is meant for a developer's own machine only.
+- Per-IP sign-in limits read the first `X-Forwarded-For` entry. Put the app behind a proxy that
+  replaces any client-supplied value.
+- Leave Lisa off (`FLEETLEVER_LISA_CODEX_ENABLED=false`) unless you have read
+  [the relay's security boundary](docs/architecture/lisa-outbound-relay.md#security-boundary).
+- Please report vulnerabilities privately to hello@fleetlever.com, not in a public issue.
+
+## License
+
+The source code is released under the [MIT License](LICENSE). The FleetLever name and logos are
+trademarks of George Karagioules and are not covered by the MIT License. Third-party components,
+including npm dependencies and third-party photographs under `public/`, keep their own licences.
