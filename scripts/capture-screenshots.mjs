@@ -1,9 +1,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
 
-const desktop = "/Users/example/Desktop";
+const desktop = join(homedir(), "Desktop");
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const outputDir = join(desktop, `FleetLever_Screenshots_${stamp}`);
 const baseUrl = process.env.FLEETLEVER_SCREENSHOT_URL ?? "http://127.0.0.1:3000/console";

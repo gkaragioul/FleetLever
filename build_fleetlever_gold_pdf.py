@@ -10,7 +10,7 @@ from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
 
 
 SOURCE = Path("docs/fleetlever-gold-version-development-plan.md")
-OUTPUT = Path("/Users/example/Desktop/FleetLever_Gold_Version_Development_Plan_2026-05-29.pdf")
+OUTPUT = Path.home() / "Desktop" / "FleetLever_Gold_Version_Development_Plan_2026-05-29.pdf"
 
 
 def esc(text: str) -> str:

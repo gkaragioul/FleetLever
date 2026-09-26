@@ -3,7 +3,7 @@ const path = require('path');
 
 async function main() {
   const input = path.resolve(__dirname, 'fleetos-domain-name-research.html');
-  const output = path.resolve('/Users/example/Desktop/FleetOS_Domain_Name_Research.pdf');
+  const output = path.resolve(require('os').homedir(), 'Desktop', 'FleetOS_Domain_Name_Research.pdf');
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1240, height: 1754 }, deviceScaleFactor: 1 });

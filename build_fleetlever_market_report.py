@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import A4
@@ -13,7 +15,7 @@ from reportlab.platypus import (
 )
 
 
-OUTPUT = "/Users/example/Desktop/FleetLever_Greece_Advanced_Market_Analysis_2026-05-29.pdf"
+OUTPUT = str(Path.home() / "Desktop" / "FleetLever_Greece_Advanced_Market_Analysis_2026-05-29.pdf")
 
 
 def p(txt, style):

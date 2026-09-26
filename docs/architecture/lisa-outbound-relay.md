@@ -16,6 +16,7 @@ No Codex credentials, browser cookies, or local ports leave the workstation.
 ## Hosted application variables
 
 ```text
+FLEETLEVER_LISA_CODEX_ENABLED=true
 FLEETLEVER_LISA_ENABLED=true
 FLEETLEVER_LISA_RELAY_ENABLED=true
 FLEETLEVER_LISA_RELAY_SECRET=<at least 32 random characters>
@@ -30,7 +31,7 @@ Do not set `FLEETLEVER_LISA_RELAY_URL` on the hosted application. The hosted app
 FLEETLEVER_LISA_LOCAL_BRIDGE_ENABLED=true
 FLEETLEVER_LISA_BRIDGE_SECRET=<separate local secret>
 FLEETLEVER_LISA_RELAY_ENABLED=true
-FLEETLEVER_LISA_RELAY_URL=https://fleetlever-app-production.up.railway.app
+FLEETLEVER_LISA_RELAY_URL=https://<your hosted console origin>
 FLEETLEVER_LISA_RELAY_SECRET=<same relay secret as the hosted app>
 FLEETLEVER_LISA_RELAY_COMPANION_ID=primary
 ```
@@ -47,6 +48,21 @@ The runner reads `%APPDATA%\FleetLever\lisa-companion.env` by default and accept
 
 - Relay jobs expire after ten minutes.
 - The hosted stream stops after 95 seconds if the companion does not finish.
-- A heartbeat older than 30 seconds is shown as disconnected.
+- A heartbeat older than 45 seconds is shown as disconnected.
 - Only `status`, `message`, `error`, and `done` event types are accepted.
 - The shared relay secret must be rotated if the workstation or its environment file is compromised.
+
+## Security boundary
+
+The relay keeps the workstation off the inbound internet, but it does not make the questions
+safe. Every signed-in user, including a new self-service trial account, can send text that ends
+up in the Codex prompt, and the `context` object is supplied by the browser. Codex runs with
+`--sandbox read-only`, which blocks writes and network access but still lets it read files the
+workstation user can read. The bridge also passes its own environment to Codex.
+
+Treat Lisa questions as untrusted input:
+
+- Keep `FLEETLEVER_LISA_CODEX_ENABLED=false` unless the companion runs as a dedicated,
+  low-privilege account (or VM) that holds no personal files, credentials, or source code.
+- Do not store other secrets in that account's environment or profile.
+- Restrict Lisa to verified, paying organizations before enabling it in production.
