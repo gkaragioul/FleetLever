@@ -191,6 +191,10 @@ export function ReleaseControlProcess() {
       window.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", scheduleUpdate);
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
+      // The ref outlives this effect. Leaving a cancelled frame id in it makes the next run of the
+      // effect (React may mount, clean up and mount again) believe an update is already queued,
+      // so scroll progress would never be tracked again.
+      frameRef.current = 0;
     };
   }, [reducedMotion]);
 

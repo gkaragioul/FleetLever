@@ -21,13 +21,15 @@ try {
   await page.goto(`${origin}/fleet-management`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "domcontentloaded", timeout: 60_000 });
-  await page.getByText("CR-04", { exact: true }).first().waitFor({ state: "visible", timeout: 60_000 });
+  // The console renders some CR-04 labels in collapsed or responsive-only regions; wait for a visible one.
+  await page.getByText("CR-04", { exact: true }).filter({ visible: true }).first().waitFor({ state: "visible", timeout: 60_000 });
   await page.waitForTimeout(500);
 
   const text = await page.locator("body").innerText();
   const overlay = await page.locator("[data-nextjs-dialog], #nextjs__container_errors_desc").count();
-  const required = ["FleetLever", "CR-04", "Επέκταση γραμμής Μετρό", "Πακέτα εργασίας"];
-  const forbidden = ["Δήμος Ελληνικού", "Υπηρεσίες πόλης", "Διαχειριστής δημοτικού στόλου"];
+  // The console is English since v0.13.0; the discontinued municipal edition must not reappear.
+  const required = ["FleetLever", "CR-04", "Metro line extension", "Work packages"];
+  const forbidden = ["Δήμος Ελληνικού", "Υπηρεσίες πόλης", "Διαχειριστής δημοτικού στόλου", "Elliniko", "Argyroupoli"];
   const failures = [];
 
   for (const token of required) {

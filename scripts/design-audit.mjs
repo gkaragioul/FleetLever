@@ -3,22 +3,46 @@ import net from "node:net";
 import process from "node:process";
 import { chromium } from "playwright";
 
+import { encodeSession } from "../src/lib/auth/super-admin-core.mjs";
+
 // The standalone server takes its host and port from the environment and ignores CLI flags,
 // and running it through npm adds a shell hop that breaks both spawn and kill on Windows.
 // Launching node directly keeps this cross-platform and lets the port actually take effect.
 const standaloneServer = ".next/standalone/server.js";
 
+// The console requires a session, exactly as in the e2e smoke test: mint a super admin cookie
+// with a secret that only this audit's server knows.
+const auditSessionSecret = "fleetlever-design-audit-session-secret-value";
+const sessionCookieName = "fleetlever_super_admin_session";
+
+function auditSessionCookie(url) {
+  const value = encodeSession(
+    { role: "super_admin", username: "design-audit", expiresAt: Date.now() + 60 * 60 * 1000 },
+    auditSessionSecret,
+  );
+
+  return { name: sessionCookieName, value, url };
+}
+
 const APP_PATH = process.env.DESIGN_AUDIT_PATH ?? "/console";
 const NAV_LABELS = [
-  "Tomorrow's Work",
-  "Worksites",
-  "Action Queue",
-  "Machines",
-  "Documents",
+  "Tomorrow's shift",
+  "Work packages",
+  "What's missing",
+  "Vehicles",
+  "Documents & checks",
   "Workshop",
-  "Release History",
+  "Staff",
+  "Shift history",
   "Settings",
 ];
+
+// Without DATABASE_URL the console-state endpoint answers 503 by design (see e2e-smoke.mjs).
+const expectedWithoutDatabase = /Failed to load resource.*503/i;
+
+function isExpectedConsoleError(text) {
+  return !process.env.DATABASE_URL && expectedWithoutDatabase.test(text);
+}
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
   { name: "mobile", width: 390, height: 844 },
@@ -62,7 +86,13 @@ async function startServer() {
   const port = await getFreePort();
   const url = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, [standaloneServer], {
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", HOSTNAME: "127.0.0.1", PORT: String(port) },
+    env: {
+      ...process.env,
+      NEXT_TELEMETRY_DISABLED: "1",
+      HOSTNAME: "127.0.0.1",
+      PORT: String(port),
+      FLEETLEVER_SESSION_SECRET: auditSessionSecret,
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -225,12 +255,13 @@ async function auditView(page, label, viewportName) {
 }
 
 async function auditDrawer(page, viewportName) {
-  await openNav(page, "Machines", viewportName);
-  await page.getByRole("button", { name: /Open case|Open issue/ }).first().click();
+  // Open a blocked vehicle the way the e2e smoke test does, through global search.
+  await page.getByPlaceholder(/Search vehicle, service, document, owner/i).fill("CR-");
+  await page.getByRole("button", { name: /CR-04[\s\S]*Liebherr LTM 1040/ }).first().click();
   await page.getByRole("heading", { name: /CR-04/i }).waitFor({ state: "visible", timeout: 5000 });
-  await page.getByText(/This machine will stop/i).waitFor({ state: "visible", timeout: 5000 });
-  await assertNoRootOverflow(page, "machine drawer", viewportName);
-  await page.getByRole("button", { name: /Close drawer/ }).first().click();
+  await page.getByText(/This vehicle will stop/i).waitFor({ state: "visible", timeout: 5000 });
+  await assertNoRootOverflow(page, "vehicle detail", viewportName);
+  await assertNamedInteractiveControls(page, "vehicle detail", viewportName);
 }
 
 async function main() {
@@ -240,15 +271,22 @@ async function main() {
 
   try {
     for (const viewport of VIEWPORTS) {
-      const page = await browser.newPage({ viewport });
+      const context = await browser.newContext({ viewport });
+      await context.addCookies([auditSessionCookie(server.url)]);
+      const page = await context.newPage();
       const consoleErrors = [];
 
       page.on("console", (message) => {
-        if (message.type() === "error") consoleErrors.push(message.text());
+        if (message.type() === "error" && !isExpectedConsoleError(message.text())) consoleErrors.push(message.text());
       });
       page.on("pageerror", (error) => consoleErrors.push(error.message));
 
-      await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "networkidle" });
+      // The console polls its state endpoint, so the network never goes idle; wait for the shell.
+      await page.goto(`${server.url}${APP_PATH}`, { waitUntil: "domcontentloaded" });
+      await page
+        .locator(`button:has-text("${NAV_LABELS[0]}"), button[aria-label="Open navigation"]`)
+        .first()
+        .waitFor({ timeout: 30_000 });
 
       for (const label of NAV_LABELS) {
         try {
@@ -270,7 +308,7 @@ async function main() {
         failures.push(`${viewport.name}: console errors:\n${consoleErrors.join("\n")}`);
       }
 
-      await page.close();
+      await context.close();
     }
   } finally {
     await browser.close();

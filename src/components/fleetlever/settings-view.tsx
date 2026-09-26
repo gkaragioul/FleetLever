@@ -254,7 +254,7 @@ function BrandSlot({
         </div>
         <div className="flex gap-2">
           <label htmlFor={inputId} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-md border border-[#BDD3CF] bg-[#F4FAF8] px-4 text-sm font-bold text-[#0D4A46]"><Upload className="h-4 w-4" />{asset ? "Replace" : "Upload"}</label>
-          <input id={inputId} type="file" accept={acceptedImageTypes} className="sr-only" onChange={(event) => selectFile(event.target.files?.[0])} />
+          <input id={inputId} type="file" accept={acceptedImageTypes} aria-label={`${asset ? "Replace" : "Upload"} ${label}`} className="sr-only" onChange={(event) => selectFile(event.target.files?.[0])} />
           {asset ? <button type="button" onClick={() => onChange(null)} className="grid h-11 w-11 place-items-center rounded-md border border-[#FECACA] text-[#B91C1C]" aria-label={`Remove ${label}`}><Trash2 className="h-4 w-4" /></button> : null}
         </div>
       </div>

@@ -962,7 +962,7 @@ try {
     pathname: "/",
     viewport: { width: 390, height: 844 },
     maxHeight: 15200,
-    required: ["FleetLever", "Start 15-day trial", "Add the fields your team actually needs.", "Try the app", "Pricing"],
+    required: ["FleetLever", "Start free", "Add the fields your team actually needs.", "Try the app", "Pricing"],
     screenshot: "site-landing-mobile.png",
     interact: async (page) => {
       await verifyHowItWorksInset(page, "landing mobile", 20);
