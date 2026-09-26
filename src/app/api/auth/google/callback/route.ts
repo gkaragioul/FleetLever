@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { createAccountSession, upsertGoogleAccount } from "@/lib/auth/account";
 import { safeRedirectPath } from "@/lib/auth/account-core.mjs";
+import { clientIpFromHeaders } from "@/lib/security/client-ip.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     if (!account) return loginError(request, "account");
     const requestHeaders = await headers();
     await createAccountSession(account, {
-      ipAddress: requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? requestHeaders.get("x-real-ip"),
+      ipAddress: clientIpFromHeaders(requestHeaders),
       userAgent: requestHeaders.get("user-agent"),
     });
     return NextResponse.redirect(new URL(next, request.url));

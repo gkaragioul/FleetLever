@@ -6,13 +6,14 @@ import { createAccountSession, registerEmailAccount } from "@/lib/auth/account";
 import { safeRedirectPath } from "@/lib/auth/account-core.mjs";
 import { accountActionUrl, sendAccountEmail } from "@/lib/auth/email";
 import { takeAuthRateLimit } from "@/lib/auth/rate-limit";
+import { clientIpFromHeaders, clientRateLimitKey } from "@/lib/security/client-ip.mjs";
 
 export type SignupState = { error?: string };
 
 export async function signupAction(_state: SignupState, formData: FormData): Promise<SignupState> {
   const requestHeaders = await headers();
-  const ipAddress = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? requestHeaders.get("x-real-ip");
-  if (!(await takeAuthRateLimit(`signup:${ipAddress ?? "unknown"}`))) return { error: "Too many attempts. Try again in a few minutes." };
+  const ipAddress = clientIpFromHeaders(requestHeaders);
+  if (!(await takeAuthRateLimit(`signup:${clientRateLimitKey(requestHeaders)}`))) return { error: "Too many attempts. Try again in a few minutes." };
   const password = String(formData.get("password") ?? "");
   if (password !== String(formData.get("passwordConfirmation") ?? "")) return { error: "The passwords do not match." };
 

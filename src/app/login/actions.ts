@@ -5,13 +5,14 @@ import { redirect } from "next/navigation";
 import { authenticateAccount, createAccountSession } from "@/lib/auth/account";
 import { normalizeAccountIdentifier, safeRedirectPath } from "@/lib/auth/account-core.mjs";
 import { takeAuthRateLimit } from "@/lib/auth/rate-limit";
+import { clientIpFromHeaders } from "@/lib/security/client-ip.mjs";
 
 export type LoginState = { error?: string };
 
 async function requestMetadata() {
   const requestHeaders = await headers();
   return {
-    ipAddress: requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? requestHeaders.get("x-real-ip"),
+    ipAddress: clientIpFromHeaders(requestHeaders),
     userAgent: requestHeaders.get("user-agent"),
   };
 }
