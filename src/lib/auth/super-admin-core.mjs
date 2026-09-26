@@ -20,7 +20,10 @@ export function sessionSecret(env = process.env) {
   const secret = env.FLEETLEVER_SESSION_SECRET;
 
   if (!secret || secret.length < minimumSecretLength) {
-    if (!isHostedDeployment(env)) {
+    // The development secret ships with the source, so anyone can sign cookies with it. Use it
+    // only where the local super admin session is granted anyway: never in production mode and
+    // never on a hosted platform. A self-hosted production server must fail closed instead.
+    if (allowsLocalDevelopmentAccess(env)) {
       return developmentSessionSecret;
     }
 

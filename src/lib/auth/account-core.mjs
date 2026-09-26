@@ -30,7 +30,12 @@ export function hashOpaqueToken(token) {
 
 export function safeRedirectPath(value, fallback = "/fleet-management") {
   const candidate = String(value ?? "");
-  return candidate.startsWith("/") && !candidate.startsWith("//") ? candidate : fallback;
+  // Browsers treat "\" as "/", so "/\evil.example" leaves the site just like "//evil.example".
+  // URL parsers also drop tabs and newlines, which can hide either form.
+  if (!candidate.startsWith("/") || candidate.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(candidate)) {
+    return fallback;
+  }
+  return candidate;
 }
 
 export function trialAccessState(startedAt, endsAt, now = Date.now()) {

@@ -25,6 +25,9 @@ test("identity input is normalized conservatively", () => {
   assert.equal(safeRedirectPath("/fleet-management?view=machines"), "/fleet-management?view=machines");
   assert.equal(safeRedirectPath("//attacker.example"), "/fleet-management");
   assert.equal(safeRedirectPath("https://attacker.example"), "/fleet-management");
+  assert.equal(safeRedirectPath("/\\attacker.example"), "/fleet-management");
+  assert.equal(safeRedirectPath("/\t/attacker.example"), "/fleet-management");
+  assert.equal(safeRedirectPath("/fleet-management\\..\\x"), "/fleet-management");
 });
 
 test("opaque tokens are stored only as one-way hashes", () => {

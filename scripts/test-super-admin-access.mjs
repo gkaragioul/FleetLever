@@ -77,6 +77,14 @@ test("a hosted deployment demands a real session secret", () => {
   assert.equal(sessionSecret({ RAILWAY_ENVIRONMENT: "production", FLEETLEVER_SESSION_SECRET: secret }), secret);
 });
 
+test("production mode off-platform demands a real session secret", () => {
+  // The development secret is published with the source. A self-hosted production server that
+  // forgot FLEETLEVER_SESSION_SECRET must refuse to sign or accept cookies with it.
+  assert.throws(() => sessionSecret({ NODE_ENV: "production" }));
+  assert.throws(() => sessionSecret({ NODE_ENV: "production", FLEETLEVER_SESSION_SECRET: "too-short" }));
+  assert.equal(sessionSecret({ NODE_ENV: "production", FLEETLEVER_SESSION_SECRET: secret }), secret);
+});
+
 test("local runs fall back to a development session secret", () => {
   assert.equal(typeof sessionSecret({}), "string");
   assert.ok(sessionSecret({}).length >= 32);

@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { createAccountSession, upsertGoogleAccount } from "@/lib/auth/account";
+import { safeRedirectPath } from "@/lib/auth/account-core.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state");
   const expectedState = cookieStore.get("fleetlever_google_state")?.value;
   const verifier = cookieStore.get("fleetlever_google_verifier")?.value;
-  const next = cookieStore.get("fleetlever_google_next")?.value ?? "/fleet-management";
+  const next = safeRedirectPath(cookieStore.get("fleetlever_google_next")?.value);
   ["fleetlever_google_state", "fleetlever_google_verifier", "fleetlever_google_next"].forEach((name) => cookieStore.delete(name));
   const code = request.nextUrl.searchParams.get("code");
   if (!state || !expectedState || state !== expectedState || !verifier || !code) return loginError(request, "invalid_state");
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       ipAddress: requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? requestHeaders.get("x-real-ip"),
       userAgent: requestHeaders.get("user-agent"),
     });
-    return NextResponse.redirect(new URL(next.startsWith("/") ? next : "/fleet-management", request.url));
+    return NextResponse.redirect(new URL(next, request.url));
   } catch {
     return loginError(request, "unexpected");
   }

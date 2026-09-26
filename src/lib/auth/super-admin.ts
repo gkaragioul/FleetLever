@@ -29,7 +29,7 @@ function localDevelopmentSession(): SuperAdminSession {
 }
 
 function configuredUsername() {
-  return process.env.FLEETLEVER_SUPER_ADMIN_USERNAME ?? "karagioules";
+  return process.env.FLEETLEVER_SUPER_ADMIN_USERNAME?.trim() || null;
 }
 
 function configuredPasswordHash() {
@@ -60,6 +60,7 @@ function verifyPassword(password: string, storedHash: string) {
 
 export async function verifySuperAdminCredentials(username: string, password: string) {
   const expectedUsername = configuredUsername();
+  if (!expectedUsername) return false;
   const usernameMatches = username.trim() === expectedUsername;
   const passwordMatches = verifyPassword(password, configuredPasswordHash());
 
