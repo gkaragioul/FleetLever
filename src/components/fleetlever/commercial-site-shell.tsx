@@ -9,9 +9,7 @@ import { FleetLeverLogo } from "./fleetlever-logo";
 const configuredAppHref =
   process.env.NEXT_PUBLIC_FLEETLEVER_APP_URL ??
   process.env.NEXT_PUBLIC_FLEETLEVER_CONSOLE_URL ??
-  (process.env.NODE_ENV === "development"
-    ? "http://127.0.0.1:3001"
-    : "https://fleetlever-app-production.up.railway.app");
+  "http://127.0.0.1:3001";
 
 const appOrigin = configuredAppHref
   .replace(/\/(?:login|signup)\/?$/i, "")

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 
-const appOrigin = (process.env.FLEETLEVER_PRODUCTION_APP_URL ?? "https://fleetlever-app-production.up.railway.app").replace(/\/$/, "");
-const siteOrigin = (process.env.FLEETLEVER_PRODUCTION_SITE_URL ?? "https://fleetlever.com").replace(/\/$/, "");
-const siteHealthOrigin = (process.env.FLEETLEVER_PRODUCTION_SITE_HEALTH_URL ?? "https://fleetlever-site-production.up.railway.app").replace(/\/$/, "");
+// Point these at your own deployment. The defaults are the local editions (npm run dev:console / dev:site).
+const appOrigin = (process.env.FLEETLEVER_PRODUCTION_APP_URL ?? "http://127.0.0.1:3001").replace(/\/$/, "");
+const siteOrigin = (process.env.FLEETLEVER_PRODUCTION_SITE_URL ?? "http://127.0.0.1:3002").replace(/\/$/, "");
+const siteHealthOrigin = (process.env.FLEETLEVER_PRODUCTION_SITE_HEALTH_URL ?? siteOrigin).replace(/\/$/, "");
 
 async function request(url, options = {}) {
   return fetch(url, {

@@ -6,6 +6,9 @@
 > lists what that needs. It is built and operated for FleetLever's own Railway and Vercel
 > deployments, and other platforms are not tested.
 
+> **Status.** The hosted FleetLever service at fleetlever.com is currently offline. The source here
+> still builds and runs locally; see [Editions](#editions) and [Self-hosting](#self-hosting).
+
 FleetLever is a release-control product for equipment-heavy operations. It answers one daily question before machines and crews are committed: what can work tomorrow, what cannot, why, and who must act.
 
 FleetLever ships one codebase in two isolated editions: the commercial site and the customer console.
@@ -138,7 +141,9 @@ Security notes:
   first) and 2 MB each.
 - Leave Lisa off (`FLEETLEVER_LISA_CODEX_ENABLED=false`) unless you have read
   [the relay's security boundary](docs/architecture/lisa-outbound-relay.md#security-boundary).
-- Please report vulnerabilities privately to hello@fleetlever.com, not in a public issue.
+- Please report vulnerabilities privately through GitHub's
+  [private vulnerability reporting](https://github.com/gkaragioul/FleetLever/security/advisories/new),
+  not in a public issue.
 
 ## License
 

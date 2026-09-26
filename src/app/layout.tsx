@@ -4,7 +4,7 @@ import { getFleetLeverEdition } from "@/lib/fleetlever/edition";
 import "./globals.css";
 
 const edition = getFleetLeverEdition();
-const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleetlever-site-production.up.railway.app");
+const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3002");
 
 const metadataCopy = {
   site: {
